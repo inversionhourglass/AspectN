@@ -2,13 +2,15 @@ using AspectN.Text;
 
 namespace AspectN.Syntax;
 
-public sealed class SyntaxToken
+public sealed class SyntaxToken : SyntaxNode
 {
     public SyntaxToken(
         SyntaxKind kind,
         TextSpan span,
         string text,
-        object? value = null)
+        object? value = null,
+        bool isMissing = false)
+        : base(kind, span)
     {
 #if NET10_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(text);
@@ -16,17 +18,25 @@ public sealed class SyntaxToken
         if (text is null) throw new ArgumentNullException(nameof(text));
 #endif
 
-        Kind = kind;
-        Span = span;
         Text = text;
         Value = value;
+        IsMissing = isMissing;
     }
-
-    public SyntaxKind Kind { get; }
-
-    public TextSpan Span { get; }
 
     public string Text { get; }
 
     public object? Value { get; }
+
+    public bool IsMissing { get; }
+
+    public TextSpan Span => FullSpan;
+
+    public static SyntaxToken Missing(SyntaxKind kind, int position)
+    {
+        return new SyntaxToken(
+            kind,
+            new TextSpan(position, 0),
+            string.Empty,
+            isMissing: true);
+    }
 }
