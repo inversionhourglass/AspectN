@@ -221,6 +221,20 @@ internal sealed class TypePatternParser
     private GenericPatternListSyntax ParseGenericPatternList()
     {
         var lessThan = NextToken();
+        if (_options.LanguageVersion == AspectNLanguageVersion.Legacy &&
+            Current.Kind == SyntaxKind.BangToken)
+        {
+            var bang = NextToken();
+            return new GenericPatternListSyntax(
+                lessThan,
+                GenericPatternForm.FixedArity,
+                0,
+                Array.Empty<TypePatternSyntax>(),
+                Array.Empty<SyntaxToken>(),
+                bang,
+                MatchToken(SyntaxKind.GreaterThanToken));
+        }
+
         if (Current.Kind == SyntaxKind.GreaterThanToken)
         {
             return new GenericPatternListSyntax(

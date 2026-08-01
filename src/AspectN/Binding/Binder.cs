@@ -1,0 +1,921 @@
+using System.Collections.ObjectModel;
+using System.Text;
+using AspectN.Diagnostics;
+using AspectN.Metadata;
+using AspectN.Parsing;
+using AspectN.Syntax;
+
+namespace AspectN.Binding;
+
+internal sealed class Binder
+{
+    private static readonly Dictionary<string, string> _PrimitiveAliases =
+        new(StringComparer.Ordinal)
+        {
+            ["bool"] = "System.Boolean",
+            ["byte"] = "System.Byte",
+            ["sbyte"] = "System.SByte",
+            ["short"] = "System.Int16",
+            ["ushort"] = "System.UInt16",
+            ["int"] = "System.Int32",
+            ["uint"] = "System.UInt32",
+            ["long"] = "System.Int64",
+            ["ulong"] = "System.UInt64",
+            ["char"] = "System.Char",
+            ["float"] = "System.Single",
+            ["double"] = "System.Double",
+            ["decimal"] = "System.Decimal",
+            ["string"] = "System.String",
+            ["object"] = "System.Object",
+            ["void"] = "System.Void"
+        };
+
+    private readonly DiagnosticBag _diagnostics = new();
+    private readonly AspectNSyntaxTree _syntaxTree;
+    private int _negationDepth;
+
+    public Binder(AspectNSyntaxTree syntaxTree)
+    {
+        _syntaxTree = syntaxTree ??
+            throw new ArgumentNullException(nameof(syntaxTree));
+    }
+
+    public IReadOnlyList<AspectNDiagnostic> Diagnostics =>
+        new ReadOnlyCollection<AspectNDiagnostic>(_diagnostics.ToArray());
+
+    public BoundNode? Bind()
+    {
+        var scope = new VariableScope();
+        return _syntaxTree.ParseKind switch
+        {
+            AspectNParseKind.MemberExpression =>
+                BindExpression((ExpressionSyntax)_syntaxTree.Root, scope),
+            AspectNParseKind.TypePattern => BindTypeRoot(_syntaxTree.Root, scope),
+            _ => null
+        };
+    }
+
+    private BoundTypePattern BindTypeRoot(SyntaxNode root, VariableScope scope)
+    {
+        if (root is TypeUseSyntax typeUse)
+        {
+            _diagnostics.Add(
+                DiagnosticCodes.InvalidTargetDomain,
+                DiagnosticSeverity.Error,
+                "A top-level type pattern cannot specify a ref kind.",
+                typeUse.FullSpan);
+            return BindTypePattern(typeUse.TypePattern, scope, false);
+        }
+
+        return BindTypePattern((TypePatternSyntax)root, scope, false);
+    }
+
+    private BoundExpression BindExpression(
+        ExpressionSyntax syntax,
+        VariableScope scope)
+    {
+        switch (syntax)
+        {
+            case SelectorSyntax selector:
+                return BindSelector(selector, scope);
+            case ParenthesizedExpressionSyntax parenthesized:
+                return BindExpression(parenthesized.Expression, scope);
+            case UnaryExpressionSyntax unary:
+                {
+                    var childScope = scope.Clone();
+                    BoundExpression operand;
+                    _negationDepth++;
+                    try
+                    {
+                        operand = BindExpression(unary.Operand, childScope);
+                    }
+                    finally
+                    {
+                        _negationDepth--;
+                    }
+
+                    scope.HideNewVariablesFrom(childScope);
+                    return new BoundUnaryExpression(unary.FullSpan, operand);
+                }
+            case BinaryExpressionSyntax binary:
+                return BindBinaryExpression(binary, scope);
+            default:
+                throw new InvalidOperationException(
+                    $"Unsupported expression syntax '{syntax.Kind}'.");
+        }
+    }
+
+    private BoundBinaryExpression BindBinaryExpression(
+        BinaryExpressionSyntax syntax,
+        VariableScope scope)
+    {
+        if (syntax.OperatorToken.Kind == SyntaxKind.AmpersandAmpersandToken)
+        {
+            var left = BindExpression(syntax.Left, scope);
+            var right = BindExpression(syntax.Right, scope);
+            var domain = left.TargetDomain & right.TargetDomain;
+            if (domain == SelectorTargetDomain.None)
+            {
+                _diagnostics.Add(
+                    DiagnosticCodes.InvalidTargetDomain,
+                    DiagnosticSeverity.Error,
+                    "The selector domains on both sides of '&&' do not overlap.",
+                    syntax.OperatorToken.Span);
+            }
+
+            return new BoundBinaryExpression(
+                syntax.FullSpan,
+                left,
+                BoundLogicalOperator.And,
+                right,
+                domain);
+        }
+
+        var leftScope = scope.Clone();
+        var rightScope = scope.Clone();
+        var leftBranch = BindExpression(syntax.Left, leftScope);
+        var rightBranch = BindExpression(syntax.Right, rightScope);
+        ReportDuplicateBranchVariables(
+            scope,
+            leftScope,
+            rightScope,
+            syntax.OperatorToken);
+        scope.HideNewVariablesFrom(leftScope);
+        scope.HideNewVariablesFrom(rightScope);
+        return new BoundBinaryExpression(
+            syntax.FullSpan,
+            leftBranch,
+            BoundLogicalOperator.Or,
+            rightBranch,
+            leftBranch.TargetDomain | rightBranch.TargetDomain);
+    }
+
+    private BoundSelector BindSelector(
+        SelectorSyntax syntax,
+        VariableScope scope)
+    {
+        if (IsUnavailableSelector(syntax))
+        {
+            return InvalidSelector(syntax);
+        }
+
+        return syntax switch
+        {
+            CallableSelectorSyntax callable => new BoundSelector(
+                callable.FullSpan,
+                BoundSelectorKind.Callable,
+                SelectorTargetDomain.Callable,
+                BindCallableSignature(
+                    (CallableSignatureSyntax)callable.Body!,
+                    scope)),
+            MethodSelectorSyntax method => new BoundSelector(
+                method.FullSpan,
+                BoundSelectorKind.Method,
+                SelectorTargetDomain.OrdinaryMethod,
+                BindCallableSignature(
+                    (CallableSignatureSyntax)method.Body!,
+                    scope)),
+            AccessorSelectorSyntax accessor => new BoundSelector(
+                accessor.FullSpan,
+                BoundSelectorKind.Accessor,
+                SelectorTargetDomain.PropertyAccessor,
+                BindPropertySignature(
+                    (PropertySignatureSyntax)accessor.Body!,
+                    scope)),
+            GetterSelectorSyntax getter => new BoundSelector(
+                getter.FullSpan,
+                BoundSelectorKind.Getter,
+                SelectorTargetDomain.PropertyGetter,
+                BindPropertySignature(
+                    (PropertySignatureSyntax)getter.Body!,
+                    scope)),
+            SetterSelectorSyntax setter => new BoundSelector(
+                setter.FullSpan,
+                BoundSelectorKind.Setter,
+                SelectorTargetDomain.PropertySetter,
+                BindPropertySignature(
+                    (PropertySignatureSyntax)setter.Body!,
+                    scope)),
+            ConstructorSelectorSyntax constructor => new BoundSelector(
+                constructor.FullSpan,
+                BoundSelectorKind.Constructor,
+                SelectorTargetDomain.InstanceConstructor,
+                BindConstructorSignature(
+                    (ConstructorSignatureSyntax)constructor.Body!,
+                    scope)),
+            StaticConstructorSelectorSyntax staticConstructor =>
+                new BoundSelector(
+                    staticConstructor.FullSpan,
+                    BoundSelectorKind.StaticConstructor,
+                    SelectorTargetDomain.StaticConstructor,
+                    new BoundStaticConstructorSignature(
+                        staticConstructor.Body!.FullSpan,
+                        BindTypePattern(
+                            (TypePatternSyntax)staticConstructor.Body,
+                            scope,
+                            IsUnderNegation))),
+            AttributeSelectorSyntax attribute => BindAttributeSelector(
+                attribute,
+                scope),
+            RegexSelectorSyntax regex => new BoundSelector(
+                regex.FullSpan,
+                BoundSelectorKind.Regex,
+                SelectorTargetDomain.All,
+                new BoundRegexPattern(
+                    regex.RegexBodyToken.Span,
+                    regex.RegexBodyToken.Text)),
+            ExtensionSelectorSyntax extension => BindMissingExtension(extension),
+            _ => throw new InvalidOperationException(
+                $"Unsupported selector syntax '{syntax.Kind}'.")
+        };
+    }
+
+    private BoundSelector BindMissingExtension(ExtensionSelectorSyntax syntax)
+    {
+        var isQualified = syntax.NameTokens.Count > 1;
+        _diagnostics.Add(
+            isQualified
+                ? DiagnosticCodes.MissingExtension
+                : DiagnosticCodes.UnknownSelector,
+            DiagnosticSeverity.Error,
+            isQualified
+                ? $"Extension '{GetExtensionName(syntax)}' is not registered."
+                : $"Selector '{GetExtensionName(syntax)}' is not recognized.",
+            syntax.FullSpan);
+        return InvalidSelector(syntax);
+    }
+
+    private BoundSelector BindAttributeSelector(
+        AttributeSelectorSyntax syntax,
+        VariableScope scope)
+    {
+        var signature = (AttributeSignatureSyntax)syntax.Body!;
+        var tokens = signature.Parts.OfType<SyntaxToken>().ToArray();
+        var typeSyntax = signature.Parts.OfType<TypePatternSyntax>().Last();
+        var targetText = tokens.Length == 0 ? string.Empty : tokens[0].Text;
+        var comparison = _syntaxTree.LanguageVersion == AspectNLanguageVersion.Legacy
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+        var target = GetAttributeTarget(targetText, comparison);
+        var parameterIndex = tokens.FirstOrDefault(
+            token => token.Kind == SyntaxKind.IntegerToken)?.Value as int?;
+        var domain = target == BoundAttributeTargetKind.Property
+            ? SelectorTargetDomain.PropertyAccessor
+            : SelectorTargetDomain.All;
+        return new BoundSelector(
+            syntax.FullSpan,
+            BoundSelectorKind.Attribute,
+            domain,
+            new BoundAttributePattern(
+                signature.FullSpan,
+                target,
+                parameterIndex,
+                BindTypePattern(typeSyntax, scope, IsUnderNegation)));
+    }
+
+    private BoundCallableSignature BindCallableSignature(
+        CallableSignatureSyntax syntax,
+        VariableScope scope)
+    {
+        var modifiers = BindModifiers(syntax.Parts.OfType<ModifierSyntax>());
+        var returnSyntax = syntax.Parts.OfType<TypeUseSyntax>().First();
+        var returnType = BindTypeUse(returnSyntax, scope, true);
+        var genericSyntax = syntax.Parts
+            .OfType<GenericPatternListSyntax>()
+            .FirstOrDefault();
+        var memberPath = GetMemberPath(syntax.Parts, returnSyntax);
+        var generic = BindGenericPattern(
+            genericSyntax,
+            IsWildcardMemberName(memberPath),
+            scope,
+            IsUnderNegation);
+        var parameters = syntax.Parts
+            .OfType<ParameterSyntax>()
+            .Select(parameter =>
+                BindTypeUse(parameter.TypeUse, scope, false))
+            .ToArray();
+        var requiresAsync = syntax.Parts
+            .OfType<SyntaxToken>()
+            .Any(token => EqualsKeyword(token.Text, "async"));
+        return new BoundCallableSignature(
+            syntax.FullSpan,
+            modifiers,
+            requiresAsync,
+            returnType,
+            memberPath,
+            generic,
+            parameters,
+            MatchesAnyParameters(syntax.Parts));
+    }
+
+    private BoundPropertySignature BindPropertySignature(
+        PropertySignatureSyntax syntax,
+        VariableScope scope)
+    {
+        var typeSyntax = syntax.Parts.OfType<TypeUseSyntax>().First();
+        return new BoundPropertySignature(
+            syntax.FullSpan,
+            BindModifiers(syntax.Parts.OfType<ModifierSyntax>()),
+            BindTypeUse(typeSyntax, scope, true),
+            GetMemberPath(syntax.Parts, typeSyntax));
+    }
+
+    private BoundConstructorSignature BindConstructorSignature(
+        ConstructorSignatureSyntax syntax,
+        VariableScope scope)
+    {
+        var declaringType = syntax.Parts.OfType<TypePatternSyntax>().First();
+        var parameters = syntax.Parts
+            .OfType<ParameterSyntax>()
+            .Select(parameter =>
+                BindTypeUse(parameter.TypeUse, scope, false))
+            .ToArray();
+        return new BoundConstructorSignature(
+            syntax.FullSpan,
+            BindTypePattern(declaringType, scope, IsUnderNegation),
+            parameters,
+            MatchesAnyParameters(syntax.Parts));
+    }
+
+    private BoundTypeUsePattern BindTypeUse(
+        TypeUseSyntax syntax,
+        VariableScope scope,
+        bool isReturn)
+    {
+        var refText = string.Join(
+            " ",
+            syntax.RefKindTokens.Select(token => token.Text));
+        var refKind = refText.ToLowerInvariant() switch
+        {
+            "ref" => RefKind.Ref,
+            "out" => RefKind.Out,
+            "in" => RefKind.In,
+            "ref readonly" => RefKind.RefReadOnly,
+            _ => RefKind.None
+        };
+        if (isReturn && refKind is RefKind.Out or RefKind.In)
+        {
+            _diagnostics.Add(
+                DiagnosticCodes.InvalidRefKind,
+                DiagnosticSeverity.Error,
+                $"'{refText}' is not valid for a return type.",
+                syntax.FullSpan);
+        }
+
+        return new BoundTypeUsePattern(
+            refKind,
+            BindTypePattern(syntax.TypePattern, scope, IsUnderNegation));
+    }
+
+    private List<BoundModifier> BindModifiers(
+        IEnumerable<ModifierSyntax> modifierSyntaxes)
+    {
+        var modifiers = new List<BoundModifier>();
+        var keys = new HashSet<string>(StringComparer.Ordinal);
+        var positiveAccessibilityCount = 0;
+        var hasPositiveStatic = false;
+        var hasNegativeStatic = false;
+        foreach (var syntax in modifierSyntaxes)
+        {
+            var isNegated = syntax.Tokens[0].Kind == SyntaxKind.BangToken;
+            var content = string.Join(
+                " ",
+                syntax.Tokens
+                    .Where(token => token.Kind != SyntaxKind.BangToken)
+                    .Select(token => token.Text));
+            if (_syntaxTree.LanguageVersion == AspectNLanguageVersion.Legacy)
+            {
+                content = content.ToLowerInvariant();
+            }
+
+            BoundModifier modifier;
+            if (content == "static")
+            {
+                modifier = new BoundModifier(BoundModifierKind.Static, isNegated);
+                hasPositiveStatic |= !isNegated;
+                hasNegativeStatic |= isNegated;
+            }
+            else
+            {
+                modifier = new BoundModifier(
+                    BoundModifierKind.Accessibility,
+                    isNegated,
+                    GetAccessibility(content));
+                if (!isNegated) positiveAccessibilityCount++;
+            }
+
+            var key = $"{modifier.Kind}:{modifier.Accessibility}:{isNegated}";
+            if (!keys.Add(key) &&
+                _syntaxTree.LanguageVersion == AspectNLanguageVersion.Standard)
+            {
+                ReportInvalidModifiers(
+                    syntax,
+                    $"Modifier '{content}' is duplicated.");
+            }
+
+            modifiers.Add(modifier);
+        }
+
+        if (_syntaxTree.LanguageVersion == AspectNLanguageVersion.Standard)
+        {
+            if (positiveAccessibilityCount > 1)
+            {
+                ReportInvalidModifiers(
+                    modifierSyntaxes.First(),
+                    "A Standard signature can contain at most one positive accessibility.");
+            }
+
+            if (hasPositiveStatic && hasNegativeStatic)
+            {
+                ReportInvalidModifiers(
+                    modifierSyntaxes.First(),
+                    "A signature cannot require both static and !static.");
+            }
+        }
+
+        return modifiers;
+    }
+
+    private BoundTypePattern BindTypePattern(
+        TypePatternSyntax syntax,
+        VariableScope scope,
+        bool underNegation)
+    {
+        switch (syntax)
+        {
+            case NamedTypePatternSyntax named:
+                if (IsLegacyImplicitVariable(named))
+                {
+                    return BindVariable(
+                        named.FullSpan,
+                        named.Segments[0].NameParts[0].Text,
+                        scope,
+                        underNegation);
+                }
+
+                return BindNamedTypePattern(named, scope, underNegation);
+            case WildcardTypePatternSyntax wildcard:
+                return new BoundWildcardTypePattern(wildcard.FullSpan);
+            case VariableTypePatternSyntax variable:
+                return BindVariable(
+                    variable.FullSpan,
+                    variable.IdentifierToken.Text,
+                    scope,
+                    underNegation);
+            case ArrayTypePatternSyntax array:
+                return new BoundArrayTypePattern(
+                    array.FullSpan,
+                    BindTypePattern(array.ElementType, scope, underNegation),
+                    array.Rank);
+            case NullableTypePatternSyntax nullable:
+                return new BoundNullableTypePattern(
+                    nullable.FullSpan,
+                    BindTypePattern(
+                        nullable.UnderlyingType,
+                        scope,
+                        underNegation));
+            case AssignableTypePatternSyntax assignable:
+                return new BoundAssignableTypePattern(
+                    assignable.FullSpan,
+                    BindTypePattern(
+                        assignable.TargetType,
+                        scope,
+                        underNegation));
+            case TupleTypePatternSyntax tuple:
+                return new BoundTupleTypePattern(
+                    tuple.FullSpan,
+                    tuple.Elements.Select(element =>
+                        BindTypePattern(element, scope, underNegation)));
+            case TaskLikeTypePatternSyntax taskLike:
+                return new BoundTaskLikeTypePattern(
+                    taskLike.FullSpan,
+                    BindTypePattern(
+                        taskLike.ResultType,
+                        scope,
+                        underNegation));
+            case ParenthesizedTypePatternSyntax parenthesized:
+                return BindTypePattern(
+                    parenthesized.Pattern,
+                    scope,
+                    underNegation);
+            case UnaryTypePatternSyntax unary:
+                {
+                    var childScope = scope.Clone();
+                    var operand = BindTypePattern(unary.Operand, childScope, true);
+                    scope.HideNewVariablesFrom(childScope);
+                    return new BoundUnaryTypePattern(unary.FullSpan, operand);
+                }
+            case BinaryTypePatternSyntax binary:
+                return BindBinaryTypePattern(binary, scope, underNegation);
+            default:
+                throw new InvalidOperationException(
+                    $"Unsupported type-pattern syntax '{syntax.Kind}'.");
+        }
+    }
+
+    private BoundBinaryTypePattern BindBinaryTypePattern(
+        BinaryTypePatternSyntax syntax,
+        VariableScope scope,
+        bool underNegation)
+    {
+        if (syntax.OperatorToken.Kind == SyntaxKind.AmpersandAmpersandToken)
+        {
+            return new BoundBinaryTypePattern(
+                syntax.FullSpan,
+                BindTypePattern(syntax.Left, scope, underNegation),
+                BoundTypeLogicalOperator.And,
+                BindTypePattern(syntax.Right, scope, underNegation));
+        }
+
+        var leftScope = scope.Clone();
+        var rightScope = scope.Clone();
+        var left = BindTypePattern(syntax.Left, leftScope, underNegation);
+        var right = BindTypePattern(syntax.Right, rightScope, underNegation);
+        ReportDuplicateBranchVariables(
+            scope,
+            leftScope,
+            rightScope,
+            syntax.OperatorToken);
+        scope.HideNewVariablesFrom(leftScope);
+        scope.HideNewVariablesFrom(rightScope);
+        return new BoundBinaryTypePattern(
+            syntax.FullSpan,
+            left,
+            BoundTypeLogicalOperator.Or,
+            right);
+    }
+
+    private BoundNamedTypePattern BindNamedTypePattern(
+        NamedTypePatternSyntax syntax,
+        VariableScope scope,
+        bool underNegation)
+    {
+        var segments = syntax.Segments.Select(segment =>
+        {
+            var pattern = string.Concat(
+                segment.NameParts.Select(token => token.Text));
+            return new BoundNameSegment(
+                pattern,
+                BindGenericPattern(
+                    segment.GenericArguments,
+                    pattern == "*",
+                    scope,
+                    underNegation));
+        }).ToArray();
+        var separators = syntax.Separators.Select(token => token.Text).ToArray();
+        var sourceName = BuildCanonicalName(segments, separators);
+        var canonicalName = _PrimitiveAliases.TryGetValue(
+            sourceName,
+            out var alias)
+            ? alias
+            : sourceName;
+        return new BoundNamedTypePattern(
+            syntax.FullSpan,
+            segments,
+            separators,
+            canonicalName);
+    }
+
+    private BoundGenericPattern BindGenericPattern(
+        GenericPatternListSyntax? syntax,
+        bool nameIsWildcard,
+        VariableScope scope,
+        bool underNegation = false)
+    {
+        if (syntax is null)
+        {
+            var kind = _syntaxTree.LanguageVersion == AspectNLanguageVersion.Legacy ||
+                       nameIsWildcard
+                ? BoundGenericArityKind.Any
+                : BoundGenericArityKind.Exact;
+            return new BoundGenericPattern(kind, 0);
+        }
+
+        var arguments = syntax.Arguments.Select(argument =>
+            BindTypePattern(argument, scope, underNegation));
+        return syntax.Form switch
+        {
+            GenericPatternForm.AnyPositiveArity => new BoundGenericPattern(
+                BoundGenericArityKind.AnyPositive,
+                0),
+            GenericPatternForm.Arguments => new BoundGenericPattern(
+                BoundGenericArityKind.Exact,
+                syntax.Arity,
+                arguments),
+            _ => new BoundGenericPattern(
+                BoundGenericArityKind.Exact,
+                syntax.Arity)
+        };
+    }
+
+    private BoundVariableTypePattern BindVariable(
+        AspectN.Text.TextSpan span,
+        string name,
+        VariableScope scope,
+        bool underNegation)
+    {
+        if (scope.TryGet(name, out var existing))
+        {
+            return new BoundVariableTypePattern(span, existing!);
+        }
+
+        var variable = new VariableSymbol(name);
+        if (underNegation)
+        {
+            _diagnostics.Add(
+                DiagnosticCodes.InvalidVariable,
+                DiagnosticSeverity.Error,
+                $"Variable '${name}' cannot be introduced under negation.",
+                span);
+            scope.Hide(name);
+            return new BoundVariableTypePattern(span, variable);
+        }
+
+        if (scope.IsHidden(name))
+        {
+            _diagnostics.Add(
+                DiagnosticCodes.InvalidVariableScope,
+                DiagnosticSeverity.Error,
+                $"Variable '${name}' was introduced in an isolated branch and cannot escape it.",
+                span);
+            return new BoundVariableTypePattern(span, variable);
+        }
+
+        scope.Add(name, variable);
+        return new BoundVariableTypePattern(span, variable);
+    }
+
+    private void ReportDuplicateBranchVariables(
+        VariableScope parent,
+        VariableScope left,
+        VariableScope right,
+        SyntaxToken operatorToken)
+    {
+        var leftNames = left.GetNamesNotVisibleIn(parent);
+        var rightNames = right.GetNamesNotVisibleIn(parent);
+        leftNames.IntersectWith(rightNames);
+        foreach (var name in leftNames)
+        {
+            _diagnostics.Add(
+                DiagnosticCodes.InvalidVariable,
+                DiagnosticSeverity.Error,
+                $"Variable '${name}' is introduced independently in both OR branches.",
+                operatorToken.Span);
+        }
+    }
+
+    private bool IsUnavailableSelector(SelectorSyntax syntax)
+    {
+        var keyword = syntax.KeywordToken?.Text;
+        if (keyword is null) return false;
+
+        if (_syntaxTree.LanguageVersion == AspectNLanguageVersion.Standard)
+        {
+            return keyword is "execution" or "property";
+        }
+
+        var unavailable = syntax switch
+        {
+            CallableSelectorSyntax =>
+                string.Equals(keyword, "callable", StringComparison.OrdinalIgnoreCase),
+            AccessorSelectorSyntax =>
+                string.Equals(keyword, "accessor", StringComparison.OrdinalIgnoreCase),
+            _ => false
+        };
+        if (unavailable)
+        {
+            _diagnostics.Add(
+                DiagnosticCodes.SelectorUnavailable,
+                DiagnosticSeverity.Error,
+                $"Selector '{keyword}' is unavailable in Legacy.",
+                syntax.KeywordToken!.Span);
+        }
+
+        return unavailable;
+    }
+
+    private static BoundSelector InvalidSelector(SelectorSyntax syntax)
+    {
+        return new BoundSelector(
+            syntax.FullSpan,
+            BoundSelectorKind.Regex,
+            SelectorTargetDomain.All,
+            new BoundRegexPattern(syntax.FullSpan, string.Empty));
+    }
+
+    private static List<string> GetMemberPath(
+        IReadOnlyList<SyntaxNode> parts,
+        TypeUseSyntax typeUse)
+    {
+        var path = new List<string>();
+        var afterType = false;
+        foreach (var part in parts)
+        {
+            if (ReferenceEquals(part, typeUse))
+            {
+                afterType = true;
+                continue;
+            }
+
+            if (!afterType) continue;
+            if (part is GenericPatternListSyntax) break;
+            if (part is SyntaxToken token)
+            {
+                if (token.Kind == SyntaxKind.OpenParenToken) break;
+                path.Add(token.Text);
+            }
+        }
+
+        return path;
+    }
+
+    private static bool MatchesAnyParameters(IReadOnlyList<SyntaxNode> parts)
+    {
+        for (var index = 0; index < parts.Count - 1; index++)
+        {
+            if (parts[index] is SyntaxToken
+                {
+                    Kind: SyntaxKind.OpenParenToken
+                } &&
+                parts[index + 1] is SyntaxToken
+                {
+                    Kind: SyntaxKind.DotDotToken
+                })
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsWildcardMemberName(List<string> memberPath)
+    {
+        return memberPath.Count > 0 && memberPath[memberPath.Count - 1] == "*";
+    }
+
+    private static string BuildCanonicalName(
+        BoundNameSegment[] segments,
+        string[] separators)
+    {
+        var builder = new StringBuilder();
+        for (var index = 0; index < segments.Length; index++)
+        {
+            if (index > 0) builder.Append(separators[index - 1]);
+            builder.Append(segments[index].Pattern);
+        }
+
+        return builder.ToString();
+    }
+
+    private bool IsLegacyImplicitVariable(NamedTypePatternSyntax syntax)
+    {
+        if (_syntaxTree.LanguageVersion != AspectNLanguageVersion.Legacy ||
+            syntax.Segments.Count != 1 ||
+            syntax.Separators.Count != 0)
+        {
+            return false;
+        }
+
+        var segment = syntax.Segments[0];
+        if (segment.GenericArguments is not null || segment.NameParts.Count != 1)
+        {
+            return false;
+        }
+
+        var name = segment.NameParts[0].Text;
+        return name == "T" ||
+               (name.Length > 1 &&
+                name[0] == 'T' &&
+                name.Skip(1).All(char.IsDigit));
+    }
+
+    private bool IsUnderNegation => _negationDepth > 0;
+
+    private bool EqualsKeyword(string actual, string expected)
+    {
+        return string.Equals(
+            actual,
+            expected,
+            _syntaxTree.LanguageVersion == AspectNLanguageVersion.Legacy
+                ? StringComparison.OrdinalIgnoreCase
+                : StringComparison.Ordinal);
+    }
+
+    private static Accessibility GetAccessibility(string content)
+    {
+        return content switch
+        {
+            "public" => Accessibility.Public,
+            "protected" => Accessibility.Protected,
+            "internal" => Accessibility.Internal,
+            "private" => Accessibility.Private,
+            "protected internal" or "protectedinternal" =>
+                Accessibility.ProtectedInternal,
+            "private protected" or "privateprotected" =>
+                Accessibility.PrivateProtected,
+            _ => Accessibility.Unknown
+        };
+    }
+
+    private static BoundAttributeTargetKind GetAttributeTarget(
+        string text,
+        StringComparison comparison)
+    {
+        if (string.Equals(text, "type", comparison))
+            return BoundAttributeTargetKind.Type;
+        if (string.Equals(text, "callable", comparison) ||
+            string.Equals(text, "exec", comparison))
+            return BoundAttributeTargetKind.Callable;
+        if (string.Equals(text, "property", comparison))
+            return BoundAttributeTargetKind.Property;
+        if (string.Equals(text, "parameter", comparison) ||
+            string.Equals(text, "para", comparison))
+            return BoundAttributeTargetKind.Parameter;
+        if (string.Equals(text, "return", comparison) ||
+            string.Equals(text, "ret", comparison))
+            return BoundAttributeTargetKind.Return;
+        return BoundAttributeTargetKind.Any;
+    }
+
+    private static string GetExtensionName(ExtensionSelectorSyntax syntax)
+    {
+        return string.Join(".", syntax.NameTokens.Select(token => token.Text));
+    }
+
+    private void ReportInvalidModifiers(ModifierSyntax syntax, string message)
+    {
+        _diagnostics.Add(
+            DiagnosticCodes.InvalidModifierCombination,
+            DiagnosticSeverity.Error,
+            message,
+            syntax.FullSpan);
+    }
+
+    private sealed class VariableScope
+    {
+        private readonly HashSet<string> _hidden;
+        private readonly Dictionary<string, VariableSymbol> _visible;
+
+        public VariableScope()
+            : this(
+                new Dictionary<string, VariableSymbol>(StringComparer.Ordinal),
+                new HashSet<string>(StringComparer.Ordinal))
+        {
+        }
+
+        private VariableScope(
+            Dictionary<string, VariableSymbol> visible,
+            HashSet<string> hidden)
+        {
+            _visible = visible;
+            _hidden = hidden;
+        }
+
+        public VariableScope Clone()
+        {
+            return new VariableScope(
+                new Dictionary<string, VariableSymbol>(
+                    _visible,
+                    StringComparer.Ordinal),
+                new HashSet<string>(_hidden, StringComparer.Ordinal));
+        }
+
+        public bool TryGet(string name, out VariableSymbol? variable)
+        {
+            return _visible.TryGetValue(name, out variable);
+        }
+
+        public void Add(string name, VariableSymbol variable)
+        {
+            _visible.Add(name, variable);
+        }
+
+        public bool IsHidden(string name)
+        {
+            return _hidden.Contains(name);
+        }
+
+        public void Hide(string name)
+        {
+            _hidden.Add(name);
+        }
+
+        public void HideNewVariablesFrom(VariableScope child)
+        {
+            foreach (var name in child._visible.Keys)
+            {
+                if (!_visible.ContainsKey(name)) _hidden.Add(name);
+            }
+
+            _hidden.UnionWith(child._hidden);
+        }
+
+        public HashSet<string> GetNamesNotVisibleIn(VariableScope parent)
+        {
+            return new HashSet<string>(
+                _visible.Keys.Where(name => !parent._visible.ContainsKey(name)),
+                StringComparer.Ordinal);
+        }
+    }
+}
