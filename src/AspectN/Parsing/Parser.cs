@@ -4,7 +4,7 @@ using AspectN.Text;
 
 namespace AspectN.Parsing;
 
-internal sealed class Parser
+internal sealed partial class Parser
 {
     private readonly DiagnosticBag _diagnostics = new();
     private readonly Lexer _lexer;
@@ -82,7 +82,7 @@ internal sealed class Parser
 
         if (Current.Kind == SyntaxKind.IdentifierToken)
         {
-            return ParseExtensionSelector();
+            return new SelectorParser(this).ParseSelector();
         }
 
         var unexpected = Current;
@@ -91,24 +91,6 @@ internal sealed class Parser
         return CreateMissingSelector(unexpected.Span.Start);
     }
 
-    private ExtensionSelectorSyntax ParseExtensionSelector()
-    {
-        var name = NextToken();
-        var openParen = MatchToken(SyntaxKind.OpenParenToken);
-
-        while (Current.Kind is not
-               SyntaxKind.CloseParenToken and not
-               SyntaxKind.EndOfFileToken and not
-               SyntaxKind.AmpersandAmpersandToken and not
-               SyntaxKind.PipePipeToken)
-        {
-            ReportUnexpected(Current, "')'");
-            NextToken();
-        }
-
-        var closeParen = MatchToken(SyntaxKind.CloseParenToken);
-        return new ExtensionSelectorSyntax(name, openParen, closeParen);
-    }
 
     private SyntaxToken MatchToken(SyntaxKind expectedKind)
     {

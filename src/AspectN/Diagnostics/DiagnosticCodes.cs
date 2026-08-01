@@ -13,4 +13,8 @@ public static class DiagnosticCodes
     public static string UnterminatedRegex => "AN0005";
 
     public static string UnexpectedToken => "AN1001";
+
+    public static string ExecutionSelectorMigration => "AN4001";
+
+    public static string PropertySelectorMigration => "AN4002";
 }

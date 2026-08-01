@@ -41,6 +41,7 @@ public enum SyntaxKind
     CallableSignature,
     PropertySignature,
     ConstructorSignature,
+    AttributeSignature,
     Parameter,
     Modifier,
     GenericPatternList,
