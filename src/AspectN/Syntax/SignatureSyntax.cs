@@ -142,9 +142,12 @@ public sealed class GenericPatternListSyntax : SyntaxNode
         SyntaxToken? wildcardToken,
         SyntaxToken greaterThanToken)
     {
+        IEnumerable<SyntaxNode> content = arguments.Count == 0
+            ? separators
+            : SyntaxChildren.Interleave(arguments, separators);
         return SyntaxChildren.Create(
             lessThanToken,
-            SyntaxChildren.Interleave(arguments, separators),
+            content,
             wildcardToken,
             greaterThanToken);
     }
