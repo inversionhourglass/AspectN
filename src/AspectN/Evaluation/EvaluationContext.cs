@@ -1,0 +1,80 @@
+using AspectN.Binding;
+using AspectN.Diagnostics;
+using AspectN.Metadata;
+using AspectN.TypeSystem;
+
+namespace AspectN.Evaluation;
+
+internal sealed class EvaluationContext
+{
+    private readonly List<AspectNDiagnostic> _diagnostics;
+    private readonly Dictionary<VariableSymbol, TypeSignature> _variables;
+
+    public EvaluationContext(
+        ITypeSystem typeSystem,
+        CancellationToken cancellationToken)
+        : this(
+            typeSystem,
+            new Dictionary<VariableSymbol, TypeSignature>(),
+            new List<AspectNDiagnostic>(),
+            cancellationToken)
+    {
+    }
+
+    private EvaluationContext(
+        ITypeSystem typeSystem,
+        Dictionary<VariableSymbol, TypeSignature> variables,
+        List<AspectNDiagnostic> diagnostics,
+        CancellationToken cancellationToken)
+    {
+        TypeSystem = typeSystem ??
+            throw new ArgumentNullException(nameof(typeSystem));
+        CancellationToken = cancellationToken;
+        _variables = variables;
+        _diagnostics = diagnostics;
+    }
+
+    public ITypeSystem TypeSystem { get; }
+
+    public CancellationToken CancellationToken { get; }
+
+    public EvaluationContext Fork()
+    {
+        return new EvaluationContext(
+            TypeSystem,
+            new Dictionary<VariableSymbol, TypeSignature>(_variables),
+            new List<AspectNDiagnostic>(),
+            CancellationToken);
+    }
+
+    public MatchStatus Bind(
+        VariableSymbol variable,
+        TypeSignature candidate)
+    {
+        CancellationToken.ThrowIfCancellationRequested();
+        if (_variables.TryGetValue(variable, out var existing))
+        {
+            var result = TypeSystem.AreEqual(existing, candidate);
+            _diagnostics.AddRange(result.Diagnostics);
+            return result.Status;
+        }
+
+        _variables.Add(variable, candidate);
+        return MatchStatus.Matched;
+    }
+
+    public void AddDiagnostic(AspectNDiagnostic diagnostic)
+    {
+        _diagnostics.Add(diagnostic);
+    }
+
+    public void MergeDiagnosticsFrom(EvaluationContext branch)
+    {
+        _diagnostics.AddRange(branch._diagnostics);
+    }
+
+    public MatchResult CreateResult(MatchStatus status)
+    {
+        return new MatchResult(status, _diagnostics);
+    }
+}

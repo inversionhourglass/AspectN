@@ -8,6 +8,8 @@ namespace AspectN;
 public sealed class AspectNCompilation
 {
     private readonly ReadOnlyCollection<AspectNDiagnostic> _diagnostics;
+    private readonly CompiledMemberPattern? _memberPattern;
+    private readonly CompiledTypePattern? _typePattern;
 
     private AspectNCompilation(
         AspectNSyntaxTree syntaxTree,
@@ -18,6 +20,18 @@ public sealed class AspectNCompilation
         SyntaxTree = syntaxTree;
         Options = options;
         BoundRoot = boundRoot;
+        _memberPattern = boundRoot is BoundExpression expression
+            ? new CompiledMemberPattern(
+                expression,
+                syntaxTree.LanguageVersion,
+                options)
+            : null;
+        _typePattern = boundRoot is BoundTypePattern typePattern
+            ? new CompiledTypePattern(
+                typePattern,
+                syntaxTree.LanguageVersion,
+                options)
+            : null;
         _diagnostics = new ReadOnlyCollection<AspectNDiagnostic>(
             diagnostics.ToArray());
     }
@@ -31,6 +45,18 @@ public sealed class AspectNCompilation
     public IReadOnlyList<AspectNDiagnostic> Diagnostics => _diagnostics;
 
     internal BoundNode? BoundRoot { get; }
+
+    public bool TryGetMemberPattern(out CompiledMemberPattern? pattern)
+    {
+        pattern = _memberPattern;
+        return pattern is not null;
+    }
+
+    public bool TryGetTypePattern(out CompiledTypePattern? pattern)
+    {
+        pattern = _typePattern;
+        return pattern is not null;
+    }
 
     public static AspectNCompilation Create(
         AspectNSyntaxTree syntaxTree,
