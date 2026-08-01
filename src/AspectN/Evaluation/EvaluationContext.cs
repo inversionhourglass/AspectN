@@ -16,9 +16,23 @@ internal sealed class EvaluationContext
         CancellationToken cancellationToken)
         : this(
             typeSystem,
+            languageVersion,
+            new AspectNCompilationOptions(),
+            cancellationToken)
+    {
+    }
+
+    public EvaluationContext(
+        ITypeSystem typeSystem,
+        AspectNLanguageVersion languageVersion,
+        AspectNCompilationOptions options,
+        CancellationToken cancellationToken)
+        : this(
+            typeSystem,
             new BindingEnvironment(),
             new List<AspectNDiagnostic>(),
             languageVersion,
+            options,
             cancellationToken)
     {
     }
@@ -28,12 +42,14 @@ internal sealed class EvaluationContext
         BindingEnvironment bindings,
         List<AspectNDiagnostic> diagnostics,
         AspectNLanguageVersion languageVersion,
+        AspectNCompilationOptions options,
         CancellationToken cancellationToken)
     {
         TypeSystem = typeSystem ??
             throw new ArgumentNullException(nameof(typeSystem));
         CancellationToken = cancellationToken;
         LanguageVersion = languageVersion;
+        Options = options ?? throw new ArgumentNullException(nameof(options));
         _bindings = bindings;
         _diagnostics = diagnostics;
     }
@@ -44,6 +60,8 @@ internal sealed class EvaluationContext
 
     public AspectNLanguageVersion LanguageVersion { get; }
 
+    public AspectNCompilationOptions Options { get; }
+
     public EvaluationContext Fork()
     {
         return new EvaluationContext(
@@ -51,6 +69,7 @@ internal sealed class EvaluationContext
             _bindings.Clone(),
             new List<AspectNDiagnostic>(),
             LanguageVersion,
+            Options,
             CancellationToken);
     }
 

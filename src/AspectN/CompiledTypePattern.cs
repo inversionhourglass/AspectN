@@ -37,6 +37,7 @@ public sealed class CompiledTypePattern : CompiledPattern
         var context = new EvaluationContext(
             typeSystem,
             LanguageVersion,
+            Options,
             cancellationToken);
         var status = TypePatternEvaluator.Evaluate(_root, candidate, context);
         return context.CreateResult(status);

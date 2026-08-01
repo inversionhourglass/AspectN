@@ -20,6 +20,10 @@ public static class DiagnosticCodes
 
     public static string MissingBackendCapability => "AN3001";
 
+    public static string InvalidRegex => "AN3002";
+
+    public static string RegexTimeout => "AN3003";
+
     public static string UnknownSelector => "AN2001";
 
     public static string SelectorUnavailable => "AN2002";

@@ -37,6 +37,7 @@ public sealed class CompiledMemberPattern : CompiledPattern
         var context = new EvaluationContext(
             typeSystem,
             LanguageVersion,
+            Options,
             cancellationToken);
         var status = MemberPatternEvaluator.Evaluate(
             _root,

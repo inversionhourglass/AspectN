@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Text;
 using AspectN.Diagnostics;
+using AspectN.Extensibility;
 using AspectN.Metadata;
 using AspectN.Parsing;
 using AspectN.Syntax;
@@ -31,13 +32,18 @@ internal sealed class Binder
         };
 
     private readonly DiagnosticBag _diagnostics = new();
+    private readonly AspectNExtensionRegistry _extensions;
     private readonly AspectNSyntaxTree _syntaxTree;
     private int _negationDepth;
 
-    public Binder(AspectNSyntaxTree syntaxTree)
+    public Binder(
+        AspectNSyntaxTree syntaxTree,
+        AspectNExtensionRegistry extensions)
     {
         _syntaxTree = syntaxTree ??
             throw new ArgumentNullException(nameof(syntaxTree));
+        _extensions = extensions ??
+            throw new ArgumentNullException(nameof(extensions));
     }
 
     public IReadOnlyList<AspectNDiagnostic> Diagnostics =>
@@ -224,25 +230,58 @@ internal sealed class Binder
                 new BoundRegexPattern(
                     regex.RegexBodyToken.Span,
                     regex.RegexBodyToken.Text)),
-            ExtensionSelectorSyntax extension => BindMissingExtension(extension),
+            ExtensionSelectorSyntax extension => BindExtension(extension),
             _ => throw new InvalidOperationException(
                 $"Unsupported selector syntax '{syntax.Kind}'.")
         };
     }
 
-    private BoundSelector BindMissingExtension(ExtensionSelectorSyntax syntax)
+    private BoundSelector BindExtension(ExtensionSelectorSyntax syntax)
     {
-        var isQualified = syntax.NameTokens.Count > 1;
-        _diagnostics.Add(
-            isQualified
-                ? DiagnosticCodes.MissingExtension
-                : DiagnosticCodes.UnknownSelector,
-            DiagnosticSeverity.Error,
-            isQualified
-                ? $"Extension '{GetExtensionName(syntax)}' is not registered."
-                : $"Selector '{GetExtensionName(syntax)}' is not recognized.",
+        var qualifiedName = GetExtensionName(syntax);
+        if (!_extensions.TryGet(qualifiedName, out var extension))
+        {
+            var isQualified = syntax.NameTokens.Count > 1;
+            _diagnostics.Add(
+                isQualified
+                    ? DiagnosticCodes.MissingExtension
+                    : DiagnosticCodes.UnknownSelector,
+                DiagnosticSeverity.Error,
+                isQualified
+                    ? $"Extension '{qualifiedName}' is not registered."
+                    : $"Selector '{qualifiedName}' is not recognized.",
+                syntax.FullSpan);
+            return InvalidSelector(syntax);
+        }
+
+        var targetDomain = (SelectorTargetDomain)(int)extension!.TargetDomain;
+        if (targetDomain == SelectorTargetDomain.None)
+        {
+            _diagnostics.Add(
+                DiagnosticCodes.InvalidTargetDomain,
+                DiagnosticSeverity.Error,
+                $"Extension '{qualifiedName}' does not declare a target domain.",
+                syntax.FullSpan);
+            return InvalidSelector(syntax);
+        }
+
+        var compileContext = new ExtensionCompileContext(
+            qualifiedName,
+            _syntaxTree.LanguageVersion,
+            syntax.Arguments.Select(ExtensionArgument.FromSyntax),
             syntax.FullSpan);
-        return InvalidSelector(syntax);
+        var matcher = extension.Compile(compileContext) ??
+            throw new InvalidOperationException(
+                $"Extension '{qualifiedName}' returned a null matcher.");
+        return new BoundSelector(
+            syntax.FullSpan,
+            BoundSelectorKind.Extension,
+            targetDomain,
+            new BoundExtensionPattern(
+                syntax.FullSpan,
+                qualifiedName,
+                extension.RequiredCapabilities,
+                matcher));
     }
 
     private BoundSelector BindAttributeSelector(
@@ -257,8 +296,13 @@ internal sealed class Binder
             ? StringComparison.OrdinalIgnoreCase
             : StringComparison.Ordinal;
         var target = GetAttributeTarget(targetText, comparison);
-        var parameterIndex = tokens.FirstOrDefault(
-            token => token.Kind == SyntaxKind.IntegerToken)?.Value as int?;
+        var parameterValue = tokens.FirstOrDefault(
+            token => token.Kind == SyntaxKind.IntegerToken)?.Value;
+        var parameterIndex = parameterValue is long value &&
+                             value >= int.MinValue &&
+                             value <= int.MaxValue
+            ? (int?)value
+            : null;
         var domain = target == BoundAttributeTargetKind.Property
             ? SelectorTargetDomain.PropertyAccessor
             : SelectorTargetDomain.All;
@@ -840,7 +884,7 @@ internal sealed class Binder
 
     private static string GetExtensionName(ExtensionSelectorSyntax syntax)
     {
-        return string.Join(".", syntax.NameTokens.Select(token => token.Text));
+        return string.Concat(syntax.NameTokens.Select(token => token.Text));
     }
 
     private void ReportInvalidModifiers(ModifierSyntax syntax, string message)

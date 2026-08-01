@@ -1,5 +1,6 @@
 using AspectN.Binding;
 using AspectN.Diagnostics;
+using AspectN.Extensibility;
 using AspectN.Metadata;
 
 namespace AspectN.Evaluation;
@@ -77,6 +78,18 @@ internal static class MemberPatternEvaluator
                 context),
             BoundSelectorKind.StaticConstructor => EvaluateStaticConstructor(
                 (BoundStaticConstructorSignature)selector.Payload,
+                candidate,
+                context),
+            BoundSelectorKind.Attribute => AttributePatternEvaluator.Evaluate(
+                (BoundAttributePattern)selector.Payload,
+                candidate,
+                context),
+            BoundSelectorKind.Regex => RegexPatternEvaluator.Evaluate(
+                (BoundRegexPattern)selector.Payload,
+                candidate,
+                context),
+            BoundSelectorKind.Extension => EvaluateExtension(
+                (BoundExtensionPattern)selector.Payload,
                 candidate,
                 context),
             _ => Unknown(
@@ -382,6 +395,33 @@ internal static class MemberPatternEvaluator
             pattern,
             new BoundGenericPattern(genericKind, 0));
     }
+
+    private static MatchStatus EvaluateExtension(
+        BoundExtensionPattern pattern,
+        CallableSignature candidate,
+        EvaluationContext context)
+    {
+        var availableCapabilities = context.TypeSystem.Capabilities;
+        if ((availableCapabilities & pattern.RequiredCapabilities) !=
+            pattern.RequiredCapabilities)
+        {
+            return Unknown(
+                pattern,
+                context,
+                $"Extension '{pattern.QualifiedName}' requires unavailable " +
+                $"capabilities '{pattern.RequiredCapabilities}'.");
+        }
+
+        var result = pattern.Matcher.Match(
+            new ExtensionMatchContext(
+                candidate,
+                context.TypeSystem,
+                context.LanguageVersion,
+                context.CancellationToken));
+        context.AddDiagnostics(result.Diagnostics);
+        return result.Status;
+    }
+
     private static SelectorTargetDomain GetTargetDomain(CallableKind kind)
     {
         return kind switch
