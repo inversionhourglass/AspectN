@@ -11,6 +11,8 @@ internal sealed class CecilTypeCache
         new(TypeReferenceIdentityComparer.Instance);
     private readonly Dictionary<CecilTypeCacheKey, TypeSignature> _byStableIdentity =
         new();
+    private readonly Dictionary<TypeSignature, TypeReference> _referenceBySignature =
+        new(TypeSignatureIdentityComparer.Instance);
     private readonly object _gate = new();
 
     public TypeSignature GetOrAdd(
@@ -34,7 +36,20 @@ internal sealed class CecilTypeCache
             var created = factory();
             _byReference.Add(typeReference, created);
             _byStableIdentity.Add(key, created);
+            _referenceBySignature.Add(created, typeReference);
             return created;
+        }
+    }
+
+    public bool TryGetReference(
+        TypeSignature signature,
+        out TypeReference? typeReference)
+    {
+        lock (_gate)
+        {
+            return _referenceBySignature.TryGetValue(
+                signature,
+                out typeReference);
         }
     }
 
@@ -44,6 +59,7 @@ internal sealed class CecilTypeCache
         {
             _byReference.Clear();
             _byStableIdentity.Clear();
+            _referenceBySignature.Clear();
         }
     }
 
@@ -64,6 +80,28 @@ internal sealed class CecilTypeCache
         }
 
         public int GetHashCode(TypeReference obj)
+        {
+            return RuntimeHelpers.GetHashCode(obj);
+        }
+    }
+
+    private sealed class TypeSignatureIdentityComparer :
+        IEqualityComparer<TypeSignature>
+    {
+        private static readonly TypeSignatureIdentityComparer _Instance = new();
+
+        private TypeSignatureIdentityComparer()
+        {
+        }
+
+        public static TypeSignatureIdentityComparer Instance => _Instance;
+
+        public bool Equals(TypeSignature? x, TypeSignature? y)
+        {
+            return ReferenceEquals(x, y);
+        }
+
+        public int GetHashCode(TypeSignature obj)
         {
             return RuntimeHelpers.GetHashCode(obj);
         }

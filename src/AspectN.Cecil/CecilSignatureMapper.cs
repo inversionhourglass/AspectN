@@ -51,4 +51,11 @@ public sealed class CecilSignatureMapper
     {
         _cache.Clear();
     }
+
+    internal bool TryGetTypeReference(
+        TypeSignature signature,
+        out TypeReference? typeReference)
+    {
+        return _cache.TryGetReference(signature, out typeReference);
+    }
 }

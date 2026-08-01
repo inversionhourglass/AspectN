@@ -16,8 +16,16 @@ public sealed class CecilContextTests
         Assert.IsAssignableFrom<ITypeSystem>(typeSystem);
         Assert.IsAssignableFrom<IDisposable>(typeSystem);
         Assert.Equal(
-            TypeSystemCapabilities.TypeEquality,
+            TypeSystemCapabilities.TypeEquality |
+            TypeSystemCapabilities.BaseTypeTraversal |
+            TypeSystemCapabilities.InterfaceTraversal |
+            TypeSystemCapabilities.Assignability |
+            TypeSystemCapabilities.GenericSubstitution |
+            TypeSystemCapabilities.OriginalDefinitionMapping,
             typeSystem.Capabilities);
+        Assert.False(
+            typeSystem.Capabilities.HasFlag(
+                TypeSystemCapabilities.DirectAttributeLookup));
         AssertNoStaticDictionary(typeof(CecilTypeSystem));
         AssertNoStaticDictionary(typeof(CecilSignatureMapper));
     }

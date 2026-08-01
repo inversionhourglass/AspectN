@@ -1,3 +1,4 @@
+using AspectN.Cecil.Internal;
 using AspectN.Diagnostics;
 using AspectN.Metadata;
 using AspectN.TypeSystem;
@@ -7,6 +8,7 @@ namespace AspectN.Cecil;
 
 public sealed class CecilTypeSystem : ITypeSystem, IDisposable
 {
+    private readonly CecilResolver _resolver;
     private ModuleDefinition? _module;
 
     public CecilTypeSystem(
@@ -16,6 +18,7 @@ public sealed class CecilTypeSystem : ITypeSystem, IDisposable
         _module = module ?? throw new ArgumentNullException(nameof(module));
         Options = options ?? new CecilMappingOptions();
         Mapper = new CecilSignatureMapper(this);
+        _resolver = new CecilResolver(Mapper);
     }
 
     public ModuleDefinition Module
@@ -32,7 +35,12 @@ public sealed class CecilTypeSystem : ITypeSystem, IDisposable
     public CecilSignatureMapper Mapper { get; }
 
     public TypeSystemCapabilities Capabilities =>
-        TypeSystemCapabilities.TypeEquality;
+        TypeSystemCapabilities.TypeEquality |
+        TypeSystemCapabilities.BaseTypeTraversal |
+        TypeSystemCapabilities.InterfaceTraversal |
+        TypeSystemCapabilities.Assignability |
+        TypeSystemCapabilities.GenericSubstitution |
+        TypeSystemCapabilities.OriginalDefinitionMapping;
 
     public TypeRelationResult AreEqual(
         TypeSignature left,
@@ -48,11 +56,7 @@ public sealed class CecilTypeSystem : ITypeSystem, IDisposable
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        cancellationToken.ThrowIfCancellationRequested();
-        var equality = StructuralTypeComparer.AreEqual(candidate, target);
-        return equality.Status == Evaluation.MatchStatus.Matched
-            ? equality
-            : MissingCapability("Assignability is not implemented yet.");
+        return _resolver.IsAssignableTo(candidate, target, cancellationToken);
     }
 
     public TypeRelationResult HasDirectAttribute(
