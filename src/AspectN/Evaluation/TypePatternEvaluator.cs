@@ -22,6 +22,12 @@ internal static class TypePatternEvaluator
                 return EvaluateNamed(named, candidate, context);
             case BoundArrayTypePattern array:
                 return EvaluateArray(array, candidate, context);
+            case BoundNullableTypePattern nullable:
+                return EvaluateNullable(nullable, candidate, context);
+            case BoundTupleTypePattern tuple:
+                return EvaluateTuple(tuple, candidate, context);
+            case BoundTaskLikeTypePattern taskLike:
+                return EvaluateTaskLike(taskLike, candidate, context);
             case BoundAssignableTypePattern assignable:
                 return EvaluateAssignable(assignable, candidate, context);
             case BoundUnaryTypePattern unary:
@@ -54,6 +60,49 @@ internal static class TypePatternEvaluator
                     context,
                     "This type-pattern node requires a later semantic evaluator.");
         }
+    }
+
+    public static MatchStatus EvaluateLegacyAsyncReturn(
+        BoundTypePattern resultPattern,
+        TypeSignature candidate,
+        EvaluationContext context)
+    {
+        context.CancellationToken.ThrowIfCancellationRequested();
+        if (candidate is UnsupportedTypeSignature unsupported)
+        {
+            return Unknown(
+                resultPattern,
+                context,
+                $"Legacy async return shape is unavailable for type '{unsupported.DisplayName}'.");
+        }
+
+        if (candidate is not NamedTypeSignature named ||
+            !IsTaskLikeDefinition(named.Identity))
+        {
+            return MatchStatus.NotMatched;
+        }
+
+        if (IsLegacyNullPattern(resultPattern))
+        {
+            return named.Identity.GenericArity == 0
+                ? MatchStatus.Matched
+                : MatchStatus.NotMatched;
+        }
+
+        if (named.Identity.GenericArity != 1)
+        {
+            return MatchStatus.NotMatched;
+        }
+
+        if (named.TypeArguments.Count != 1)
+        {
+            return Unknown(
+                resultPattern,
+                context,
+                "The Legacy async result type is unavailable.");
+        }
+
+        return Evaluate(resultPattern, named.TypeArguments[0], context);
     }
 
     private static MatchStatus EvaluateNamed(
@@ -95,6 +144,231 @@ internal static class TypePatternEvaluator
             : MatchStatus.NotMatched;
     }
 
+    private static MatchStatus EvaluateNullable(
+        BoundNullableTypePattern pattern,
+        TypeSignature candidate,
+        EvaluationContext context)
+    {
+        if (candidate is UnsupportedTypeSignature unsupported)
+        {
+            return Unknown(
+                pattern,
+                context,
+                $"Nullability is unavailable for type '{unsupported.DisplayName}'.");
+        }
+
+        if (candidate is ArrayTypeSignature)
+        {
+            return Evaluate(pattern.UnderlyingType, candidate, context);
+        }
+
+        if (candidate is not NamedTypeSignature named)
+        {
+            return Unknown(
+                pattern,
+                context,
+                "The candidate's value/reference type category is unavailable.");
+        }
+
+        if (IsNamedDefinition(named.Identity, "System", "Nullable", 1))
+        {
+            if (named.TypeArguments.Count != 1)
+            {
+                return Unknown(
+                    pattern,
+                    context,
+                    "System.Nullable<T> is missing its constructed argument.");
+            }
+
+            return Evaluate(
+                pattern.UnderlyingType,
+                named.TypeArguments[0],
+                context);
+        }
+
+        return named.Identity.Kind switch
+        {
+            TypeKind.Class or TypeKind.Interface or TypeKind.Delegate =>
+                Evaluate(pattern.UnderlyingType, candidate, context),
+            TypeKind.Struct or TypeKind.Enum => MatchStatus.NotMatched,
+            _ => Unknown(
+                pattern,
+                context,
+                "The candidate's value/reference type category is unavailable.")
+        };
+    }
+
+    private static MatchStatus EvaluateTuple(
+        BoundTupleTypePattern pattern,
+        TypeSignature candidate,
+        EvaluationContext context)
+    {
+        if (candidate is UnsupportedTypeSignature unsupported)
+        {
+            return Unknown(
+                pattern,
+                context,
+                $"Tuple shape is unavailable for type '{unsupported.DisplayName}'.");
+        }
+
+        if (candidate is not NamedTypeSignature named ||
+            !IsTupleDefinition(named.Identity, context.LanguageVersion))
+        {
+            return MatchStatus.NotMatched;
+        }
+
+        var elements = new List<TypeSignature>();
+        if (!TryFlattenTuple(named, context.LanguageVersion, elements))
+        {
+            return Unknown(
+                pattern,
+                context,
+                "Tuple element metadata is incomplete.");
+        }
+
+        if (elements.Count != pattern.Elements.Count)
+        {
+            return MatchStatus.NotMatched;
+        }
+
+        var status = MatchStatus.Matched;
+        for (var index = 0; index < elements.Count; index++)
+        {
+            status = MatchLogic.And(
+                status,
+                Evaluate(pattern.Elements[index], elements[index], context));
+        }
+
+        return status;
+    }
+
+    private static MatchStatus EvaluateTaskLike(
+        BoundTaskLikeTypePattern pattern,
+        TypeSignature candidate,
+        EvaluationContext context)
+    {
+        if (candidate is UnsupportedTypeSignature unsupported)
+        {
+            return Unknown(
+                pattern,
+                context,
+                $"Task-like shape is unavailable for type '{unsupported.DisplayName}'.");
+        }
+
+        if (candidate is not NamedTypeSignature named ||
+            !IsTaskLikeDefinition(named.Identity))
+        {
+            return MatchStatus.NotMatched;
+        }
+
+        if (IsVoidPattern(pattern.ResultType))
+        {
+            return named.Identity.GenericArity == 0
+                ? MatchStatus.Matched
+                : MatchStatus.NotMatched;
+        }
+
+        if (named.Identity.GenericArity != 1)
+        {
+            return MatchStatus.NotMatched;
+        }
+
+        if (named.TypeArguments.Count != 1)
+        {
+            return Unknown(
+                pattern,
+                context,
+                "The task-like result type is unavailable.");
+        }
+
+        return Evaluate(pattern.ResultType, named.TypeArguments[0], context);
+    }
+
+    private static bool TryFlattenTuple(
+        NamedTypeSignature tuple,
+        AspectNLanguageVersion languageVersion,
+        List<TypeSignature> elements)
+    {
+        var current = tuple;
+        while (true)
+        {
+            var arity = current.Identity.GenericArity;
+            if (arity < 1 || current.TypeArguments.Count != arity)
+            {
+                return false;
+            }
+
+            var directElementCount = arity == 8 ? 7 : arity;
+            for (var index = 0; index < directElementCount; index++)
+            {
+                elements.Add(current.TypeArguments[index]);
+            }
+
+            if (arity != 8) return true;
+            if (current.TypeArguments[7] is not NamedTypeSignature rest ||
+                !IsTupleDefinition(rest.Identity, languageVersion))
+            {
+                return false;
+            }
+
+            current = rest;
+        }
+    }
+
+    private static bool IsTupleDefinition(
+        TypeIdentity identity,
+        AspectNLanguageVersion languageVersion)
+    {
+        return StringComparer.Ordinal.Equals(identity.Namespace, "System") &&
+               (StringComparer.Ordinal.Equals(
+                    identity.MetadataName,
+                    "ValueTuple") ||
+                (languageVersion == AspectNLanguageVersion.Legacy &&
+                 StringComparer.Ordinal.Equals(
+                     identity.MetadataName,
+                     "Tuple")));
+    }
+
+    private static bool IsTaskLikeDefinition(TypeIdentity identity)
+    {
+        return StringComparer.Ordinal.Equals(
+                   identity.Namespace,
+                   "System.Threading.Tasks") &&
+               (StringComparer.Ordinal.Equals(identity.MetadataName, "Task") ||
+                StringComparer.Ordinal.Equals(
+                    identity.MetadataName,
+                    "ValueTask"));
+    }
+
+    private static bool IsLegacyNullPattern(BoundTypePattern pattern)
+    {
+        return pattern is BoundNamedTypePattern named &&
+               named.Segments.Count == 1 &&
+               StringComparer.Ordinal.Equals(
+                   named.CanonicalName,
+                   "null");
+    }
+
+    private static bool IsVoidPattern(BoundTypePattern pattern)
+    {
+        return pattern is BoundNamedTypePattern named &&
+               StringComparer.Ordinal.Equals(
+                   named.CanonicalName,
+                   "System.Void");
+    }
+
+    private static bool IsNamedDefinition(
+        TypeIdentity identity,
+        string @namespace,
+        string metadataName,
+        int arity)
+    {
+        return identity.GenericArity == arity &&
+               StringComparer.Ordinal.Equals(identity.Namespace, @namespace) &&
+               StringComparer.Ordinal.Equals(
+                   identity.MetadataName,
+                   metadataName);
+    }
     private static MatchStatus EvaluateAssignable(
         BoundAssignableTypePattern pattern,
         TypeSignature candidate,

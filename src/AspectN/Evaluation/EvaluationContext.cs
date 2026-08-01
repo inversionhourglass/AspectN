@@ -12,11 +12,13 @@ internal sealed class EvaluationContext
 
     public EvaluationContext(
         ITypeSystem typeSystem,
+        AspectNLanguageVersion languageVersion,
         CancellationToken cancellationToken)
         : this(
             typeSystem,
             new BindingEnvironment(),
             new List<AspectNDiagnostic>(),
+            languageVersion,
             cancellationToken)
     {
     }
@@ -25,11 +27,13 @@ internal sealed class EvaluationContext
         ITypeSystem typeSystem,
         BindingEnvironment bindings,
         List<AspectNDiagnostic> diagnostics,
+        AspectNLanguageVersion languageVersion,
         CancellationToken cancellationToken)
     {
         TypeSystem = typeSystem ??
             throw new ArgumentNullException(nameof(typeSystem));
         CancellationToken = cancellationToken;
+        LanguageVersion = languageVersion;
         _bindings = bindings;
         _diagnostics = diagnostics;
     }
@@ -38,12 +42,15 @@ internal sealed class EvaluationContext
 
     public CancellationToken CancellationToken { get; }
 
+    public AspectNLanguageVersion LanguageVersion { get; }
+
     public EvaluationContext Fork()
     {
         return new EvaluationContext(
             TypeSystem,
             _bindings.Clone(),
             new List<AspectNDiagnostic>(),
+            LanguageVersion,
             CancellationToken);
     }
 

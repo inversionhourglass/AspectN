@@ -34,7 +34,10 @@ public sealed class CompiledTypePattern : CompiledPattern
 #endif
 
         cancellationToken.ThrowIfCancellationRequested();
-        var context = new EvaluationContext(typeSystem, cancellationToken);
+        var context = new EvaluationContext(
+            typeSystem,
+            LanguageVersion,
+            cancellationToken);
         var status = TypePatternEvaluator.Evaluate(_root, candidate, context);
         return context.CreateResult(status);
     }
