@@ -1,0 +1,16 @@
+#nullable enable
+AspectN.Cecil.CecilMappingOptions
+AspectN.Cecil.CecilMappingOptions.CecilMappingOptions(bool compositeAccessibility = false) -> void
+AspectN.Cecil.CecilMappingOptions.CompositeAccessibility.get -> bool
+AspectN.Cecil.CecilSignatureMapper
+AspectN.Cecil.CecilSignatureMapper.MapType(Mono.Cecil.TypeReference! typeReference) -> AspectN.Metadata.TypeSignature!
+AspectN.Cecil.CecilTypeSystem
+AspectN.Cecil.CecilTypeSystem.AreEqual(AspectN.Metadata.TypeSignature! left, AspectN.Metadata.TypeSignature! right) -> AspectN.TypeSystem.TypeRelationResult!
+AspectN.Cecil.CecilTypeSystem.Capabilities.get -> AspectN.TypeSystem.TypeSystemCapabilities
+AspectN.Cecil.CecilTypeSystem.CecilTypeSystem(Mono.Cecil.ModuleDefinition! module, AspectN.Cecil.CecilMappingOptions? options = null) -> void
+AspectN.Cecil.CecilTypeSystem.Dispose() -> void
+AspectN.Cecil.CecilTypeSystem.HasDirectAttribute(AspectN.TypeSystem.AttributeTarget! target, AspectN.Metadata.TypeSignature! attributeType, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.TypeSystem.TypeRelationResult!
+AspectN.Cecil.CecilTypeSystem.IsAssignableTo(AspectN.Metadata.TypeSignature! candidate, AspectN.Metadata.TypeSignature! target, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.TypeSystem.TypeRelationResult!
+AspectN.Cecil.CecilTypeSystem.Mapper.get -> AspectN.Cecil.CecilSignatureMapper!
+AspectN.Cecil.CecilTypeSystem.Module.get -> Mono.Cecil.ModuleDefinition!
+AspectN.Cecil.CecilTypeSystem.Options.get -> AspectN.Cecil.CecilMappingOptions!
