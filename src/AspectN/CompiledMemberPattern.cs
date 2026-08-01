@@ -1,5 +1,4 @@
 using AspectN.Binding;
-using AspectN.Diagnostics;
 using AspectN.Evaluation;
 using AspectN.Metadata;
 using AspectN.TypeSystem;
@@ -35,11 +34,14 @@ public sealed class CompiledMemberPattern : CompiledPattern
 #endif
 
         cancellationToken.ThrowIfCancellationRequested();
-        return MatchResult.Unknown(
-            new AspectNDiagnostic(
-                DiagnosticCodes.MissingBackendCapability,
-                DiagnosticSeverity.Warning,
-                "Member-pattern evaluation is introduced by the selector evaluation milestone.",
-                _root.Span));
+        var context = new EvaluationContext(
+            typeSystem,
+            LanguageVersion,
+            cancellationToken);
+        var status = MemberPatternEvaluator.Evaluate(
+            _root,
+            candidate,
+            context);
+        return context.CreateResult(status);
     }
 }
