@@ -8,14 +8,14 @@ namespace AspectN.Evaluation;
 internal sealed class EvaluationContext
 {
     private readonly List<AspectNDiagnostic> _diagnostics;
-    private readonly Dictionary<VariableSymbol, TypeSignature> _variables;
+    private readonly BindingEnvironment _bindings;
 
     public EvaluationContext(
         ITypeSystem typeSystem,
         CancellationToken cancellationToken)
         : this(
             typeSystem,
-            new Dictionary<VariableSymbol, TypeSignature>(),
+            new BindingEnvironment(),
             new List<AspectNDiagnostic>(),
             cancellationToken)
     {
@@ -23,14 +23,14 @@ internal sealed class EvaluationContext
 
     private EvaluationContext(
         ITypeSystem typeSystem,
-        Dictionary<VariableSymbol, TypeSignature> variables,
+        BindingEnvironment bindings,
         List<AspectNDiagnostic> diagnostics,
         CancellationToken cancellationToken)
     {
         TypeSystem = typeSystem ??
             throw new ArgumentNullException(nameof(typeSystem));
         CancellationToken = cancellationToken;
-        _variables = variables;
+        _bindings = bindings;
         _diagnostics = diagnostics;
     }
 
@@ -42,7 +42,7 @@ internal sealed class EvaluationContext
     {
         return new EvaluationContext(
             TypeSystem,
-            new Dictionary<VariableSymbol, TypeSignature>(_variables),
+            _bindings.Clone(),
             new List<AspectNDiagnostic>(),
             CancellationToken);
     }
@@ -52,14 +52,14 @@ internal sealed class EvaluationContext
         TypeSignature candidate)
     {
         CancellationToken.ThrowIfCancellationRequested();
-        if (_variables.TryGetValue(variable, out var existing))
+        if (_bindings.TryGet(variable, out var existing))
         {
-            var result = TypeSystem.AreEqual(existing, candidate);
+            var result = TypeSystem.AreEqual(existing!, candidate);
             _diagnostics.AddRange(result.Diagnostics);
             return result.Status;
         }
 
-        _variables.Add(variable, candidate);
+        _bindings.Add(variable, candidate);
         return MatchStatus.Matched;
     }
 

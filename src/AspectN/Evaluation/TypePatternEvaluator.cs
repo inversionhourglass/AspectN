@@ -74,9 +74,7 @@ internal static class TypePatternEvaluator
             return MatchStatus.NotMatched;
         }
 
-        return MatchesNamed(pattern, named)
-            ? MatchStatus.Matched
-            : MatchStatus.NotMatched;
+        return EvaluateNamedCandidate(pattern, named, context);
     }
 
     private static MatchStatus EvaluateArray(
@@ -119,19 +117,30 @@ internal static class TypePatternEvaluator
         return result.Status;
     }
 
-    private static bool MatchesNamed(
+    private static MatchStatus EvaluateNamedCandidate(
         BoundNamedTypePattern pattern,
-        NamedTypeSignature candidate)
+        NamedTypeSignature candidate,
+        EvaluationContext context)
     {
         if (IsPrimitiveAlias(pattern))
         {
-            return string.Equals(
-                       pattern.CanonicalName,
-                       candidate.Identity.FullMetadataName,
-                       StringComparison.Ordinal) &&
-                   MatchesGeneric(
-                       pattern.Segments[0].Generic,
-                       candidate.Identity.GenericArity);
+            if (!string.Equals(
+                    pattern.CanonicalName,
+                    candidate.Identity.FullMetadataName,
+                    StringComparison.Ordinal) ||
+                !MatchesGeneric(
+                    pattern.Segments[0].Generic,
+                    candidate.Identity.GenericArity))
+            {
+                return MatchStatus.NotMatched;
+            }
+
+            return EvaluateGenericArguments(
+                pattern,
+                candidate,
+                new List<TypeIdentity> { candidate.Identity },
+                0,
+                context);
         }
 
         var slashIndex = FindFirstSlash(pattern.Separators);
@@ -141,7 +150,7 @@ internal static class TypePatternEvaluator
         var candidateTypes = GetTypeChain(candidate.Identity);
         if (candidateTypes.Count != pattern.Segments.Count - outerTypeIndex)
         {
-            return false;
+            return MatchStatus.NotMatched;
         }
 
         for (var index = 0; index < candidateTypes.Count; index++)
@@ -153,14 +162,79 @@ internal static class TypePatternEvaluator
                     identity.MetadataName) ||
                 !MatchesGeneric(patternSegment.Generic, identity.GenericArity))
             {
-                return false;
+                return MatchStatus.NotMatched;
             }
         }
 
-        return MatchesNamespaceAndOuterType(
+        if (!MatchesNamespaceAndOuterType(
+                pattern,
+                outerTypeIndex,
+                candidateTypes[0]))
+        {
+            return MatchStatus.NotMatched;
+        }
+
+        return EvaluateGenericArguments(
             pattern,
+            candidate,
+            candidateTypes,
             outerTypeIndex,
-            candidateTypes[0]);
+            context);
+    }
+
+    private static MatchStatus EvaluateGenericArguments(
+        BoundNamedTypePattern pattern,
+        NamedTypeSignature candidate,
+        List<TypeIdentity> candidateTypes,
+        int outerTypeIndex,
+        EvaluationContext context)
+    {
+        var requiresArguments = false;
+        var totalArity = 0;
+        for (var index = 0; index < candidateTypes.Count; index++)
+        {
+            totalArity += candidateTypes[index].GenericArity;
+            requiresArguments |= pattern
+                .Segments[outerTypeIndex + index]
+                .Generic
+                .Arguments
+                .Count > 0;
+        }
+
+        if (!requiresArguments) return MatchStatus.Matched;
+        if (candidate.TypeArguments.Count != totalArity)
+        {
+            return Unknown(
+                pattern,
+                context,
+                "Constructed generic arguments are unavailable for this type.");
+        }
+
+        var status = MatchStatus.Matched;
+        var candidateArgumentOffset = 0;
+        for (var typeIndex = 0;
+             typeIndex < candidateTypes.Count;
+             typeIndex++)
+        {
+            var generic = pattern
+                .Segments[outerTypeIndex + typeIndex]
+                .Generic;
+            for (var argumentIndex = 0;
+                 argumentIndex < generic.Arguments.Count;
+                 argumentIndex++)
+            {
+                var argumentStatus = Evaluate(
+                    generic.Arguments[argumentIndex],
+                    candidate.TypeArguments[
+                        candidateArgumentOffset + argumentIndex],
+                    context);
+                status = MatchLogic.And(status, argumentStatus);
+            }
+
+            candidateArgumentOffset += candidateTypes[typeIndex].GenericArity;
+        }
+
+        return status;
     }
 
     private static bool MatchesNamespaceAndOuterType(
