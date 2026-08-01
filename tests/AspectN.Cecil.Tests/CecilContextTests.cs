@@ -21,11 +21,10 @@ public sealed class CecilContextTests
             TypeSystemCapabilities.InterfaceTraversal |
             TypeSystemCapabilities.Assignability |
             TypeSystemCapabilities.GenericSubstitution |
+            TypeSystemCapabilities.DirectAttributeLookup |
             TypeSystemCapabilities.OriginalDefinitionMapping,
             typeSystem.Capabilities);
-        Assert.False(
-            typeSystem.Capabilities.HasFlag(
-                TypeSystemCapabilities.DirectAttributeLookup));
+
         AssertNoStaticDictionary(typeof(CecilTypeSystem));
         AssertNoStaticDictionary(typeof(CecilSignatureMapper));
     }

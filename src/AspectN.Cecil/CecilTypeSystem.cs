@@ -1,5 +1,6 @@
 using AspectN.Cecil.Internal;
 using AspectN.Diagnostics;
+using AspectN.Evaluation;
 using AspectN.Metadata;
 using AspectN.TypeSystem;
 using Mono.Cecil;
@@ -40,6 +41,7 @@ public sealed class CecilTypeSystem : ITypeSystem, IDisposable
         TypeSystemCapabilities.InterfaceTraversal |
         TypeSystemCapabilities.Assignability |
         TypeSystemCapabilities.GenericSubstitution |
+        TypeSystemCapabilities.DirectAttributeLookup |
         TypeSystemCapabilities.OriginalDefinitionMapping;
 
     public TypeRelationResult AreEqual(
@@ -66,7 +68,33 @@ public sealed class CecilTypeSystem : ITypeSystem, IDisposable
     {
         ThrowIfDisposed();
         cancellationToken.ThrowIfCancellationRequested();
-        return MissingCapability("Direct attribute lookup is not implemented yet.");
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(target);
+        ArgumentNullException.ThrowIfNull(attributeType);
+#else
+        if (target is null) throw new ArgumentNullException(nameof(target));
+        if (attributeType is null)
+            throw new ArgumentNullException(nameof(attributeType));
+#endif
+
+        var attributes = GetAttributes(target);
+        if (attributes is null)
+        {
+            return MissingCapability(
+                "No Cecil reference is available for the attribute target.");
+        }
+
+        TypeRelationResult? unknown = null;
+        foreach (var attribute in attributes)
+        {
+            var relation = StructuralTypeComparer.AreEqual(
+                attribute.AttributeType,
+                attributeType);
+            if (relation.Status == MatchStatus.Matched) return relation;
+            if (relation.Status == MatchStatus.Unknown) unknown = relation;
+        }
+
+        return unknown ?? TypeRelationResult.NotMatched;
     }
 
     public void Dispose()
@@ -96,5 +124,53 @@ public sealed class CecilTypeSystem : ITypeSystem, IDisposable
                 DiagnosticCodes.MissingBackendCapability,
                 DiagnosticSeverity.Warning,
                 message));
+    }
+
+    private IReadOnlyList<AttributeSignature>? GetAttributes(
+        AttributeTarget target)
+    {
+        return target.Kind switch
+        {
+            AttributeTargetKind.Type => GetTypeAttributes(target.Type!),
+            AttributeTargetKind.Callable => target.Callable!.Attributes,
+            AttributeTargetKind.Property => target.Property!.Attributes,
+            AttributeTargetKind.Parameter => target.Parameter!.Attributes,
+            AttributeTargetKind.Return => target.Callable!.ReturnAttributes,
+            _ => null
+        };
+    }
+
+    private AttributeSignature[]? GetTypeAttributes(
+        TypeSignature type)
+    {
+        if (!Mapper.TryGetTypeReference(type, out var reference) ||
+            reference is null)
+        {
+            return null;
+        }
+
+        TypeDefinition? definition;
+        try
+        {
+            definition = reference as TypeDefinition ?? reference.Resolve();
+        }
+        catch (AssemblyResolutionException)
+        {
+            return null;
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
+        }
+        catch (NotSupportedException)
+        {
+            return null;
+        }
+
+        return definition?.CustomAttributes
+            .Select(attribute => new AttributeSignature(
+                Mapper.MapType(attribute.AttributeType),
+                AttributeTargetKind.Type))
+            .ToArray();
     }
 }

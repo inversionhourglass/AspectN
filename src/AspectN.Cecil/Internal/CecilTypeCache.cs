@@ -36,7 +36,14 @@ internal sealed class CecilTypeCache
             var created = factory();
             _byReference.Add(typeReference, created);
             _byStableIdentity.Add(key, created);
-            _referenceBySignature.Add(created, typeReference);
+#if NET10_0_OR_GREATER
+            _referenceBySignature.TryAdd(created, typeReference);
+#else
+            if (!_referenceBySignature.ContainsKey(created))
+            {
+                _referenceBySignature.Add(created, typeReference);
+            }
+#endif
             return created;
         }
     }
