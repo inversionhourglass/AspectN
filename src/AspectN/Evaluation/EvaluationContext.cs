@@ -68,6 +68,11 @@ internal sealed class EvaluationContext
         _diagnostics.Add(diagnostic);
     }
 
+    public void AddDiagnostics(IEnumerable<AspectNDiagnostic> diagnostics)
+    {
+        _diagnostics.AddRange(diagnostics);
+    }
+
     public void MergeDiagnosticsFrom(EvaluationContext branch)
     {
         _diagnostics.AddRange(branch._diagnostics);
