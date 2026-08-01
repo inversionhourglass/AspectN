@@ -17,4 +17,6 @@ public static class DiagnosticCodes
     public static string ExecutionSelectorMigration => "AN4001";
 
     public static string PropertySelectorMigration => "AN4002";
+
+    public static string MissingBackendCapability => "AN3001";
 }
