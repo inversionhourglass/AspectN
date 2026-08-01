@@ -4,6 +4,7 @@ AspectN.Cecil.CecilMappingOptions.CecilMappingOptions(bool compositeAccessibilit
 AspectN.Cecil.CecilMappingOptions.CompositeAccessibility.get -> bool
 AspectN.Cecil.CecilSignatureMapper
 AspectN.Cecil.CecilSignatureMapper.MapType(Mono.Cecil.TypeReference! typeReference) -> AspectN.Metadata.TypeSignature!
+AspectN.Cecil.CecilSignatureMapper.MapTypeUse(Mono.Cecil.TypeReference! typeReference, AspectN.Metadata.TypeUseKind useKind) -> AspectN.Metadata.TypeUseSignature!
 AspectN.Cecil.CecilTypeSystem
 AspectN.Cecil.CecilTypeSystem.AreEqual(AspectN.Metadata.TypeSignature! left, AspectN.Metadata.TypeSignature! right) -> AspectN.TypeSystem.TypeRelationResult!
 AspectN.Cecil.CecilTypeSystem.Capabilities.get -> AspectN.TypeSystem.TypeSystemCapabilities

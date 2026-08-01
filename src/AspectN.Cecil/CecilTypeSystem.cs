@@ -68,6 +68,7 @@ public sealed class CecilTypeSystem : ITypeSystem, IDisposable
     public void Dispose()
     {
         var module = Interlocked.Exchange(ref _module, null);
+        Mapper.ClearCache();
         module?.Dispose();
         GC.SuppressFinalize(this);
     }
