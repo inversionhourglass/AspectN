@@ -1,4 +1,5 @@
 using AspectN.Binding;
+using AspectN.Binding.Legacy;
 using AspectN.Diagnostics;
 using AspectN.Metadata;
 
@@ -155,6 +156,29 @@ internal static class TypePatternEvaluator
                 pattern,
                 context,
                 $"Nullability is unavailable for type '{unsupported.DisplayName}'.");
+        }
+
+        if (context.LanguageVersion == AspectNLanguageVersion.Legacy)
+        {
+            if (candidate is not NamedTypeSignature legacyNamed ||
+                !LegacyGenericRules.IsNullableDefinition(
+                    legacyNamed.Identity))
+            {
+                return MatchStatus.NotMatched;
+            }
+
+            if (legacyNamed.TypeArguments.Count != 1)
+            {
+                return Unknown(
+                    pattern,
+                    context,
+                    "System.Nullable<T> is missing its constructed argument.");
+            }
+
+            return Evaluate(
+                pattern.UnderlyingType,
+                legacyNamed.TypeArguments[0],
+                context);
         }
 
         if (candidate is ArrayTypeSignature)
@@ -319,14 +343,12 @@ internal static class TypePatternEvaluator
         TypeIdentity identity,
         AspectNLanguageVersion languageVersion)
     {
-        return StringComparer.Ordinal.Equals(identity.Namespace, "System") &&
-               (StringComparer.Ordinal.Equals(
-                    identity.MetadataName,
-                    "ValueTuple") ||
-                (languageVersion == AspectNLanguageVersion.Legacy &&
-                 StringComparer.Ordinal.Equals(
-                     identity.MetadataName,
-                     "Tuple")));
+        return languageVersion == AspectNLanguageVersion.Legacy
+            ? LegacyGenericRules.IsTupleDefinition(identity)
+            : StringComparer.Ordinal.Equals(identity.Namespace, "System") &&
+              StringComparer.Ordinal.Equals(
+                  identity.MetadataName,
+                  "ValueTuple");
     }
 
     private static bool IsTaskLikeDefinition(TypeIdentity identity)
@@ -476,7 +498,11 @@ internal static class TypePatternEvaluator
         }
 
         if (!requiresArguments) return MatchStatus.Matched;
-        if (candidate.TypeArguments.Count != totalArity)
+        var candidateArguments = context.LanguageVersion ==
+            AspectNLanguageVersion.Legacy
+            ? LegacyGenericRules.GetEffectiveTypeArguments(candidate)
+            : candidate.TypeArguments.ToArray();
+        if (candidateArguments.Length != totalArity)
         {
             return Unknown(
                 pattern,
@@ -499,7 +525,7 @@ internal static class TypePatternEvaluator
             {
                 var argumentStatus = Evaluate(
                     generic.Arguments[argumentIndex],
-                    candidate.TypeArguments[
+                    candidateArguments[
                         candidateArgumentOffset + argumentIndex],
                     context);
                 status = MatchLogic.And(status, argumentStatus);

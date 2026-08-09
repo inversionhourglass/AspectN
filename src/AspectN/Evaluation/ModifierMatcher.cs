@@ -1,4 +1,5 @@
 using AspectN.Binding;
+using AspectN.Binding.Legacy;
 using AspectN.Metadata;
 
 namespace AspectN.Evaluation;
@@ -11,6 +12,14 @@ internal static class ModifierMatcher
         bool isStatic,
         AspectNLanguageVersion languageVersion)
     {
+        if (languageVersion == AspectNLanguageVersion.Legacy)
+        {
+            return LegacyModifierRules.IsMatch(
+                modifiers,
+                accessibility,
+                isStatic);
+        }
+
         var hasPositiveAccessibility = false;
         var positiveAccessibilityMatched = false;
         foreach (var modifier in modifiers)
@@ -30,8 +39,7 @@ internal static class ModifierMatcher
             hasPositiveAccessibility = true;
             positiveAccessibilityMatched |=
                 modifier.Accessibility == accessibility;
-            if (languageVersion == AspectNLanguageVersion.Standard &&
-                !positiveAccessibilityMatched)
+            if (!positiveAccessibilityMatched)
             {
                 return false;
             }

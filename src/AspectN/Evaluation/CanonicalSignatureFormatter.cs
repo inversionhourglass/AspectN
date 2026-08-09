@@ -1,4 +1,5 @@
 using System.Text;
+using AspectN.Evaluation.Legacy;
 using AspectN.Metadata;
 
 namespace AspectN.Evaluation;
@@ -9,6 +10,11 @@ internal static class CanonicalSignatureFormatter
         CallableSignature candidate,
         AspectNLanguageVersion languageVersion)
     {
+        if (languageVersion == AspectNLanguageVersion.Legacy)
+        {
+            return LegacyCanonicalSignatureFormatter.Format(candidate);
+        }
+
         var builder = new StringBuilder();
         builder.Append(
             FormatAccessibility(candidate.Accessibility, languageVersion));

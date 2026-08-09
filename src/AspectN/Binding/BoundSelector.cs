@@ -100,9 +100,24 @@ internal abstract class BoundSelectorPayload : BoundNode
     }
 }
 
+internal sealed class BoundMemberPattern
+{
+    public BoundMemberPattern(
+        BoundTypePattern? declaringType,
+        string namePattern)
+    {
+        DeclaringType = declaringType;
+        NamePattern = namePattern ??
+            throw new ArgumentNullException(nameof(namePattern));
+    }
+
+    public BoundTypePattern? DeclaringType { get; }
+
+    public string NamePattern { get; }
+}
+
 internal sealed class BoundCallableSignature : BoundSelectorPayload
 {
-    private readonly ReadOnlyCollection<string> _memberPath;
     private readonly ReadOnlyCollection<BoundModifier> _modifiers;
     private readonly ReadOnlyCollection<BoundTypeUsePattern> _parameters;
 
@@ -111,7 +126,7 @@ internal sealed class BoundCallableSignature : BoundSelectorPayload
         IEnumerable<BoundModifier> modifiers,
         bool requiresAsync,
         BoundTypeUsePattern returnType,
-        IEnumerable<string> memberPath,
+        BoundMemberPattern member,
         BoundGenericPattern? generic,
         IEnumerable<BoundTypeUsePattern> parameters,
         bool matchesAnyParameters)
@@ -121,7 +136,7 @@ internal sealed class BoundCallableSignature : BoundSelectorPayload
         RequiresAsync = requiresAsync;
         ReturnType = returnType ??
             throw new ArgumentNullException(nameof(returnType));
-        _memberPath = new ReadOnlyCollection<string>(memberPath.ToArray());
+        Member = member ?? throw new ArgumentNullException(nameof(member));
         Generic = generic;
         _parameters = new ReadOnlyCollection<BoundTypeUsePattern>(
             parameters.ToArray());
@@ -134,7 +149,7 @@ internal sealed class BoundCallableSignature : BoundSelectorPayload
 
     public BoundTypeUsePattern ReturnType { get; }
 
-    public IReadOnlyList<string> MemberPath => _memberPath;
+    public BoundMemberPattern Member { get; }
 
     public BoundGenericPattern? Generic { get; }
 
@@ -145,27 +160,26 @@ internal sealed class BoundCallableSignature : BoundSelectorPayload
 
 internal sealed class BoundPropertySignature : BoundSelectorPayload
 {
-    private readonly ReadOnlyCollection<string> _memberPath;
     private readonly ReadOnlyCollection<BoundModifier> _modifiers;
 
     public BoundPropertySignature(
         TextSpan span,
         IEnumerable<BoundModifier> modifiers,
         BoundTypeUsePattern propertyType,
-        IEnumerable<string> memberPath)
+        BoundMemberPattern member)
         : base(span)
     {
         _modifiers = new ReadOnlyCollection<BoundModifier>(modifiers.ToArray());
         PropertyType = propertyType ??
             throw new ArgumentNullException(nameof(propertyType));
-        _memberPath = new ReadOnlyCollection<string>(memberPath.ToArray());
+        Member = member ?? throw new ArgumentNullException(nameof(member));
     }
 
     public IReadOnlyList<BoundModifier> Modifiers => _modifiers;
 
     public BoundTypeUsePattern PropertyType { get; }
 
-    public IReadOnlyList<string> MemberPath => _memberPath;
+    public BoundMemberPattern Member { get; }
 }
 
 internal sealed class BoundConstructorSignature : BoundSelectorPayload

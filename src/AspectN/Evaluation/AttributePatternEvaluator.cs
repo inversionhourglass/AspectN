@@ -1,4 +1,5 @@
 using AspectN.Binding;
+using AspectN.Binding.Legacy;
 using AspectN.Diagnostics;
 using AspectN.Metadata;
 using AspectN.TypeSystem;
@@ -30,7 +31,8 @@ internal static class AttributePatternEvaluator
                 "Attribute lookup requires a concrete named attribute type.");
         }
 
-        if (pattern.Target == BoundAttributeTargetKind.Property &&
+        if (context.LanguageVersion == AspectNLanguageVersion.Standard &&
+            pattern.Target == BoundAttributeTargetKind.Property &&
             candidate.AssociatedProperty is null)
         {
             return Unknown(
@@ -39,7 +41,9 @@ internal static class AttributePatternEvaluator
                 "The associated property is unavailable for attribute lookup.");
         }
 
-        var targets = GetTargets(pattern, candidate);
+        var targets = context.LanguageVersion == AspectNLanguageVersion.Legacy
+            ? LegacyAttributeRules.GetTargets(pattern, candidate)
+            : GetTargets(pattern, candidate);
         var status = MatchStatus.NotMatched;
         foreach (var target in targets)
         {

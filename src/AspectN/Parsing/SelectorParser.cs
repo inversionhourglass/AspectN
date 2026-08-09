@@ -138,10 +138,17 @@ internal sealed class SelectorParser
     {
         var openParen = MatchToken(SyntaxKind.OpenParenToken);
         var parts = new List<SyntaxNode>();
-        if (Current.Kind == SyntaxKind.IdentifierToken)
+        if (Current.Kind == SyntaxKind.IdentifierToken ||
+            (LanguageVersion == AspectNLanguageVersion.Legacy &&
+             Current.Kind == SyntaxKind.StarToken))
         {
             var position = NextToken();
             parts.Add(position);
+            if (!IsAttributePosition(position.Text))
+            {
+                ReportUnexpected(position, "attribute position");
+            }
+
             if (EqualsKeyword(position.Text, "parameter"))
             {
                 parts.Add(MatchToken(SyntaxKind.OpenBracketToken));
@@ -157,10 +164,21 @@ internal sealed class SelectorParser
                 parts.Add(MatchToken(SyntaxKind.CloseBracketToken));
             }
             else if (LanguageVersion == AspectNLanguageVersion.Legacy &&
-                     EqualsKeyword(position.Text, "para") &&
-                     Current.Kind is SyntaxKind.IntegerToken or SyntaxKind.StarToken)
+                     EqualsKeyword(position.Text, "para"))
             {
-                parts.Add(NextToken());
+                if (Current.Kind is SyntaxKind.IntegerToken or SyntaxKind.StarToken)
+                {
+                    var index = NextToken();
+                    parts.Add(index);
+                    if (index.Value is long value && value < 0)
+                    {
+                        ReportUnexpected(index, "non-negative parameter index");
+                    }
+                }
+                else
+                {
+                    ReportUnexpected(Current, "parameter index or '*'");
+                }
             }
         }
         else
@@ -236,11 +254,6 @@ internal sealed class SelectorParser
         if (IsIdentifier("async")) parts.Add(NextToken());
         parts.Add(ParseTypeUse());
         parts.AddRange(ParseMemberPath());
-        if (Current.Kind == SyntaxKind.LessThanToken)
-        {
-            parts.Add(ParseGenericPatternList());
-        }
-
         parts.AddRange(ParseParameterPatternList());
         return new CallableSignatureSyntax(parts);
     }
@@ -312,7 +325,36 @@ internal sealed class SelectorParser
         return new TypeUseSyntax(refKind, ParseTypePattern());
     }
 
-    private TypePatternSyntax ParseTypePattern()
+    private TypePatternSyntax ParseTypePattern(int parentPrecedence = 0)
+    {
+        TypePatternSyntax left;
+        var unaryPrecedence = GetUnaryPrecedence(Current.Kind);
+        if (unaryPrecedence != 0 && unaryPrecedence >= parentPrecedence)
+        {
+            var operatorToken = NextToken();
+            left = new UnaryTypePatternSyntax(
+                operatorToken,
+                ParseTypePattern(unaryPrecedence));
+        }
+        else
+        {
+            left = ParseTypePrimaryWithSuffixes();
+        }
+
+        while (true)
+        {
+            var precedence = GetBinaryPrecedence(Current.Kind);
+            if (precedence == 0 || precedence <= parentPrecedence) break;
+
+            var operatorToken = NextToken();
+            var right = ParseTypePattern(precedence);
+            left = new BinaryTypePatternSyntax(left, operatorToken, right);
+        }
+
+        return left;
+    }
+
+    private TypePatternSyntax ParseTypePrimaryWithSuffixes()
     {
         var pattern = ParseTypeAtom();
         while (true)
@@ -557,9 +599,13 @@ internal sealed class SelectorParser
                SyntaxKind.StarToken or
                SyntaxKind.DotToken or
                SyntaxKind.DotDotToken or
-               SyntaxKind.SlashToken)
+               SyntaxKind.SlashToken or
+               SyntaxKind.LessThanToken)
         {
-            parts.Add(NextToken());
+            parts.Add(
+                Current.Kind == SyntaxKind.LessThanToken
+                    ? ParseGenericPatternList()
+                    : NextToken());
         }
 
         if (parts.Count == 0) ReportUnexpected(Current, "member path");
@@ -576,6 +622,10 @@ internal sealed class SelectorParser
         {
             parts.Add(NextToken());
         }
+        else if (LanguageVersion == AspectNLanguageVersion.Legacy)
+        {
+            ParseLegacyParameterSlots(parts);
+        }
         else
         {
             while (Current.Kind is not
@@ -590,6 +640,47 @@ internal sealed class SelectorParser
 
         parts.Add(MatchToken(SyntaxKind.CloseParenToken));
         return parts;
+    }
+
+    private void ParseLegacyParameterSlots(List<SyntaxNode> parts)
+    {
+        var expectsParameter = true;
+        var sawComma = false;
+        while (Current.Kind is not
+               SyntaxKind.CloseParenToken and not
+               SyntaxKind.EndOfFileToken)
+        {
+            if (Current.Kind == SyntaxKind.CommaToken)
+            {
+                if (expectsParameter)
+                {
+                    parts.Add(CreateLegacyWildcardParameter(Current.Span.Start));
+                }
+
+                parts.Add(NextToken());
+                expectsParameter = true;
+                sawComma = true;
+                continue;
+            }
+
+            parts.Add(new ParameterSyntax(ParseTypeUse()));
+            expectsParameter = false;
+            if (Current.Kind != SyntaxKind.CommaToken) break;
+        }
+
+        if (sawComma && expectsParameter)
+        {
+            parts.Add(CreateLegacyWildcardParameter(Current.Span.Start));
+        }
+    }
+
+    private static ParameterSyntax CreateLegacyWildcardParameter(int position)
+    {
+        return new ParameterSyntax(
+            new TypeUseSyntax(
+                Array.Empty<SyntaxToken>(),
+                new WildcardTypePatternSyntax(
+                    SyntaxToken.Missing(SyntaxKind.StarToken, position))));
     }
 
     private void AddMigrationDiagnosticIfNeeded(SyntaxToken keyword)
@@ -652,6 +743,26 @@ internal sealed class SelectorParser
                  EqualsKeyword(text, "protectedinternal")));
     }
 
+    private bool IsAttributePosition(string text)
+    {
+        if (LanguageVersion == AspectNLanguageVersion.Legacy)
+        {
+            return EqualsKeyword(text, "type") ||
+                   EqualsKeyword(text, "exec") ||
+                   EqualsKeyword(text, "para") ||
+                   EqualsKeyword(text, "ret") ||
+                   text == "*";
+        }
+
+        return text is
+            "type" or
+            "callable" or
+            "property" or
+            "parameter" or
+            "return" or
+            "any";
+    }
+
     private bool IsIdentifier(string text)
     {
         return Current.Kind == SyntaxKind.IdentifierToken &&
@@ -687,6 +798,21 @@ internal sealed class SelectorParser
     {
         return new WildcardTypePatternSyntax(
             SyntaxToken.Missing(SyntaxKind.StarToken, position));
+    }
+
+    private static int GetUnaryPrecedence(SyntaxKind kind)
+    {
+        return kind == SyntaxKind.BangToken ? 3 : 0;
+    }
+
+    private static int GetBinaryPrecedence(SyntaxKind kind)
+    {
+        return kind switch
+        {
+            SyntaxKind.AmpersandAmpersandToken => 2,
+            SyntaxKind.PipePipeToken => 1,
+            _ => 0
+        };
     }
 
     private enum SelectorFamily

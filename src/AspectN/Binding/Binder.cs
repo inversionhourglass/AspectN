@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Text;
 using AspectN.Diagnostics;
+using AspectN.Binding.Legacy;
 using AspectN.Extensibility;
 using AspectN.Metadata;
 using AspectN.Parsing;
@@ -33,6 +34,7 @@ internal sealed class Binder
 
     private readonly DiagnosticBag _diagnostics = new();
     private readonly AspectNExtensionRegistry _extensions;
+    private readonly bool _isLegacy;
     private readonly AspectNSyntaxTree _syntaxTree;
     private int _negationDepth;
 
@@ -44,6 +46,7 @@ internal sealed class Binder
             throw new ArgumentNullException(nameof(syntaxTree));
         _extensions = extensions ??
             throw new ArgumentNullException(nameof(extensions));
+        _isLegacy = syntaxTree.LanguageVersion == AspectNLanguageVersion.Legacy;
     }
 
     public IReadOnlyList<AspectNDiagnostic> Diagnostics =>
@@ -292,10 +295,9 @@ internal sealed class Binder
         var tokens = signature.Parts.OfType<SyntaxToken>().ToArray();
         var typeSyntax = signature.Parts.OfType<TypePatternSyntax>().Last();
         var targetText = tokens.Length == 0 ? string.Empty : tokens[0].Text;
-        var comparison = _syntaxTree.LanguageVersion == AspectNLanguageVersion.Legacy
-            ? StringComparison.OrdinalIgnoreCase
-            : StringComparison.Ordinal;
-        var target = GetAttributeTarget(targetText, comparison);
+        var target = _isLegacy
+            ? LegacyBinder.GetAttributeTarget(targetText)
+            : GetStandardAttributeTarget(targetText);
         var parameterValue = tokens.FirstOrDefault(
             token => token.Kind == SyntaxKind.IntegerToken)?.Value;
         var parameterIndex = parameterValue is long value &&
@@ -323,16 +325,18 @@ internal sealed class Binder
     {
         var modifiers = BindModifiers(syntax.Parts.OfType<ModifierSyntax>());
         var returnSyntax = syntax.Parts.OfType<TypeUseSyntax>().First();
-        var returnType = BindTypeUse(returnSyntax, scope, true);
-        var genericSyntax = syntax.Parts
-            .OfType<GenericPatternListSyntax>()
-            .FirstOrDefault();
-        var memberPath = GetMemberPath(syntax.Parts, returnSyntax);
+        var member = BindMemberPattern(
+            syntax.Parts,
+            returnSyntax,
+            scope,
+            out var genericSyntax);
         var generic = BindGenericPattern(
             genericSyntax,
-            IsWildcardMemberName(memberPath),
+            member.NamePattern == "*",
             scope,
-            IsUnderNegation);
+            IsUnderNegation,
+            declaresLegacyVariables: true);
+        var returnType = BindTypeUse(returnSyntax, scope, true);
         var parameters = syntax.Parts
             .OfType<ParameterSyntax>()
             .Select(parameter =>
@@ -346,7 +350,7 @@ internal sealed class Binder
             modifiers,
             requiresAsync,
             returnType,
-            memberPath,
+            member,
             generic,
             parameters,
             MatchesAnyParameters(syntax.Parts));
@@ -357,11 +361,16 @@ internal sealed class Binder
         VariableScope scope)
     {
         var typeSyntax = syntax.Parts.OfType<TypeUseSyntax>().First();
+        var member = BindMemberPattern(
+            syntax.Parts,
+            typeSyntax,
+            scope,
+            out _);
         return new BoundPropertySignature(
             syntax.FullSpan,
             BindModifiers(syntax.Parts.OfType<ModifierSyntax>()),
             BindTypeUse(typeSyntax, scope, true),
-            GetMemberPath(syntax.Parts, typeSyntax));
+            member);
     }
 
     private BoundConstructorSignature BindConstructorSignature(
@@ -427,9 +436,9 @@ internal sealed class Binder
                 syntax.Tokens
                     .Where(token => token.Kind != SyntaxKind.BangToken)
                     .Select(token => token.Text));
-            if (_syntaxTree.LanguageVersion == AspectNLanguageVersion.Legacy)
+            if (_isLegacy)
             {
-                content = content.ToLowerInvariant();
+                content = LegacyBinder.NormalizeModifier(content);
             }
 
             BoundModifier modifier;
@@ -488,16 +497,24 @@ internal sealed class Binder
         switch (syntax)
         {
             case NamedTypePatternSyntax named:
-                if (IsLegacyImplicitVariable(named))
+                if (TryGetLegacyImplicitVariableName(
+                        named,
+                        scope,
+                        declaration: false,
+                        out var variableName))
                 {
                     return BindVariable(
                         named.FullSpan,
-                        named.Segments[0].NameParts[0].Text,
+                        variableName!,
                         scope,
                         underNegation);
                 }
 
-                return BindNamedTypePattern(named, scope, underNegation);
+                return BindNamedTypePattern(
+                    named,
+                    scope,
+                    underNegation,
+                    declaresLegacyVariables: false);
             case WildcardTypePatternSyntax wildcard:
                 return new BoundWildcardTypePattern(wildcard.FullSpan);
             case VariableTypePatternSyntax variable:
@@ -592,7 +609,8 @@ internal sealed class Binder
     private BoundNamedTypePattern BindNamedTypePattern(
         NamedTypePatternSyntax syntax,
         VariableScope scope,
-        bool underNegation)
+        bool underNegation,
+        bool declaresLegacyVariables)
     {
         var segments = syntax.Segments.Select(segment =>
         {
@@ -604,7 +622,8 @@ internal sealed class Binder
                     segment.GenericArguments,
                     pattern == "*",
                     scope,
-                    underNegation));
+                    underNegation,
+                    declaresLegacyVariables));
         }).ToArray();
         var separators = syntax.Separators.Select(token => token.Text).ToArray();
         var sourceName = BuildCanonicalName(segments, separators);
@@ -624,19 +643,29 @@ internal sealed class Binder
         GenericPatternListSyntax? syntax,
         bool nameIsWildcard,
         VariableScope scope,
-        bool underNegation = false)
+        bool underNegation = false,
+        bool declaresLegacyVariables = false)
     {
         if (syntax is null)
         {
-            var kind = _syntaxTree.LanguageVersion == AspectNLanguageVersion.Legacy ||
-                       nameIsWildcard
-                ? BoundGenericArityKind.Any
-                : BoundGenericArityKind.Exact;
-            return new BoundGenericPattern(kind, 0);
+            if (_isLegacy)
+            {
+                return LegacyBinder.CreateOmittedGenericPattern();
+            }
+
+            return new BoundGenericPattern(
+                nameIsWildcard
+                    ? BoundGenericArityKind.Any
+                    : BoundGenericArityKind.Exact,
+                0);
         }
 
         var arguments = syntax.Arguments.Select(argument =>
-            BindTypePattern(argument, scope, underNegation));
+            BindGenericArgument(
+                argument,
+                scope,
+                underNegation,
+                declaresLegacyVariables));
         return syntax.Form switch
         {
             GenericPatternForm.AnyPositiveArity => new BoundGenericPattern(
@@ -650,6 +679,30 @@ internal sealed class Binder
                 BoundGenericArityKind.Exact,
                 syntax.Arity)
         };
+    }
+
+    private BoundTypePattern BindGenericArgument(
+        TypePatternSyntax syntax,
+        VariableScope scope,
+        bool underNegation,
+        bool declaresLegacyVariables)
+    {
+        if (declaresLegacyVariables &&
+            syntax is NamedTypePatternSyntax named &&
+            TryGetLegacyImplicitVariableName(
+                named,
+                scope,
+                declaration: true,
+                out var variableName))
+        {
+            return BindVariable(
+                named.FullSpan,
+                variableName!,
+                scope,
+                underNegation);
+        }
+
+        return BindTypePattern(syntax, scope, underNegation);
     }
 
     private BoundVariableTypePattern BindVariable(
@@ -713,17 +766,15 @@ internal sealed class Binder
         var keyword = syntax.KeywordToken?.Text;
         if (keyword is null) return false;
 
-        if (_syntaxTree.LanguageVersion == AspectNLanguageVersion.Standard)
+        if (!_isLegacy)
         {
             return keyword is "execution" or "property";
         }
 
         var unavailable = syntax switch
         {
-            CallableSelectorSyntax =>
-                string.Equals(keyword, "callable", StringComparison.OrdinalIgnoreCase),
-            AccessorSelectorSyntax =>
-                string.Equals(keyword, "accessor", StringComparison.OrdinalIgnoreCase),
+            CallableSelectorSyntax => LegacyBinder.EqualsKeyword(keyword, "callable"),
+            AccessorSelectorSyntax => LegacyBinder.EqualsKeyword(keyword, "accessor"),
             _ => false
         };
         if (unavailable)
@@ -747,11 +798,13 @@ internal sealed class Binder
             new BoundRegexPattern(syntax.FullSpan, string.Empty));
     }
 
-    private static List<string> GetMemberPath(
+    private BoundMemberPattern BindMemberPattern(
         IReadOnlyList<SyntaxNode> parts,
-        TypeUseSyntax typeUse)
+        TypeUseSyntax typeUse,
+        VariableScope scope,
+        out GenericPatternListSyntax? callableGeneric)
     {
-        var path = new List<string>();
+        var path = new List<SyntaxNode>();
         var afterType = false;
         foreach (var part in parts)
         {
@@ -762,15 +815,80 @@ internal sealed class Binder
             }
 
             if (!afterType) continue;
-            if (part is GenericPatternListSyntax) break;
-            if (part is SyntaxToken token)
+            if (part is SyntaxToken token &&
+                token.Kind == SyntaxKind.OpenParenToken)
             {
-                if (token.Kind == SyntaxKind.OpenParenToken) break;
-                path.Add(token.Text);
+                break;
+            }
+
+            path.Add(part);
+        }
+
+        var memberSeparator = -1;
+        for (var index = path.Count - 1; index >= 0; index--)
+        {
+            if (path[index] is SyntaxToken { Kind: SyntaxKind.DotToken })
+            {
+                memberSeparator = index;
+                break;
             }
         }
 
-        return path;
+        var memberNodes = path.Skip(memberSeparator + 1).ToArray();
+        callableGeneric = memberNodes
+            .OfType<GenericPatternListSyntax>()
+            .LastOrDefault();
+        var memberName = string.Concat(
+            memberNodes.OfType<SyntaxToken>().Select(token => token.Text));
+        if (memberSeparator < 0)
+        {
+            return new BoundMemberPattern(null, memberName);
+        }
+
+        var declaringSyntax = CreateNamedTypeSyntax(
+            path.Take(memberSeparator));
+        return new BoundMemberPattern(
+            BindNamedTypePattern(
+                declaringSyntax,
+                scope,
+                IsUnderNegation,
+                declaresLegacyVariables: _isLegacy),
+            memberName);
+    }
+
+    private static NamedTypePatternSyntax CreateNamedTypeSyntax(
+        IEnumerable<SyntaxNode> nodes)
+    {
+        var segments = new List<NamePatternSegmentSyntax>();
+        var separators = new List<SyntaxToken>();
+        var nameParts = new List<SyntaxToken>();
+        GenericPatternListSyntax? generic = null;
+
+        foreach (var node in nodes)
+        {
+            if (node is GenericPatternListSyntax genericList)
+            {
+                generic = genericList;
+                continue;
+            }
+
+            var token = (SyntaxToken)node;
+            if (token.Kind is SyntaxKind.DotToken or
+                SyntaxKind.DotDotToken or
+                SyntaxKind.SlashToken)
+            {
+                segments.Add(new NamePatternSegmentSyntax(nameParts, generic));
+                nameParts.Clear();
+                generic = null;
+                separators.Add(token);
+                continue;
+            }
+
+            nameParts.Add(token);
+        }
+
+        segments.Add(new NamePatternSegmentSyntax(nameParts, generic));
+        return new NamedTypePatternSyntax(segments, separators);
     }
 
     private static bool MatchesAnyParameters(IReadOnlyList<SyntaxNode> parts)
@@ -793,10 +911,6 @@ internal sealed class Binder
         return false;
     }
 
-    private static bool IsWildcardMemberName(List<string> memberPath)
-    {
-        return memberPath.Count > 0 && memberPath[memberPath.Count - 1] == "*";
-    }
 
     private static string BuildCanonicalName(
         BoundNameSegment[] segments,
@@ -812,38 +926,32 @@ internal sealed class Binder
         return builder.ToString();
     }
 
-    private bool IsLegacyImplicitVariable(NamedTypePatternSyntax syntax)
+    private bool TryGetLegacyImplicitVariableName(
+        NamedTypePatternSyntax syntax,
+        VariableScope scope,
+        bool declaration,
+        out string? name)
     {
-        if (_syntaxTree.LanguageVersion != AspectNLanguageVersion.Legacy ||
-            syntax.Segments.Count != 1 ||
-            syntax.Separators.Count != 0)
+        if (!_isLegacy)
         {
+            name = null;
             return false;
         }
 
-        var segment = syntax.Segments[0];
-        if (segment.GenericArguments is not null || segment.NameParts.Count != 1)
-        {
-            return false;
-        }
-
-        var name = segment.NameParts[0].Text;
-        return name == "T" ||
-               (name.Length > 1 &&
-                name[0] == 'T' &&
-                name.Skip(1).All(char.IsDigit));
+        return LegacyBinder.TryGetImplicitVariableName(
+            syntax,
+            declaration,
+            variableName => scope.TryGet(variableName, out _),
+            out name);
     }
 
     private bool IsUnderNegation => _negationDepth > 0;
 
     private bool EqualsKeyword(string actual, string expected)
     {
-        return string.Equals(
-            actual,
-            expected,
-            _syntaxTree.LanguageVersion == AspectNLanguageVersion.Legacy
-                ? StringComparison.OrdinalIgnoreCase
-                : StringComparison.Ordinal);
+        return _isLegacy
+            ? LegacyBinder.EqualsKeyword(actual, expected)
+            : string.Equals(actual, expected, StringComparison.Ordinal);
     }
 
     private static Accessibility GetAccessibility(string content)
@@ -862,24 +970,18 @@ internal sealed class Binder
         };
     }
 
-    private static BoundAttributeTargetKind GetAttributeTarget(
-        string text,
-        StringComparison comparison)
+    private static BoundAttributeTargetKind GetStandardAttributeTarget(
+        string text)
     {
-        if (string.Equals(text, "type", comparison))
-            return BoundAttributeTargetKind.Type;
-        if (string.Equals(text, "callable", comparison) ||
-            string.Equals(text, "exec", comparison))
-            return BoundAttributeTargetKind.Callable;
-        if (string.Equals(text, "property", comparison))
-            return BoundAttributeTargetKind.Property;
-        if (string.Equals(text, "parameter", comparison) ||
-            string.Equals(text, "para", comparison))
-            return BoundAttributeTargetKind.Parameter;
-        if (string.Equals(text, "return", comparison) ||
-            string.Equals(text, "ret", comparison))
-            return BoundAttributeTargetKind.Return;
-        return BoundAttributeTargetKind.Any;
+        return text switch
+        {
+            "type" => BoundAttributeTargetKind.Type,
+            "callable" => BoundAttributeTargetKind.Callable,
+            "property" => BoundAttributeTargetKind.Property,
+            "parameter" => BoundAttributeTargetKind.Parameter,
+            "return" => BoundAttributeTargetKind.Return,
+            _ => BoundAttributeTargetKind.Any
+        };
     }
 
     private static string GetExtensionName(ExtensionSelectorSyntax syntax)

@@ -1,4 +1,5 @@
 using AspectN.Binding;
+using AspectN.Binding.Legacy;
 using AspectN.Diagnostics;
 using AspectN.Extensibility;
 using AspectN.Metadata;
@@ -116,11 +117,10 @@ internal static class MemberPatternEvaluator
             return MatchStatus.NotMatched;
         }
 
-        var memberStatus = EvaluateMemberPath(
-            pattern.MemberPath,
+        var memberStatus = EvaluateMember(
+            pattern.Member,
             candidate.DeclaringType,
             candidate.Name,
-            pattern,
             context);
         if (memberStatus == MatchStatus.NotMatched)
         {
@@ -192,11 +192,10 @@ internal static class MemberPatternEvaluator
             return MatchStatus.NotMatched;
         }
 
-        var memberStatus = EvaluateMemberPath(
-            pattern.MemberPath,
+        var memberStatus = EvaluateMember(
+            pattern.Member,
             property.DeclaringType,
             property.Name,
-            pattern,
             context);
         var typeStatus = TypePatternEvaluator.Evaluate(
             pattern.PropertyType.TypePattern,
@@ -291,7 +290,11 @@ internal static class MemberPatternEvaluator
         };
         if (!arityMatches) return MatchStatus.NotMatched;
         if (pattern.Arguments.Count == 0) return MatchStatus.Matched;
-        if (candidate.GenericArguments.Count != pattern.Arguments.Count)
+        var candidateArguments = context.LanguageVersion ==
+            AspectNLanguageVersion.Legacy
+            ? LegacyGenericRules.GetEffectiveCallableArguments(candidate)
+            : candidate.GenericArguments.ToArray();
+        if (candidateArguments.Length != pattern.Arguments.Count)
         {
             return Unknown(
                 owner,
@@ -306,94 +309,33 @@ internal static class MemberPatternEvaluator
                 status,
                 TypePatternEvaluator.Evaluate(
                     pattern.Arguments[index],
-                    candidate.GenericArguments[index],
+                    candidateArguments[index],
                     context));
         }
 
         return status;
     }
 
-    private static MatchStatus EvaluateMemberPath(
-        IReadOnlyList<string> pathParts,
+    private static MatchStatus EvaluateMember(
+        BoundMemberPattern pattern,
         TypeSignature declaringType,
         string memberName,
-        BoundNode owner,
         EvaluationContext context)
     {
-        var declaringTypeEnd = -1;
-        for (var index = pathParts.Count - 1; index >= 0; index--)
-        {
-            if (pathParts[index] == ".")
-            {
-                declaringTypeEnd = index;
-                break;
-            }
-        }
-
-        var memberPattern = string.Concat(
-            pathParts.Skip(declaringTypeEnd + 1));
-        if (!NamePatternMatcher.IsMatch(memberPattern, memberName))
+        if (!NamePatternMatcher.IsMatch(pattern.NamePattern, memberName))
         {
             return MatchStatus.NotMatched;
         }
 
-        if (declaringTypeEnd < 0)
+        if (pattern.DeclaringType is null)
         {
             return MatchStatus.Matched;
         }
 
-        var declaringPattern = CreateDeclaringTypePattern(
-            pathParts.Take(declaringTypeEnd),
-            owner,
-            context.LanguageVersion);
         return TypePatternEvaluator.Evaluate(
-            declaringPattern,
+            pattern.DeclaringType,
             declaringType,
             context);
-    }
-
-    private static BoundNamedTypePattern CreateDeclaringTypePattern(
-        IEnumerable<string> pathParts,
-        BoundNode owner,
-        AspectNLanguageVersion languageVersion)
-    {
-        var path = pathParts.ToArray();
-        var segments = new List<BoundNameSegment>();
-        var separators = new List<string>();
-        var currentSegment = new List<string>();
-        foreach (var part in path)
-        {
-            if (part is "." or ".." or "/")
-            {
-                segments.Add(CreateNameSegment(currentSegment, languageVersion));
-                currentSegment.Clear();
-                separators.Add(part);
-                continue;
-            }
-
-            currentSegment.Add(part);
-        }
-
-        segments.Add(CreateNameSegment(currentSegment, languageVersion));
-        return new BoundNamedTypePattern(
-            owner.Span,
-            segments,
-            separators,
-            string.Concat(path));
-    }
-
-    private static BoundNameSegment CreateNameSegment(
-        IEnumerable<string> parts,
-        AspectNLanguageVersion languageVersion)
-    {
-        var pattern = string.Concat(parts);
-        var genericKind = languageVersion == AspectNLanguageVersion.Legacy ||
-                          pattern == "*"
-            ? BoundGenericArityKind.Any
-            : BoundGenericArityKind.Exact;
-        return new BoundNameSegment(
-            pattern,
-            new BoundGenericPattern(genericKind, 0));
     }
 
     private static MatchStatus EvaluateExtension(
