@@ -294,6 +294,35 @@ public sealed class LegacySemanticTests
             formatted);
     }
 
+    [Fact]
+    public void Match_AssignableDeclaringType_UsesTypeSystemRelation()
+    {
+        var declaringType = Named("PatternUsage", "Implementation");
+        var candidate = Callable(
+            "Run",
+            CallableKind.OrdinaryMethod,
+            declaringType: declaringType);
+        var typeSystem = new StubTypeSystem
+        {
+            Assignability = (actual, target, _) =>
+            {
+                Assert.Same(declaringType, actual);
+                var namedTarget = Assert.IsType<NamedTypeSignature>(target);
+                Assert.Equal(
+                    "PatternUsage.InterfaceAB",
+                    namedTarget.Identity.FullMetadataName);
+                return TypeRelationResult.Matched;
+            }
+        };
+
+        var result = Match(
+            "execution(* PatternUsage.InterfaceAB+.*(..))",
+            candidate,
+            typeSystem);
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+    }
+
     private static MatchResult Match(
         string source,
         CallableSignature candidate,

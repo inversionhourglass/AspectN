@@ -614,7 +614,8 @@ internal sealed class SelectorParser
                SyntaxKind.DotToken or
                SyntaxKind.DotDotToken or
                SyntaxKind.SlashToken or
-               SyntaxKind.LessThanToken)
+               SyntaxKind.LessThanToken or
+               SyntaxKind.PlusToken)
         {
             if (Current.Kind == SyntaxKind.LessThanToken)
             {

@@ -6,6 +6,7 @@ public sealed class LegacySyntaxTests
 {
     [Theory]
     [InlineData("EXECUTION(* Service.Run(..))")]
+    [InlineData("execution(* PatternUsage.InterfaceAB+.*(..))")]
     [InlineData("method(* Service.Run(..))")]
     [InlineData("property(string Service.Name)")]
     [InlineData("getter(string Service.Name)")]
@@ -58,6 +59,8 @@ public sealed class LegacySyntaxTests
     [InlineData("method(* <T>(T))")]
     [InlineData("method(* Service.<T>(T))")]
     [InlineData("method(* Service.Run<T><U>(T))")]
+    [InlineData("method(* Service.Run+(..))")]
+    [InlineData("method(* Run+(..))")]
     public void Parse_HistoricalInvalidAccident_ReportsDiagnosticNotException(
         string source)
     {

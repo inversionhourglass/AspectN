@@ -840,20 +840,49 @@ internal sealed class Binder
             .LastOrDefault();
         var memberName = string.Concat(
             memberNodes.OfType<SyntaxToken>().Select(token => token.Text));
+        var declaringNodes = path.Take(memberSeparator).ToArray();
+        var assignableSuffix = declaringNodes.LastOrDefault() as SyntaxToken;
+        var isAssignable = assignableSuffix?.Kind == SyntaxKind.PlusToken;
+        foreach (var plusToken in path
+                     .OfType<SyntaxToken>()
+                     .Where(token => token.Kind == SyntaxKind.PlusToken))
+        {
+            if (isAssignable && ReferenceEquals(plusToken, assignableSuffix))
+            {
+                continue;
+            }
+
+            _diagnostics.Add(
+                DiagnosticCodes.UnexpectedToken,
+                DiagnosticSeverity.Error,
+                "Assignable suffix '+' is only valid on a declaring type.",
+                plusToken.Span);
+        }
         if (memberSeparator < 0)
         {
             return new BoundMemberPattern(null, memberName);
         }
 
         var declaringSyntax = CreateNamedTypeSyntax(
-            path.Take(memberSeparator));
-        return new BoundMemberPattern(
-            BindNamedTypePattern(
+            isAssignable
+                ? declaringNodes.Take(declaringNodes.Length - 1)
+                : declaringNodes);
+        BoundTypePattern declaringType = BindNamedTypePattern(
+            declaringSyntax,
+            scope,
+            IsUnderNegation,
+            declaresLegacyVariables: _isLegacy);
+        if (isAssignable)
+        {
+            var assignableSyntax = new AssignableTypePatternSyntax(
                 declaringSyntax,
-                scope,
-                IsUnderNegation,
-                declaresLegacyVariables: _isLegacy),
-            memberName);
+                assignableSuffix!);
+            declaringType = new BoundAssignableTypePattern(
+                assignableSyntax.FullSpan,
+                declaringType);
+        }
+
+        return new BoundMemberPattern(declaringType, memberName);
     }
 
     private static NamedTypePatternSyntax CreateNamedTypeSyntax(
