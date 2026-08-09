@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\AspectN\AspectN.csproj" />
+    <ProjectReference Include="..\..\src\AspectN.Cecil\AspectN.Cecil.csproj" />
+    <ProjectReference Include="..\..\src\AspectN.Roslyn\AspectN.Roslyn.csproj" />
+    <ProjectReference Include="..\..\src\AspectN.Reflection\AspectN.Reflection.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net472" PrivateAssets="all" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
+    <PackageReference Include="coverlet.collector" PrivateAssets="all" />
+  </ItemGroup>
+</Project>
