@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <Nullable>annotations</Nullable>
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
+    <NoWarn>$(NoWarn);CS8669</NoWarn>
+    <LegacyOracleRoot Condition="'$(LegacyOracleRoot)' == ''">$(MSBuildThisFileDirectory)..\..\artifacts\legacy-oracle\Shared.Cecil.AspectN</LegacyOracleRoot>
+  </PropertyGroup>
+  <ItemGroup>
+    <AssemblyMetadata Include="LegacyOracleRoot" Value="$(LegacyOracleRoot)" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\AspectN.Cecil\AspectN.Cecil.csproj" />
+    <ProjectReference Include="..\AspectN.TestAssembly\AspectN.TestAssembly.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Mono.Cecil" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
+    <PackageReference Include="coverlet.collector" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="approved-differences.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="legacy-patterns.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <Import Project="$(LegacyOracleRoot)\Cecil.AspectN.projitems"
+          Label="FrozenLegacyOracle"
+          Condition="Exists('$(LegacyOracleRoot)\Cecil.AspectN.projitems')" />
+</Project>

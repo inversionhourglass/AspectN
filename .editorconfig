@@ -52,3 +52,6 @@ dotnet_naming_style.underscore_camel_case.capitalization = camel_case
 
 [*.md]
 trim_trailing_whitespace = false
+
+[artifacts/legacy-oracle/**/*.cs]
+generated_code = true
