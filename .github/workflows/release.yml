@@ -1,0 +1,175 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  build:
+    name: Build release artifacts
+    runs-on: windows-latest
+    timeout-minutes: 30
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Validate tag version
+        id: version
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF_NAME -notmatch '^v(?<version>\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)$') {
+            throw "Tag '$env:GITHUB_REF_NAME' is not a supported NuGet version tag."
+          }
+          "version=$($Matches.version)" >> $env:GITHUB_OUTPUT
+
+      - name: Verify package configuration and consumers
+        run: powershell -NoProfile -File eng/verify-packages.ps1
+
+      - name: Pack release version
+        shell: pwsh
+        run: |
+          $output = "artifacts/release"
+          if (Test-Path -LiteralPath $output) {
+            Remove-Item -LiteralPath $output -Recurse -Force
+          }
+          New-Item -ItemType Directory -Path $output | Out-Null
+          $version = "${{ steps.version.outputs.version }}"
+          $projects = @(
+            "src/AspectN/AspectN.csproj",
+            "src/AspectN.Cecil/AspectN.Cecil.csproj",
+            "src/AspectN.Roslyn/AspectN.Roslyn.csproj",
+            "src/AspectN.Reflection/AspectN.Reflection.csproj")
+          foreach ($project in $projects) {
+            dotnet pack $project -c Release --output $output -p:Version=$version -p:PackageVersion=$version
+            if ($LASTEXITCODE -ne 0) {
+              throw "Packing '$project' failed."
+            }
+          }
+
+      - name: Record unsigned checksums
+        shell: pwsh
+        run: |
+          $lines = Get-ChildItem -LiteralPath artifacts/release -File |
+            Sort-Object Name |
+            ForEach-Object {
+              $hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash
+              "$hash *$($_.Name)"
+            }
+          [System.IO.File]::WriteAllLines(
+            (Join-Path (Resolve-Path artifacts/release) "SHA256SUMS.unsigned"),
+            $lines,
+            [System.Text.Encoding]::ASCII)
+
+      - name: Upload unsigned release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-packages-${{ steps.version.outputs.version }}
+          path: artifacts/release/*
+          if-no-files-found: error
+
+  sign-verify-publish:
+    name: Sign, verify, and publish
+    needs: build
+    runs-on: windows-latest
+    timeout-minutes: 20
+    environment:
+      name: nuget-release
+      url: https://www.nuget.org/packages/AspectN/${{ needs.build.outputs.version }}
+    steps:
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Download unsigned release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: unsigned-packages-${{ needs.build.outputs.version }}
+          path: artifacts/release
+
+      - name: Sign and verify NuGet packages
+        shell: pwsh
+        env:
+          SIGNING_CERTIFICATE: ${{ secrets.NUGET_SIGNING_CERTIFICATE_BASE64 }}
+          SIGNING_PASSWORD: ${{ secrets.NUGET_SIGNING_CERTIFICATE_PASSWORD }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:SIGNING_CERTIFICATE)) {
+            throw "The protected environment has no signing certificate."
+          }
+          $certificatePath = Join-Path $env:RUNNER_TEMP "AspectN-signing.pfx"
+          try {
+            [System.IO.File]::WriteAllBytes(
+              $certificatePath,
+              [Convert]::FromBase64String($env:SIGNING_CERTIFICATE))
+            $packages = Get-ChildItem -LiteralPath artifacts/release -Filter *.nupkg
+            if ($packages.Count -ne 4) {
+              throw "Expected four release nupkg files; found $($packages.Count)."
+            }
+            foreach ($package in $packages) {
+              dotnet nuget sign $package.FullName --certificate-path $certificatePath --certificate-password $env:SIGNING_PASSWORD --timestamper http://timestamp.digicert.com --overwrite
+              if ($LASTEXITCODE -ne 0) {
+                throw "Signing '$($package.Name)' failed."
+              }
+              dotnet nuget verify $package.FullName --all
+              if ($LASTEXITCODE -ne 0) {
+                throw "Verification of '$($package.Name)' failed."
+              }
+            }
+          }
+          finally {
+            if (Test-Path -LiteralPath $certificatePath) {
+              Remove-Item -LiteralPath $certificatePath -Force
+            }
+          }
+
+      - name: Record signed checksums
+        shell: pwsh
+        run: |
+          Remove-Item -LiteralPath artifacts/release/SHA256SUMS.unsigned
+          $lines = Get-ChildItem -LiteralPath artifacts/release -File |
+            Sort-Object Name |
+            ForEach-Object {
+              $hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash
+              "$hash *$($_.Name)"
+            }
+          [System.IO.File]::WriteAllLines(
+            (Join-Path (Resolve-Path artifacts/release) "SHA256SUMS"),
+            $lines,
+            [System.Text.Encoding]::ASCII)
+
+      - name: Upload signed release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-packages-${{ needs.build.outputs.version }}
+          path: artifacts/release/*
+          if-no-files-found: error
+
+      - name: Publish NuGet packages
+        shell: pwsh
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:NUGET_API_KEY)) {
+            throw "The protected environment has no NuGet API key."
+          }
+          foreach ($package in Get-ChildItem -LiteralPath artifacts/release -Filter *.nupkg) {
+            dotnet nuget push $package.FullName --api-key $env:NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
+            if ($LASTEXITCODE -ne 0) {
+              throw "Publishing '$($package.Name)' failed."
+            }
+          }

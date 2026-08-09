@@ -1,0 +1,124 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  build-and-test:
+    name: Build and test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Check out pinned Legacy sources for solution formatting
+        uses: actions/checkout@v4
+        with:
+          repository: inversionhourglass/Shared.Cecil.AspectN
+          ref: 03a9d1030f92a64449b6220eb45d7198d31653db
+          path: artifacts/legacy-oracle/Shared.Cecil.AspectN
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore AspectN.sln -p:CecilVersion=0.11.5 -p:RoslynVersion=4.12.0
+
+      - name: Verify formatting
+        run: dotnet format AspectN.sln --verify-no-changes --no-restore
+
+      - name: Build core, adapters, and conformance
+        run: |
+          dotnet build tests/AspectN.Tests/AspectN.Tests.csproj -c Release --no-restore
+          dotnet build tests/AspectN.Cecil.Tests/AspectN.Cecil.Tests.csproj -c Release --no-restore
+          dotnet build tests/AspectN.Reflection.Tests/AspectN.Reflection.Tests.csproj -c Release --no-restore
+          dotnet build tests/AspectN.Roslyn.Tests/AspectN.Roslyn.Tests.csproj -c Release --no-restore
+          dotnet build tests/AspectN.Conformance.Tests/AspectN.Conformance.Tests.csproj -c Release --no-restore
+
+      - name: Test core, adapters, and conformance
+        run: |
+          dotnet test tests/AspectN.Tests/AspectN.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=core.trx" --results-directory artifacts/test-results/${{ runner.os }}
+          dotnet test tests/AspectN.Cecil.Tests/AspectN.Cecil.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=cecil.trx" --results-directory artifacts/test-results/${{ runner.os }}
+          dotnet test tests/AspectN.Reflection.Tests/AspectN.Reflection.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=reflection.trx" --results-directory artifacts/test-results/${{ runner.os }}
+          dotnet test tests/AspectN.Roslyn.Tests/AspectN.Roslyn.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=roslyn.trx" --results-directory artifacts/test-results/${{ runner.os }}
+          dotnet test tests/AspectN.Conformance.Tests/AspectN.Conformance.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=conformance.trx" --results-directory artifacts/test-results/${{ runner.os }}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ runner.os }}
+          path: artifacts/test-results/${{ runner.os }}/*.trx
+          if-no-files-found: error
+
+  net-framework:
+    name: Test .NET Framework 4.7.2
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore tests/AspectN.NetFramework.Tests/AspectN.NetFramework.Tests.csproj
+
+      - name: Test .NET Framework 4.7.2
+        run: dotnet test tests/AspectN.NetFramework.Tests/AspectN.NetFramework.Tests.csproj -c Release -f net472 --no-restore --logger "trx;LogFileName=net472.trx" --results-directory artifacts/test-results/net472
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-net472
+          path: artifacts/test-results/net472/*.trx
+          if-no-files-found: error
+
+  packages:
+    name: Verify package artifacts
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Verify packages
+        run: powershell -NoProfile -File eng/verify-packages.ps1
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-${{ github.sha }}
+          path: artifacts/packages/*
+          if-no-files-found: error
