@@ -8,6 +8,19 @@ namespace AspectN.Cecil.Tests;
 public sealed class CecilTypeMappingTests
 {
     [Fact]
+    public void MapType_ResolvableDelegateReference_PreservesDelegateKind()
+    {
+        using var module = TestModuleFactory.Create();
+        using var typeSystem = new CecilTypeSystem(module);
+        var reference = module.ImportReference(typeof(EventHandler));
+
+        var signature = Assert.IsType<NamedTypeSignature>(
+            typeSystem.Mapper.MapType(reference));
+
+        Assert.Equal(TypeKind.Delegate, signature.Identity.Kind);
+    }
+
+    [Fact]
     public void MapType_TopLevelAndNestedDefinitions_PreserveIdentityAndArity()
     {
         var module = TestModuleFactory.Create();

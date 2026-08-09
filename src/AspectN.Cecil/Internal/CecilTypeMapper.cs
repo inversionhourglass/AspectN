@@ -95,7 +95,8 @@ internal static class CecilTypeMapper
 
     private static TypeKind GetTypeKind(TypeReference typeReference)
     {
-        if (typeReference is TypeDefinition definition)
+        var definition = TryResolve(typeReference);
+        if (definition is not null)
         {
             if (definition.IsInterface) return TypeKind.Interface;
             if (definition.IsEnum) return TypeKind.Enum;
@@ -134,6 +135,38 @@ internal static class CecilTypeMapper
             MetadataType.String => TypeKind.Class,
             _ => TypeKind.Unknown
         };
+    }
+
+    private static TypeDefinition? TryResolve(TypeReference typeReference)
+    {
+        try
+        {
+            return typeReference as TypeDefinition ?? typeReference.Resolve();
+        }
+        catch (AssemblyResolutionException)
+        {
+            return null;
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
+        }
+        catch (IOException)
+        {
+            return null;
+        }
+        catch (BadImageFormatException)
+        {
+            return null;
+        }
+        catch (NotSupportedException)
+        {
+            return null;
+        }
+        catch (ArgumentException)
+        {
+            return null;
+        }
     }
 
     private static AssemblyIdentity MapAssemblyIdentity(
