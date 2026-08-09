@@ -1,0 +1,217 @@
+[
+  {
+    "id": "ordinary",
+    "kind": "method",
+    "member": "Read",
+    "parameterCount": 0,
+    "expression": "method(string AspectN.TestAssembly.Conformance.ConformanceFixture.Read())",
+    "expected": "Matched"
+  },
+  {
+    "id": "constructed-generic-method",
+    "kind": "method",
+    "member": "Generic",
+    "parameterCount": 2,
+    "genericArguments": [ "System.String", "System.Int32" ],
+    "expression": "method(int AspectN.TestAssembly.Conformance.ConformanceFixture.Generic<string,int>(string,int))",
+    "expected": "Matched"
+  },
+  {
+    "id": "ref-kinds",
+    "kind": "method",
+    "member": "RefKinds",
+    "parameterCount": 4,
+    "expression": "method(void AspectN.TestAssembly.Conformance.ConformanceFixture.RefKinds(ref int,out string,in double,ref readonly long))",
+    "expected": "Matched"
+  },
+  {
+    "id": "async",
+    "kind": "method",
+    "member": "AsyncMethod",
+    "parameterCount": 0,
+    "expression": "method(async System.Threading.Tasks.Task<int> AspectN.TestAssembly.Conformance.ConformanceFixture.AsyncMethod())",
+    "expected": "Matched"
+  },
+  {
+    "id": "task-like-not-async",
+    "kind": "method",
+    "member": "TaskLikeMethod",
+    "parameterCount": 0,
+    "expression": "method(async * AspectN.TestAssembly.Conformance.ConformanceFixture.TaskLikeMethod())",
+    "expected": "NotMatched"
+  },
+  {
+    "id": "direct-attribute",
+    "kind": "method",
+    "member": "Attributed",
+    "parameterCount": 1,
+    "expression": "method(* AspectN.TestAssembly.Conformance.ConformanceFixture.Attributed(..)) && attr(callable AspectN.TestAssembly.Conformance.ConformanceMarkerAttribute)",
+    "expected": "Matched"
+  },
+  {
+    "id": "property-getter",
+    "kind": "method",
+    "member": "get_Name",
+    "parameterCount": 0,
+    "expression": "getter(string AspectN.TestAssembly.Conformance.ConformanceFixture.Name)",
+    "expected": "Matched"
+  },
+  {
+    "id": "property-setter",
+    "kind": "method",
+    "member": "set_Name",
+    "parameterCount": 1,
+    "expression": "setter(string AspectN.TestAssembly.Conformance.ConformanceFixture.Name)",
+    "expected": "Matched"
+  },
+  {
+    "id": "indexer-getter",
+    "kind": "method",
+    "member": "get_Item",
+    "parameterCount": 1,
+    "expression": "getter(string AspectN.TestAssembly.Conformance.ConformanceFixture.Item)",
+    "expected": "Matched"
+  },
+  {
+    "id": "event-adder",
+    "kind": "method",
+    "member": "add_Changed",
+    "parameterCount": 1,
+    "expression": "callable(void AspectN.TestAssembly.Conformance.ConformanceFixture.add_Changed(System.EventHandler))",
+    "expected": "Matched"
+  },
+  {
+    "id": "event-remover",
+    "kind": "method",
+    "member": "remove_Changed",
+    "parameterCount": 1,
+    "expression": "callable(void AspectN.TestAssembly.Conformance.ConformanceFixture.remove_Changed(System.EventHandler))",
+    "expected": "Matched"
+  },
+  {
+    "id": "instance-constructor",
+    "kind": "method",
+    "member": ".ctor",
+    "parameterCount": 0,
+    "expression": "ctor(AspectN.TestAssembly.Conformance.ConformanceFixture())",
+    "expected": "Matched"
+  },
+  {
+    "id": "private-instance-constructor",
+    "kind": "method",
+    "member": ".ctor",
+    "parameterCount": 1,
+    "expression": "ctor(AspectN.TestAssembly.Conformance.ConformanceFixture(int))",
+    "expected": "Matched"
+  },
+  {
+    "id": "static-constructor",
+    "kind": "method",
+    "member": ".cctor",
+    "parameterCount": 0,
+    "expression": "cctor(AspectN.TestAssembly.Conformance.ConformanceFixture)",
+    "expected": "Matched"
+  },
+  {
+    "id": "constructed-nested-type",
+    "kind": "nested-type",
+    "expression": "AspectN.TestAssembly.Conformance.ConformanceOuter<string>/Inner<int,double>",
+    "expected": "Matched"
+  },
+  {
+    "id": "arrays",
+    "kind": "method",
+    "member": "Arrays",
+    "parameterCount": 1,
+    "expression": "method(* AspectN.TestAssembly.Conformance.ConformanceFixture.Arrays(..))",
+    "expected": "Matched"
+  },
+  {
+    "id": "tuple",
+    "kind": "method",
+    "member": "Tuple",
+    "parameterCount": 1,
+    "expression": "method((string,int) AspectN.TestAssembly.Conformance.ConformanceFixture.Tuple((string,int)))",
+    "expected": "Matched"
+  },
+  {
+    "id": "nullable-value",
+    "kind": "method",
+    "member": "NullableValue",
+    "parameterCount": 1,
+    "expression": "method(int? AspectN.TestAssembly.Conformance.ConformanceFixture.NullableValue(int?))",
+    "expected": "Matched"
+  },
+  {
+    "id": "nullable-reference",
+    "kind": "method",
+    "member": "NullableReference",
+    "parameterCount": 1,
+    "expression": "method(string? AspectN.TestAssembly.Conformance.ConformanceFixture.NullableReference(string?))",
+    "expected": "Matched"
+  },
+  {
+    "id": "ref-readonly-return",
+    "kind": "method",
+    "member": "RefReadonlyReturn",
+    "parameterCount": 0,
+    "expression": "method(ref readonly int AspectN.TestAssembly.Conformance.ConformanceFixture.RefReadonlyReturn())",
+    "expected": "Matched"
+  },
+  {
+    "id": "protected",
+    "kind": "method",
+    "member": "ProtectedMethod",
+    "parameterCount": 0,
+    "expression": "method(protected void AspectN.TestAssembly.Conformance.ConformanceFixture.ProtectedMethod())",
+    "expected": "Matched"
+  },
+  {
+    "id": "internal",
+    "kind": "method",
+    "member": "InternalMethod",
+    "parameterCount": 0,
+    "expression": "method(internal void AspectN.TestAssembly.Conformance.ConformanceFixture.InternalMethod())",
+    "expected": "Matched"
+  },
+  {
+    "id": "private",
+    "kind": "method",
+    "member": "PrivateMethod",
+    "parameterCount": 0,
+    "expression": "method(private void AspectN.TestAssembly.Conformance.ConformanceFixture.PrivateMethod())",
+    "expected": "Matched"
+  },
+  {
+    "id": "protected-internal",
+    "kind": "method",
+    "member": "ProtectedInternalMethod",
+    "parameterCount": 0,
+    "expression": "method(protected internal void AspectN.TestAssembly.Conformance.ConformanceFixture.ProtectedInternalMethod())",
+    "expected": "Matched"
+  },
+  {
+    "id": "private-protected",
+    "kind": "method",
+    "member": "PrivateProtectedMethod",
+    "parameterCount": 0,
+    "expression": "method(private protected void AspectN.TestAssembly.Conformance.ConformanceFixture.PrivateProtectedMethod())",
+    "expected": "Matched"
+  },
+  {
+    "id": "operator",
+    "kind": "method",
+    "member": "op_Addition",
+    "parameterCount": 2,
+    "expression": "callable(* AspectN.TestAssembly.Conformance.ConformanceFixture.op_Addition(..))",
+    "expected": "Matched"
+  },
+  {
+    "id": "conversion",
+    "kind": "method",
+    "member": "op_Implicit",
+    "parameterCount": 1,
+    "expression": "callable(string AspectN.TestAssembly.Conformance.ConformanceFixture.op_Implicit(..))",
+    "expected": "Matched"
+  }
+]
