@@ -1,0 +1,19 @@
+#nullable enable
+AspectN.Roslyn.RoslynSignatureMapper
+AspectN.Roslyn.RoslynSignatureMapper.MapCallable(Microsoft.CodeAnalysis.IMethodSymbol! methodSymbol) -> AspectN.Metadata.CallableSignature!
+AspectN.Roslyn.RoslynSignatureMapper.MapProperty(Microsoft.CodeAnalysis.IPropertySymbol! propertySymbol) -> AspectN.Metadata.PropertySignature!
+AspectN.Roslyn.RoslynSignatureMapper.MapType(Microsoft.CodeAnalysis.ITypeSymbol! typeSymbol) -> AspectN.Metadata.TypeSignature!
+AspectN.Roslyn.RoslynSignatureMapper.MapTypeUse(Microsoft.CodeAnalysis.ITypeSymbol! typeSymbol, AspectN.Metadata.TypeUseKind useKind) -> AspectN.Metadata.TypeUseSignature!
+AspectN.Roslyn.RoslynSyntaxExtensions
+static AspectN.Roslyn.RoslynSyntaxExtensions.MapCallable(this AspectN.Roslyn.RoslynSignatureMapper! mapper, Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax! declaration, Microsoft.CodeAnalysis.Compilation! compilation) -> AspectN.Metadata.CallableSignature!
+static AspectN.Roslyn.RoslynSyntaxExtensions.MapCallable(this AspectN.Roslyn.RoslynSignatureMapper! mapper, Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax! declaration, Microsoft.CodeAnalysis.SemanticModel! semanticModel) -> AspectN.Metadata.CallableSignature!
+static AspectN.Roslyn.RoslynSyntaxExtensions.MapType(this AspectN.Roslyn.RoslynSignatureMapper! mapper, Microsoft.CodeAnalysis.CSharp.Syntax.TypeDeclarationSyntax! declaration, Microsoft.CodeAnalysis.Compilation! compilation) -> AspectN.Metadata.TypeSignature!
+static AspectN.Roslyn.RoslynSyntaxExtensions.MapType(this AspectN.Roslyn.RoslynSignatureMapper! mapper, Microsoft.CodeAnalysis.CSharp.Syntax.TypeDeclarationSyntax! declaration, Microsoft.CodeAnalysis.SemanticModel! semanticModel) -> AspectN.Metadata.TypeSignature!
+AspectN.Roslyn.RoslynTypeSystem
+AspectN.Roslyn.RoslynTypeSystem.AreEqual(AspectN.Metadata.TypeSignature! left, AspectN.Metadata.TypeSignature! right) -> AspectN.TypeSystem.TypeRelationResult!
+AspectN.Roslyn.RoslynTypeSystem.Capabilities.get -> AspectN.TypeSystem.TypeSystemCapabilities
+AspectN.Roslyn.RoslynTypeSystem.Compilation.get -> Microsoft.CodeAnalysis.Compilation!
+AspectN.Roslyn.RoslynTypeSystem.HasDirectAttribute(AspectN.TypeSystem.AttributeTarget! target, AspectN.Metadata.TypeSignature! attributeType, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.TypeSystem.TypeRelationResult!
+AspectN.Roslyn.RoslynTypeSystem.IsAssignableTo(AspectN.Metadata.TypeSignature! candidate, AspectN.Metadata.TypeSignature! target, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.TypeSystem.TypeRelationResult!
+AspectN.Roslyn.RoslynTypeSystem.Mapper.get -> AspectN.Roslyn.RoslynSignatureMapper!
+AspectN.Roslyn.RoslynTypeSystem.RoslynTypeSystem(Microsoft.CodeAnalysis.Compilation! compilation) -> void
