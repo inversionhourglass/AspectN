@@ -52,6 +52,7 @@ jobs:
           $projects = @(
             "src/AspectN/AspectN.csproj",
             "src/AspectN.Cecil/AspectN.Cecil.csproj",
+            "src/AspectN.Cecil.Fody/AspectN.Cecil.Fody.csproj",
             "src/AspectN.Roslyn/AspectN.Roslyn.csproj",
             "src/AspectN.Reflection/AspectN.Reflection.csproj")
           foreach ($project in $projects) {
@@ -117,8 +118,8 @@ jobs:
               $certificatePath,
               [Convert]::FromBase64String($env:SIGNING_CERTIFICATE))
             $packages = Get-ChildItem -LiteralPath artifacts/release -Filter *.nupkg
-            if ($packages.Count -ne 4) {
-              throw "Expected four release nupkg files; found $($packages.Count)."
+            if ($packages.Count -ne 5) {
+              throw "Expected five release nupkg files; found $($packages.Count)."
             }
             foreach ($package in $packages) {
               dotnet nuget sign $package.FullName --certificate-path $certificatePath --certificate-password $env:SIGNING_PASSWORD --timestamper http://timestamp.digicert.com --overwrite

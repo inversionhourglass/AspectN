@@ -9,7 +9,13 @@ the Standard language separately.
 Replace the Shared.Cecil.AspectN source dependency with:
 
 - `AspectN` for parsing, compilation, signatures, and match results.
-- `AspectN.Cecil` for mapping `Mono.Cecil` metadata and resolving type facts.
+- `AspectN.Cecil` for applications using the official `Mono.Cecil` package.
+- `AspectN.Cecil.Fody` for Fody weavers using the Cecil assembly bundled by
+  `FodyHelpers`.
+
+The two Cecil packages expose the same `AspectN.Cecil` namespace but target
+different strong-named Cecil identities. Reference exactly one of them in a
+consumer project. Rougamo uses `AspectN.Cecil.Fody`.
 
 The frozen Legacy oracle remains a test-only compatibility reference. Do not
 copy or modify its production source during migration.

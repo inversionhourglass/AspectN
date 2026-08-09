@@ -53,6 +53,7 @@ jobs:
         run: |
           dotnet build tests/AspectN.Tests/AspectN.Tests.csproj -c Release --no-restore
           dotnet build tests/AspectN.Cecil.Tests/AspectN.Cecil.Tests.csproj -c Release --no-restore
+          dotnet build tests/AspectN.Cecil.Fody.Tests/AspectN.Cecil.Fody.Tests.csproj -c Release --no-restore
           dotnet build tests/AspectN.Reflection.Tests/AspectN.Reflection.Tests.csproj -c Release --no-restore
           dotnet build tests/AspectN.Roslyn.Tests/AspectN.Roslyn.Tests.csproj -c Release --no-restore
           dotnet build tests/AspectN.Conformance.Tests/AspectN.Conformance.Tests.csproj -c Release --no-restore
@@ -61,6 +62,7 @@ jobs:
         run: |
           dotnet test tests/AspectN.Tests/AspectN.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=core.trx" --results-directory artifacts/test-results/${{ runner.os }}
           dotnet test tests/AspectN.Cecil.Tests/AspectN.Cecil.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=cecil.trx" --results-directory artifacts/test-results/${{ runner.os }}
+          dotnet test tests/AspectN.Cecil.Fody.Tests/AspectN.Cecil.Fody.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=cecil-fody.trx" --results-directory artifacts/test-results/${{ runner.os }}
           dotnet test tests/AspectN.Reflection.Tests/AspectN.Reflection.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=reflection.trx" --results-directory artifacts/test-results/${{ runner.os }}
           dotnet test tests/AspectN.Roslyn.Tests/AspectN.Roslyn.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=roslyn.trx" --results-directory artifacts/test-results/${{ runner.os }}
           dotnet test tests/AspectN.Conformance.Tests/AspectN.Conformance.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=conformance.trx" --results-directory artifacts/test-results/${{ runner.os }}

@@ -69,12 +69,13 @@ Rougamo cannot switch to the new engine while any unapproved Legacy behavior dif
 
 ## 5. Package and Dependency Layout
 
-The first stable release contains four packages:
+The first stable release contains five packages:
 
 | Package | Responsibility | External dependency |
 |---|---|---|
 | `AspectN` | Parser, syntax model, binder, compiled plans, unified metadata contracts, matching | None beyond the BCL |
 | `AspectN.Cecil` | Mono.Cecil mapping, resolution, equality, and relationship queries | Mono.Cecil |
+| `AspectN.Cecil.Fody` | The same Cecil adapter API compiled for Fody's strong-named Cecil identity | FodyHelpers |
 | `AspectN.Roslyn` | `ISymbol` mapping and `SyntaxNode + SemanticModel` convenience entry points | Microsoft.CodeAnalysis |
 | `AspectN.Reflection` | `Type`, `MethodBase`, `PropertyInfo`, and related reflection mapping | BCL Reflection |
 
@@ -82,11 +83,17 @@ Dependency direction is strict:
 
 ```text
 AspectN.Cecil ──────┐
+AspectN.Cecil.Fody ─┤
 AspectN.Roslyn ─────┼──> AspectN
 AspectN.Reflection ─┘
 ```
 
 Adapters never reference one another. `AspectN` never references an adapter.
+
+`AspectN.Cecil` and `AspectN.Cecil.Fody` share adapter source but are mutually
+exclusive consumer dependencies because their Cecil assembly public key tokens
+differ. Fody upgrades are compatibility events and must re-run the shared Cecil
+contract and Rougamo integration lanes.
 
 `AspectN.Abstractions` is not a separate package in 1.0. The core `AspectN` package is the abstraction boundary. Legacy is a language version, not a separate NuGet package.
 

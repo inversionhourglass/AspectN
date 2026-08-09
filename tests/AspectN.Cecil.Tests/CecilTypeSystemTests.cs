@@ -179,6 +179,24 @@ public sealed class CecilTypeSystemTests
             typeSystem.IsAssignableTo(candidate, target, cancellation.Token));
     }
 
+    [Fact]
+    public void Dispose_LeaveOpen_KeepsModuleWritable()
+    {
+        var module = TestModuleFactory.Create();
+        var typeSystem = new CecilTypeSystem(
+            module,
+            new CecilMappingOptions(
+                compositeAccessibility: false,
+                leaveOpen: true));
+
+        typeSystem.Dispose();
+
+        using var stream = new MemoryStream();
+        module.Write(stream);
+        Assert.True(stream.Length > 0);
+        module.Dispose();
+    }
+
     private static TypeDefinition AddClass(
         ModuleDefinition module,
         string name,

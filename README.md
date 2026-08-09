@@ -11,11 +11,16 @@ already use, and evaluate it with explicit `Matched`, `NotMatched`, or
 | --- | --- |
 | `AspectN` | Syntax, binding, backend-neutral signatures, and matching |
 | `AspectN.Cecil` | Mono.Cecil metadata adapter |
+| `AspectN.Cecil.Fody` | Cecil adapter for projects that consume FodyHelpers |
 | `AspectN.Roslyn` | Microsoft.CodeAnalysis symbol adapter |
 | `AspectN.Reflection` | Runtime reflection adapter |
 
 All packages target `netstandard2.0` and `net10.0`. The `netstandard2.0`
 assets support consumers targeting .NET Framework 4.7.2.
+
+`AspectN.Cecil` and `AspectN.Cecil.Fody` expose the same adapter API against
+different strong-named Cecil assemblies and must not be referenced together.
+Use `AspectN.Cecil.Fody` inside Fody weavers that reference `FodyHelpers`.
 
 ## Quick start
 

@@ -131,6 +131,16 @@ using var typeSystem = new CecilTypeSystem(module);
 _ = typeSystem.Mapper.MapType(module.TypeSystem.String);
 "@
         }
+        "AspectN.Cecil.Fody" {
+            return @"
+using AspectN.Cecil;
+using Mono.Cecil;
+
+using var module = ModuleDefinition.CreateModule("Consumer", ModuleKind.Dll);
+using var typeSystem = new CecilTypeSystem(module);
+_ = typeSystem.Mapper.MapType(module.TypeSystem.String);
+"@
+        }
         "AspectN.Roslyn" {
             return @"
 using AspectN.Roslyn;
@@ -167,6 +177,11 @@ $packages = @(
         Id = "AspectN.Cecil"
         Project = "src\AspectN.Cecil\AspectN.Cecil.csproj"
         Dependencies = @("AspectN", "Mono.Cecil")
+    },
+    @{
+        Id = "AspectN.Cecil.Fody"
+        Project = "src\AspectN.Cecil.Fody\AspectN.Cecil.Fody.csproj"
+        Dependencies = @("AspectN", "FodyHelpers")
     },
     @{
         Id = "AspectN.Roslyn"
@@ -350,4 +365,4 @@ finally {
     }
 }
 
-Write-Host "Validated four AspectN packages and temporary consumers."
+Write-Host "Validated five AspectN packages and temporary consumers."
