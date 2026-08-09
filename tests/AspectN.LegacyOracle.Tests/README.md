@@ -40,8 +40,10 @@ assembly. Candidate IDs have this stable form:
 <assembly-name>::<Cecil-declaring-type-full-name>::0x<metadata-token>
 ```
 
-The Task 24 seed covers every legacy selector family and representative syntax.
-Task 25 expands the positive compatibility corpus while closing matcher gaps.
+The corpus covers every legacy selector family, the deterministic local fixture,
+Rougamo `SignatureUsage` and `PatternUsage`, and seven fixed public package
+assemblies. Package restore is locked by `packages.lock.json`; the exact corpus,
+versions, hashes, pair counts, and results are recorded in the migration report.
 
 ## Approved differences
 

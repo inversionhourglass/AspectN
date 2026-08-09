@@ -23,7 +23,7 @@ internal sealed class CecilResolver
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var structural = StructuralTypeComparer.AreEqual(candidate, target);
+        var structural = UnqualifiedTypeComparer.AreEqual(candidate, target);
         if (structural.Status != MatchStatus.NotMatched) return structural;
 
         if (!_mapper.TryGetTypeReference(candidate, out var candidateReference) ||
@@ -42,7 +42,7 @@ internal sealed class CecilResolver
             var current = pending.Dequeue();
             if (!visited.Add(CecilTypeCacheKey.Create(current))) continue;
 
-            var relation = StructuralTypeComparer.AreEqual(
+            var relation = UnqualifiedTypeComparer.AreEqual(
                 _mapper.MapType(current),
                 target);
             if (relation.Status == MatchStatus.Matched) return relation;

@@ -6,10 +6,13 @@
     <Nullable>annotations</Nullable>
     <EnableNETAnalyzers>false</EnableNETAnalyzers>
     <NoWarn>$(NoWarn);CS8669</NoWarn>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <LegacyOracleRoot Condition="'$(LegacyOracleRoot)' == ''">$(MSBuildThisFileDirectory)..\..\artifacts\legacy-oracle\Shared.Cecil.AspectN</LegacyOracleRoot>
+    <RougamoRoot Condition="'$(RougamoRoot)' == ''">$(MSBuildThisFileDirectory)..\..\..\rougamo-eco\Rougamo</RougamoRoot>
   </PropertyGroup>
   <ItemGroup>
     <AssemblyMetadata Include="LegacyOracleRoot" Value="$(LegacyOracleRoot)" />
+    <AssemblyMetadata Include="RougamoRoot" Value="$(RougamoRoot)" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\AspectN.Cecil\AspectN.Cecil.csproj" />
@@ -21,6 +24,15 @@
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
     <PackageReference Include="coverlet.collector" PrivateAssets="all" />
+    <PackageReference Include="Abp" />
+    <PackageReference Include="Autofac" />
+    <PackageReference Include="FreeSql" />
+    <PackageReference Include="Newtonsoft.Json" />
+    <PackageReference Include="Polly" />
+    <PackageReference Include="Serilog" />
+    <PackageReference Include="StackExchange.Redis" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" PrivateAssets="all" />
+    <PackageReference Include="System.Linq.Dynamic.Core" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
     <None Update="approved-differences.json" CopyToOutputDirectory="PreserveNewest" />

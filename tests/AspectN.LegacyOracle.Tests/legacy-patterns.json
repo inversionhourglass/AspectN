@@ -1,5 +1,319 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
+  "assemblies": [
+    {
+      "name": "AspectN.TestAssembly",
+      "fileName": "AspectN.TestAssembly.dll",
+      "sourceKind": "output",
+      "relativePath": "",
+      "version": "project"
+    },
+    {
+      "name": "SignatureUsage",
+      "fileName": "SignatureUsage.dll",
+      "sourceKind": "rougamo",
+      "relativePath": "test/TestAssemblies/SignatureUsage/bin/Release/net8.0/SignatureUsage.dll",
+      "version": "c4071b5e3ded79ee30c047cf45685637c542fa26"
+    },
+    {
+      "name": "PatternUsage",
+      "fileName": "PatternUsage.dll",
+      "sourceKind": "rougamo",
+      "relativePath": "test/TestAssemblies/PatternUsage/bin/Release/net8.0/PatternUsage.dll",
+      "version": "c4071b5e3ded79ee30c047cf45685637c542fa26"
+    },
+    {
+      "name": "Abp",
+      "fileName": "Abp.dll",
+      "sourceKind": "output",
+      "relativePath": "",
+      "version": "9.4.2"
+    },
+    {
+      "name": "Autofac",
+      "fileName": "Autofac.dll",
+      "sourceKind": "output",
+      "relativePath": "",
+      "version": "8.1.1"
+    },
+    {
+      "name": "FreeSql",
+      "fileName": "FreeSql.dll",
+      "sourceKind": "output",
+      "relativePath": "",
+      "version": "3.2.833"
+    },
+    {
+      "name": "Newtonsoft.Json",
+      "fileName": "Newtonsoft.Json.dll",
+      "sourceKind": "output",
+      "relativePath": "",
+      "version": "13.0.3"
+    },
+    {
+      "name": "Polly",
+      "fileName": "Polly.dll",
+      "sourceKind": "output",
+      "relativePath": "",
+      "version": "8.4.2"
+    },
+    {
+      "name": "Serilog",
+      "fileName": "Serilog.dll",
+      "sourceKind": "output",
+      "relativePath": "",
+      "version": "4.0.2"
+    },
+    {
+      "name": "StackExchange.Redis",
+      "fileName": "StackExchange.Redis.dll",
+      "sourceKind": "output",
+      "relativePath": "",
+      "version": "2.8.16"
+    }
+  ],
+  "sweeps": [
+    {
+      "pattern": "execution(async null *(..))",
+      "assemblies": [
+        "AspectN.TestAssembly",
+        "SignatureUsage",
+        "PatternUsage"
+      ],
+      "compositeAccessibility": false,
+      "source": "Rougamo SignatureUsage/PatternUsage deterministic sweep"
+    },
+    {
+      "pattern": "execution(async null *(..))",
+      "assemblies": [
+        "Abp",
+        "Autofac",
+        "FreeSql",
+        "Newtonsoft.Json",
+        "Polly",
+        "Serilog",
+        "StackExchange.Redis"
+      ],
+      "compositeAccessibility": true,
+      "source": "AspectN.Tests/test/Tests/Cases public package sweep"
+    },
+    {
+      "pattern": "ctor(*(..))",
+      "assemblies": [
+        "AspectN.TestAssembly",
+        "SignatureUsage",
+        "PatternUsage"
+      ],
+      "compositeAccessibility": false,
+      "source": "Rougamo SignatureUsage/PatternUsage deterministic sweep"
+    },
+    {
+      "pattern": "ctor(*(..))",
+      "assemblies": [
+        "Abp",
+        "Autofac",
+        "FreeSql",
+        "Newtonsoft.Json",
+        "Polly",
+        "Serilog",
+        "StackExchange.Redis"
+      ],
+      "compositeAccessibility": true,
+      "source": "AspectN.Tests/test/Tests/Cases public package sweep"
+    },
+    {
+      "pattern": "ctor(*())",
+      "assemblies": [
+        "AspectN.TestAssembly",
+        "SignatureUsage",
+        "PatternUsage"
+      ],
+      "compositeAccessibility": false,
+      "source": "Rougamo SignatureUsage/PatternUsage deterministic sweep"
+    },
+    {
+      "pattern": "ctor(*())",
+      "assemblies": [
+        "Abp",
+        "Autofac",
+        "FreeSql",
+        "Newtonsoft.Json",
+        "Polly",
+        "Serilog",
+        "StackExchange.Redis"
+      ],
+      "compositeAccessibility": true,
+      "source": "AspectN.Tests/test/Tests/Cases public package sweep"
+    },
+    {
+      "pattern": "ctor(*(*))",
+      "assemblies": [
+        "AspectN.TestAssembly",
+        "SignatureUsage",
+        "PatternUsage"
+      ],
+      "compositeAccessibility": false,
+      "source": "Rougamo SignatureUsage/PatternUsage deterministic sweep"
+    },
+    {
+      "pattern": "ctor(*(*))",
+      "assemblies": [
+        "Abp",
+        "Autofac",
+        "FreeSql",
+        "Newtonsoft.Json",
+        "Polly",
+        "Serilog",
+        "StackExchange.Redis"
+      ],
+      "compositeAccessibility": true,
+      "source": "AspectN.Tests/test/Tests/Cases public package sweep"
+    },
+    {
+      "pattern": "ctor(*(*, *))",
+      "assemblies": [
+        "AspectN.TestAssembly",
+        "SignatureUsage",
+        "PatternUsage"
+      ],
+      "compositeAccessibility": false,
+      "source": "Rougamo SignatureUsage/PatternUsage deterministic sweep"
+    },
+    {
+      "pattern": "ctor(*(*, *))",
+      "assemblies": [
+        "Abp",
+        "Autofac",
+        "FreeSql",
+        "Newtonsoft.Json",
+        "Polly",
+        "Serilog",
+        "StackExchange.Redis"
+      ],
+      "compositeAccessibility": true,
+      "source": "AspectN.Tests/test/Tests/Cases public package sweep"
+    },
+    {
+      "pattern": "ctor(*(string, *))",
+      "assemblies": [
+        "AspectN.TestAssembly",
+        "SignatureUsage",
+        "PatternUsage"
+      ],
+      "compositeAccessibility": false,
+      "source": "Rougamo SignatureUsage/PatternUsage deterministic sweep"
+    },
+    {
+      "pattern": "ctor(*(string, *))",
+      "assemblies": [
+        "Abp",
+        "Autofac",
+        "FreeSql",
+        "Newtonsoft.Json",
+        "Polly",
+        "Serilog",
+        "StackExchange.Redis"
+      ],
+      "compositeAccessibility": true,
+      "source": "AspectN.Tests/test/Tests/Cases public package sweep"
+    },
+    {
+      "pattern": "ctor(*<!>(..))",
+      "assemblies": [
+        "AspectN.TestAssembly",
+        "SignatureUsage",
+        "PatternUsage"
+      ],
+      "compositeAccessibility": false,
+      "source": "Rougamo SignatureUsage/PatternUsage deterministic sweep"
+    },
+    {
+      "pattern": "ctor(*<!>(..))",
+      "assemblies": [
+        "Abp",
+        "Autofac",
+        "FreeSql",
+        "Newtonsoft.Json",
+        "Polly",
+        "Serilog",
+        "StackExchange.Redis"
+      ],
+      "compositeAccessibility": true,
+      "source": "AspectN.Tests/test/Tests/Cases public package sweep"
+    },
+    {
+      "pattern": "ctor(*<>(..))",
+      "assemblies": [
+        "AspectN.TestAssembly",
+        "SignatureUsage",
+        "PatternUsage"
+      ],
+      "compositeAccessibility": false,
+      "source": "Rougamo SignatureUsage/PatternUsage deterministic sweep"
+    },
+    {
+      "pattern": "ctor(*<>(..))",
+      "assemblies": [
+        "Abp",
+        "Autofac",
+        "FreeSql",
+        "Newtonsoft.Json",
+        "Polly",
+        "Serilog",
+        "StackExchange.Redis"
+      ],
+      "compositeAccessibility": true,
+      "source": "AspectN.Tests/test/Tests/Cases public package sweep"
+    },
+    {
+      "pattern": "ctor(*<,>(..))",
+      "assemblies": [
+        "AspectN.TestAssembly",
+        "SignatureUsage",
+        "PatternUsage"
+      ],
+      "compositeAccessibility": false,
+      "source": "Rougamo SignatureUsage/PatternUsage deterministic sweep"
+    },
+    {
+      "pattern": "ctor(*<,>(..))",
+      "assemblies": [
+        "Abp",
+        "Autofac",
+        "FreeSql",
+        "Newtonsoft.Json",
+        "Polly",
+        "Serilog",
+        "StackExchange.Redis"
+      ],
+      "compositeAccessibility": true,
+      "source": "AspectN.Tests/test/Tests/Cases public package sweep"
+    },
+    {
+      "pattern": "cctor(*)",
+      "assemblies": [
+        "AspectN.TestAssembly",
+        "SignatureUsage",
+        "PatternUsage"
+      ],
+      "compositeAccessibility": false,
+      "source": "Rougamo SignatureUsage/PatternUsage deterministic sweep"
+    },
+    {
+      "pattern": "cctor(*)",
+      "assemblies": [
+        "Abp",
+        "Autofac",
+        "FreeSql",
+        "Newtonsoft.Json",
+        "Polly",
+        "Serilog",
+        "StackExchange.Redis"
+      ],
+      "compositeAccessibility": true,
+      "source": "AspectN.Tests/test/Tests/Cases public package sweep"
+    }
+  ],
   "cases": [
     {
       "pattern": "regex(^public static System\\.Int32 AspectN\\.TestAssembly\\.LegacyFixture\\.StaticMethod\\()",
@@ -20,7 +334,7 @@
       "source": "PatternUsage/Attributes/Methods/DoubleAnyParameterAttribute"
     },
     {
-      "pattern": "property(IDictionary<string,string> AspectN.TestAssembly.LegacyFixture.Dictionary)",
+      "pattern": "property(IDictionary<string,string>+||IList<string>+ AspectN.TestAssembly.LegacyFixture.Dictionary)",
       "candidateId": "AspectN.TestAssembly::AspectN.TestAssembly.LegacyFixture::0x0600000C",
       "compositeAccessibility": false,
       "source": "PatternUsage/Attributes/Properties/ReturnsChildOfDicOrListAttribute"
@@ -62,37 +376,37 @@
       "source": "AspectN.Tests/test/Tests/Cases"
     },
     {
-      "pattern": "attr(type AspectN.TestAssembly.LegacySecondaryAttribute)",
+      "pattern": "attr(type AspectN.TestAssembly.LegacyMarkerAttribute)",
       "candidateId": "AspectN.TestAssembly::AspectN.TestAssembly.LegacyFixture::0x0600000E",
       "compositeAccessibility": false,
       "source": "PatternUsage/Attributes/Attributes/TypeLabel1Attribute"
     },
     {
-      "pattern": "attr(exec AspectN.TestAssembly.LegacySecondaryAttribute)",
+      "pattern": "attr(exec AspectN.TestAssembly.LegacyMarkerAttribute)",
       "candidateId": "AspectN.TestAssembly::AspectN.TestAssembly.LegacyFixture::0x0600000D",
       "compositeAccessibility": false,
       "source": "PatternUsage/Attributes/Attributes/ExecutionLabel1Attribute"
     },
     {
-      "pattern": "attr(exec System.ObsoleteAttribute)",
+      "pattern": "attr(exec AspectN.TestAssembly.LegacyMarkerAttribute)",
       "candidateId": "AspectN.TestAssembly::AspectN.TestAssembly.LegacyFixture::0x0600000B",
       "compositeAccessibility": false,
       "source": "PatternUsage/Attributes/Attributes/ExecutionLabel1Attribute"
     },
     {
-      "pattern": "attr(para 0 AspectN.TestAssembly.LegacySecondaryAttribute)",
+      "pattern": "attr(para 0 AspectN.TestAssembly.LegacyMarkerAttribute)",
       "candidateId": "AspectN.TestAssembly::AspectN.TestAssembly.LegacyFixture::0x0600000D",
       "compositeAccessibility": false,
       "source": "PatternUsage/Attributes/Attributes/Parameter0Label1Attribute"
     },
     {
-      "pattern": "attr(ret AspectN.TestAssembly.LegacySecondaryAttribute)",
+      "pattern": "attr(ret AspectN.TestAssembly.LegacyMarkerAttribute)",
       "candidateId": "AspectN.TestAssembly::AspectN.TestAssembly.LegacyFixture::0x0600000D",
       "compositeAccessibility": false,
       "source": "PatternUsage/Attributes/Attributes/ReturnLabel1Attribute"
     },
     {
-      "pattern": "attr(* AspectN.TestAssembly.LegacySecondaryAttribute)",
+      "pattern": "attr(* AspectN.TestAssembly.LegacyMarkerAttribute)",
       "candidateId": "AspectN.TestAssembly::AspectN.TestAssembly.LegacyFixture::0x0600000D",
       "compositeAccessibility": false,
       "source": "PatternUsage/Attributes/Attributes/AnyLabel1Attribute"
@@ -156,6 +470,12 @@
       "candidateId": "AspectN.TestAssembly::AspectN.TestAssembly.LegacyFixture`2::0x06000016",
       "compositeAccessibility": false,
       "source": "PatternUsage/Attributes/Methods/GenericParameterMatch1Attribute"
+    },
+    {
+      "pattern": "regex(^public T4 AspectN\\.TestAssembly\\.LegacyFixture<T1,T2>\\.GenericMethod<T3,T4>\\(T1,T2,T3,T4\\)$)",
+      "candidateId": "AspectN.TestAssembly::AspectN.TestAssembly.LegacyFixture`2::0x06000016",
+      "compositeAccessibility": false,
+      "source": "Task 23 open generic Legacy regex regression"
     }
   ]
 }

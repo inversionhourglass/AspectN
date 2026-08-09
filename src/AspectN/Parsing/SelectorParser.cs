@@ -380,7 +380,19 @@ internal sealed class SelectorParser
     {
         if (Current.Kind == SyntaxKind.StarToken)
         {
-            return new WildcardTypePatternSyntax(NextToken());
+            var star = NextToken();
+            if ((Current.Kind == SyntaxKind.IdentifierToken &&
+                 Current.Span.Start == star.Span.End) ||
+                Current.Kind is
+                    SyntaxKind.LessThanToken or
+                    SyntaxKind.DotToken or
+                    SyntaxKind.DotDotToken or
+                    SyntaxKind.SlashToken)
+            {
+                return ParseNamedType(star);
+            }
+
+            return new WildcardTypePatternSyntax(star);
         }
 
         if (Current.Kind == SyntaxKind.DollarToken)
@@ -594,6 +606,8 @@ internal sealed class SelectorParser
     private List<SyntaxNode> ParseMemberPath()
     {
         var parts = new List<SyntaxNode>();
+        var hasName = false;
+        var hasGeneric = false;
         while (Current.Kind is
                SyntaxKind.IdentifierToken or
                SyntaxKind.StarToken or
@@ -602,10 +616,36 @@ internal sealed class SelectorParser
                SyntaxKind.SlashToken or
                SyntaxKind.LessThanToken)
         {
-            parts.Add(
-                Current.Kind == SyntaxKind.LessThanToken
-                    ? ParseGenericPatternList()
-                    : NextToken());
+            if (Current.Kind == SyntaxKind.LessThanToken)
+            {
+                if (!hasName || hasGeneric)
+                {
+                    ReportUnexpected(Current, "member name before generic pattern");
+                }
+
+                parts.Add(ParseGenericPatternList());
+                hasGeneric = true;
+                continue;
+            }
+
+            if (Current.Kind is
+                SyntaxKind.DotToken or
+                SyntaxKind.DotDotToken or
+                SyntaxKind.SlashToken)
+            {
+                parts.Add(NextToken());
+                hasName = false;
+                hasGeneric = false;
+                continue;
+            }
+
+            if (hasGeneric)
+            {
+                ReportUnexpected(Current, "member path separator");
+            }
+
+            parts.Add(NextToken());
+            hasName = true;
         }
 
         if (parts.Count == 0) ReportUnexpected(Current, "member path");

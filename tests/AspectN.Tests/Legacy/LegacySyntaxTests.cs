@@ -55,6 +55,9 @@ public sealed class LegacySyntaxTests
     [InlineData("method(* Service.Run(ref))")]
     [InlineData("attr(para -1 Example.MarkerAttribute)")]
     [InlineData("method(* Service.Run<T,..>(..))")]
+    [InlineData("method(* <T>(T))")]
+    [InlineData("method(* Service.<T>(T))")]
+    [InlineData("method(* Service.Run<T><U>(T))")]
     public void Parse_HistoricalInvalidAccident_ReportsDiagnosticNotException(
         string source)
     {

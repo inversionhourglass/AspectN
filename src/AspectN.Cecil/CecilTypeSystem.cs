@@ -87,7 +87,7 @@ public sealed class CecilTypeSystem : ITypeSystem, IDisposable
         TypeRelationResult? unknown = null;
         foreach (var attribute in attributes)
         {
-            var relation = StructuralTypeComparer.AreEqual(
+            var relation = UnqualifiedTypeComparer.AreEqual(
                 attribute.AttributeType,
                 attributeType);
             if (relation.Status == MatchStatus.Matched) return relation;

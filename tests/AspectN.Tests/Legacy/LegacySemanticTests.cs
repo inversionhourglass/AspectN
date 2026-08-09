@@ -245,6 +245,55 @@ public sealed class LegacySemanticTests
             formatted);
     }
 
+    [Fact]
+    public void Format_OpenGenericDefinition_UsesVirtualTypeParameterName()
+    {
+        var identity = new TypeIdentity(
+            new AssemblyIdentity("Example.Assembly"),
+            "Example",
+            "Container",
+            1,
+            TypeKind.Class);
+        var candidate = Callable(
+            "Run",
+            CallableKind.OrdinaryMethod,
+            declaringType: new NamedTypeSignature(identity));
+
+        var formatted = LegacyCanonicalSignatureFormatter.Format(candidate);
+
+        Assert.Equal(
+            "public System.Void Example.Container<T>.Run()",
+            formatted);
+    }
+
+    [Fact]
+    public void Format_NestedOpenGenericDefinition_UsesVirtualTypeParameterNames()
+    {
+        var outer = new TypeIdentity(
+            new AssemblyIdentity("Example.Assembly"),
+            "Example",
+            "Outer",
+            1,
+            TypeKind.Class);
+        var inner = new TypeIdentity(
+            new AssemblyIdentity("Example.Assembly"),
+            string.Empty,
+            "Inner",
+            2,
+            TypeKind.Class,
+            outer);
+        var candidate = Callable(
+            "Run",
+            CallableKind.OrdinaryMethod,
+            declaringType: new NamedTypeSignature(inner));
+
+        var formatted = LegacyCanonicalSignatureFormatter.Format(candidate);
+
+        Assert.Equal(
+            "public System.Void Example.Outer<T1>/Inner<T2,T3>.Run()",
+            formatted);
+    }
+
     private static MatchResult Match(
         string source,
         CallableSignature candidate,

@@ -637,12 +637,77 @@ internal static class TypePatternEvaluator
         BoundTypePattern pattern,
         out TypeSignature? target)
     {
-        if (pattern is not BoundNamedTypePattern named ||
-            named.Segments.Any(segment => segment.Pattern.Contains('*')) ||
-            named.Separators.Contains(".."))
+        if (!TryCreateConcreteType(pattern, out target) ||
+            target is not NamedTypeSignature)
         {
             target = null;
             return false;
+        }
+
+        return true;
+    }
+
+    private static bool TryCreateConcreteType(
+        BoundTypePattern pattern,
+        out TypeSignature? type)
+    {
+        if (pattern is BoundNamedTypePattern named)
+        {
+            return TryCreateConcreteNamedType(named, out type);
+        }
+
+        if (pattern is BoundArrayTypePattern array &&
+            TryCreateConcreteType(array.ElementType, out var elementType))
+        {
+            type = new ArrayTypeSignature(elementType!, array.Rank);
+            return true;
+        }
+
+        if (pattern is BoundNullableTypePattern nullable &&
+            TryCreateConcreteType(nullable.UnderlyingType, out var underlying))
+        {
+            var identity = new TypeIdentity(
+                new AssemblyIdentity(string.Empty),
+                "System",
+                "Nullable",
+                1,
+                TypeKind.Unknown);
+            var definition = new NamedTypeSignature(identity);
+            type = new NamedTypeSignature(
+                identity,
+                new[] { underlying! },
+                definition);
+            return true;
+        }
+
+        type = null;
+        return false;
+    }
+
+    private static bool TryCreateConcreteNamedType(
+        BoundNamedTypePattern named,
+        out TypeSignature? type)
+    {
+        if (named.Segments.Any(segment => segment.Pattern.Contains('*')) ||
+            named.Separators.Contains(".."))
+        {
+            type = null;
+            return false;
+        }
+
+        if (IsPrimitiveAlias(named))
+        {
+            var separator = named.CanonicalName.LastIndexOf('.');
+            type = new NamedTypeSignature(
+                new TypeIdentity(
+                    new AssemblyIdentity(string.Empty),
+                    separator < 0
+                        ? string.Empty
+                        : named.CanonicalName.Substring(0, separator),
+                    named.CanonicalName.Substring(separator + 1),
+                    0,
+                    TypeKind.Unknown));
+            return true;
         }
 
         var slashIndex = FindFirstSlash(named.Separators);
@@ -651,9 +716,27 @@ internal static class TypePatternEvaluator
             : named.Segments.Count - 1;
         var namespaceName = BuildNamespace(named, outerIndex);
         TypeIdentity? containingType = null;
+        var typeArguments = new List<TypeSignature>();
         for (var index = outerIndex; index < named.Segments.Count; index++)
         {
             var segment = named.Segments[index];
+            if (segment.Generic.Kind == BoundGenericArityKind.AnyPositive)
+            {
+                type = null;
+                return false;
+            }
+
+            foreach (var argument in segment.Generic.Arguments)
+            {
+                if (!TryCreateConcreteType(argument, out var typeArgument))
+                {
+                    type = null;
+                    return false;
+                }
+
+                typeArguments.Add(typeArgument!);
+            }
+
             containingType = new TypeIdentity(
                 new AssemblyIdentity(string.Empty),
                 index == outerIndex ? namespaceName : string.Empty,
@@ -663,7 +746,13 @@ internal static class TypePatternEvaluator
                 containingType);
         }
 
-        target = new NamedTypeSignature(containingType!);
+        var definition = new NamedTypeSignature(containingType!);
+        type = typeArguments.Count == 0
+            ? definition
+            : new NamedTypeSignature(
+                containingType!,
+                typeArguments,
+                definition);
         return true;
     }
 

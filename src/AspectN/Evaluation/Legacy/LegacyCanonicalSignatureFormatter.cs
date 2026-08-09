@@ -1,4 +1,5 @@
 using System.Text;
+using AspectN.Binding.Legacy;
 using AspectN.Metadata;
 
 namespace AspectN.Evaluation.Legacy;
@@ -55,7 +56,7 @@ internal static class LegacyCanonicalSignatureFormatter
         for (var index = 0; index < typeParameters.Length; index++)
         {
             names[new GenericParameterKey(typeParameters[index])] =
-                $"T{typeParameters.Length - index}";
+                $"T{index + 1}";
         }
 
         for (var index = 0; index < methodParameters.Length; index++)
@@ -67,11 +68,11 @@ internal static class LegacyCanonicalSignatureFormatter
         return names;
     }
 
-    private static IEnumerable<TypeSignature> EnumerateTypeArguments(
+    private static TypeSignature[] EnumerateTypeArguments(
         TypeSignature type)
     {
         return type is NamedTypeSignature named
-            ? named.TypeArguments
+            ? LegacyGenericRules.GetEffectiveTypeArguments(named)
             : Array.Empty<TypeSignature>();
     }
 
@@ -146,6 +147,7 @@ internal static class LegacyCanonicalSignatureFormatter
         IReadOnlyDictionary<GenericParameterKey, string> genericNames)
     {
         var chain = GetTypeChain(named.Identity);
+        var arguments = LegacyGenericRules.GetEffectiveTypeArguments(named);
         var argumentOffset = 0;
         for (var index = 0; index < chain.Count; index++)
         {
@@ -164,7 +166,7 @@ internal static class LegacyCanonicalSignatureFormatter
             AppendNamedGeneric(
                 builder,
                 identity.GenericArity,
-                named.TypeArguments,
+                arguments,
                 ref argumentOffset,
                 genericNames);
         }
@@ -173,13 +175,13 @@ internal static class LegacyCanonicalSignatureFormatter
     private static void AppendNamedGeneric(
         StringBuilder builder,
         int arity,
-        IReadOnlyList<TypeSignature> arguments,
+        TypeSignature[] arguments,
         ref int argumentOffset,
         IReadOnlyDictionary<GenericParameterKey, string> genericNames)
     {
         if (arity == 0) return;
         builder.Append('<');
-        if (arguments.Count >= argumentOffset + arity)
+        if (arguments.Length >= argumentOffset + arity)
         {
             for (var index = 0; index < arity; index++)
             {
