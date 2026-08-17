@@ -46,6 +46,21 @@ public sealed class LegacySemanticTests
     }
 
     [Fact]
+    public void Match_LegacyMemberNameStartingWithAsync_IsNotAsyncModifier()
+    {
+        var candidate = Callable(
+            "AsyncTask",
+            CallableKind.OrdinaryMethod,
+            isAsync: false,
+            returnType: Named("System.Threading.Tasks", "Task"),
+            declaringType: Named("ConfiguredMoUsage", "InstanceCls"));
+
+        var result = Match("method(* *.Async*(..))", candidate);
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+    }
+
+    [Fact]
     public void Match_LegacyWildcardParameterSlots_PreserveArityAndPositions()
     {
         var candidate = Callable(

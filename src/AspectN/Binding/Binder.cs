@@ -345,6 +345,7 @@ internal sealed class Binder
                 BindTypeUse(parameter.TypeUse, scope, false))
             .ToArray();
         var requiresAsync = syntax.Parts
+            .TakeWhile(part => !ReferenceEquals(part, returnSyntax))
             .OfType<SyntaxToken>()
             .Any(token => EqualsKeyword(token.Text, "async"));
         return new BoundCallableSignature(
