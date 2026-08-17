@@ -78,15 +78,18 @@ internal sealed class EvaluationContext
         TypeSignature candidate)
     {
         CancellationToken.ThrowIfCancellationRequested();
-        if (_bindings.TryGet(variable, out var existing))
-        {
-            var result = TypeSystem.AreEqual(existing!, candidate);
-            _diagnostics.AddRange(result.Diagnostics);
-            return result.Status;
-        }
+        return _bindings.Bind(
+            variable,
+            candidate,
+            TypeSystem,
+            _diagnostics);
+    }
 
-        _bindings.Add(variable, candidate);
-        return MatchStatus.Matched;
+    public void ReplaceBindingsWithAlternativesFrom(
+        IEnumerable<EvaluationContext> branches)
+    {
+        _bindings.ReplaceWithAlternativesFrom(
+            branches.Select(branch => branch._bindings));
     }
 
     public void AddDiagnostic(AspectNDiagnostic diagnostic)

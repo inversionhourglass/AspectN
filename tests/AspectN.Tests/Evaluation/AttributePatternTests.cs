@@ -36,6 +36,55 @@ public sealed class AttributePatternTests
     }
 
     [Fact]
+    public void Match_VariableAttributeAlternatives_PreserveSatisfyingBinding()
+    {
+        var first = Named("Example.Markers", "FirstAttribute");
+        var second = Named("Example.Markers", "SecondAttribute");
+        var attributes = new[]
+        {
+            new AttributeSignature(first, AttributeTargetKind.Callable),
+            new AttributeSignature(second, AttributeTargetKind.Callable)
+        };
+        var typeSystem = new AttributeTypeSystem(_ => false);
+
+        var matched = Match(
+            "attr(callable $A) && callable($A Service.get_Name(..))",
+            Candidate(returnType: second, attributes: attributes),
+            typeSystem);
+        var notMatched = Match(
+            "attr(callable $A) && callable($A Service.get_Name(..))",
+            Candidate(returnType: second, attributes: attributes.Take(1)),
+            typeSystem);
+
+        Assert.Equal(MatchStatus.Matched, matched.Status);
+        Assert.Equal(MatchStatus.NotMatched, notMatched.Status);
+    }
+
+    [Fact]
+    public void Match_VariableAttributeTargets_PreserveSatisfyingBinding()
+    {
+        var first = Named("Example.Markers", "FirstAttribute");
+        var second = Named("Example.Markers", "SecondAttribute");
+        var typeSystem = new AttributeTypeSystem(_ => false);
+
+        var result = Match(
+            "attr(any $A) && callable($A Service.get_Name(..))",
+            Candidate(
+                returnType: second,
+                attributes:
+                [
+                    new AttributeSignature(first, AttributeTargetKind.Callable)
+                ],
+                propertyAttributes:
+                [
+                    new AttributeSignature(second, AttributeTargetKind.Property)
+                ]),
+            typeSystem);
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+    }
+
+    [Fact]
     public void Match_IndexedParameter_DoesNotInspectOtherParameters()
     {
         var typeSystem = new AttributeTypeSystem(target =>
@@ -79,7 +128,10 @@ public sealed class AttributePatternTests
         return pattern!.Match(candidate, typeSystem);
     }
 
-    private static CallableSignature Candidate()
+    private static CallableSignature Candidate(
+        TypeSignature? returnType = null,
+        IEnumerable<AttributeSignature>? attributes = null,
+        IEnumerable<AttributeSignature>? propertyAttributes = null)
     {
         var declaringType = Named("Example", "Service");
         var property = new PropertySignature(
@@ -92,7 +144,7 @@ public sealed class AttributePatternTests
                 RefKind.None,
                 TypeUseKind.Property),
             Array.Empty<ParameterSignature>(),
-            Array.Empty<AttributeSignature>());
+            propertyAttributes ?? Array.Empty<AttributeSignature>());
         return new CallableSignature(
             "get_Name",
             CallableKind.PropertyGetter,
@@ -101,7 +153,7 @@ public sealed class AttributePatternTests
             isAsync: false,
             declaringType,
             new TypeUseSignature(
-                Named("System", "String"),
+                returnType ?? Named("System", "String"),
                 RefKind.None,
                 TypeUseKind.Return),
             new[]
@@ -111,7 +163,7 @@ public sealed class AttributePatternTests
             },
             Array.Empty<GenericParameterSignature>(),
             Array.Empty<TypeSignature>(),
-            Array.Empty<AttributeSignature>(),
+            attributes ?? Array.Empty<AttributeSignature>(),
             Array.Empty<AttributeSignature>(),
             associatedProperty: property);
     }

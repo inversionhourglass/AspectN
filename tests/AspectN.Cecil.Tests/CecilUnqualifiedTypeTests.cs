@@ -39,6 +39,47 @@ public sealed class CecilUnqualifiedTypeTests
     }
 
     [Fact]
+    public void Match_UnqualifiedAssignableDeclaringType_MatchesInterfaceImplementation()
+    {
+        var module = TestModuleFactory.Create();
+        using var typeSystem = new CecilTypeSystem(module);
+        var contract = new TypeDefinition(
+            "PatternUsage",
+            "InterfaceA",
+            TypeAttributes.Public |
+            TypeAttributes.Interface |
+            TypeAttributes.Abstract,
+            module.TypeSystem.Object);
+        module.Types.Add(contract);
+        var implementation = new TypeDefinition(
+            "PatternUsage",
+            "ClsA",
+            TypeAttributes.Public | TypeAttributes.Class,
+            module.TypeSystem.Object);
+        implementation.Interfaces.Add(new InterfaceImplementation(contract));
+        var constructor = new MethodDefinition(
+            ".ctor",
+            MethodAttributes.Public |
+            MethodAttributes.HideBySig |
+            MethodAttributes.SpecialName |
+            MethodAttributes.RTSpecialName,
+            module.TypeSystem.Void);
+        implementation.Methods.Add(constructor);
+        module.Types.Add(implementation);
+
+        var compilation = new AspectNEngine().CompileMemberExpression(
+            "execution(* InterfaceA+.*(..))",
+            new AspectNParseOptions(AspectNLanguageVersion.Legacy));
+        Assert.True(compilation.TryGetMemberPattern(out var pattern));
+
+        var result = pattern!.Match(
+            typeSystem.Mapper.MapCallable(constructor),
+            typeSystem);
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+    }
+
+    [Fact]
     public void HasDirectAttribute_UnqualifiedType_IgnoresAssemblyIdentity()
     {
         using var typeSystem = EmittedFixture.Open();

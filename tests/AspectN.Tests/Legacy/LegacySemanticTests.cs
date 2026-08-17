@@ -14,6 +14,8 @@ public sealed class LegacySemanticTests
     [Theory]
     [InlineData("execution(* Service.Run(..))", CallableKind.OrdinaryMethod, true)]
     [InlineData("execution(* Service.*(..))", CallableKind.PropertyGetter, true)]
+    [InlineData("execution(* Service.*(..))", CallableKind.InstanceConstructor, true)]
+    [InlineData("execution(* Service.*(..))", CallableKind.StaticConstructor, true)]
     [InlineData("execution(* Service.Run(..))", CallableKind.InstanceConstructor, false)]
     [InlineData("method(* Service.Run(..))", CallableKind.PropertyGetter, false)]
     [InlineData("property(string Service.Name)", CallableKind.PropertyGetter, true)]
@@ -170,6 +172,28 @@ public sealed class LegacySemanticTests
     }
 
     [Fact]
+    public void Match_LegacyMixedArrayRanks_PreservesOuterToInnerOrder()
+    {
+        var returnType = new ArrayTypeSignature(
+            new ArrayTypeSignature(
+                new ArrayTypeSignature(
+                    Named("System", "Int32", TypeKind.Struct),
+                    3),
+                1),
+            2);
+        var candidate = Callable(
+            "Run",
+            CallableKind.OrdinaryMethod,
+            returnType: returnType);
+
+        var result = Match(
+            "method(int[,][][,,] Service.Run(..))",
+            candidate);
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+    }
+
+    [Fact]
     public void Match_LegacyExecAttribute_ComposesAccessorPropertyAttributes()
     {
         var marker = Named("Example", "MarkerAttribute");
@@ -198,6 +222,30 @@ public sealed class LegacySemanticTests
 
         var result = Match(
             "attr(exec Example.MarkerAttribute)",
+            candidate,
+            new SignatureAttributeTypeSystem());
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+    }
+
+    [Fact]
+    public void Match_WildcardExecutionAttribute_MatchesCallableAttribute()
+    {
+        var marker = Named(
+            "PatternUsage.Attributes.Attributes",
+            "Label1Attribute");
+        var candidate = Callable(
+            "set_Prop",
+            CallableKind.PropertySetter,
+            attributes:
+            [
+                new AttributeSignature(
+                    marker,
+                    AttributeTargetKind.Callable)
+            ]);
+
+        var result = Match(
+            "attr(exec PatternUsage..Label1Attribute)",
             candidate,
             new SignatureAttributeTypeSystem());
 
@@ -373,6 +421,7 @@ public sealed class LegacySemanticTests
         TypeSignature? declaringType = null,
         IEnumerable<ParameterSignature>? parameters = null,
         IEnumerable<GenericParameterSignature>? genericParameters = null,
+        IEnumerable<AttributeSignature>? attributes = null,
         PropertySignature? associatedProperty = null)
     {
         return new CallableSignature(
@@ -389,7 +438,7 @@ public sealed class LegacySemanticTests
             parameters ?? Array.Empty<ParameterSignature>(),
             genericParameters ?? Array.Empty<GenericParameterSignature>(),
             Array.Empty<TypeSignature>(),
-            Array.Empty<AttributeSignature>(),
+            attributes ?? Array.Empty<AttributeSignature>(),
             Array.Empty<AttributeSignature>(),
             associatedProperty: associatedProperty);
     }

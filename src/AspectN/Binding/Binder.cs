@@ -173,7 +173,9 @@ internal sealed class Binder
             CallableSelectorSyntax callable => new BoundSelector(
                 callable.FullSpan,
                 BoundSelectorKind.Callable,
-                SelectorTargetDomain.Callable,
+                _isLegacy
+                    ? SelectorTargetDomain.All
+                    : SelectorTargetDomain.Callable,
                 BindCallableSignature(
                     (CallableSignatureSyntax)callable.Body!,
                     scope)),
@@ -524,10 +526,7 @@ internal sealed class Binder
                     scope,
                     underNegation);
             case ArrayTypePatternSyntax array:
-                return new BoundArrayTypePattern(
-                    array.FullSpan,
-                    BindTypePattern(array.ElementType, scope, underNegation),
-                    array.Rank);
+                return BindArrayTypePattern(array, scope, underNegation);
             case NullableTypePatternSyntax nullable:
                 return new BoundNullableTypePattern(
                     nullable.FullSpan,
@@ -572,6 +571,34 @@ internal sealed class Binder
                 throw new InvalidOperationException(
                     $"Unsupported type-pattern syntax '{syntax.Kind}'.");
         }
+    }
+
+    private BoundArrayTypePattern BindArrayTypePattern(
+        ArrayTypePatternSyntax syntax,
+        VariableScope scope,
+        bool underNegation)
+    {
+        var suffixes = new List<ArrayTypePatternSyntax>();
+        TypePatternSyntax elementType = syntax;
+        while (elementType is ArrayTypePatternSyntax array)
+        {
+            suffixes.Add(array);
+            elementType = array.ElementType;
+        }
+
+        BoundTypePattern bound = BindTypePattern(
+            elementType,
+            scope,
+            underNegation);
+        foreach (var suffix in suffixes)
+        {
+            bound = new BoundArrayTypePattern(
+                suffix.FullSpan,
+                bound,
+                suffix.Rank);
+        }
+
+        return (BoundArrayTypePattern)bound;
     }
 
     private BoundBinaryTypePattern BindBinaryTypePattern(

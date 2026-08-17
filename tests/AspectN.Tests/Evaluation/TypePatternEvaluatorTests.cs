@@ -72,6 +72,21 @@ public sealed class TypePatternEvaluatorTests
     }
 
     [Fact]
+    public void Match_MixedArrayRanks_UsesTextualOuterToInnerOrder()
+    {
+        var candidate = new ArrayTypeSignature(
+            new ArrayTypeSignature(
+                new ArrayTypeSignature(
+                    Named("System", "Int32", TypeKind.Struct),
+                    3),
+                1),
+            2);
+
+        var result = Match("int[,][][,,]", candidate);
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+    }
+    [Fact]
     public void Match_GroupingAndBooleanOperators_UseThreeStateLogic()
     {
         var candidate = Named("System", "Int32", TypeKind.Struct);

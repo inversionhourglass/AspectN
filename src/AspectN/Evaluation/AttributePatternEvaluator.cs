@@ -23,13 +23,9 @@ internal static class AttributePatternEvaluator
                 "The backend does not support direct attribute lookup.");
         }
 
-        if (!TryCreateAttributeType(pattern.AttributeType, out var attributeType))
-        {
-            return Unknown(
-                pattern,
-                context,
-                "Attribute lookup requires a concrete named attribute type.");
-        }
+        var hasConcreteAttributeType = TryCreateAttributeType(
+            pattern.AttributeType,
+            out var attributeType);
 
         if (context.LanguageVersion == AspectNLanguageVersion.Standard &&
             pattern.Target == BoundAttributeTargetKind.Property &&
@@ -45,18 +41,109 @@ internal static class AttributePatternEvaluator
             ? LegacyAttributeRules.GetTargets(pattern, candidate)
             : GetTargets(pattern, candidate);
         var status = MatchStatus.NotMatched;
+        var matchedTargetBranches = hasConcreteAttributeType
+            ? null
+            : new List<EvaluationContext>();
         foreach (var target in targets)
         {
             context.CancellationToken.ThrowIfCancellationRequested();
-            var result = context.TypeSystem.HasDirectAttribute(
-                target,
-                attributeType!,
-                context.CancellationToken);
-            context.AddDiagnostics(result.Diagnostics);
-            status = MatchLogic.Or(status, result.Status);
+            if (hasConcreteAttributeType)
+            {
+                var result = context.TypeSystem.HasDirectAttribute(
+                    target,
+                    attributeType!,
+                    context.CancellationToken);
+                context.AddDiagnostics(result.Diagnostics);
+                status = MatchLogic.Or(status, result.Status);
+                continue;
+            }
+
+            var branch = context.Fork();
+            MatchStatus targetStatus;
+            if (!TryGetEmbeddedAttributes(target, out var attributes))
+            {
+                targetStatus = Unknown(
+                    pattern,
+                    branch,
+                    "Wildcard attribute lookup requires attributes embedded in the candidate signature.");
+            }
+            else
+            {
+                targetStatus = EvaluateAttributes(
+                    pattern,
+                    attributes,
+                    branch);
+            }
+
+            context.MergeDiagnosticsFrom(branch);
+            status = MatchLogic.Or(status, targetStatus);
+            if (targetStatus == MatchStatus.Matched)
+            {
+                matchedTargetBranches!.Add(branch);
+            }
+        }
+
+        if (matchedTargetBranches?.Count > 0)
+        {
+            context.ReplaceBindingsWithAlternativesFrom(matchedTargetBranches);
         }
 
         return status;
+    }
+
+    private static MatchStatus EvaluateAttributes(
+        BoundAttributePattern pattern,
+        IReadOnlyList<AttributeSignature> attributes,
+        EvaluationContext context)
+    {
+        var status = MatchStatus.NotMatched;
+        var matchedBranches = new List<EvaluationContext>();
+        foreach (var attribute in attributes)
+        {
+            context.CancellationToken.ThrowIfCancellationRequested();
+            var branch = context.Fork();
+            var branchStatus = TypePatternEvaluator.Evaluate(
+                pattern.AttributeType,
+                attribute.AttributeType,
+                branch);
+            context.MergeDiagnosticsFrom(branch);
+            status = MatchLogic.Or(status, branchStatus);
+            if (branchStatus == MatchStatus.Matched)
+            {
+                matchedBranches.Add(branch);
+            }
+        }
+
+        if (matchedBranches.Count > 0)
+        {
+            context.ReplaceBindingsWithAlternativesFrom(matchedBranches);
+        }
+
+        return status;
+    }
+
+    private static bool TryGetEmbeddedAttributes(
+        AttributeTarget target,
+        out IReadOnlyList<AttributeSignature> attributes)
+    {
+        switch (target.Kind)
+        {
+            case AttributeTargetKind.Callable:
+                attributes = target.Callable!.Attributes;
+                return true;
+            case AttributeTargetKind.Property:
+                attributes = target.Property!.Attributes;
+                return true;
+            case AttributeTargetKind.Parameter:
+                attributes = target.Parameter!.Attributes;
+                return true;
+            case AttributeTargetKind.Return:
+                attributes = target.Callable!.ReturnAttributes;
+                return true;
+            default:
+                attributes = Array.Empty<AttributeSignature>();
+                return false;
+        }
     }
 
     private static IReadOnlyList<AttributeTarget> GetTargets(
