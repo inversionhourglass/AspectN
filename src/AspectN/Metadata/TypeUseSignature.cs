@@ -1,20 +1,20 @@
 namespace AspectN.Metadata;
 
-public sealed class TypeUseSignature
+/// <summary>Represents metadata for a type use signature.</summary>
+/// <param name="type">Specifies the type.</param>
+/// <param name="refKind">Specifies the ref kind.</param>
+/// <param name="useKind">Specifies the use kind.</param>
+public sealed class TypeUseSignature(
+    TypeSignature type,
+    RefKind refKind,
+    TypeUseKind useKind)
 {
-    public TypeUseSignature(
-        TypeSignature type,
-        RefKind refKind,
-        TypeUseKind useKind)
-    {
-        Type = type ?? throw new ArgumentNullException(nameof(type));
-        RefKind = refKind;
-        UseKind = useKind;
-    }
+    /// <summary>Gets the underlying type.</summary>
+    public TypeSignature Type { get; } = type ?? throw new ArgumentNullException(nameof(type));
 
-    public TypeSignature Type { get; }
+    /// <summary>Gets the ref kind.</summary>
+    public RefKind RefKind { get; } = refKind;
 
-    public RefKind RefKind { get; }
-
-    public TypeUseKind UseKind { get; }
+    /// <summary>Gets the use kind.</summary>
+    public TypeUseKind UseKind { get; } = useKind;
 }

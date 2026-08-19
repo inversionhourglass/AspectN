@@ -45,3 +45,10 @@ if (matchFound) break;
 ```
 
 Use braces when a branch has multiple statements, contains explanatory comments, or placing it on one line would reduce readability. Do not compress ordinary business logic into one-line conditionals.
+
+## Primary constructors and documentation
+
+- Prefer a primary constructor for a type when its constructor parameters represent the required instance dependencies or initialization state and the conversion preserves constructor visibility, parameter order, validation, initialization order, and observable behavior.
+- Keep an ordinary constructor when the type has multiple independent construction paths, constructor-specific validation or side effects, initialization-order requirements, or a conversion would change the public contract. When multiple constructors remain, keep their delegation explicit.
+- Add English `/// <summary>` documentation to every public type, interface, enum, method, constructor, and property. Public methods should document each parameter and return value when applicable; document exceptions when they are part of the public contract.
+- Add Chinese comments to complex internal types, methods, and implementation blocks when they explain non-obvious algorithms, state transitions, metadata mappings, compatibility rules, or invariants. Do not comment obvious statements.

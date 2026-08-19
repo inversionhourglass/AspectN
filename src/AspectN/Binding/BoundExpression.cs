@@ -8,48 +8,28 @@ internal enum BoundLogicalOperator
     Or
 }
 
-internal abstract class BoundExpression : BoundNode
+internal abstract class BoundExpression(
+    TextSpan span,
+    SelectorTargetDomain targetDomain) : BoundNode(span)
 {
-    protected BoundExpression(
-        TextSpan span,
-        SelectorTargetDomain targetDomain)
-        : base(span)
-    {
-        TargetDomain = targetDomain;
-    }
-
-    public SelectorTargetDomain TargetDomain { get; }
+    public SelectorTargetDomain TargetDomain { get; } = targetDomain;
 }
 
-internal sealed class BoundUnaryExpression : BoundExpression
+internal sealed class BoundUnaryExpression(TextSpan span, BoundExpression operand) : BoundExpression(span, SelectorTargetDomain.All)
 {
-    public BoundUnaryExpression(TextSpan span, BoundExpression operand)
-        : base(span, SelectorTargetDomain.All)
-    {
-        Operand = operand ?? throw new ArgumentNullException(nameof(operand));
-    }
-
-    public BoundExpression Operand { get; }
+    public BoundExpression Operand { get; } = operand ?? throw new ArgumentNullException(nameof(operand));
 }
 
-internal sealed class BoundBinaryExpression : BoundExpression
+internal sealed class BoundBinaryExpression(
+    TextSpan span,
+    BoundExpression left,
+    BoundLogicalOperator @operator,
+    BoundExpression right,
+    SelectorTargetDomain targetDomain) : BoundExpression(span, targetDomain)
 {
-    public BoundBinaryExpression(
-        TextSpan span,
-        BoundExpression left,
-        BoundLogicalOperator @operator,
-        BoundExpression right,
-        SelectorTargetDomain targetDomain)
-        : base(span, targetDomain)
-    {
-        Left = left ?? throw new ArgumentNullException(nameof(left));
-        Operator = @operator;
-        Right = right ?? throw new ArgumentNullException(nameof(right));
-    }
+    public BoundExpression Left { get; } = left ?? throw new ArgumentNullException(nameof(left));
 
-    public BoundExpression Left { get; }
+    public BoundLogicalOperator Operator { get; } = @operator;
 
-    public BoundLogicalOperator Operator { get; }
-
-    public BoundExpression Right { get; }
+    public BoundExpression Right { get; } = right ?? throw new ArgumentNullException(nameof(right));
 }

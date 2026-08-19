@@ -4,8 +4,13 @@ using AspectN.Metadata;
 
 namespace AspectN.TypeSystem;
 
+/// <summary>Represents structural type comparer.</summary>
 public static class StructuralTypeComparer
 {
+    /// <summary>Compares two values for structural equality.</summary>
+    /// <param name="left">Specifies the left.</param>
+    /// <param name="right">Specifies the right.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public static TypeRelationResult AreEqual(
         TypeSignature left,
         TypeSignature right)

@@ -59,237 +59,151 @@ internal enum BoundAttributeTargetKind
     Any
 }
 
-internal sealed class BoundModifier
+internal sealed class BoundModifier(
+    BoundModifierKind kind,
+    bool isNegated,
+    Accessibility accessibility = Accessibility.Unknown)
 {
-    public BoundModifier(
-        BoundModifierKind kind,
-        bool isNegated,
-        Accessibility accessibility = Accessibility.Unknown)
-    {
-        Kind = kind;
-        IsNegated = isNegated;
-        Accessibility = accessibility;
-    }
+    public BoundModifierKind Kind { get; } = kind;
 
-    public BoundModifierKind Kind { get; }
+    public bool IsNegated { get; } = isNegated;
 
-    public bool IsNegated { get; }
-
-    public Accessibility Accessibility { get; }
+    public Accessibility Accessibility { get; } = accessibility;
 }
 
-internal sealed class BoundTypeUsePattern
+internal sealed class BoundTypeUsePattern(RefKind refKind, BoundTypePattern typePattern)
 {
-    public BoundTypeUsePattern(RefKind refKind, BoundTypePattern typePattern)
-    {
-        RefKind = refKind;
-        TypePattern = typePattern ??
+    public RefKind RefKind { get; } = refKind;
+
+    public BoundTypePattern TypePattern { get; } = typePattern ??
             throw new ArgumentNullException(nameof(typePattern));
-    }
-
-    public RefKind RefKind { get; }
-
-    public BoundTypePattern TypePattern { get; }
 }
 
-internal abstract class BoundSelectorPayload : BoundNode
+internal abstract class BoundSelectorPayload(TextSpan span) : BoundNode(span)
 {
-    protected BoundSelectorPayload(TextSpan span)
-        : base(span)
-    {
-    }
 }
 
-internal sealed class BoundMemberPattern
+internal sealed class BoundMemberPattern(
+    BoundTypePattern? declaringType,
+    string namePattern)
 {
-    public BoundMemberPattern(
-        BoundTypePattern? declaringType,
-        string namePattern)
-    {
-        DeclaringType = declaringType;
-        NamePattern = namePattern ??
+    public BoundTypePattern? DeclaringType { get; } = declaringType;
+
+    public string NamePattern { get; } = namePattern ??
             throw new ArgumentNullException(nameof(namePattern));
-    }
-
-    public BoundTypePattern? DeclaringType { get; }
-
-    public string NamePattern { get; }
 }
 
-internal sealed class BoundCallableSignature : BoundSelectorPayload
+internal sealed class BoundCallableSignature(
+    TextSpan span,
+    IEnumerable<BoundModifier> modifiers,
+    bool requiresAsync,
+    BoundTypeUsePattern returnType,
+    BoundMemberPattern member,
+    BoundGenericPattern? generic,
+    IEnumerable<BoundTypeUsePattern> parameters,
+    bool matchesAnyParameters) : BoundSelectorPayload(span)
 {
-    private readonly ReadOnlyCollection<BoundModifier> _modifiers;
-    private readonly ReadOnlyCollection<BoundTypeUsePattern> _parameters;
+    private readonly ReadOnlyCollection<BoundModifier> _modifiers = new ReadOnlyCollection<BoundModifier>(modifiers.ToArray());
+    private readonly ReadOnlyCollection<BoundTypeUsePattern> _parameters = new ReadOnlyCollection<BoundTypeUsePattern>(
+            parameters.ToArray());
 
-    public BoundCallableSignature(
-        TextSpan span,
-        IEnumerable<BoundModifier> modifiers,
-        bool requiresAsync,
-        BoundTypeUsePattern returnType,
-        BoundMemberPattern member,
-        BoundGenericPattern? generic,
-        IEnumerable<BoundTypeUsePattern> parameters,
-        bool matchesAnyParameters)
-        : base(span)
-    {
-        _modifiers = new ReadOnlyCollection<BoundModifier>(modifiers.ToArray());
-        RequiresAsync = requiresAsync;
-        ReturnType = returnType ??
+    public IReadOnlyList<BoundModifier> Modifiers => _modifiers;
+
+    public bool RequiresAsync { get; } = requiresAsync;
+
+    public BoundTypeUsePattern ReturnType { get; } = returnType ??
             throw new ArgumentNullException(nameof(returnType));
-        Member = member ?? throw new ArgumentNullException(nameof(member));
-        Generic = generic;
-        _parameters = new ReadOnlyCollection<BoundTypeUsePattern>(
-            parameters.ToArray());
-        MatchesAnyParameters = matchesAnyParameters;
-    }
 
-    public IReadOnlyList<BoundModifier> Modifiers => _modifiers;
+    public BoundMemberPattern Member { get; } = member ?? throw new ArgumentNullException(nameof(member));
 
-    public bool RequiresAsync { get; }
-
-    public BoundTypeUsePattern ReturnType { get; }
-
-    public BoundMemberPattern Member { get; }
-
-    public BoundGenericPattern? Generic { get; }
+    public BoundGenericPattern? Generic { get; } = generic;
 
     public IReadOnlyList<BoundTypeUsePattern> Parameters => _parameters;
 
-    public bool MatchesAnyParameters { get; }
+    public bool MatchesAnyParameters { get; } = matchesAnyParameters;
 }
 
-internal sealed class BoundPropertySignature : BoundSelectorPayload
+internal sealed class BoundPropertySignature(
+    TextSpan span,
+    IEnumerable<BoundModifier> modifiers,
+    BoundTypeUsePattern propertyType,
+    BoundMemberPattern member) : BoundSelectorPayload(span)
 {
-    private readonly ReadOnlyCollection<BoundModifier> _modifiers;
+    private readonly ReadOnlyCollection<BoundModifier> _modifiers = new ReadOnlyCollection<BoundModifier>(modifiers.ToArray());
 
-    public BoundPropertySignature(
-        TextSpan span,
-        IEnumerable<BoundModifier> modifiers,
-        BoundTypeUsePattern propertyType,
-        BoundMemberPattern member)
-        : base(span)
-    {
-        _modifiers = new ReadOnlyCollection<BoundModifier>(modifiers.ToArray());
-        PropertyType = propertyType ??
+    public IReadOnlyList<BoundModifier> Modifiers => _modifiers;
+
+    public BoundTypeUsePattern PropertyType { get; } = propertyType ??
             throw new ArgumentNullException(nameof(propertyType));
-        Member = member ?? throw new ArgumentNullException(nameof(member));
-    }
 
-    public IReadOnlyList<BoundModifier> Modifiers => _modifiers;
-
-    public BoundTypeUsePattern PropertyType { get; }
-
-    public BoundMemberPattern Member { get; }
+    public BoundMemberPattern Member { get; } = member ?? throw new ArgumentNullException(nameof(member));
 }
 
-internal sealed class BoundConstructorSignature : BoundSelectorPayload
+internal sealed class BoundConstructorSignature(
+    TextSpan span,
+    BoundTypePattern declaringType,
+    IEnumerable<BoundTypeUsePattern> parameters,
+    bool matchesAnyParameters) : BoundSelectorPayload(span)
 {
-    private readonly ReadOnlyCollection<BoundTypeUsePattern> _parameters;
-
-    public BoundConstructorSignature(
-        TextSpan span,
-        BoundTypePattern declaringType,
-        IEnumerable<BoundTypeUsePattern> parameters,
-        bool matchesAnyParameters)
-        : base(span)
-    {
-        DeclaringType = declaringType ??
-            throw new ArgumentNullException(nameof(declaringType));
-        _parameters = new ReadOnlyCollection<BoundTypeUsePattern>(
+    private readonly ReadOnlyCollection<BoundTypeUsePattern> _parameters = new ReadOnlyCollection<BoundTypeUsePattern>(
             parameters.ToArray());
-        MatchesAnyParameters = matchesAnyParameters;
-    }
 
-    public BoundTypePattern DeclaringType { get; }
+    public BoundTypePattern DeclaringType { get; } = declaringType ??
+            throw new ArgumentNullException(nameof(declaringType));
 
     public IReadOnlyList<BoundTypeUsePattern> Parameters => _parameters;
 
-    public bool MatchesAnyParameters { get; }
+    public bool MatchesAnyParameters { get; } = matchesAnyParameters;
 }
 
-internal sealed class BoundAttributePattern : BoundSelectorPayload
+internal sealed class BoundAttributePattern(
+    TextSpan span,
+    BoundAttributeTargetKind target,
+    int? parameterIndex,
+    BoundTypePattern attributeType) : BoundSelectorPayload(span)
 {
-    public BoundAttributePattern(
-        TextSpan span,
-        BoundAttributeTargetKind target,
-        int? parameterIndex,
-        BoundTypePattern attributeType)
-        : base(span)
-    {
-        Target = target;
-        ParameterIndex = parameterIndex;
-        AttributeType = attributeType ??
+    public BoundAttributeTargetKind Target { get; } = target;
+
+    public int? ParameterIndex { get; } = parameterIndex;
+
+    public BoundTypePattern AttributeType { get; } = attributeType ??
             throw new ArgumentNullException(nameof(attributeType));
-    }
-
-    public BoundAttributeTargetKind Target { get; }
-
-    public int? ParameterIndex { get; }
-
-    public BoundTypePattern AttributeType { get; }
 }
 
-internal sealed class BoundRegexPattern : BoundSelectorPayload
+internal sealed class BoundRegexPattern(TextSpan span, string pattern) : BoundSelectorPayload(span)
 {
-    public BoundRegexPattern(TextSpan span, string pattern)
-        : base(span)
-    {
-        Pattern = pattern ?? throw new ArgumentNullException(nameof(pattern));
-    }
-
-    public string Pattern { get; }
+    public string Pattern { get; } = pattern ?? throw new ArgumentNullException(nameof(pattern));
 }
 
-internal sealed class BoundExtensionPattern : BoundSelectorPayload
+internal sealed class BoundExtensionPattern(
+    TextSpan span,
+    string qualifiedName,
+    TypeSystemCapabilities requiredCapabilities,
+    IAspectNExtensionMatcher matcher) : BoundSelectorPayload(span)
 {
-    public BoundExtensionPattern(
-        TextSpan span,
-        string qualifiedName,
-        TypeSystemCapabilities requiredCapabilities,
-        IAspectNExtensionMatcher matcher)
-        : base(span)
-    {
-        QualifiedName = qualifiedName ??
+    public string QualifiedName { get; } = qualifiedName ??
             throw new ArgumentNullException(nameof(qualifiedName));
-        RequiredCapabilities = requiredCapabilities;
-        Matcher = matcher ?? throw new ArgumentNullException(nameof(matcher));
-    }
 
-    public string QualifiedName { get; }
+    public TypeSystemCapabilities RequiredCapabilities { get; } = requiredCapabilities;
 
-    public TypeSystemCapabilities RequiredCapabilities { get; }
-
-    public IAspectNExtensionMatcher Matcher { get; }
+    public IAspectNExtensionMatcher Matcher { get; } = matcher ?? throw new ArgumentNullException(nameof(matcher));
 }
 
-internal sealed class BoundStaticConstructorSignature : BoundSelectorPayload
+internal sealed class BoundStaticConstructorSignature(
+    TextSpan span,
+    BoundTypePattern declaringType) : BoundSelectorPayload(span)
 {
-    public BoundStaticConstructorSignature(
-        TextSpan span,
-        BoundTypePattern declaringType)
-        : base(span)
-    {
-        DeclaringType = declaringType ??
+    public BoundTypePattern DeclaringType { get; } = declaringType ??
             throw new ArgumentNullException(nameof(declaringType));
-    }
-
-    public BoundTypePattern DeclaringType { get; }
 }
 
-internal sealed class BoundSelector : BoundExpression
+internal sealed class BoundSelector(
+    TextSpan span,
+    BoundSelectorKind selectorKind,
+    SelectorTargetDomain targetDomain,
+    BoundSelectorPayload payload) : BoundExpression(span, targetDomain)
 {
-    public BoundSelector(
-        TextSpan span,
-        BoundSelectorKind selectorKind,
-        SelectorTargetDomain targetDomain,
-        BoundSelectorPayload payload)
-        : base(span, targetDomain)
-    {
-        SelectorKind = selectorKind;
-        Payload = payload ?? throw new ArgumentNullException(nameof(payload));
-    }
+    public BoundSelectorKind SelectorKind { get; } = selectorKind;
 
-    public BoundSelectorKind SelectorKind { get; }
-
-    public BoundSelectorPayload Payload { get; }
+    public BoundSelectorPayload Payload { get; } = payload ?? throw new ArgumentNullException(nameof(payload));
 }

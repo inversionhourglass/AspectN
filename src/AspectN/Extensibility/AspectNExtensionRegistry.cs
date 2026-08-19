@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 
 namespace AspectN.Extensibility;
 
+/// <summary>Stores the versioned extensions available to an AspectN compilation.</summary>
 public sealed class AspectNExtensionRegistry
 {
     private static readonly AspectNExtensionRegistry _Empty = new(
@@ -22,14 +23,20 @@ public sealed class AspectNExtensionRegistry
                 StringComparer.Ordinal));
     }
 
+    /// <summary>Gets the version.</summary>
     public string Version { get; }
 
+    /// <summary>Gets the count.</summary>
     public int Count => _extensions.Count;
 
+    /// <summary>Gets the empty.</summary>
     public static AspectNExtensionRegistry Empty => _Empty;
 
     internal Guid CacheIdentity { get; }
 
+    /// <summary>Determines whether an extension with the specified name is registered.</summary>
+    /// <param name="qualifiedName">Specifies the qualified name.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public bool Contains(string qualifiedName)
     {
 #if NET10_0_OR_GREATER
@@ -42,6 +49,9 @@ public sealed class AspectNExtensionRegistry
         return _extensions.ContainsKey(qualifiedName);
     }
 
+    /// <summary>Creates a builder for registering extensions.</summary>
+    /// <param name="version">Specifies the version.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public static Builder CreateBuilder(string version)
     {
         return new Builder(version);
@@ -54,6 +64,7 @@ public sealed class AspectNExtensionRegistry
         return _extensions.TryGetValue(qualifiedName, out extension);
     }
 
+    /// <summary>Represents builder.</summary>
     public sealed class Builder
     {
         private readonly Dictionary<string, IAspectNExtension> _extensions =
@@ -71,8 +82,12 @@ public sealed class AspectNExtensionRegistry
             Version = version;
         }
 
+        /// <summary>Gets the version.</summary>
         public string Version { get; }
 
+        /// <summary>Performs the add operation.</summary>
+        /// <param name="extension">Specifies the extension.</param>
+        /// <returns>Returns the result of the operation.</returns>
         public Builder Add(IAspectNExtension extension)
         {
 #if NET10_0_OR_GREATER
@@ -94,6 +109,8 @@ public sealed class AspectNExtensionRegistry
             return this;
         }
 
+        /// <summary>Creates build.</summary>
+        /// <returns>Returns the result of the operation.</returns>
         public AspectNExtensionRegistry Build()
         {
             return new AspectNExtensionRegistry(Version, _extensions);

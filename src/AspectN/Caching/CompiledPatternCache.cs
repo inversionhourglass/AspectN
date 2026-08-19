@@ -110,50 +110,35 @@ internal sealed class CompiledPatternCache
         }
     }
 
-    private sealed class Entry
+    private sealed class Entry(
+        CompiledPatternCacheKey key,
+        Lazy<AspectNCompilation> value)
     {
-        public Entry(
-            CompiledPatternCacheKey key,
-            Lazy<AspectNCompilation> value)
-        {
-            Key = key;
-            Value = value;
-        }
+        public CompiledPatternCacheKey Key { get; } = key;
 
-        public CompiledPatternCacheKey Key { get; }
-
-        public Lazy<AspectNCompilation> Value { get; }
+        public Lazy<AspectNCompilation> Value { get; } = value;
     }
 }
 
-internal readonly struct CompiledPatternCacheKey :
+internal readonly struct CompiledPatternCacheKey(
+    string source,
+    AspectNParseKind parseKind,
+    AspectNLanguageVersion languageVersion,
+    AspectNCompilationOptions compilationOptions,
+    AspectNExtensionRegistry extensions) :
     IEquatable<CompiledPatternCacheKey>
 {
-    public CompiledPatternCacheKey(
-        string source,
-        AspectNParseKind parseKind,
-        AspectNLanguageVersion languageVersion,
-        AspectNCompilationOptions compilationOptions,
-        AspectNExtensionRegistry extensions)
-    {
-        Source = source ?? throw new ArgumentNullException(nameof(source));
-        ParseKind = parseKind;
-        LanguageVersion = languageVersion;
-        RegexTimeoutTicks = compilationOptions?.RegexTimeout.Ticks ??
+    public string Source { get; } = source ?? throw new ArgumentNullException(nameof(source));
+
+    public AspectNParseKind ParseKind { get; } = parseKind;
+
+    public AspectNLanguageVersion LanguageVersion { get; } = languageVersion;
+
+    public long RegexTimeoutTicks { get; } = compilationOptions?.RegexTimeout.Ticks ??
             throw new ArgumentNullException(nameof(compilationOptions));
-        ExtensionIdentity = extensions?.CacheIdentity ??
+
+    public Guid ExtensionIdentity { get; } = extensions?.CacheIdentity ??
             throw new ArgumentNullException(nameof(extensions));
-    }
-
-    public string Source { get; }
-
-    public AspectNParseKind ParseKind { get; }
-
-    public AspectNLanguageVersion LanguageVersion { get; }
-
-    public long RegexTimeoutTicks { get; }
-
-    public Guid ExtensionIdentity { get; }
 
     public bool Equals(CompiledPatternCacheKey other)
     {
@@ -182,6 +167,7 @@ internal readonly struct CompiledPatternCacheKey :
         }
     }
 
+    /// <summary>Determines whether the two values are equal.</summary>
     public static bool operator ==(
         CompiledPatternCacheKey left,
         CompiledPatternCacheKey right)
@@ -189,6 +175,7 @@ internal readonly struct CompiledPatternCacheKey :
         return left.Equals(right);
     }
 
+    /// <summary>Determines whether the two values are not equal.</summary>
     public static bool operator !=(
         CompiledPatternCacheKey left,
         CompiledPatternCacheKey right)

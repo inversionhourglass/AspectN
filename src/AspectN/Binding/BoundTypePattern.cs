@@ -16,196 +16,116 @@ internal enum BoundTypeLogicalOperator
     Or
 }
 
-internal sealed class BoundGenericPattern
+internal sealed class BoundGenericPattern(
+    BoundGenericArityKind kind,
+    int arity,
+    IEnumerable<BoundTypePattern>? arguments = null)
 {
-    private readonly ReadOnlyCollection<BoundTypePattern> _arguments;
-
-    public BoundGenericPattern(
-        BoundGenericArityKind kind,
-        int arity,
-        IEnumerable<BoundTypePattern>? arguments = null)
-    {
-        Kind = kind;
-        Arity = arity;
-        _arguments = new ReadOnlyCollection<BoundTypePattern>(
+    private readonly ReadOnlyCollection<BoundTypePattern> _arguments = new ReadOnlyCollection<BoundTypePattern>(
             (arguments ?? Array.Empty<BoundTypePattern>()).ToArray());
-    }
 
-    public BoundGenericArityKind Kind { get; }
+    public BoundGenericArityKind Kind { get; } = kind;
 
-    public int Arity { get; }
+    public int Arity { get; } = arity;
 
     public IReadOnlyList<BoundTypePattern> Arguments => _arguments;
 }
 
-internal sealed class BoundNameSegment
+internal sealed class BoundNameSegment(string pattern, BoundGenericPattern generic)
 {
-    public BoundNameSegment(string pattern, BoundGenericPattern generic)
-    {
-        Pattern = pattern ?? throw new ArgumentNullException(nameof(pattern));
-        Generic = generic ?? throw new ArgumentNullException(nameof(generic));
-    }
+    public string Pattern { get; } = pattern ?? throw new ArgumentNullException(nameof(pattern));
 
-    public string Pattern { get; }
-
-    public BoundGenericPattern Generic { get; }
+    public BoundGenericPattern Generic { get; } = generic ?? throw new ArgumentNullException(nameof(generic));
 }
 
-internal abstract class BoundTypePattern : BoundNode
+internal abstract class BoundTypePattern(TextSpan span) : BoundNode(span)
 {
-    protected BoundTypePattern(TextSpan span)
-        : base(span)
-    {
-    }
 }
 
-internal sealed class BoundNamedTypePattern : BoundTypePattern
+internal sealed class BoundNamedTypePattern(
+    TextSpan span,
+    IEnumerable<BoundNameSegment> segments,
+    IEnumerable<string> separators,
+    string canonicalName) : BoundTypePattern(span)
 {
-    private readonly ReadOnlyCollection<BoundNameSegment> _segments;
-    private readonly ReadOnlyCollection<string> _separators;
-
-    public BoundNamedTypePattern(
-        TextSpan span,
-        IEnumerable<BoundNameSegment> segments,
-        IEnumerable<string> separators,
-        string canonicalName)
-        : base(span)
-    {
-        _segments = new ReadOnlyCollection<BoundNameSegment>(segments.ToArray());
-        _separators = new ReadOnlyCollection<string>(separators.ToArray());
-        CanonicalName = canonicalName ??
-            throw new ArgumentNullException(nameof(canonicalName));
-    }
+    private readonly ReadOnlyCollection<BoundNameSegment> _segments = new ReadOnlyCollection<BoundNameSegment>(segments.ToArray());
+    private readonly ReadOnlyCollection<string> _separators = new ReadOnlyCollection<string>(separators.ToArray());
 
     public IReadOnlyList<BoundNameSegment> Segments => _segments;
 
     public IReadOnlyList<string> Separators => _separators;
 
-    public string CanonicalName { get; }
+    public string CanonicalName { get; } = canonicalName ??
+            throw new ArgumentNullException(nameof(canonicalName));
 }
 
-internal sealed class BoundWildcardTypePattern : BoundTypePattern
+internal sealed class BoundWildcardTypePattern(TextSpan span) : BoundTypePattern(span)
 {
-    public BoundWildcardTypePattern(TextSpan span)
-        : base(span)
-    {
-    }
 }
 
-internal sealed class BoundVariableTypePattern : BoundTypePattern
+internal sealed class BoundVariableTypePattern(TextSpan span, VariableSymbol variable) : BoundTypePattern(span)
 {
-    public BoundVariableTypePattern(TextSpan span, VariableSymbol variable)
-        : base(span)
-    {
-        Variable = variable ?? throw new ArgumentNullException(nameof(variable));
-    }
-
-    public VariableSymbol Variable { get; }
+    public VariableSymbol Variable { get; } = variable ?? throw new ArgumentNullException(nameof(variable));
 }
 
-internal sealed class BoundArrayTypePattern : BoundTypePattern
+internal sealed class BoundArrayTypePattern(
+    TextSpan span,
+    BoundTypePattern elementType,
+    int rank) : BoundTypePattern(span)
 {
-    public BoundArrayTypePattern(
-        TextSpan span,
-        BoundTypePattern elementType,
-        int rank)
-        : base(span)
-    {
-        ElementType = elementType ??
+    public BoundTypePattern ElementType { get; } = elementType ??
             throw new ArgumentNullException(nameof(elementType));
-        Rank = rank;
-    }
 
-    public BoundTypePattern ElementType { get; }
-
-    public int Rank { get; }
+    public int Rank { get; } = rank;
 }
 
-internal sealed class BoundNullableTypePattern : BoundTypePattern
+internal sealed class BoundNullableTypePattern(
+    TextSpan span,
+    BoundTypePattern underlyingType) : BoundTypePattern(span)
 {
-    public BoundNullableTypePattern(
-        TextSpan span,
-        BoundTypePattern underlyingType)
-        : base(span)
-    {
-        UnderlyingType = underlyingType ??
+    public BoundTypePattern UnderlyingType { get; } = underlyingType ??
             throw new ArgumentNullException(nameof(underlyingType));
-    }
-
-    public BoundTypePattern UnderlyingType { get; }
 }
 
-internal sealed class BoundAssignableTypePattern : BoundTypePattern
+internal sealed class BoundAssignableTypePattern(
+    TextSpan span,
+    BoundTypePattern targetType) : BoundTypePattern(span)
 {
-    public BoundAssignableTypePattern(
-        TextSpan span,
-        BoundTypePattern targetType)
-        : base(span)
-    {
-        TargetType = targetType ??
+    public BoundTypePattern TargetType { get; } = targetType ??
             throw new ArgumentNullException(nameof(targetType));
-    }
-
-    public BoundTypePattern TargetType { get; }
 }
 
-internal sealed class BoundTupleTypePattern : BoundTypePattern
+internal sealed class BoundTupleTypePattern(
+    TextSpan span,
+    IEnumerable<BoundTypePattern> elements) : BoundTypePattern(span)
 {
-    private readonly ReadOnlyCollection<BoundTypePattern> _elements;
-
-    public BoundTupleTypePattern(
-        TextSpan span,
-        IEnumerable<BoundTypePattern> elements)
-        : base(span)
-    {
-        _elements = new ReadOnlyCollection<BoundTypePattern>(elements.ToArray());
-    }
+    private readonly ReadOnlyCollection<BoundTypePattern> _elements = new ReadOnlyCollection<BoundTypePattern>(elements.ToArray());
 
     public IReadOnlyList<BoundTypePattern> Elements => _elements;
 }
 
-internal sealed class BoundTaskLikeTypePattern : BoundTypePattern
+internal sealed class BoundTaskLikeTypePattern(
+    TextSpan span,
+    BoundTypePattern resultType) : BoundTypePattern(span)
 {
-    public BoundTaskLikeTypePattern(
-        TextSpan span,
-        BoundTypePattern resultType)
-        : base(span)
-    {
-        ResultType = resultType ??
+    public BoundTypePattern ResultType { get; } = resultType ??
             throw new ArgumentNullException(nameof(resultType));
-    }
-
-    public BoundTypePattern ResultType { get; }
 }
 
-internal sealed class BoundUnaryTypePattern : BoundTypePattern
+internal sealed class BoundUnaryTypePattern(TextSpan span, BoundTypePattern operand) : BoundTypePattern(span)
 {
-    public BoundUnaryTypePattern(TextSpan span, BoundTypePattern operand)
-        : base(span)
-    {
-        Operand = operand ?? throw new ArgumentNullException(nameof(operand));
-    }
-
-    public BoundTypePattern Operand { get; }
+    public BoundTypePattern Operand { get; } = operand ?? throw new ArgumentNullException(nameof(operand));
 }
 
-internal sealed class BoundBinaryTypePattern : BoundTypePattern
+internal sealed class BoundBinaryTypePattern(
+    TextSpan span,
+    BoundTypePattern left,
+    BoundTypeLogicalOperator @operator,
+    BoundTypePattern right) : BoundTypePattern(span)
 {
-    public BoundBinaryTypePattern(
-        TextSpan span,
-        BoundTypePattern left,
-        BoundTypeLogicalOperator @operator,
-        BoundTypePattern right)
-        : base(span)
-    {
-        Left = left ?? throw new ArgumentNullException(nameof(left));
-        Operator = @operator;
-        Right = right ?? throw new ArgumentNullException(nameof(right));
-    }
+    public BoundTypePattern Left { get; } = left ?? throw new ArgumentNullException(nameof(left));
 
-    public BoundTypePattern Left { get; }
+    public BoundTypeLogicalOperator Operator { get; } = @operator;
 
-    public BoundTypeLogicalOperator Operator { get; }
-
-    public BoundTypePattern Right { get; }
+    public BoundTypePattern Right { get; } = right ?? throw new ArgumentNullException(nameof(right));
 }

@@ -9,7 +9,9 @@ using AspectN.Syntax;
 
 namespace AspectN.Binding;
 
-internal sealed class Binder
+internal sealed class Binder(
+    AspectNSyntaxTree syntaxTree,
+    AspectNExtensionRegistry extensions)
 {
     private static readonly Dictionary<string, string> _PrimitiveAliases =
         new(StringComparer.Ordinal)
@@ -33,25 +35,17 @@ internal sealed class Binder
         };
 
     private readonly DiagnosticBag _diagnostics = new();
-    private readonly AspectNExtensionRegistry _extensions;
-    private readonly bool _isLegacy;
-    private readonly AspectNSyntaxTree _syntaxTree;
-    private int _negationDepth;
-
-    public Binder(
-        AspectNSyntaxTree syntaxTree,
-        AspectNExtensionRegistry extensions)
-    {
-        _syntaxTree = syntaxTree ??
-            throw new ArgumentNullException(nameof(syntaxTree));
-        _extensions = extensions ??
+    private readonly AspectNExtensionRegistry _extensions = extensions ??
             throw new ArgumentNullException(nameof(extensions));
-        _isLegacy = syntaxTree.LanguageVersion == AspectNLanguageVersion.Legacy;
-    }
+    private readonly AspectNSyntaxTree _syntaxTree = syntaxTree ??
+            throw new ArgumentNullException(nameof(syntaxTree));
+    private readonly bool _isLegacy = syntaxTree.LanguageVersion == AspectNLanguageVersion.Legacy;
+    private int _negationDepth;
 
     public IReadOnlyList<AspectNDiagnostic> Diagnostics =>
         new ReadOnlyCollection<AspectNDiagnostic>(_diagnostics.ToArray());
 
+    // 绑定阶段将语法树转换为带类型语义的节点，并把无法恢复的错误统一收集到诊断集合。
     public BoundNode? Bind()
     {
         var scope = new VariableScope();
@@ -79,6 +73,7 @@ internal sealed class Binder
         return BindTypePattern((TypePatternSyntax)root, scope, false);
     }
 
+    // 表达式绑定需要沿着分支复制作用域，保证逻辑运算两侧的变量约束不会相互污染。
     private BoundExpression BindExpression(
         ExpressionSyntax syntax,
         VariableScope scope)

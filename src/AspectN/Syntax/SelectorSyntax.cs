@@ -1,5 +1,6 @@
 namespace AspectN.Syntax;
 
+/// <summary>Represents a selector syntax node.</summary>
 public abstract class SelectorSyntax : ExpressionSyntax
 {
     protected SelectorSyntax(
@@ -27,177 +28,194 @@ public abstract class SelectorSyntax : ExpressionSyntax
     {
     }
 
+    /// <summary>Gets the keyword token.</summary>
     public virtual SyntaxToken? KeywordToken { get; }
 
+    /// <summary>Gets the open paren token.</summary>
     public virtual SyntaxToken OpenParenToken { get; } = null!;
 
+    /// <summary>Gets the body.</summary>
     public virtual SyntaxNode? Body { get; }
 
+    /// <summary>Gets the close paren token.</summary>
     public virtual SyntaxToken CloseParenToken { get; } = null!;
 }
 
-public sealed class CallableSelectorSyntax : SelectorSyntax
+/// <summary>Represents a callable selector syntax node.</summary>
+/// <param name="keywordToken">Specifies the keyword token.</param>
+/// <param name="openParenToken">Specifies the open paren token.</param>
+/// <param name="signature">Specifies the signature.</param>
+/// <param name="closeParenToken">Specifies the close paren token.</param>
+public sealed class CallableSelectorSyntax(
+    SyntaxToken keywordToken,
+    SyntaxToken openParenToken,
+    CallableSignatureSyntax signature,
+    SyntaxToken closeParenToken) : SelectorSyntax(
+        SyntaxKind.CallableSelector,
+        keywordToken,
+        openParenToken,
+        signature,
+        closeParenToken)
 {
-    public CallableSelectorSyntax(
-        SyntaxToken keywordToken,
-        SyntaxToken openParenToken,
-        CallableSignatureSyntax signature,
-        SyntaxToken closeParenToken)
-        : base(
-            SyntaxKind.CallableSelector,
-            keywordToken,
-            openParenToken,
-            signature,
-            closeParenToken)
-    {
-    }
 }
 
-public sealed class MethodSelectorSyntax : SelectorSyntax
+/// <summary>Represents a method selector syntax node.</summary>
+/// <param name="keywordToken">Specifies the keyword token.</param>
+/// <param name="openParenToken">Specifies the open paren token.</param>
+/// <param name="signature">Specifies the signature.</param>
+/// <param name="closeParenToken">Specifies the close paren token.</param>
+public sealed class MethodSelectorSyntax(
+    SyntaxToken keywordToken,
+    SyntaxToken openParenToken,
+    CallableSignatureSyntax signature,
+    SyntaxToken closeParenToken) : SelectorSyntax(
+        SyntaxKind.MethodSelector,
+        keywordToken,
+        openParenToken,
+        signature,
+        closeParenToken)
 {
-    public MethodSelectorSyntax(
-        SyntaxToken keywordToken,
-        SyntaxToken openParenToken,
-        CallableSignatureSyntax signature,
-        SyntaxToken closeParenToken)
-        : base(
-            SyntaxKind.MethodSelector,
-            keywordToken,
-            openParenToken,
-            signature,
-            closeParenToken)
-    {
-    }
 }
 
-public sealed class AccessorSelectorSyntax : SelectorSyntax
+/// <summary>Represents a accessor selector syntax node.</summary>
+/// <param name="keywordToken">Specifies the keyword token.</param>
+/// <param name="openParenToken">Specifies the open paren token.</param>
+/// <param name="signature">Specifies the signature.</param>
+/// <param name="closeParenToken">Specifies the close paren token.</param>
+public sealed class AccessorSelectorSyntax(
+    SyntaxToken keywordToken,
+    SyntaxToken openParenToken,
+    PropertySignatureSyntax signature,
+    SyntaxToken closeParenToken) : SelectorSyntax(
+        SyntaxKind.AccessorSelector,
+        keywordToken,
+        openParenToken,
+        signature,
+        closeParenToken)
 {
-    public AccessorSelectorSyntax(
-        SyntaxToken keywordToken,
-        SyntaxToken openParenToken,
-        PropertySignatureSyntax signature,
-        SyntaxToken closeParenToken)
-        : base(
-            SyntaxKind.AccessorSelector,
-            keywordToken,
-            openParenToken,
-            signature,
-            closeParenToken)
-    {
-    }
 }
 
-public sealed class GetterSelectorSyntax : SelectorSyntax
+/// <summary>Represents a getter selector syntax node.</summary>
+/// <param name="keywordToken">Specifies the keyword token.</param>
+/// <param name="openParenToken">Specifies the open paren token.</param>
+/// <param name="signature">Specifies the signature.</param>
+/// <param name="closeParenToken">Specifies the close paren token.</param>
+public sealed class GetterSelectorSyntax(
+    SyntaxToken keywordToken,
+    SyntaxToken openParenToken,
+    PropertySignatureSyntax signature,
+    SyntaxToken closeParenToken) : SelectorSyntax(
+        SyntaxKind.GetterSelector,
+        keywordToken,
+        openParenToken,
+        signature,
+        closeParenToken)
 {
-    public GetterSelectorSyntax(
-        SyntaxToken keywordToken,
-        SyntaxToken openParenToken,
-        PropertySignatureSyntax signature,
-        SyntaxToken closeParenToken)
-        : base(
-            SyntaxKind.GetterSelector,
-            keywordToken,
-            openParenToken,
-            signature,
-            closeParenToken)
-    {
-    }
 }
 
-public sealed class SetterSelectorSyntax : SelectorSyntax
+/// <summary>Represents a setter selector syntax node.</summary>
+/// <param name="keywordToken">Specifies the keyword token.</param>
+/// <param name="openParenToken">Specifies the open paren token.</param>
+/// <param name="signature">Specifies the signature.</param>
+/// <param name="closeParenToken">Specifies the close paren token.</param>
+public sealed class SetterSelectorSyntax(
+    SyntaxToken keywordToken,
+    SyntaxToken openParenToken,
+    PropertySignatureSyntax signature,
+    SyntaxToken closeParenToken) : SelectorSyntax(
+        SyntaxKind.SetterSelector,
+        keywordToken,
+        openParenToken,
+        signature,
+        closeParenToken)
 {
-    public SetterSelectorSyntax(
-        SyntaxToken keywordToken,
-        SyntaxToken openParenToken,
-        PropertySignatureSyntax signature,
-        SyntaxToken closeParenToken)
-        : base(
-            SyntaxKind.SetterSelector,
-            keywordToken,
-            openParenToken,
-            signature,
-            closeParenToken)
-    {
-    }
 }
 
-public sealed class ConstructorSelectorSyntax : SelectorSyntax
+/// <summary>Represents a constructor selector syntax node.</summary>
+/// <param name="keywordToken">Specifies the keyword token.</param>
+/// <param name="openParenToken">Specifies the open paren token.</param>
+/// <param name="signature">Specifies the signature.</param>
+/// <param name="closeParenToken">Specifies the close paren token.</param>
+public sealed class ConstructorSelectorSyntax(
+    SyntaxToken keywordToken,
+    SyntaxToken openParenToken,
+    ConstructorSignatureSyntax signature,
+    SyntaxToken closeParenToken) : SelectorSyntax(
+        SyntaxKind.ConstructorSelector,
+        keywordToken,
+        openParenToken,
+        signature,
+        closeParenToken)
 {
-    public ConstructorSelectorSyntax(
-        SyntaxToken keywordToken,
-        SyntaxToken openParenToken,
-        ConstructorSignatureSyntax signature,
-        SyntaxToken closeParenToken)
-        : base(
-            SyntaxKind.ConstructorSelector,
-            keywordToken,
-            openParenToken,
-            signature,
-            closeParenToken)
-    {
-    }
 }
 
-public sealed class StaticConstructorSelectorSyntax : SelectorSyntax
+/// <summary>Represents a static constructor selector syntax node.</summary>
+/// <param name="keywordToken">Specifies the keyword token.</param>
+/// <param name="openParenToken">Specifies the open paren token.</param>
+/// <param name="typePattern">Specifies the type pattern.</param>
+/// <param name="closeParenToken">Specifies the close paren token.</param>
+public sealed class StaticConstructorSelectorSyntax(
+    SyntaxToken keywordToken,
+    SyntaxToken openParenToken,
+    TypePatternSyntax typePattern,
+    SyntaxToken closeParenToken) : SelectorSyntax(
+        SyntaxKind.StaticConstructorSelector,
+        keywordToken,
+        openParenToken,
+        typePattern,
+        closeParenToken)
 {
-    public StaticConstructorSelectorSyntax(
-        SyntaxToken keywordToken,
-        SyntaxToken openParenToken,
-        TypePatternSyntax typePattern,
-        SyntaxToken closeParenToken)
-        : base(
-            SyntaxKind.StaticConstructorSelector,
-            keywordToken,
-            openParenToken,
-            typePattern,
-            closeParenToken)
-    {
-    }
 }
 
-public sealed class AttributeSelectorSyntax : SelectorSyntax
+/// <summary>Represents a attribute selector syntax node.</summary>
+/// <param name="keywordToken">Specifies the keyword token.</param>
+/// <param name="openParenToken">Specifies the open paren token.</param>
+/// <param name="body">Specifies the body.</param>
+/// <param name="closeParenToken">Specifies the close paren token.</param>
+public sealed class AttributeSelectorSyntax(
+    SyntaxToken keywordToken,
+    SyntaxToken openParenToken,
+    SyntaxNode body,
+    SyntaxToken closeParenToken) : SelectorSyntax(
+        SyntaxKind.AttributeSelector,
+        keywordToken,
+        openParenToken,
+        body,
+        closeParenToken)
 {
-    public AttributeSelectorSyntax(
-        SyntaxToken keywordToken,
-        SyntaxToken openParenToken,
-        SyntaxNode body,
-        SyntaxToken closeParenToken)
-        : base(
-            SyntaxKind.AttributeSelector,
-            keywordToken,
-            openParenToken,
-            body,
-            closeParenToken)
-    {
-    }
 }
 
-public sealed class RegexSelectorSyntax : SelectorSyntax
+/// <summary>Represents a regex selector syntax node.</summary>
+/// <param name="keywordToken">Specifies the keyword token.</param>
+/// <param name="openParenToken">Specifies the open paren token.</param>
+/// <param name="regexBodyToken">Specifies the regex body token.</param>
+/// <param name="closeParenToken">Specifies the close paren token.</param>
+public sealed class RegexSelectorSyntax(
+    SyntaxToken keywordToken,
+    SyntaxToken openParenToken,
+    SyntaxToken regexBodyToken,
+    SyntaxToken closeParenToken) : SelectorSyntax(
+        SyntaxKind.RegexSelector,
+        keywordToken,
+        openParenToken,
+        regexBodyToken,
+        closeParenToken)
 {
-    public RegexSelectorSyntax(
-        SyntaxToken keywordToken,
-        SyntaxToken openParenToken,
-        SyntaxToken regexBodyToken,
-        SyntaxToken closeParenToken)
-        : base(
-            SyntaxKind.RegexSelector,
-            keywordToken,
-            openParenToken,
-            regexBodyToken,
-            closeParenToken)
-    {
-        RegexBodyToken = regexBodyToken;
-    }
-
-    public SyntaxToken RegexBodyToken { get; }
+    /// <summary>Gets the regex body token.</summary>
+    public SyntaxToken RegexBodyToken { get; } = regexBodyToken;
 }
 
+/// <summary>Represents a extension selector syntax node.</summary>
 public sealed class ExtensionSelectorSyntax : SelectorSyntax
 {
     private readonly IReadOnlyList<SyntaxNode> _arguments;
     private readonly IReadOnlyList<SyntaxToken> _nameTokens;
     private readonly IReadOnlyList<SyntaxToken> _separators;
 
+    /// <summary>Initializes a new instance of the ExtensionSelectorSyntax class.</summary>
+    /// <param name="nameToken">Specifies the name token.</param>
+    /// <param name="openParenToken">Specifies the open paren token.</param>
+    /// <param name="closeParenToken">Specifies the close paren token.</param>
     public ExtensionSelectorSyntax(
         SyntaxToken nameToken,
         SyntaxToken openParenToken,
@@ -211,6 +229,12 @@ public sealed class ExtensionSelectorSyntax : SelectorSyntax
     {
     }
 
+    /// <summary>Initializes a new instance of the ExtensionSelectorSyntax class.</summary>
+    /// <param name="nameTokens">Specifies the name tokens.</param>
+    /// <param name="openParenToken">Specifies the open paren token.</param>
+    /// <param name="arguments">Specifies the arguments.</param>
+    /// <param name="separators">Specifies the separators.</param>
+    /// <param name="closeParenToken">Specifies the close paren token.</param>
     public ExtensionSelectorSyntax(
         IEnumerable<SyntaxToken> nameTokens,
         SyntaxToken openParenToken,
@@ -248,18 +272,25 @@ public sealed class ExtensionSelectorSyntax : SelectorSyntax
         CloseParenToken = closeParenToken;
     }
 
+    /// <summary>Gets the name tokens.</summary>
     public IReadOnlyList<SyntaxToken> NameTokens => _nameTokens;
 
+    /// <summary>Gets the arguments.</summary>
     public IReadOnlyList<SyntaxNode> Arguments => _arguments;
 
+    /// <summary>Gets the separators.</summary>
     public IReadOnlyList<SyntaxToken> Separators => _separators;
 
+    /// <summary>Gets the keyword token.</summary>
     public override SyntaxToken? KeywordToken => null;
 
+    /// <summary>Gets the open paren token.</summary>
     public override SyntaxToken OpenParenToken { get; }
 
+    /// <summary>Gets the body.</summary>
     public override SyntaxNode? Body => null;
 
+    /// <summary>Gets the close paren token.</summary>
     public override SyntaxToken CloseParenToken { get; }
 
     private static IReadOnlyList<SyntaxNode> BuildChildren(

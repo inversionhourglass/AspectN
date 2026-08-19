@@ -5,6 +5,7 @@ using AspectN.TypeSystem;
 
 namespace AspectN;
 
+/// <summary>Represents a compiled compiled member pattern.</summary>
 public sealed class CompiledMemberPattern : CompiledPattern
 {
     private readonly BoundExpression _root;
@@ -18,6 +19,11 @@ public sealed class CompiledMemberPattern : CompiledPattern
         _root = root ?? throw new ArgumentNullException(nameof(root));
     }
 
+    /// <summary>Evaluates match against the current matching context.</summary>
+    /// <param name="candidate">Specifies the candidate.</param>
+    /// <param name="typeSystem">Specifies the type system.</param>
+    /// <param name="cancellationToken">Specifies the cancellation token.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public MatchResult Match(
         CallableSignature candidate,
         ITypeSystem typeSystem,

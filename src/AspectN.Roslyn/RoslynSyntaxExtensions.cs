@@ -4,8 +4,14 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace AspectN.Roslyn;
 
+/// <summary>Represents roslyn syntax extensions.</summary>
 public static class RoslynSyntaxExtensions
 {
+    /// <summary>Maps type metadata to an AspectN signature.</summary>
+    /// <param name="mapper">Specifies the mapper.</param>
+    /// <param name="declaration">Specifies the declaration.</param>
+    /// <param name="semanticModel">Specifies the semantic model.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public static TypeSignature MapType(
         this RoslynSignatureMapper mapper,
         TypeDeclarationSyntax declaration,
@@ -18,6 +24,11 @@ public static class RoslynSyntaxExtensions
         return mapper.MapType(symbol);
     }
 
+    /// <summary>Maps type metadata to an AspectN signature.</summary>
+    /// <param name="mapper">Specifies the mapper.</param>
+    /// <param name="declaration">Specifies the declaration.</param>
+    /// <param name="compilation">Specifies the compilation.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public static TypeSignature MapType(
         this RoslynSignatureMapper mapper,
         TypeDeclarationSyntax declaration,
@@ -29,6 +40,11 @@ public static class RoslynSyntaxExtensions
             compilation.GetSemanticModel(declaration.SyntaxTree));
     }
 
+    /// <summary>Maps callable metadata to an AspectN signature.</summary>
+    /// <param name="mapper">Specifies the mapper.</param>
+    /// <param name="declaration">Specifies the declaration.</param>
+    /// <param name="semanticModel">Specifies the semantic model.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public static CallableSignature MapCallable(
         this RoslynSignatureMapper mapper,
         MethodDeclarationSyntax declaration,
@@ -41,6 +57,11 @@ public static class RoslynSyntaxExtensions
         return mapper.MapCallable(symbol);
     }
 
+    /// <summary>Maps callable metadata to an AspectN signature.</summary>
+    /// <param name="mapper">Specifies the mapper.</param>
+    /// <param name="declaration">Specifies the declaration.</param>
+    /// <param name="compilation">Specifies the compilation.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public static CallableSignature MapCallable(
         this RoslynSignatureMapper mapper,
         MethodDeclarationSyntax declaration,

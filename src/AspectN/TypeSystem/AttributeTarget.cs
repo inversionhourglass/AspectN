@@ -2,6 +2,7 @@ using AspectN.Metadata;
 
 namespace AspectN.TypeSystem;
 
+/// <summary>Represents attribute target.</summary>
 public sealed class AttributeTarget
 {
     private AttributeTarget(
@@ -18,16 +19,24 @@ public sealed class AttributeTarget
         Parameter = parameter;
     }
 
+    /// <summary>Gets the kind.</summary>
     public AttributeTargetKind Kind { get; }
 
+    /// <summary>Gets the type.</summary>
     public TypeSignature? Type { get; }
 
+    /// <summary>Gets the callable.</summary>
     public CallableSignature? Callable { get; }
 
+    /// <summary>Gets the property.</summary>
     public PropertySignature? Property { get; }
 
+    /// <summary>Gets the parameter.</summary>
     public ParameterSignature? Parameter { get; }
 
+    /// <summary>Creates for type.</summary>
+    /// <param name="type">Specifies the type.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public static AttributeTarget ForType(TypeSignature type)
     {
         return new AttributeTarget(
@@ -38,6 +47,9 @@ public sealed class AttributeTarget
             null);
     }
 
+    /// <summary>Creates for callable.</summary>
+    /// <param name="callable">Specifies the callable.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public static AttributeTarget ForCallable(CallableSignature callable)
     {
         return new AttributeTarget(
@@ -48,6 +60,9 @@ public sealed class AttributeTarget
             null);
     }
 
+    /// <summary>Creates for property.</summary>
+    /// <param name="property">Specifies the property.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public static AttributeTarget ForProperty(PropertySignature property)
     {
         return new AttributeTarget(
@@ -58,6 +73,9 @@ public sealed class AttributeTarget
             null);
     }
 
+    /// <summary>Creates for parameter.</summary>
+    /// <param name="parameter">Specifies the parameter.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public static AttributeTarget ForParameter(ParameterSignature parameter)
     {
         return new AttributeTarget(
@@ -68,6 +86,9 @@ public sealed class AttributeTarget
             parameter ?? throw new ArgumentNullException(nameof(parameter)));
     }
 
+    /// <summary>Creates for return.</summary>
+    /// <param name="callable">Specifies the callable.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public static AttributeTarget ForReturn(CallableSignature callable)
     {
         return new AttributeTarget(

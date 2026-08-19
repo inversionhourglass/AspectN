@@ -3,6 +3,7 @@ using AspectN.Text;
 
 namespace AspectN.Syntax;
 
+/// <summary>Represents syntax node.</summary>
 public abstract class SyntaxNode
 {
     private readonly IReadOnlyList<SyntaxNode> _children;
@@ -22,10 +23,13 @@ public abstract class SyntaxNode
         FullSpan = GetFullSpan(copy);
     }
 
+    /// <summary>Gets the kind.</summary>
     public SyntaxKind Kind { get; }
 
+    /// <summary>Gets the full span.</summary>
     public TextSpan FullSpan { get; }
 
+    /// <summary>Gets the children.</summary>
     public IReadOnlyList<SyntaxNode> Children => _children;
 
     private static TextSpan GetFullSpan(SyntaxNode[] children)

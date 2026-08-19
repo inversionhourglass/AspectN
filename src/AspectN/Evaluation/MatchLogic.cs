@@ -2,8 +2,12 @@ using AspectN.Diagnostics;
 
 namespace AspectN.Evaluation;
 
+/// <summary>Represents match logic.</summary>
 public static class MatchLogic
 {
+    /// <summary>Computes the logical negation of the specified match result.</summary>
+    /// <param name="operand">Specifies the operand.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public static MatchStatus Not(MatchStatus operand)
     {
         return operand switch
@@ -14,6 +18,10 @@ public static class MatchLogic
         };
     }
 
+    /// <summary>Computes the logical conjunction of the specified match results.</summary>
+    /// <param name="left">Specifies the left.</param>
+    /// <param name="right">Specifies the right.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public static MatchStatus And(MatchStatus left, MatchStatus right)
     {
         if (left == MatchStatus.NotMatched ||
@@ -27,6 +35,10 @@ public static class MatchLogic
             : MatchStatus.Unknown;
     }
 
+    /// <summary>Computes the logical disjunction of the specified match results.</summary>
+    /// <param name="left">Specifies the left.</param>
+    /// <param name="right">Specifies the right.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public static MatchStatus Or(MatchStatus left, MatchStatus right)
     {
         if (left == MatchStatus.Matched || right == MatchStatus.Matched)
@@ -40,6 +52,9 @@ public static class MatchLogic
             : MatchStatus.Unknown;
     }
 
+    /// <summary>Computes the logical negation of the specified match result.</summary>
+    /// <param name="operand">Specifies the operand.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public static MatchResult Not(MatchResult operand)
     {
 #if NET10_0_OR_GREATER
@@ -51,12 +66,20 @@ public static class MatchLogic
         return new MatchResult(Not(operand.Status), operand.Diagnostics);
     }
 
+    /// <summary>Computes the logical conjunction of the specified match results.</summary>
+    /// <param name="left">Specifies the left.</param>
+    /// <param name="right">Specifies the right.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public static MatchResult And(MatchResult left, MatchResult right)
     {
         GuardOperands(left, right);
         return Combine(left, right, And(left.Status, right.Status));
     }
 
+    /// <summary>Computes the logical disjunction of the specified match results.</summary>
+    /// <param name="left">Specifies the left.</param>
+    /// <param name="right">Specifies the right.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public static MatchResult Or(MatchResult left, MatchResult right)
     {
         GuardOperands(left, right);

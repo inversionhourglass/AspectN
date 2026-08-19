@@ -1,11 +1,6 @@
 namespace AspectN.Binding;
 
-internal sealed class VariableSymbol
+internal sealed class VariableSymbol(string name)
 {
-    public VariableSymbol(string name)
-    {
-        Name = name ?? throw new ArgumentNullException(nameof(name));
-    }
-
-    public string Name { get; }
+    public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
 }

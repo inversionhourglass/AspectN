@@ -7,6 +7,7 @@ namespace AspectN.Evaluation;
 
 internal static class TypePatternEvaluator
 {
+    // 类型匹配必须传播 Unknown 状态，并在分支匹配时复制绑定环境，避免失败分支泄漏变量。
     public static MatchStatus Evaluate(
         BoundTypePattern pattern,
         TypeSignature candidate,

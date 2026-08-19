@@ -1,9 +1,7 @@
 namespace AspectN.Syntax;
 
-public sealed class AttributeSignatureSyntax : SignatureSyntax
+/// <summary>Represents a attribute signature syntax node.</summary>
+/// <param name="parts">Specifies the parts.</param>
+public sealed class AttributeSignatureSyntax(IEnumerable<SyntaxNode> parts) : SignatureSyntax(SyntaxKind.AttributeSignature, parts)
 {
-    public AttributeSignatureSyntax(IEnumerable<SyntaxNode> parts)
-        : base(SyntaxKind.AttributeSignature, parts)
-    {
-    }
 }

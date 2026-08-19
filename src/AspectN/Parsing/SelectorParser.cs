@@ -3,20 +3,16 @@ using AspectN.Syntax;
 
 namespace AspectN.Parsing;
 
-internal sealed class SelectorParser
+internal sealed class SelectorParser(Parser parser)
 {
-    private readonly Parser _parser;
-
-    public SelectorParser(Parser parser)
-    {
-        _parser = parser;
-    }
+    private readonly Parser _parser = parser;
 
     private SyntaxToken Current => _parser.SelectorCurrent;
 
     private AspectNLanguageVersion LanguageVersion =>
         _parser.SelectorOptions.LanguageVersion;
 
+    // 选择器解析先识别族类型，再把后续签名解析委托给对应分支，兼容旧语法时保留迁移诊断。
     public SelectorSyntax ParseSelector()
     {
         var nameTokens = ParseQualifiedName();
@@ -325,6 +321,7 @@ internal sealed class SelectorParser
         return new TypeUseSyntax(refKind, ParseTypePattern());
     }
 
+    // 使用优先级爬升解析类型表达式，以保持一元、二元和后缀构造的结合顺序。
     private TypePatternSyntax ParseTypePattern(int parentPrecedence = 0)
     {
         TypePatternSyntax left;

@@ -6,6 +6,7 @@ using AspectN.Reflection.Internal;
 
 namespace AspectN.Reflection;
 
+/// <summary>Maps reflection metadata to backend-neutral AspectN signatures.</summary>
 public sealed class ReflectionSignatureMapper
 {
     private const string ASYNC_STATE_MACHINE_ATTRIBUTE =
@@ -35,6 +36,9 @@ public sealed class ReflectionSignatureMapper
     {
     }
 
+    /// <summary>Maps type metadata to an AspectN signature.</summary>
+    /// <param name="type">Specifies the type.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public TypeSignature MapType(Type type)
     {
 #if NET10_0_OR_GREATER
@@ -46,6 +50,10 @@ public sealed class ReflectionSignatureMapper
         return _types.GetOrAdd(type, () => MapTypeCore(type));
     }
 
+    /// <summary>Maps type use metadata to an AspectN signature.</summary>
+    /// <param name="type">Specifies the type.</param>
+    /// <param name="useKind">Specifies the use kind.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public TypeUseSignature MapTypeUse(Type type, TypeUseKind useKind)
     {
 #if NET10_0_OR_GREATER
@@ -65,6 +73,9 @@ public sealed class ReflectionSignatureMapper
         return new TypeUseSignature(MapType(type), RefKind.None, useKind);
     }
 
+    /// <summary>Maps callable metadata to an AspectN signature.</summary>
+    /// <param name="method">Specifies the method.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public CallableSignature MapCallable(MethodBase method)
     {
 #if NET10_0_OR_GREATER
@@ -80,6 +91,9 @@ public sealed class ReflectionSignatureMapper
         return signature;
     }
 
+    /// <summary>Maps property metadata to an AspectN signature.</summary>
+    /// <param name="property">Specifies the property.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public PropertySignature MapProperty(PropertyInfo property)
     {
 #if NET10_0_OR_GREATER

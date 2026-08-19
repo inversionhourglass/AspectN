@@ -5,6 +5,7 @@ using AspectN.Text;
 
 namespace AspectN.Syntax;
 
+/// <summary>Represents aspect nsyntax tree.</summary>
 public sealed class AspectNSyntaxTree
 {
     private readonly IReadOnlyList<AspectNDiagnostic> _diagnostics;
@@ -24,13 +25,18 @@ public sealed class AspectNSyntaxTree
             diagnostics.ToArray());
     }
 
+    /// <summary>Gets the text.</summary>
     public SourceText Text { get; }
 
+    /// <summary>Gets the parse kind.</summary>
     public AspectNParseKind ParseKind { get; }
 
+    /// <summary>Gets the root.</summary>
     public SyntaxNode Root { get; }
 
+    /// <summary>Gets the language version.</summary>
     public AspectNLanguageVersion LanguageVersion { get; }
 
+    /// <summary>Gets the diagnostics.</summary>
     public IReadOnlyList<AspectNDiagnostic> Diagnostics => _diagnostics;
 }

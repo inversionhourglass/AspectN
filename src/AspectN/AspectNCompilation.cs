@@ -6,6 +6,7 @@ using AspectN.Syntax;
 
 namespace AspectN;
 
+/// <summary>Represents a parsed and bound AspectN expression.</summary>
 public sealed class AspectNCompilation
 {
     private readonly ReadOnlyCollection<AspectNDiagnostic> _diagnostics;
@@ -39,30 +40,46 @@ public sealed class AspectNCompilation
             diagnostics.ToArray());
     }
 
+    /// <summary>Gets the syntax tree.</summary>
     public AspectNSyntaxTree SyntaxTree { get; }
 
+    /// <summary>Gets the options.</summary>
     public AspectNCompilationOptions Options { get; }
 
+    /// <summary>Gets the extensions.</summary>
     public AspectNExtensionRegistry Extensions { get; }
 
+    /// <summary>Gets the language version.</summary>
     public AspectNLanguageVersion LanguageVersion => SyntaxTree.LanguageVersion;
 
+    /// <summary>Gets the diagnostics.</summary>
     public IReadOnlyList<AspectNDiagnostic> Diagnostics => _diagnostics;
 
     internal BoundNode? BoundRoot { get; }
 
+    /// <summary>Attempts to get member pattern.</summary>
+    /// <param name="pattern">Specifies the pattern.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public bool TryGetMemberPattern(out CompiledMemberPattern? pattern)
     {
         pattern = _memberPattern;
         return pattern is not null;
     }
 
+    /// <summary>Attempts to get type pattern.</summary>
+    /// <param name="pattern">Specifies the pattern.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public bool TryGetTypePattern(out CompiledTypePattern? pattern)
     {
         pattern = _typePattern;
         return pattern is not null;
     }
 
+    /// <summary>Creates a compilation from the specified syntax tree and options.</summary>
+    /// <param name="syntaxTree">Specifies the syntax tree.</param>
+    /// <param name="options">Specifies the options.</param>
+    /// <param name="extensions">Specifies the extensions.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public static AspectNCompilation Create(
         AspectNSyntaxTree syntaxTree,
         AspectNCompilationOptions? options = null,

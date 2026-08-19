@@ -1,17 +1,20 @@
 namespace AspectN.Syntax;
 
-public abstract class TypePatternSyntax : SyntaxNode
+/// <summary>Represents a type pattern syntax node.</summary>
+/// <param name="kind">Specifies the kind.</param>
+/// <param name="children">Specifies the children.</param>
+public abstract class TypePatternSyntax(SyntaxKind kind, IEnumerable<SyntaxNode> children) : SyntaxNode(kind, children)
 {
-    protected TypePatternSyntax(SyntaxKind kind, IEnumerable<SyntaxNode> children)
-        : base(kind, children)
-    {
-    }
 }
 
+/// <summary>Represents a name pattern segment syntax node.</summary>
 public sealed class NamePatternSegmentSyntax : SyntaxNode
 {
     private readonly IReadOnlyList<SyntaxToken> _nameParts;
 
+    /// <summary>Initializes a new instance of the NamePatternSegmentSyntax class.</summary>
+    /// <param name="nameParts">Specifies the name parts.</param>
+    /// <param name="genericArguments">Specifies the generic arguments.</param>
     public NamePatternSegmentSyntax(
         IEnumerable<SyntaxToken> nameParts,
         GenericPatternListSyntax? genericArguments = null)
@@ -30,16 +33,22 @@ public sealed class NamePatternSegmentSyntax : SyntaxNode
         GenericArguments = genericArguments;
     }
 
+    /// <summary>Gets the name parts.</summary>
     public IReadOnlyList<SyntaxToken> NameParts => _nameParts;
 
+    /// <summary>Gets the generic arguments.</summary>
     public GenericPatternListSyntax? GenericArguments { get; }
 }
 
+/// <summary>Represents a named type pattern syntax node.</summary>
 public sealed class NamedTypePatternSyntax : TypePatternSyntax
 {
     private readonly IReadOnlyList<NamePatternSegmentSyntax> _segments;
     private readonly IReadOnlyList<SyntaxToken> _separators;
 
+    /// <summary>Initializes a new instance of the NamedTypePatternSyntax class.</summary>
+    /// <param name="segments">Specifies the segments.</param>
+    /// <param name="separators">Specifies the separators.</param>
     public NamedTypePatternSyntax(
         IEnumerable<NamePatternSegmentSyntax> segments,
         IEnumerable<SyntaxToken> separators)
@@ -58,29 +67,34 @@ public sealed class NamedTypePatternSyntax : TypePatternSyntax
         _separators = separators;
     }
 
+    /// <summary>Gets the segments.</summary>
     public IReadOnlyList<NamePatternSegmentSyntax> Segments => _segments;
 
+    /// <summary>Gets the separators.</summary>
     public IReadOnlyList<SyntaxToken> Separators => _separators;
 }
 
-public sealed class WildcardTypePatternSyntax : TypePatternSyntax
+/// <summary>Represents a wildcard type pattern syntax node.</summary>
+/// <param name="starToken">Specifies the star token.</param>
+public sealed class WildcardTypePatternSyntax(SyntaxToken starToken) : TypePatternSyntax(
+        SyntaxKind.WildcardTypePattern,
+        SyntaxChildren.Create(starToken))
 {
-    public WildcardTypePatternSyntax(SyntaxToken starToken)
-        : base(
-            SyntaxKind.WildcardTypePattern,
-            SyntaxChildren.Create(starToken))
-    {
-        StarToken = starToken;
-    }
-
-    public SyntaxToken StarToken { get; }
+    /// <summary>Gets the star token.</summary>
+    public SyntaxToken StarToken { get; } = starToken;
 }
 
+/// <summary>Represents a tuple type pattern syntax node.</summary>
 public sealed class TupleTypePatternSyntax : TypePatternSyntax
 {
     private readonly IReadOnlyList<TypePatternSyntax> _elements;
     private readonly IReadOnlyList<SyntaxToken> _separators;
 
+    /// <summary>Initializes a new instance of the TupleTypePatternSyntax class.</summary>
+    /// <param name="openParenToken">Specifies the open paren token.</param>
+    /// <param name="elements">Specifies the elements.</param>
+    /// <param name="separators">Specifies the separators.</param>
+    /// <param name="closeParenToken">Specifies the close paren token.</param>
     public TupleTypePatternSyntax(
         SyntaxToken openParenToken,
         IEnumerable<TypePatternSyntax> elements,
@@ -112,67 +126,75 @@ public sealed class TupleTypePatternSyntax : TypePatternSyntax
         CloseParenToken = closeParenToken;
     }
 
+    /// <summary>Gets the open paren token.</summary>
     public SyntaxToken OpenParenToken { get; }
 
+    /// <summary>Gets the elements.</summary>
     public IReadOnlyList<TypePatternSyntax> Elements => _elements;
 
+    /// <summary>Gets the separators.</summary>
     public IReadOnlyList<SyntaxToken> Separators => _separators;
 
+    /// <summary>Gets the close paren token.</summary>
     public SyntaxToken CloseParenToken { get; }
 }
 
-public sealed class TaskLikeTypePatternSyntax : TypePatternSyntax
-{
-    public TaskLikeTypePatternSyntax(
-        SyntaxToken taskLikeKeyword,
-        SyntaxToken lessThanToken,
-        TypePatternSyntax resultType,
-        SyntaxToken greaterThanToken)
-        : base(
-            SyntaxKind.TaskLikeTypePattern,
-            SyntaxChildren.Create(
+/// <summary>Represents a task like type pattern syntax node.</summary>
+/// <param name="taskLikeKeyword">Specifies the task like keyword.</param>
+/// <param name="lessThanToken">Specifies the less than token.</param>
+/// <param name="resultType">Specifies the result type.</param>
+/// <param name="greaterThanToken">Specifies the greater than token.</param>
+public sealed class TaskLikeTypePatternSyntax(
+    SyntaxToken taskLikeKeyword,
+    SyntaxToken lessThanToken,
+    TypePatternSyntax resultType,
+    SyntaxToken greaterThanToken) : TypePatternSyntax(
+        SyntaxKind.TaskLikeTypePattern,
+        SyntaxChildren.Create(
                 taskLikeKeyword,
                 lessThanToken,
                 resultType,
                 greaterThanToken))
-    {
-        TaskLikeKeyword = taskLikeKeyword;
-        LessThanToken = lessThanToken;
-        ResultType = resultType;
-        GreaterThanToken = greaterThanToken;
-    }
-
-    public SyntaxToken TaskLikeKeyword { get; }
-
-    public SyntaxToken LessThanToken { get; }
-
-    public TypePatternSyntax ResultType { get; }
-
-    public SyntaxToken GreaterThanToken { get; }
-}
-
-public sealed class VariableTypePatternSyntax : TypePatternSyntax
 {
-    public VariableTypePatternSyntax(
-        SyntaxToken dollarToken,
-        SyntaxToken identifierToken)
-        : base(
-            SyntaxKind.VariableTypePattern,
-            SyntaxChildren.Create(dollarToken, identifierToken))
-    {
-        DollarToken = dollarToken;
-        IdentifierToken = identifierToken;
-    }
+    /// <summary>Gets the task like keyword.</summary>
+    public SyntaxToken TaskLikeKeyword { get; } = taskLikeKeyword;
 
-    public SyntaxToken DollarToken { get; }
+    /// <summary>Gets the less than token.</summary>
+    public SyntaxToken LessThanToken { get; } = lessThanToken;
 
-    public SyntaxToken IdentifierToken { get; }
+    /// <summary>Gets the result type.</summary>
+    public TypePatternSyntax ResultType { get; } = resultType;
+
+    /// <summary>Gets the greater than token.</summary>
+    public SyntaxToken GreaterThanToken { get; } = greaterThanToken;
 }
 
+/// <summary>Represents a variable type pattern syntax node.</summary>
+/// <param name="dollarToken">Specifies the dollar token.</param>
+/// <param name="identifierToken">Specifies the identifier token.</param>
+public sealed class VariableTypePatternSyntax(
+    SyntaxToken dollarToken,
+    SyntaxToken identifierToken) : TypePatternSyntax(
+        SyntaxKind.VariableTypePattern,
+        SyntaxChildren.Create(dollarToken, identifierToken))
+{
+    /// <summary>Gets the dollar token.</summary>
+    public SyntaxToken DollarToken { get; } = dollarToken;
+
+    /// <summary>Gets the identifier token.</summary>
+    public SyntaxToken IdentifierToken { get; } = identifierToken;
+}
+
+/// <summary>Represents a array type pattern syntax node.</summary>
 public sealed class ArrayTypePatternSyntax : TypePatternSyntax
 {
     private readonly IReadOnlyList<SyntaxToken> _commaTokens;
 
+    /// <summary>Initializes a new instance of the ArrayTypePatternSyntax class.</summary>
+    /// <param name="elementType">Specifies the element type.</param>
+    /// <param name="openBracketToken">Specifies the open bracket token.</param>
+    /// <param name="commaTokens">Specifies the comma tokens.</param>
+    /// <param name="closeBracketToken">Specifies the close bracket token.</param>
     public ArrayTypePatternSyntax(
         TypePatternSyntax elementType,
         SyntaxToken openBracketToken,
@@ -205,111 +227,108 @@ public sealed class ArrayTypePatternSyntax : TypePatternSyntax
         CloseBracketToken = closeBracketToken;
     }
 
+    /// <summary>Gets the element type.</summary>
     public TypePatternSyntax ElementType { get; }
 
+    /// <summary>Gets the open bracket token.</summary>
     public SyntaxToken OpenBracketToken { get; }
 
+    /// <summary>Gets the comma tokens.</summary>
     public IReadOnlyList<SyntaxToken> CommaTokens => _commaTokens;
 
+    /// <summary>Gets the close bracket token.</summary>
     public SyntaxToken CloseBracketToken { get; }
 
+    /// <summary>Gets the rank.</summary>
     public int Rank => _commaTokens.Count + 1;
 }
 
-public sealed class NullableTypePatternSyntax : TypePatternSyntax
+/// <summary>Represents a nullable type pattern syntax node.</summary>
+/// <param name="underlyingType">Specifies the underlying type.</param>
+/// <param name="questionToken">Specifies the question token.</param>
+public sealed class NullableTypePatternSyntax(
+    TypePatternSyntax underlyingType,
+    SyntaxToken questionToken) : TypePatternSyntax(
+        SyntaxKind.NullableTypePattern,
+        SyntaxChildren.Create(underlyingType, questionToken))
 {
-    public NullableTypePatternSyntax(
-        TypePatternSyntax underlyingType,
-        SyntaxToken questionToken)
-        : base(
-            SyntaxKind.NullableTypePattern,
-            SyntaxChildren.Create(underlyingType, questionToken))
-    {
-        UnderlyingType = underlyingType;
-        QuestionToken = questionToken;
-    }
+    /// <summary>Gets the underlying type.</summary>
+    public TypePatternSyntax UnderlyingType { get; } = underlyingType;
 
-    public TypePatternSyntax UnderlyingType { get; }
-
-    public SyntaxToken QuestionToken { get; }
+    /// <summary>Gets the question token.</summary>
+    public SyntaxToken QuestionToken { get; } = questionToken;
 }
 
-public sealed class AssignableTypePatternSyntax : TypePatternSyntax
+/// <summary>Represents a assignable type pattern syntax node.</summary>
+/// <param name="targetType">Specifies the target type.</param>
+/// <param name="plusToken">Specifies the plus token.</param>
+public sealed class AssignableTypePatternSyntax(
+    TypePatternSyntax targetType,
+    SyntaxToken plusToken) : TypePatternSyntax(
+        SyntaxKind.AssignableTypePattern,
+        SyntaxChildren.Create(targetType, plusToken))
 {
-    public AssignableTypePatternSyntax(
-        TypePatternSyntax targetType,
-        SyntaxToken plusToken)
-        : base(
-            SyntaxKind.AssignableTypePattern,
-            SyntaxChildren.Create(targetType, plusToken))
-    {
-        TargetType = targetType;
-        PlusToken = plusToken;
-    }
+    /// <summary>Gets the target type.</summary>
+    public TypePatternSyntax TargetType { get; } = targetType;
 
-    public TypePatternSyntax TargetType { get; }
-
-    public SyntaxToken PlusToken { get; }
+    /// <summary>Gets the plus token.</summary>
+    public SyntaxToken PlusToken { get; } = plusToken;
 }
 
-public sealed class ParenthesizedTypePatternSyntax : TypePatternSyntax
+/// <summary>Represents a parenthesized type pattern syntax node.</summary>
+/// <param name="openParenToken">Specifies the open paren token.</param>
+/// <param name="pattern">Specifies the pattern.</param>
+/// <param name="closeParenToken">Specifies the close paren token.</param>
+public sealed class ParenthesizedTypePatternSyntax(
+    SyntaxToken openParenToken,
+    TypePatternSyntax pattern,
+    SyntaxToken closeParenToken) : TypePatternSyntax(
+        SyntaxKind.ParenthesizedTypePattern,
+        SyntaxChildren.Create(openParenToken, pattern, closeParenToken))
 {
-    public ParenthesizedTypePatternSyntax(
-        SyntaxToken openParenToken,
-        TypePatternSyntax pattern,
-        SyntaxToken closeParenToken)
-        : base(
-            SyntaxKind.ParenthesizedTypePattern,
-            SyntaxChildren.Create(openParenToken, pattern, closeParenToken))
-    {
-        OpenParenToken = openParenToken;
-        Pattern = pattern;
-        CloseParenToken = closeParenToken;
-    }
+    /// <summary>Gets the open paren token.</summary>
+    public SyntaxToken OpenParenToken { get; } = openParenToken;
 
-    public SyntaxToken OpenParenToken { get; }
+    /// <summary>Gets the pattern.</summary>
+    public TypePatternSyntax Pattern { get; } = pattern;
 
-    public TypePatternSyntax Pattern { get; }
-
-    public SyntaxToken CloseParenToken { get; }
+    /// <summary>Gets the close paren token.</summary>
+    public SyntaxToken CloseParenToken { get; } = closeParenToken;
 }
 
-public sealed class UnaryTypePatternSyntax : TypePatternSyntax
+/// <summary>Represents a unary type pattern syntax node.</summary>
+/// <param name="operatorToken">Specifies the operator token.</param>
+/// <param name="operand">Specifies the operand.</param>
+public sealed class UnaryTypePatternSyntax(
+    SyntaxToken operatorToken,
+    TypePatternSyntax operand) : TypePatternSyntax(
+        SyntaxKind.UnaryTypePattern,
+        SyntaxChildren.Create(operatorToken, operand))
 {
-    public UnaryTypePatternSyntax(
-        SyntaxToken operatorToken,
-        TypePatternSyntax operand)
-        : base(
-            SyntaxKind.UnaryTypePattern,
-            SyntaxChildren.Create(operatorToken, operand))
-    {
-        OperatorToken = operatorToken;
-        Operand = operand;
-    }
+    /// <summary>Gets the operator token.</summary>
+    public SyntaxToken OperatorToken { get; } = operatorToken;
 
-    public SyntaxToken OperatorToken { get; }
-
-    public TypePatternSyntax Operand { get; }
+    /// <summary>Gets the operand.</summary>
+    public TypePatternSyntax Operand { get; } = operand;
 }
 
-public sealed class BinaryTypePatternSyntax : TypePatternSyntax
+/// <summary>Represents a binary type pattern syntax node.</summary>
+/// <param name="left">Specifies the left.</param>
+/// <param name="operatorToken">Specifies the operator token.</param>
+/// <param name="right">Specifies the right.</param>
+public sealed class BinaryTypePatternSyntax(
+    TypePatternSyntax left,
+    SyntaxToken operatorToken,
+    TypePatternSyntax right) : TypePatternSyntax(
+        SyntaxKind.BinaryTypePattern,
+        SyntaxChildren.Create(left, operatorToken, right))
 {
-    public BinaryTypePatternSyntax(
-        TypePatternSyntax left,
-        SyntaxToken operatorToken,
-        TypePatternSyntax right)
-        : base(
-            SyntaxKind.BinaryTypePattern,
-            SyntaxChildren.Create(left, operatorToken, right))
-    {
-        Left = left;
-        OperatorToken = operatorToken;
-        Right = right;
-    }
+    /// <summary>Gets the left.</summary>
+    public TypePatternSyntax Left { get; } = left;
 
-    public TypePatternSyntax Left { get; }
+    /// <summary>Gets the operator token.</summary>
+    public SyntaxToken OperatorToken { get; } = operatorToken;
 
-    public SyntaxToken OperatorToken { get; }
-
-    public TypePatternSyntax Right { get; }
+    /// <summary>Gets the right.</summary>
+    public TypePatternSyntax Right { get; } = right;
 }

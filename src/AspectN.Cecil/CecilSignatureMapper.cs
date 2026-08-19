@@ -6,6 +6,7 @@ using Mono.Collections.Generic;
 
 namespace AspectN.Cecil;
 
+/// <summary>Maps Mono.Cecil metadata to backend-neutral AspectN signatures.</summary>
 public sealed class CecilSignatureMapper
 {
     private readonly Dictionary<CecilMemberCacheKey, CallableSignature>
@@ -21,6 +22,9 @@ public sealed class CecilSignatureMapper
         _typeSystem = typeSystem;
     }
 
+    /// <summary>Maps type metadata to an AspectN signature.</summary>
+    /// <param name="typeReference">Specifies the type reference.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public TypeSignature MapType(TypeReference typeReference)
     {
 #if NET10_0_OR_GREATER
@@ -36,6 +40,10 @@ public sealed class CecilSignatureMapper
             () => CecilTypeMapper.Map(typeReference, MapType));
     }
 
+    /// <summary>Maps type use metadata to an AspectN signature.</summary>
+    /// <param name="typeReference">Specifies the type reference.</param>
+    /// <param name="useKind">Specifies the use kind.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public TypeUseSignature MapTypeUse(
         TypeReference typeReference,
         TypeUseKind useKind)
@@ -54,6 +62,9 @@ public sealed class CecilSignatureMapper
             useKind);
     }
 
+    /// <summary>Maps callable metadata to an AspectN signature.</summary>
+    /// <param name="methodReference">Specifies the method reference.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public CallableSignature MapCallable(MethodReference methodReference)
     {
 #if NET10_0_OR_GREATER
@@ -88,6 +99,9 @@ public sealed class CecilSignatureMapper
         }
     }
 
+    /// <summary>Maps property metadata to an AspectN signature.</summary>
+    /// <param name="propertyReference">Specifies the property reference.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public PropertySignature MapProperty(PropertyReference propertyReference)
     {
 #if NET10_0_OR_GREATER
@@ -467,19 +481,13 @@ public sealed class CecilSignatureMapper
         };
     }
 
-    private readonly struct CecilMemberCacheKey :
+    private readonly struct CecilMemberCacheKey(
+        object reference,
+        bool compositeAccessibility) :
         IEquatable<CecilMemberCacheKey>
     {
-        private readonly object _reference;
-        private readonly bool _compositeAccessibility;
-
-        public CecilMemberCacheKey(
-            object reference,
-            bool compositeAccessibility)
-        {
-            _reference = reference;
-            _compositeAccessibility = compositeAccessibility;
-        }
+        private readonly object _reference = reference;
+        private readonly bool _compositeAccessibility = compositeAccessibility;
 
         public bool Equals(CecilMemberCacheKey other)
         {

@@ -1,5 +1,6 @@
 namespace AspectN.Syntax;
 
+/// <summary>Specifies the syntax kind values.</summary>
 public enum SyntaxKind
 {
     BadToken,

@@ -8,6 +8,7 @@ namespace AspectN.Evaluation;
 
 internal static class MemberPatternEvaluator
 {
+    // 成员匹配按选择器种类分派，再合并名称、泛型、参数和属性等独立约束的结果。
     public static MatchStatus Evaluate(
         BoundExpression pattern,
         CallableSignature candidate,

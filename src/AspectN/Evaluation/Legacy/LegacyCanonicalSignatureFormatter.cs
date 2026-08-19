@@ -6,6 +6,7 @@ namespace AspectN.Evaluation.Legacy;
 
 internal static class LegacyCanonicalSignatureFormatter
 {
+    // Legacy 格式化器刻意保留旧版名称、泛型和可见性编码，兼容性基线依赖其稳定输出。
     public static string Format(CallableSignature candidate)
     {
         var genericNames = CreateGenericNames(candidate);
@@ -258,19 +259,12 @@ internal static class LegacyCanonicalSignatureFormatter
         };
     }
 
-    private readonly struct GenericParameterKey :
+    private readonly struct GenericParameterKey(GenericParameterSignature parameter) :
         IEquatable<GenericParameterKey>
     {
-        private readonly GenericParameterOwnerKind _ownerKind;
-        private readonly string _ownerId;
-        private readonly int _position;
-
-        public GenericParameterKey(GenericParameterSignature parameter)
-        {
-            _ownerKind = parameter.OwnerKind;
-            _ownerId = parameter.OwnerId;
-            _position = parameter.Position;
-        }
+        private readonly GenericParameterOwnerKind _ownerKind = parameter.OwnerKind;
+        private readonly string _ownerId = parameter.OwnerId;
+        private readonly int _position = parameter.Position;
 
         public bool Equals(GenericParameterKey other)
         {

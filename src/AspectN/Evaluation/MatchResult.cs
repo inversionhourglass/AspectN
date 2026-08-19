@@ -3,12 +3,14 @@ using AspectN.Diagnostics;
 
 namespace AspectN.Evaluation;
 
+/// <summary>Specifies the unknown match behavior values.</summary>
 public enum UnknownMatchBehavior
 {
     False,
     Throw
 }
 
+/// <summary>Represents match result.</summary>
 public sealed class MatchResult
 {
     private static readonly MatchResult _Matched =
@@ -18,6 +20,9 @@ public sealed class MatchResult
 
     private readonly ReadOnlyCollection<AspectNDiagnostic> _diagnostics;
 
+    /// <summary>Initializes a new instance of the MatchResult class.</summary>
+    /// <param name="status">Specifies the status.</param>
+    /// <param name="diagnostics">Specifies the diagnostics.</param>
     public MatchResult(
         MatchStatus status,
         IEnumerable<AspectNDiagnostic>? diagnostics = null)
@@ -33,19 +38,29 @@ public sealed class MatchResult
         }
     }
 
+    /// <summary>Gets the status.</summary>
     public MatchStatus Status { get; }
 
+    /// <summary>Gets the diagnostics.</summary>
     public IReadOnlyList<AspectNDiagnostic> Diagnostics => _diagnostics;
 
+    /// <summary>Gets the matched.</summary>
     public static MatchResult Matched => _Matched;
 
+    /// <summary>Gets the not matched.</summary>
     public static MatchResult NotMatched => _NotMatched;
 
+    /// <summary>Creates an unknown result with the supplied diagnostics.</summary>
+    /// <param name="diagnostics">Specifies the diagnostics.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public static MatchResult Unknown(params AspectNDiagnostic[] diagnostics)
     {
         return new MatchResult(MatchStatus.Unknown, diagnostics);
     }
 
+    /// <summary>Converts the match result to a Boolean value.</summary>
+    /// <param name="behavior">Specifies the behavior.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public bool ToBoolean(UnknownMatchBehavior behavior)
     {
         return Status switch

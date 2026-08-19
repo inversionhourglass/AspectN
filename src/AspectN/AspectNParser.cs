@@ -4,8 +4,13 @@ using AspectN.Text;
 
 namespace AspectN;
 
+/// <summary>Provides entry points for parsing AspectN expressions and type patterns.</summary>
 public static class AspectNParser
 {
+    /// <summary>Parses member expression input.</summary>
+    /// <param name="source">Specifies the source.</param>
+    /// <param name="options">Specifies the options.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public static AspectNSyntaxTree ParseMemberExpression(
         string source,
         AspectNParseOptions? options = null)
@@ -21,6 +26,10 @@ public static class AspectNParser
             options ?? new AspectNParseOptions()).ParseMemberExpression();
     }
 
+    /// <summary>Parses type pattern input.</summary>
+    /// <param name="source">Specifies the source.</param>
+    /// <param name="options">Specifies the options.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public static AspectNSyntaxTree ParseTypePattern(
         string source,
         AspectNParseOptions? options = null)

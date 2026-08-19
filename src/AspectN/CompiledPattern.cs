@@ -1,5 +1,6 @@
 namespace AspectN;
 
+/// <summary>Represents a compiled compiled pattern.</summary>
 public abstract class CompiledPattern
 {
     internal CompiledPattern(
@@ -10,7 +11,9 @@ public abstract class CompiledPattern
         Options = options ?? throw new ArgumentNullException(nameof(options));
     }
 
+    /// <summary>Gets the language version.</summary>
     public AspectNLanguageVersion LanguageVersion { get; }
 
+    /// <summary>Gets the options.</summary>
     public AspectNCompilationOptions Options { get; }
 }

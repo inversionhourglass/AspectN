@@ -1,27 +1,31 @@
 namespace AspectN.Metadata;
 
-public sealed class AssemblyIdentity : IEquatable<AssemblyIdentity>
+/// <summary>Represents assembly identity.</summary>
+/// <param name="name">Specifies the name.</param>
+/// <param name="version">Specifies the version.</param>
+/// <param name="cultureName">Specifies the culture name.</param>
+/// <param name="publicKeyToken">Specifies the public key token.</param>
+public sealed class AssemblyIdentity(
+    string name,
+    Version? version = null,
+    string? cultureName = null,
+    string? publicKeyToken = null) : IEquatable<AssemblyIdentity>
 {
-    public AssemblyIdentity(
-        string name,
-        Version? version = null,
-        string? cultureName = null,
-        string? publicKeyToken = null)
-    {
-        Name = name ?? throw new ArgumentNullException(nameof(name));
-        Version = version;
-        CultureName = cultureName ?? string.Empty;
-        PublicKeyToken = publicKeyToken ?? string.Empty;
-    }
+    /// <summary>Gets the assembly name.</summary>
+    public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
 
-    public string Name { get; }
+    /// <summary>Gets the version.</summary>
+    public Version? Version { get; } = version;
 
-    public Version? Version { get; }
+    /// <summary>Gets the culture name.</summary>
+    public string CultureName { get; } = cultureName ?? string.Empty;
 
-    public string CultureName { get; }
+    /// <summary>Gets the public key token.</summary>
+    public string PublicKeyToken { get; } = publicKeyToken ?? string.Empty;
 
-    public string PublicKeyToken { get; }
-
+    /// <summary>Determines whether the specified value is equal to this instance.</summary>
+    /// <param name="other">Specifies the other.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public bool Equals(AssemblyIdentity? other)
     {
         return other is not null &&
@@ -33,11 +37,16 @@ public sealed class AssemblyIdentity : IEquatable<AssemblyIdentity>
                    other.PublicKeyToken);
     }
 
+    /// <summary>Determines whether the specified value is equal to this instance.</summary>
+    /// <param name="obj">Specifies the obj.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public override bool Equals(object? obj)
     {
         return Equals(obj as AssemblyIdentity);
     }
 
+    /// <summary>Returns the hash code for this instance.</summary>
+    /// <returns>Returns the result of the operation.</returns>
     public override int GetHashCode()
     {
         unchecked
@@ -51,6 +60,7 @@ public sealed class AssemblyIdentity : IEquatable<AssemblyIdentity>
         }
     }
 
+    /// <summary>Determines whether the two values are equal.</summary>
     public static bool operator ==(
         AssemblyIdentity? left,
         AssemblyIdentity? right)
@@ -58,6 +68,7 @@ public sealed class AssemblyIdentity : IEquatable<AssemblyIdentity>
         return Equals(left, right);
     }
 
+    /// <summary>Determines whether the two values are not equal.</summary>
     public static bool operator !=(
         AssemblyIdentity? left,
         AssemblyIdentity? right)

@@ -2,8 +2,14 @@ using AspectN.Text;
 
 namespace AspectN.Diagnostics;
 
+/// <summary>Describes a diagnostic reported by AspectN.</summary>
 public sealed class AspectNDiagnostic
 {
+    /// <summary>Initializes a new instance of the AspectNDiagnostic class.</summary>
+    /// <param name="code">Specifies the code.</param>
+    /// <param name="severity">Specifies the severity.</param>
+    /// <param name="message">Specifies the message.</param>
+    /// <param name="span">Specifies the span.</param>
     public AspectNDiagnostic(
         string code,
         DiagnosticSeverity severity,
@@ -24,11 +30,15 @@ public sealed class AspectNDiagnostic
         Span = span;
     }
 
+    /// <summary>Gets the code.</summary>
     public string Code { get; }
 
+    /// <summary>Gets the severity.</summary>
     public DiagnosticSeverity Severity { get; }
 
+    /// <summary>Gets the message.</summary>
     public string Message { get; }
 
+    /// <summary>Gets the span.</summary>
     public TextSpan? Span { get; }
 }

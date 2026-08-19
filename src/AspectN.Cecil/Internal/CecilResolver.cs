@@ -6,17 +6,13 @@ using Mono.Cecil;
 
 namespace AspectN.Cecil.Internal;
 
-internal sealed class CecilResolver
+internal sealed class CecilResolver(CecilSignatureMapper mapper)
 {
     private const string RESOLUTION_FAILURE_CODE = "AN3002";
 
-    private readonly CecilSignatureMapper _mapper;
+    private readonly CecilSignatureMapper _mapper = mapper;
 
-    public CecilResolver(CecilSignatureMapper mapper)
-    {
-        _mapper = mapper;
-    }
-
+    // 解析继承链时遇到损坏元数据不能直接让匹配崩溃，而是转换为可诊断的 Unknown 结果。
     public TypeRelationResult IsAssignableTo(
         TypeSignature candidate,
         TypeSignature target,

@@ -7,11 +7,15 @@ using Mono.Cecil;
 
 namespace AspectN.Cecil;
 
+/// <summary>Provides Mono.Cecil-backed type and metadata operations for AspectN matching.</summary>
 public sealed class CecilTypeSystem : ITypeSystem, IDisposable
 {
     private readonly CecilResolver _resolver;
     private ModuleDefinition? _module;
 
+    /// <summary>Initializes a new instance of the CecilTypeSystem class.</summary>
+    /// <param name="module">Specifies the module.</param>
+    /// <param name="options">Specifies the options.</param>
     public CecilTypeSystem(
         ModuleDefinition module,
         CecilMappingOptions? options = null)
@@ -22,6 +26,7 @@ public sealed class CecilTypeSystem : ITypeSystem, IDisposable
         _resolver = new CecilResolver(Mapper);
     }
 
+    /// <summary>Gets the module.</summary>
     public ModuleDefinition Module
     {
         get
@@ -31,10 +36,13 @@ public sealed class CecilTypeSystem : ITypeSystem, IDisposable
         }
     }
 
+    /// <summary>Gets the options.</summary>
     public CecilMappingOptions Options { get; }
 
+    /// <summary>Gets the mapper.</summary>
     public CecilSignatureMapper Mapper { get; }
 
+    /// <summary>Gets the capabilities.</summary>
     public TypeSystemCapabilities Capabilities =>
         TypeSystemCapabilities.TypeEquality |
         TypeSystemCapabilities.BaseTypeTraversal |
@@ -44,6 +52,10 @@ public sealed class CecilTypeSystem : ITypeSystem, IDisposable
         TypeSystemCapabilities.DirectAttributeLookup |
         TypeSystemCapabilities.OriginalDefinitionMapping;
 
+    /// <summary>Compares two values for structural equality.</summary>
+    /// <param name="left">Specifies the left.</param>
+    /// <param name="right">Specifies the right.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public TypeRelationResult AreEqual(
         TypeSignature left,
         TypeSignature right)
@@ -52,6 +64,11 @@ public sealed class CecilTypeSystem : ITypeSystem, IDisposable
         return StructuralTypeComparer.AreEqual(left, right);
     }
 
+    /// <summary>Determines whether is assignable to.</summary>
+    /// <param name="candidate">Specifies the candidate.</param>
+    /// <param name="target">Specifies the target.</param>
+    /// <param name="cancellationToken">Specifies the cancellation token.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public TypeRelationResult IsAssignableTo(
         TypeSignature candidate,
         TypeSignature target,
@@ -61,6 +78,11 @@ public sealed class CecilTypeSystem : ITypeSystem, IDisposable
         return _resolver.IsAssignableTo(candidate, target, cancellationToken);
     }
 
+    /// <summary>Determines whether has direct attribute.</summary>
+    /// <param name="target">Specifies the target.</param>
+    /// <param name="attributeType">Specifies the attribute type.</param>
+    /// <param name="cancellationToken">Specifies the cancellation token.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public TypeRelationResult HasDirectAttribute(
         AttributeTarget target,
         TypeSignature attributeType,
@@ -97,6 +119,7 @@ public sealed class CecilTypeSystem : ITypeSystem, IDisposable
         return unknown ?? TypeRelationResult.NotMatched;
     }
 
+    /// <summary>Releases the resources owned by this instance.</summary>
     public void Dispose()
     {
         var module = Interlocked.Exchange(ref _module, null);

@@ -2,12 +2,7 @@ using AspectN.Text;
 
 namespace AspectN.Binding;
 
-internal abstract class BoundNode
+internal abstract class BoundNode(TextSpan span)
 {
-    protected BoundNode(TextSpan span)
-    {
-        Span = span;
-    }
-
-    public TextSpan Span { get; }
+    public TextSpan Span { get; } = span;
 }

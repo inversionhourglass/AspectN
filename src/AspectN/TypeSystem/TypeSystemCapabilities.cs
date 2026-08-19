@@ -1,5 +1,6 @@
 namespace AspectN.TypeSystem;
 
+/// <summary>Specifies the type system capabilities values.</summary>
 [Flags]
 public enum TypeSystemCapabilities
 {

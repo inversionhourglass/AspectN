@@ -1,7 +1,15 @@
 namespace AspectN.Metadata;
 
+/// <summary>Represents type identity.</summary>
 public sealed class TypeIdentity : IEquatable<TypeIdentity>
 {
+    /// <summary>Initializes a new instance of the TypeIdentity class.</summary>
+    /// <param name="assembly">Specifies the assembly.</param>
+    /// <param name="namespace">Specifies the namespace.</param>
+    /// <param name="metadataName">Specifies the metadata name.</param>
+    /// <param name="genericArity">Specifies the generic arity.</param>
+    /// <param name="kind">Specifies the kind.</param>
+    /// <param name="containingType">Specifies the containing type.</param>
     public TypeIdentity(
         AssemblyIdentity assembly,
         string @namespace,
@@ -20,18 +28,25 @@ public sealed class TypeIdentity : IEquatable<TypeIdentity>
         ContainingType = containingType;
     }
 
+    /// <summary>Gets the assembly.</summary>
     public AssemblyIdentity Assembly { get; }
 
+    /// <summary>Gets the namespace.</summary>
     public string Namespace { get; }
 
+    /// <summary>Gets the metadata name.</summary>
     public string MetadataName { get; }
 
+    /// <summary>Gets the generic arity.</summary>
     public int GenericArity { get; }
 
+    /// <summary>Gets the kind.</summary>
     public TypeKind Kind { get; }
 
+    /// <summary>Gets the containing type.</summary>
     public TypeIdentity? ContainingType { get; }
 
+    /// <summary>Gets the full metadata name.</summary>
     public string FullMetadataName
     {
         get
@@ -50,6 +65,9 @@ public sealed class TypeIdentity : IEquatable<TypeIdentity>
         }
     }
 
+    /// <summary>Determines whether the specified value is equal to this instance.</summary>
+    /// <param name="other">Specifies the other.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public bool Equals(TypeIdentity? other)
     {
         return other is not null &&
@@ -61,11 +79,16 @@ public sealed class TypeIdentity : IEquatable<TypeIdentity>
                Equals(ContainingType, other.ContainingType);
     }
 
+    /// <summary>Determines whether the specified value is equal to this instance.</summary>
+    /// <param name="obj">Specifies the obj.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public override bool Equals(object? obj)
     {
         return Equals(obj as TypeIdentity);
     }
 
+    /// <summary>Returns the hash code for this instance.</summary>
+    /// <returns>Returns the result of the operation.</returns>
     public override int GetHashCode()
     {
         unchecked
@@ -80,11 +103,13 @@ public sealed class TypeIdentity : IEquatable<TypeIdentity>
         }
     }
 
+    /// <summary>Determines whether the two values are equal.</summary>
     public static bool operator ==(TypeIdentity? left, TypeIdentity? right)
     {
         return Equals(left, right);
     }
 
+    /// <summary>Determines whether the two values are not equal.</summary>
     public static bool operator !=(TypeIdentity? left, TypeIdentity? right)
     {
         return !Equals(left, right);

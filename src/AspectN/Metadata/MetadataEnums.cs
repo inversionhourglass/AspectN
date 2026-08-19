@@ -1,5 +1,6 @@
 namespace AspectN.Metadata;
 
+/// <summary>Specifies the type kind values.</summary>
 public enum TypeKind
 {
     Unknown,
@@ -10,6 +11,7 @@ public enum TypeKind
     Delegate
 }
 
+/// <summary>Specifies the type signature kind values.</summary>
 public enum TypeSignatureKind
 {
     Named,
@@ -18,12 +20,14 @@ public enum TypeSignatureKind
     Unsupported
 }
 
+/// <summary>Specifies the generic parameter owner kind values.</summary>
 public enum GenericParameterOwnerKind
 {
     Type,
     Method
 }
 
+/// <summary>Specifies the ref kind values.</summary>
 public enum RefKind
 {
     None,
@@ -33,6 +37,7 @@ public enum RefKind
     RefReadOnly
 }
 
+/// <summary>Specifies the type use kind values.</summary>
 public enum TypeUseKind
 {
     Other,
@@ -43,6 +48,7 @@ public enum TypeUseKind
     GenericArgument
 }
 
+/// <summary>Specifies the callable kind values.</summary>
 public enum CallableKind
 {
     OrdinaryMethod,
@@ -57,6 +63,7 @@ public enum CallableKind
     StaticConstructor
 }
 
+/// <summary>Specifies the accessibility values.</summary>
 public enum Accessibility
 {
     Unknown,
@@ -68,6 +75,7 @@ public enum Accessibility
     PrivateProtected
 }
 
+/// <summary>Specifies the attribute target kind values.</summary>
 public enum AttributeTargetKind
 {
     Type,

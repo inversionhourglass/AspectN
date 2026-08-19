@@ -8,8 +8,11 @@ using CoreTypeKind = AspectN.Metadata.TypeKind;
 
 namespace AspectN.Roslyn;
 
+/// <summary>Provides Roslyn-backed type and metadata operations for AspectN matching.</summary>
 public sealed class RoslynTypeSystem : ITypeSystem
 {
+    /// <summary>Initializes a new instance of the RoslynTypeSystem class.</summary>
+    /// <param name="compilation">Specifies the compilation.</param>
     public RoslynTypeSystem(Compilation compilation)
     {
 #if NET10_0_OR_GREATER
@@ -23,12 +26,19 @@ public sealed class RoslynTypeSystem : ITypeSystem
         Mapper = new RoslynSignatureMapper(compilation);
     }
 
+    /// <summary>Gets the compilation.</summary>
     public Compilation Compilation { get; }
 
+    /// <summary>Gets the capabilities.</summary>
     public TypeSystemCapabilities Capabilities => TypeSystemCapabilities.All;
 
+    /// <summary>Gets the mapper.</summary>
     public RoslynSignatureMapper Mapper { get; }
 
+    /// <summary>Compares two values for structural equality.</summary>
+    /// <param name="left">Specifies the left.</param>
+    /// <param name="right">Specifies the right.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public TypeRelationResult AreEqual(
         TypeSignature left,
         TypeSignature right)
@@ -36,6 +46,11 @@ public sealed class RoslynTypeSystem : ITypeSystem
         return StructuralTypeComparer.AreEqual(left, right);
     }
 
+    /// <summary>Determines whether is assignable to.</summary>
+    /// <param name="candidate">Specifies the candidate.</param>
+    /// <param name="target">Specifies the target.</param>
+    /// <param name="cancellationToken">Specifies the cancellation token.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public TypeRelationResult IsAssignableTo(
         TypeSignature candidate,
         TypeSignature target,
@@ -100,6 +115,11 @@ public sealed class RoslynTypeSystem : ITypeSystem
         }
     }
 
+    /// <summary>Determines whether has direct attribute.</summary>
+    /// <param name="target">Specifies the target.</param>
+    /// <param name="attributeType">Specifies the attribute type.</param>
+    /// <param name="cancellationToken">Specifies the cancellation token.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public TypeRelationResult HasDirectAttribute(
         AttributeTarget target,
         TypeSignature attributeType,

@@ -8,6 +8,7 @@ internal static class CecilTypeMapper
 {
     private const string HEX_DIGITS = "0123456789abcdef";
 
+    // Cecil 类型引用可能代表数组、泛型实例或泛型参数，先按元数据形状分派再构造统一签名。
     public static TypeSignature Map(
         TypeReference typeReference,
         Func<TypeReference, TypeSignature> mapType)

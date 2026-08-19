@@ -6,17 +6,25 @@ using AspectN.TypeSystem;
 
 namespace AspectN.Reflection;
 
+/// <summary>Provides reflection-backed type and metadata operations for AspectN matching.</summary>
 public sealed class ReflectionTypeSystem : ITypeSystem
 {
+    /// <summary>Initializes a new instance of the ReflectionTypeSystem class.</summary>
     public ReflectionTypeSystem()
     {
         Mapper = new ReflectionSignatureMapper();
     }
 
+    /// <summary>Gets the capabilities.</summary>
     public TypeSystemCapabilities Capabilities => TypeSystemCapabilities.All;
 
+    /// <summary>Gets the mapper.</summary>
     public ReflectionSignatureMapper Mapper { get; }
 
+    /// <summary>Compares two values for structural equality.</summary>
+    /// <param name="left">Specifies the left.</param>
+    /// <param name="right">Specifies the right.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public TypeRelationResult AreEqual(
         TypeSignature left,
         TypeSignature right)
@@ -24,6 +32,11 @@ public sealed class ReflectionTypeSystem : ITypeSystem
         return StructuralTypeComparer.AreEqual(left, right);
     }
 
+    /// <summary>Determines whether is assignable to.</summary>
+    /// <param name="candidate">Specifies the candidate.</param>
+    /// <param name="target">Specifies the target.</param>
+    /// <param name="cancellationToken">Specifies the cancellation token.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public TypeRelationResult IsAssignableTo(
         TypeSignature candidate,
         TypeSignature target,
@@ -84,6 +97,11 @@ public sealed class ReflectionTypeSystem : ITypeSystem
         }
     }
 
+    /// <summary>Determines whether has direct attribute.</summary>
+    /// <param name="target">Specifies the target.</param>
+    /// <param name="attributeType">Specifies the attribute type.</param>
+    /// <param name="cancellationToken">Specifies the cancellation token.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public TypeRelationResult HasDirectAttribute(
         AttributeTarget target,
         TypeSignature attributeType,

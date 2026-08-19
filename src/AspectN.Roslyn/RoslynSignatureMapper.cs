@@ -7,6 +7,7 @@ using CoreTypeKind = AspectN.Metadata.TypeKind;
 
 namespace AspectN.Roslyn;
 
+/// <summary>Maps Roslyn symbols to backend-neutral AspectN signatures.</summary>
 public sealed class RoslynSignatureMapper
 {
     private const string HEX_DIGITS = "0123456789abcdef";
@@ -28,6 +29,9 @@ public sealed class RoslynSignatureMapper
 
     internal Compilation Compilation => _compilation;
 
+    /// <summary>Maps type metadata to an AspectN signature.</summary>
+    /// <param name="typeSymbol">Specifies the type symbol.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public TypeSignature MapType(ITypeSymbol typeSymbol)
     {
 #if NET10_0_OR_GREATER
@@ -52,6 +56,10 @@ public sealed class RoslynSignatureMapper
         }
     }
 
+    /// <summary>Maps type use metadata to an AspectN signature.</summary>
+    /// <param name="typeSymbol">Specifies the type symbol.</param>
+    /// <param name="useKind">Specifies the use kind.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public TypeUseSignature MapTypeUse(
         ITypeSymbol typeSymbol,
         TypeUseKind useKind)
@@ -62,6 +70,9 @@ public sealed class RoslynSignatureMapper
             useKind);
     }
 
+    /// <summary>Maps callable metadata to an AspectN signature.</summary>
+    /// <param name="methodSymbol">Specifies the method symbol.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public CallableSignature MapCallable(IMethodSymbol methodSymbol)
     {
 #if NET10_0_OR_GREATER
@@ -84,6 +95,9 @@ public sealed class RoslynSignatureMapper
         }
     }
 
+    /// <summary>Maps property metadata to an AspectN signature.</summary>
+    /// <param name="propertySymbol">Specifies the property symbol.</param>
+    /// <returns>Returns the result of the operation.</returns>
     public PropertySignature MapProperty(IPropertySymbol propertySymbol)
     {
 #if NET10_0_OR_GREATER
