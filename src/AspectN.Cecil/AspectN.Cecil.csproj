@@ -5,7 +5,7 @@
     <PackageId>AspectN.Cecil</PackageId>
     <Description>Mono.Cecil adapter for AspectN metadata matching.</Description>
     <PackageTags>aspectn;mono-cecil;il-weaving;metadata</PackageTags>
-    <PackageProjectUrl>https://github.com/inversionhourglass/AspectN</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/AspectN/AspectN</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>

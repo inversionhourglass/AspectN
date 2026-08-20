@@ -12,7 +12,7 @@ $artifactRoot = [System.IO.Path]::GetFullPath(
     (Join-Path $repositoryRoot "artifacts"))
 $validationId = [System.Guid]::NewGuid().ToString("N").Substring(0, 12)
 $packageVersion = "0.0.0-validation-$validationId"
-$projectUrl = "https://github.com/inversionhourglass/AspectN"
+$projectUrl = "https://github.com/AspectN/AspectN"
 $nugetSource = "https://api.nuget.org/v3/index.json"
 
 if (-not $packageDirectory.StartsWith(

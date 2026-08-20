@@ -136,7 +136,7 @@ Create `Directory.Build.props` with:
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <RepositoryUrl>https://github.com/inversionhourglass/AspectN</RepositoryUrl>
+    <RepositoryUrl>https://github.com/AspectN/AspectN</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <Authors>AspectN contributors</Authors>
     <Copyright>Copyright © AspectN contributors</Copyright>
@@ -1719,7 +1719,7 @@ Then remove only its `.gitmodules` section and remove the solution Shared Projec
 
 **Step 5: Update documentation link**
 
-Point `PointcutAttribute` remarks and Rougamo docs to `https://github.com/inversionhourglass/AspectN`.
+Point `PointcutAttribute` remarks and Rougamo docs to `https://github.com/AspectN/AspectN`.
 
 **Step 6: Verify no old references**
 

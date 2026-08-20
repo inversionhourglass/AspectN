@@ -1,0 +1,2 @@
+# Keep repository text files in LF so formatting checks are deterministic across platforms.
+* text=auto eol=lf

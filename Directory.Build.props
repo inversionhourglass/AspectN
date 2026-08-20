@@ -8,7 +8,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <RepositoryUrl>https://github.com/inversionhourglass/AspectN</RepositoryUrl>
+    <RepositoryUrl>https://github.com/AspectN/AspectN</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <Authors>AspectN contributors</Authors>
     <Copyright>Copyright © AspectN contributors</Copyright>
