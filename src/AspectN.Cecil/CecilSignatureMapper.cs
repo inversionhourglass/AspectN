@@ -219,7 +219,7 @@ public sealed class CecilSignatureMapper
             MapType(propertyReference.DeclaringType),
             new TypeUseSignature(
                 MapType(propertyReference.PropertyType),
-                RefKind.None,
+                CecilRefKindDetector.ForReturn(definition?.GetMethod),
                 TypeUseKind.Property),
             MapParameters(
                 propertyReference.Parameters,

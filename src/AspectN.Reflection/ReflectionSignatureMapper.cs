@@ -227,6 +227,7 @@ public sealed class ReflectionSignatureMapper
     {
         var accessor = property.GetMethod ?? property.SetMethod ??
             property.GetAccessors(nonPublic: true).FirstOrDefault();
+        var getter = property.GetMethod;
         return new PropertySignature(
             property.Name,
             GetPropertyAccessibility(property),
@@ -234,7 +235,9 @@ public sealed class ReflectionSignatureMapper
             MapType(RequiredDeclaringType(property)),
             new TypeUseSignature(
                 MapType(UnwrapByReference(property.PropertyType)),
-                RefKind.None,
+                getter is null
+                    ? RefKind.None
+                    : GetReturnRefKind(getter.ReturnParameter, getter.ReturnType),
                 TypeUseKind.Property),
             property.GetIndexParameters().Select(MapParameter),
             MapAttributes(

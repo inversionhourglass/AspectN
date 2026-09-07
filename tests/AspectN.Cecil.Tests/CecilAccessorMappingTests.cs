@@ -27,6 +27,21 @@ public sealed class CecilAccessorMappingTests
     }
 
     [Fact]
+    public void MapProperty_RefReturningProperties_PreserveRefKind()
+    {
+        using var typeSystem = EmittedFixture.Open();
+        var type = FixtureType(typeSystem);
+        var refValue = typeSystem.Mapper.MapProperty(
+            FindProperty(type, "RefValue"));
+        var refReadonly = typeSystem.Mapper.MapProperty(
+            FindProperty(type, "RefReadonlyValue"));
+
+        Assert.Equal(RefKind.Ref, refValue.PropertyType.RefKind);
+        Assert.Equal(RefKind.RefReadOnly, refReadonly.PropertyType.RefKind);
+        Assert.Equal("System.Int32", NamedName(refValue.PropertyType.Type));
+    }
+
+    [Fact]
     public void MapCallable_PropertyAccessors_LinkAssociatedProperty()
     {
         using var typeSystem = EmittedFixture.Open();

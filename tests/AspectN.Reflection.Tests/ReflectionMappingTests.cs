@@ -219,6 +219,63 @@ public sealed class ReflectionMappingTests
     }
 
     [Fact]
+    public void MapAndLookupAttributes_GenericAttributeType_PreservesTypeArguments()
+    {
+        var typeSystem = new ReflectionTypeSystem();
+        var method = RequiredMethod(
+            typeof(ReflectionFixture<int>),
+            nameof(ReflectionFixture<object>.GenericAttributed));
+        var callable = typeSystem.Mapper.MapCallable(method);
+        var intMarker = typeSystem.Mapper.MapType(
+            typeof(GenericMarkerAttribute<int>));
+        var stringMarker = typeSystem.Mapper.MapType(
+            typeof(GenericMarkerAttribute<string>));
+
+        Assert.Equal(
+            MatchStatus.Matched,
+            typeSystem.HasDirectAttribute(
+                AttributeTarget.ForCallable(callable),
+                intMarker).Status);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.HasDirectAttribute(
+                AttributeTarget.ForCallable(callable),
+                stringMarker).Status);
+        Assert.Equal(
+            MatchStatus.Matched,
+            MemberPattern(
+                "attr(callable GenericMarkerAttribute<int>)",
+                callable,
+                typeSystem).Status);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            MemberPattern(
+                "attr(callable GenericMarkerAttribute<string>)",
+                callable,
+                typeSystem).Status);
+    }
+
+    [Fact]
+    public void MapProperty_RefReturningProperties_PreserveRefKind()
+    {
+        var typeSystem = new ReflectionTypeSystem();
+        var type = typeof(ReflectionFixture<int>);
+        var refValue = typeSystem.Mapper.MapProperty(
+            Assert.IsAssignableFrom<PropertyInfo>(
+                type.GetProperty(nameof(ReflectionFixture<object>.RefValue))));
+        var refReadonly = typeSystem.Mapper.MapProperty(
+            Assert.IsAssignableFrom<PropertyInfo>(
+                type.GetProperty(nameof(ReflectionFixture<object>.RefReadonlyValue))));
+
+        Assert.Equal(RefKind.Ref, refValue.PropertyType.RefKind);
+        Assert.Equal(RefKind.RefReadOnly, refReadonly.PropertyType.RefKind);
+        Assert.Equal(
+            "System.Int32",
+            Assert.IsType<NamedTypeSignature>(refValue.PropertyType.Type)
+                .Identity.FullMetadataName);
+    }
+
+    [Fact]
     public void TypeSystem_AssignabilityAndUnqualifiedPattern_ReturnExpected()
     {
         var typeSystem = new ReflectionTypeSystem();
@@ -275,6 +332,17 @@ public sealed class ReflectionMappingTests
                 DiagnosticCodes.MissingBackendCapability);
     }
 
+    private static MatchResult MemberPattern(
+        string source,
+        CallableSignature candidate,
+        ITypeSystem typeSystem)
+    {
+        var compilation = AspectNCompilation.Create(
+            AspectNParser.ParseMemberExpression(source));
+        Assert.True(compilation.TryGetMemberPattern(out var pattern));
+        return pattern!.Match(candidate, typeSystem);
+    }
+
     private static MethodInfo RequiredMethod(Type type, string name)
     {
         return Assert.IsAssignableFrom<MethodInfo>(
@@ -312,6 +380,11 @@ internal sealed class ExplosiveMarkerAttribute : Attribute
     {
         throw new InvalidOperationException("Attributes must not be instantiated.");
     }
+}
+
+[AttributeUsage(AttributeTargets.All)]
+internal sealed class GenericMarkerAttribute<T> : Attribute
+{
 }
 
 [ExplosiveMarker]
@@ -364,6 +437,22 @@ internal sealed class ReflectionFixture<T>
     public ref readonly int RefReadonlyReturn()
     {
         return ref _value;
+    }
+
+    [GenericMarker<int>]
+    public void GenericAttributed()
+    {
+        _value++;
+    }
+
+    public ref int RefValue
+    {
+        get => ref _value;
+    }
+
+    public ref readonly int RefReadonlyValue
+    {
+        get => ref _value;
     }
 
     [ExplosiveMarker]

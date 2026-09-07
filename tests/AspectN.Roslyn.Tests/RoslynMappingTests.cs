@@ -11,6 +11,37 @@ namespace AspectN.Roslyn.Tests;
 public sealed class RoslynMappingTests
 {
     [Fact]
+    public void MapType_GlobalNamespaceType_UsesEmptyNamespaceInIdentity()
+    {
+        var compilation = RoslynTestCompilation.Create(
+            "public class GlobalFixture { }");
+        var typeSystem = new RoslynTypeSystem(compilation);
+        var symbol = compilation.GetTypeByMetadataName("GlobalFixture");
+
+        Assert.NotNull(symbol);
+        var mapped = Assert.IsType<NamedTypeSignature>(
+            typeSystem.Mapper.MapType(symbol!));
+        Assert.Equal(string.Empty, mapped.Identity.Namespace);
+        Assert.Equal("GlobalFixture", mapped.Identity.FullMetadataName);
+    }
+
+    [Fact]
+    public void MapProperty_RefReturningProperties_PreserveRefKind()
+    {
+        var compilation = RoslynTestCompilation.Create();
+        var typeSystem = new RoslynTypeSystem(compilation);
+        var sample = RequiredType(compilation, "Fixtures.Sample`1");
+
+        var refValue = typeSystem.Mapper.MapProperty(
+            RequiredProperty(sample, "RefValue"));
+        var refReadonly = typeSystem.Mapper.MapProperty(
+            RequiredProperty(sample, "RefReadonlyValue"));
+
+        Assert.Equal(AspectN.Metadata.RefKind.Ref, refValue.PropertyType.RefKind);
+        Assert.Equal(AspectN.Metadata.RefKind.RefReadOnly, refReadonly.PropertyType.RefKind);
+    }
+
+    [Fact]
     public void MapType_ConstructedNestedTupleAndNullable_PreserveSemantics()
     {
         var compilation = RoslynTestCompilation.Create();
@@ -389,6 +420,10 @@ internal static class RoslynTestCompilation
             {
                 return ref _value;
             }
+
+            public ref int RefValue => ref _value;
+
+            public ref readonly int RefReadonlyValue => ref _value;
 
             [Marker]
             public string? Name

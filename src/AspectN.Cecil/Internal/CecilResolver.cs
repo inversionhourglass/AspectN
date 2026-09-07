@@ -44,39 +44,24 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
             if (relation.Status == MatchStatus.Matched) return relation;
             if (relation.Status == MatchStatus.Unknown) return relation;
 
-            TypeDefinition? definition;
-            try
+            // 数组、引用与指针的 Resolve() 会退化为元素类型定义，继承链必须按包装类型单独判断。
+            if (current is ArrayType array)
             {
-                definition = current as TypeDefinition ?? current.Resolve();
-            }
-            catch (AssemblyResolutionException exception)
-            {
-                return ResolutionFailure(current, exception);
-            }
-            catch (InvalidOperationException exception)
-            {
-                return ResolutionFailure(current, exception);
-            }
-            catch (IOException exception)
-            {
-                return ResolutionFailure(current, exception);
-            }
-            catch (BadImageFormatException exception)
-            {
-                return ResolutionFailure(current, exception);
-            }
-            catch (NotSupportedException exception)
-            {
-                return ResolutionFailure(current, exception);
-            }
-            catch (ArgumentException exception)
-            {
-                return ResolutionFailure(current, exception);
+                return EvaluateArrayAssignment(
+                    array,
+                    target,
+                    cancellationToken);
             }
 
+            if (current is ByReferenceType or PointerType)
+            {
+                return TypeRelationResult.NotMatched;
+            }
+
+            var definition = TryResolve(current, out var failure);
             if (definition is null)
             {
-                return ResolutionFailure(current, exception: null);
+                return failure!;
             }
 
             var constructed = current as GenericInstanceType;
@@ -93,6 +78,100 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
         }
 
         return TypeRelationResult.NotMatched;
+    }
+
+    // 数组只能赋值给同秩数组（引用协变）、System.Array 与 System.Object，不能继承元素类型的关系。
+    private TypeRelationResult EvaluateArrayAssignment(
+        ArrayType candidate,
+        TypeSignature target,
+        CancellationToken cancellationToken)
+    {
+        if (target is ArrayTypeSignature targetArray)
+        {
+            if (targetArray.Rank != candidate.Rank)
+            {
+                return TypeRelationResult.NotMatched;
+            }
+
+            if (!IsCovariantElement(candidate.ElementType, out var failure))
+            {
+                return failure ?? TypeRelationResult.NotMatched;
+            }
+
+            return IsAssignableTo(
+                _mapper.MapType(candidate.ElementType),
+                targetArray.ElementType,
+                cancellationToken);
+        }
+
+        return IsArrayRootTarget(target)
+            ? TypeRelationResult.Matched
+            : TypeRelationResult.NotMatched;
+    }
+
+    // 数组协变仅对引用类型元素成立；数组与泛型参数元素按引用处理，其余元素解析后判断。
+    private static bool IsCovariantElement(
+        TypeReference element,
+        out TypeRelationResult? failure)
+    {
+        if (element is ArrayType or GenericParameter)
+        {
+            failure = null;
+            return true;
+        }
+
+        var definition = TryResolve(element, out failure);
+        return definition is not null && !definition.IsValueType;
+    }
+
+    private static bool IsArrayRootTarget(TypeSignature target)
+    {
+        return target is NamedTypeSignature named &&
+               named.TypeArguments.Count == 0 &&
+               named.Identity.ContainingType is null &&
+               named.Identity.GenericArity == 0 &&
+               named.Identity.Namespace == "System" &&
+               named.Identity.MetadataName is "Array" or "Object";
+    }
+
+    private static TypeDefinition? TryResolve(
+        TypeReference reference,
+        out TypeRelationResult? failure)
+    {
+        try
+        {
+            var definition = reference.Resolve();
+            failure = definition is null
+                ? ResolutionFailure(reference, exception: null)
+                : null;
+            return definition;
+        }
+        catch (AssemblyResolutionException exception)
+        {
+            failure = ResolutionFailure(reference, exception);
+        }
+        catch (InvalidOperationException exception)
+        {
+            failure = ResolutionFailure(reference, exception);
+        }
+        catch (IOException exception)
+        {
+            failure = ResolutionFailure(reference, exception);
+        }
+        catch (BadImageFormatException exception)
+        {
+            failure = ResolutionFailure(reference, exception);
+        }
+        catch (NotSupportedException exception)
+        {
+            failure = ResolutionFailure(reference, exception);
+        }
+        catch (ArgumentException exception)
+        {
+            failure = ResolutionFailure(reference, exception);
+        }
+
+        return null;
     }
 
     private static TypeReference Substitute(

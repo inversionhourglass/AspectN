@@ -325,13 +325,21 @@ public sealed class RoslynSignatureMapper
         return new TypeIdentity(
             MapAssemblyIdentity(definition.ContainingAssembly.Identity),
             containing is null
-                ? definition.ContainingNamespace?.ToDisplayString() ??
-                    string.Empty
+                ? MapNamespaceName(definition.ContainingNamespace)
                 : string.Empty,
             definition.Name,
             definition.Arity,
             MapTypeKind(definition.TypeKind),
             containing);
+    }
+
+    // 全局命名空间的 ToDisplayString() 返回 "<global namespace>"，必须归一化为空字符串。
+    private static string MapNamespaceName(
+        Microsoft.CodeAnalysis.INamespaceSymbol? namespaceSymbol)
+    {
+        return namespaceSymbol is null || namespaceSymbol.IsGlobalNamespace
+            ? string.Empty
+            : namespaceSymbol.ToDisplayString();
     }
 
     private static CoreAssemblyIdentity MapAssemblyIdentity(

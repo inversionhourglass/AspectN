@@ -117,6 +117,74 @@ public sealed class AttributePatternTests
             Assert.Single(typeSystem.RequestedTargets).Kind);
     }
 
+    [Fact]
+    public void Match_ConcreteGenericAttribute_DirectLookupReceivesTypeArguments()
+    {
+        var typeSystem = new AttributeTypeSystem(_ => true);
+
+        var result = Match(
+            "attr(callable Example.ReviewTagAttribute<int>)",
+            Candidate(),
+            typeSystem);
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+        var requested = Assert.IsType<NamedTypeSignature>(
+            Assert.Single(typeSystem.RequestedAttributeTypes));
+        Assert.Equal(1, requested.Identity.GenericArity);
+        var argument = Assert.IsType<NamedTypeSignature>(
+            Assert.Single(requested.TypeArguments));
+        Assert.Equal("System.Int32", argument.Identity.FullMetadataName);
+    }
+
+    [Theory]
+    [InlineData("attr(callable Example.ReviewTagAttribute<>)")]
+    [InlineData("attr(callable Example.ReviewTagAttribute<..>)")]
+    public void Match_GenericWildcardAttribute_UsesEmbeddedAttributes(
+        string source)
+    {
+        var typeSystem = new AttributeTypeSystem(_ => false);
+        var candidate = Candidate(
+            attributes:
+            [
+                new AttributeSignature(
+                    Generic(
+                        "Example",
+                        "ReviewTagAttribute",
+                        Named("System", "Int32")),
+                    AttributeTargetKind.Callable)
+            ]);
+
+        var result = Match(source, candidate, typeSystem);
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+        Assert.Empty(typeSystem.RequestedAttributeTypes);
+    }
+
+    [Theory]
+    [InlineData("attr(callable ReviewTag*<int>)", MatchStatus.Matched)]
+    [InlineData("attr(callable ReviewTag*<string>)", MatchStatus.NotMatched)]
+    public void Match_WildcardNameGenericAttribute_ComparesEmbeddedArguments(
+        string source,
+        MatchStatus expected)
+    {
+        var typeSystem = new AttributeTypeSystem(_ => false);
+        var candidate = Candidate(
+            attributes:
+            [
+                new AttributeSignature(
+                    Generic(
+                        "Example",
+                        "ReviewTagAttribute",
+                        Named("System", "Int32")),
+                    AttributeTargetKind.Callable)
+            ]);
+
+        var result = Match(source, candidate, typeSystem);
+
+        Assert.Equal(expected, result.Status);
+        Assert.Empty(typeSystem.RequestedAttributeTypes);
+    }
+
     private static MatchResult Match(
         string source,
         CallableSignature candidate,
@@ -188,6 +256,23 @@ public sealed class AttributePatternTests
                 name,
                 0,
                 TypeKind.Class));
+    }
+
+    private static NamedTypeSignature Generic(
+        string @namespace,
+        string name,
+        params TypeSignature[] arguments)
+    {
+        var identity = new TypeIdentity(
+            new AssemblyIdentity("Example.Assembly"),
+            @namespace,
+            name,
+            arguments.Length,
+            TypeKind.Class);
+        return new NamedTypeSignature(
+            identity,
+            arguments,
+            new NamedTypeSignature(identity));
     }
 
     private sealed class AttributeTypeSystem : ITypeSystem

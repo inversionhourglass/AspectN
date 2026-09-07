@@ -57,6 +57,30 @@
     "expected": "Matched"
   },
   {
+    "id": "ref-property-getter",
+    "kind": "method",
+    "member": "get_RefValue",
+    "parameterCount": 0,
+    "expression": "getter(ref int AspectN.TestAssembly.Conformance.ConformanceFixture.RefValue)",
+    "expected": "Matched"
+  },
+  {
+    "id": "ref-property-getter-without-ref",
+    "kind": "method",
+    "member": "get_RefValue",
+    "parameterCount": 0,
+    "expression": "getter(int AspectN.TestAssembly.Conformance.ConformanceFixture.RefValue)",
+    "expected": "NotMatched"
+  },
+  {
+    "id": "ref-readonly-property-getter",
+    "kind": "method",
+    "member": "get_RefReadonlyValue",
+    "parameterCount": 0,
+    "expression": "getter(ref readonly int AspectN.TestAssembly.Conformance.ConformanceFixture.RefReadonlyValue)",
+    "expected": "Matched"
+  },
+  {
     "id": "property-setter",
     "kind": "method",
     "member": "set_Name",

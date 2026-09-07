@@ -94,6 +94,10 @@ public class ConformanceFixture : IConformanceContract<string>
         return ref _value;
     }
 
+    public ref int RefValue => ref _value;
+
+    public ref readonly int RefReadonlyValue => ref _value;
+
     public async Task<int> AsyncMethod()
     {
         await Task.Yield();

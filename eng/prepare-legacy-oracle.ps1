@@ -120,11 +120,12 @@ function Assert-GitOracle {
     }
 
     Assert-PinnedMarker -Root $Root
-    $status = Invoke-Git -WorkingDirectory $Root -Arguments @(
-        'status',
-        '--porcelain',
-        '--untracked-files=all'
-    )
+    # 干净 checkout 时 git 没有输出，@() 确保结果始终是数组，避免严格模式下读取 .Count 抛错。
+    $status = @(Invoke-Git -WorkingDirectory $Root -Arguments @(
+            'status',
+            '--porcelain',
+            '--untracked-files=all'
+        ))
     if ($status.Count -ne 0) {
         throw "Legacy oracle directory '$Root' is dirty:`n$($status -join [Environment]::NewLine)"
     }

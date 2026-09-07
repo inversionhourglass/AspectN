@@ -219,49 +219,22 @@ internal static class AttributePatternEvaluator
         out TypeSignature? type)
     {
         if (pattern is not BoundNamedTypePattern named ||
-            named.Segments.Any(segment => segment.Pattern.Contains('*')) ||
-            named.Separators.Contains(".."))
+            !HasSpecifiedGenericArguments(named))
         {
             type = null;
             return false;
         }
 
-        var slashIndex = FindFirstSlash(named.Separators);
-        var outerIndex = slashIndex >= 0
-            ? slashIndex
-            : named.Segments.Count - 1;
-        var namespaceName = outerIndex == 0
-            ? string.Empty
-            : string.Join(
-                ".",
-                named.Segments
-                    .Take(outerIndex)
-                    .Select(segment => segment.Pattern));
-        TypeIdentity? containingType = null;
-        for (var index = outerIndex; index < named.Segments.Count; index++)
-        {
-            var segment = named.Segments[index];
-            containingType = new TypeIdentity(
-                new AssemblyIdentity(string.Empty),
-                index == outerIndex ? namespaceName : string.Empty,
-                segment.Pattern,
-                segment.Generic.Arity,
-                TypeKind.Class,
-                containingType);
-        }
-
-        type = new NamedTypeSignature(containingType!);
-        return true;
+        return TypePatternEvaluator.TryCreateConcreteType(pattern, out type);
     }
 
-    private static int FindFirstSlash(IReadOnlyList<string> separators)
+    // 直接特性查询要求泛型形参完全具体化；通配元数或未指定实参的模式交给类型模式求值器。
+    private static bool HasSpecifiedGenericArguments(BoundNamedTypePattern named)
     {
-        for (var index = 0; index < separators.Count; index++)
-        {
-            if (separators[index] == "/") return index;
-        }
-
-        return -1;
+        return !named.Segments.Any(segment =>
+            segment.Generic.Kind == BoundGenericArityKind.AnyPositive ||
+            (segment.Generic.Arity > 0 &&
+             segment.Generic.Arguments.Count != segment.Generic.Arity));
     }
 
     private static MatchStatus Unknown(

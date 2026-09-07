@@ -62,6 +62,111 @@ public sealed class CecilTypeSystemTests
     }
 
     [Fact]
+    public void IsAssignableTo_ArrayCandidate_DoesNotInheritElementBaseRelationship()
+    {
+        var module = TestModuleFactory.Create();
+        using var typeSystem = new CecilTypeSystem(module);
+        var baseType = AddClass(module, "Base", module.TypeSystem.Object);
+        var derivedType = AddClass(module, "Derived", baseType);
+        var derivedArray = typeSystem.Mapper.MapType(
+            new ArrayType(derivedType, 1));
+
+        var result = typeSystem.IsAssignableTo(
+            derivedArray,
+            typeSystem.Mapper.MapType(baseType));
+
+        Assert.Equal(MatchStatus.NotMatched, result.Status);
+    }
+
+    [Fact]
+    public void IsAssignableTo_ArrayCandidate_DoesNotInheritElementInterfaceRelationship()
+    {
+        var module = TestModuleFactory.Create();
+        using var typeSystem = new CecilTypeSystem(module);
+        var contract = new TypeDefinition(
+            "Example",
+            "IElement",
+            TypeAttributes.Public |
+            TypeAttributes.Interface |
+            TypeAttributes.Abstract,
+            module.TypeSystem.Object);
+        module.Types.Add(contract);
+        var derivedType = AddClass(module, "Derived", module.TypeSystem.Object);
+        derivedType.Interfaces.Add(new InterfaceImplementation(contract));
+        var derivedArray = typeSystem.Mapper.MapType(
+            new ArrayType(derivedType, 1));
+
+        var result = typeSystem.IsAssignableTo(
+            derivedArray,
+            typeSystem.Mapper.MapType(contract));
+
+        Assert.Equal(MatchStatus.NotMatched, result.Status);
+    }
+
+    [Fact]
+    public void IsAssignableTo_CovariantArray_MatchesBaseElementArray()
+    {
+        var module = TestModuleFactory.Create();
+        using var typeSystem = new CecilTypeSystem(module);
+        var baseType = AddClass(module, "Base", module.TypeSystem.Object);
+        var derivedType = AddClass(module, "Derived", baseType);
+        var derivedArray = typeSystem.Mapper.MapType(
+            new ArrayType(derivedType, 1));
+        var baseArray = typeSystem.Mapper.MapType(new ArrayType(baseType, 1));
+
+        var forward = typeSystem.IsAssignableTo(derivedArray, baseArray);
+        var reverse = typeSystem.IsAssignableTo(baseArray, derivedArray);
+        var rankMismatch = typeSystem.IsAssignableTo(
+            derivedArray,
+            typeSystem.Mapper.MapType(new ArrayType(baseType, 2)));
+
+        Assert.Equal(MatchStatus.Matched, forward.Status);
+        Assert.Equal(MatchStatus.NotMatched, reverse.Status);
+        Assert.Equal(MatchStatus.NotMatched, rankMismatch.Status);
+    }
+
+    [Fact]
+    public void IsAssignableTo_ValueElementArray_DoesNotMatchOtherElementArray()
+    {
+        var module = TestModuleFactory.Create();
+        using var typeSystem = new CecilTypeSystem(module);
+        var valueType = AddStruct(module, "Number");
+        var valueArray = typeSystem.Mapper.MapType(
+            new ArrayType(valueType, 1));
+        var objectArray = typeSystem.Mapper.MapType(
+            new ArrayType(module.TypeSystem.Object, 1));
+
+        var result = typeSystem.IsAssignableTo(valueArray, objectArray);
+
+        Assert.Equal(MatchStatus.NotMatched, result.Status);
+    }
+
+    [Fact]
+    public void IsAssignableTo_ArrayCandidate_MatchesSystemArrayRootsOnly()
+    {
+        var module = TestModuleFactory.Create();
+        using var typeSystem = new CecilTypeSystem(module);
+        var baseType = AddClass(module, "Base", module.TypeSystem.Object);
+        var derivedType = AddClass(module, "Derived", baseType);
+        var derivedArray = typeSystem.Mapper.MapType(
+            new ArrayType(derivedType, 1));
+        var arrayRoot = typeSystem.Mapper.MapType(
+            new TypeReference("System", "Array", module, module.TypeSystem.CoreLibrary));
+        var objectRoot = typeSystem.Mapper.MapType(module.TypeSystem.Object);
+        var unrelated = typeSystem.Mapper.MapType(baseType);
+
+        Assert.Equal(
+            MatchStatus.Matched,
+            typeSystem.IsAssignableTo(derivedArray, arrayRoot).Status);
+        Assert.Equal(
+            MatchStatus.Matched,
+            typeSystem.IsAssignableTo(derivedArray, objectRoot).Status);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.IsAssignableTo(derivedArray, unrelated).Status);
+    }
+
+    [Fact]
     public void IsAssignableTo_ConstructedGenericInterface_SubstitutesArguments()
     {
         var module = TestModuleFactory.Create();
@@ -207,6 +312,24 @@ public sealed class CecilTypeSystemTests
             name,
             TypeAttributes.Public | TypeAttributes.Class,
             baseType);
+        module.Types.Add(definition);
+        return definition;
+    }
+
+    private static TypeDefinition AddStruct(ModuleDefinition module, string name)
+    {
+        var valueType = new TypeReference(
+            "System",
+            "ValueType",
+            module,
+            module.TypeSystem.CoreLibrary);
+        var definition = new TypeDefinition(
+            "Example",
+            name,
+            TypeAttributes.Public |
+            TypeAttributes.SequentialLayout |
+            TypeAttributes.Sealed,
+            valueType);
         module.Types.Add(definition);
         return definition;
     }

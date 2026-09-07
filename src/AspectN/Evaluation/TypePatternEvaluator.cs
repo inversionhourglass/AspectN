@@ -648,7 +648,7 @@ internal static class TypePatternEvaluator
         return true;
     }
 
-    private static bool TryCreateConcreteType(
+    internal static bool TryCreateConcreteType(
         BoundTypePattern pattern,
         out TypeSignature? type)
     {
