@@ -279,6 +279,16 @@ internal sealed class SelectorParser(Parser parser)
                 }
 
                 tokens.Add(NextToken());
+                // 否定作用于完整 accessibility 短语，复合访问修饰符必须整体消费，不能拆成两条约束。
+                if (LanguageVersion == AspectNLanguageVersion.Standard &&
+                    ((tokens[1].Text == "private" &&
+                      IsIdentifier("protected")) ||
+                     (tokens[1].Text == "protected" &&
+                      IsIdentifier("internal"))))
+                {
+                    tokens.Add(NextToken());
+                }
+
                 modifiers.Add(new ModifierSyntax(tokens));
                 continue;
             }

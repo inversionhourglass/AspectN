@@ -297,11 +297,23 @@ internal sealed class Binder(
             : GetStandardAttributeTarget(targetText);
         var parameterValue = tokens.FirstOrDefault(
             token => token.Kind == SyntaxKind.IntegerToken)?.Value;
-        var parameterIndex = parameterValue is long value &&
-                             value >= int.MinValue &&
-                             value <= int.MaxValue
-            ? (int?)value
-            : null;
+        int? parameterIndex = null;
+        if (parameterValue is long value &&
+            value >= int.MinValue &&
+            value <= int.MaxValue)
+        {
+            parameterIndex = (int)value;
+        }
+        else if (parameterValue is not null)
+        {
+            // 越界索引不能退化为通配符扩大匹配范围：报告诊断，并绑定到永不匹配的哨兵索引。
+            _diagnostics.Add(
+                DiagnosticCodes.InvalidParameterIndex,
+                DiagnosticSeverity.Error,
+                $"The parameter index '{parameterValue}' is outside the Int32 range.",
+                syntax.FullSpan);
+            parameterIndex = int.MinValue;
+        }
         var domain = target == BoundAttributeTargetKind.Property
             ? SelectorTargetDomain.PropertyAccessor
             : SelectorTargetDomain.All;
@@ -375,7 +387,12 @@ internal sealed class Binder(
         ConstructorSignatureSyntax syntax,
         VariableScope scope)
     {
+        // 声明类型在源码顺序上先于参数，其引入的变量必须先进入作用域，参数内的引用才是合法引用。
         var declaringType = syntax.Parts.OfType<TypePatternSyntax>().First();
+        var declaringTypePattern = BindTypePattern(
+            declaringType,
+            scope,
+            IsUnderNegation);
         var parameters = syntax.Parts
             .OfType<ParameterSyntax>()
             .Select(parameter =>
@@ -383,7 +400,7 @@ internal sealed class Binder(
             .ToArray();
         return new BoundConstructorSignature(
             syntax.FullSpan,
-            BindTypePattern(declaringType, scope, IsUnderNegation),
+            declaringTypePattern,
             parameters,
             MatchesAnyParameters(syntax.Parts));
     }

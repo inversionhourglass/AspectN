@@ -516,6 +516,7 @@ static AspectN.Diagnostics.DiagnosticCodes.ExecutionSelectorMigration.get -> str
 static AspectN.Diagnostics.DiagnosticCodes.InvalidEscapeSequence.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.InvalidInteger.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.InvalidModifierCombination.get -> string!
+static AspectN.Diagnostics.DiagnosticCodes.InvalidParameterIndex.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.InvalidRefKind.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.InvalidRegex.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.InvalidTargetDomain.get -> string!

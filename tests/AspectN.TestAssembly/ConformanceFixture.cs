@@ -54,6 +54,11 @@ public class ConformanceFixture : IConformanceContract<string>
         return output;
     }
 
+    public void Swap<T>(ref T left, T right)
+    {
+        (left, right) = (right, left);
+    }
+
     public int[,][] Arrays(int[,][] value)
     {
         _value += value.Length;

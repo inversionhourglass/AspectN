@@ -167,6 +167,348 @@ public sealed class CecilTypeSystemTests
     }
 
     [Fact]
+    public void IsAssignableTo_ArrayCandidate_MatchesArrayOwnedNonGenericInterfaces()
+    {
+        var module = TestModuleFactory.Create();
+        using var typeSystem = new CecilTypeSystem(module);
+        var valueType = AddStruct(module, "Number");
+        var valueArray = typeSystem.Mapper.MapType(
+            new ArrayType(valueType, 2));
+        var multiDimensional = typeSystem.Mapper.MapType(
+            new ArrayType(module.TypeSystem.Int32, 2));
+
+        Assert.Equal(
+            MatchStatus.Matched,
+            typeSystem.IsAssignableTo(
+                valueArray,
+                NamedTarget(typeSystem, module, "System.Collections", "IEnumerable")).Status);
+        Assert.Equal(
+            MatchStatus.Matched,
+            typeSystem.IsAssignableTo(
+                valueArray,
+                NamedTarget(typeSystem, module, "System.Collections", "IList")).Status);
+        Assert.Equal(
+            MatchStatus.Matched,
+            typeSystem.IsAssignableTo(
+                multiDimensional,
+                NamedTarget(typeSystem, module, "System", "ICloneable")).Status);
+    }
+
+    [Fact]
+    public void IsAssignableTo_SzArray_MatchesGenericCollectionInterfaces()
+    {
+        var module = TestModuleFactory.Create();
+        using var typeSystem = new CecilTypeSystem(module);
+        var baseType = AddClass(module, "Base", module.TypeSystem.Object);
+        var derivedType = AddClass(module, "Derived", baseType);
+        var derivedArray = typeSystem.Mapper.MapType(
+            new ArrayType(derivedType, 1));
+        var numberType = AddStruct(module, "Number");
+        var numberArray = typeSystem.Mapper.MapType(
+            new ArrayType(numberType, 1));
+        var multiDimensional = typeSystem.Mapper.MapType(
+            new ArrayType(module.TypeSystem.Int32, 2));
+
+        Assert.Equal(
+            MatchStatus.Matched,
+            typeSystem.IsAssignableTo(
+                derivedArray,
+                GenericTarget(
+                    typeSystem,
+                    module,
+                    "IEnumerable",
+                    derivedType)).Status);
+        Assert.Equal(
+            MatchStatus.Matched,
+            typeSystem.IsAssignableTo(
+                derivedArray,
+                GenericTarget(
+                    typeSystem,
+                    module,
+                    "IEnumerable",
+                    baseType)).Status);
+        Assert.Equal(
+            MatchStatus.Matched,
+            typeSystem.IsAssignableTo(
+                derivedArray,
+                GenericTarget(
+                    typeSystem,
+                    module,
+                    "IList",
+                    baseType)).Status);
+        Assert.Equal(
+            MatchStatus.Matched,
+            typeSystem.IsAssignableTo(
+                numberArray,
+                GenericTarget(
+                    typeSystem,
+                    module,
+                    "IList",
+                    numberType)).Status);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.IsAssignableTo(
+                numberArray,
+                GenericTarget(
+                    typeSystem,
+                    module,
+                    "IEnumerable",
+                    baseType)).Status);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.IsAssignableTo(
+                multiDimensional,
+                GenericTarget(
+                    typeSystem,
+                    module,
+                    "IEnumerable",
+                    module.TypeSystem.Int32)).Status);
+    }
+
+    [Fact]
+    public void IsAssignableTo_NonVectorRankOneArray_RejectsVectorOnlyRelations()
+    {
+        var module = TestModuleFactory.Create();
+        using var typeSystem = new CecilTypeSystem(module);
+        var baseType = AddClass(module, "Base", module.TypeSystem.Object);
+        var derivedType = AddClass(module, "Derived", baseType);
+        var nonVector = new ArrayType(derivedType, 1);
+        nonVector.Dimensions[0] = new ArrayDimension(1, null);
+        Assert.False(nonVector.IsVector);
+        var nonVectorSignature = typeSystem.Mapper.MapType(nonVector);
+        var baseArray = typeSystem.Mapper.MapType(
+            new ArrayType(baseType, 1));
+
+        // 非向量（非零下界）一维数组不能赋给向量数组；泛型集合接口仅对向量数组成立。
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.IsAssignableTo(nonVectorSignature, baseArray).Status);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.IsAssignableTo(
+                nonVectorSignature,
+                GenericTarget(typeSystem, module, "IEnumerable", derivedType)).Status);
+        // 反方向（向量 → 非向量一维）按 CLR 规则允许，元素引用协变即可。
+        var derivedVector = typeSystem.Mapper.MapType(
+            new ArrayType(derivedType, 1));
+        var baseNonVector = typeSystem.Mapper.MapType(nonVector);
+        Assert.Equal(
+            MatchStatus.Matched,
+            typeSystem.IsAssignableTo(derivedVector, baseNonVector).Status);
+        // 非泛型接口由任意秩的数组实现，与向量性无关。
+        Assert.Equal(
+            MatchStatus.Matched,
+            typeSystem.IsAssignableTo(
+                nonVectorSignature,
+                NamedTarget(typeSystem, module, "System.Collections", "IEnumerable")).Status);
+    }
+
+    [Fact]
+    public void IsAssignableTo_MultidimensionalReferenceArray_MatchesCovariance()
+    {
+        var module = TestModuleFactory.Create();
+        using var typeSystem = new CecilTypeSystem(module);
+        var baseType = AddClass(module, "Base", module.TypeSystem.Object);
+        var derivedType = AddClass(module, "Derived", baseType);
+        var numberType = AddStruct(module, "Number");
+        var derivedGrid = typeSystem.Mapper.MapType(
+            new ArrayType(derivedType, 2));
+        var baseGrid = typeSystem.Mapper.MapType(
+            new ArrayType(baseType, 2));
+        var numberGrid = typeSystem.Mapper.MapType(
+            new ArrayType(numberType, 2));
+
+        // 多维引用类型数组支持协变；值类型元素不协变。
+        Assert.Equal(
+            MatchStatus.Matched,
+            typeSystem.IsAssignableTo(derivedGrid, baseGrid).Status);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.IsAssignableTo(baseGrid, derivedGrid).Status);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.IsAssignableTo(numberGrid, baseGrid).Status);
+    }
+
+    [Fact]
+    public void MapCallable_NonVectorArrayReturnType_PreservesShape()
+    {
+        var module = TestModuleFactory.Create();
+        using var typeSystem = new CecilTypeSystem(module);
+        var probe = AddClass(module, "Probe", module.TypeSystem.Object);
+        var nonVector = new ArrayType(module.TypeSystem.String, 1);
+        nonVector.Dimensions[0] = new ArrayDimension(1, null);
+        var nonVectorMethod = new MethodDefinition(
+            "Array",
+            MethodAttributes.Public,
+            nonVector);
+        var vectorMethod = new MethodDefinition(
+            "Vector",
+            MethodAttributes.Public,
+            new ArrayType(module.TypeSystem.String, 1));
+        probe.Methods.Add(nonVectorMethod);
+        probe.Methods.Add(vectorMethod);
+
+        // 成员映射复制数组类型时必须保留维度形状：非 SZ 返回值不能匹配 SZ 专属的泛型集合接口。
+        var mapped = typeSystem.Mapper.MapCallable(nonVectorMethod);
+        var target = GenericTarget(
+            typeSystem,
+            module,
+            "IEnumerable",
+            module.TypeSystem.String);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.IsAssignableTo(mapped.ReturnType.Type, target).Status);
+
+        var nonVectorPattern = AspectN.AspectNCompilation.Create(
+            AspectN.AspectNParser.ParseMemberExpression(
+                "method(System.Collections.Generic.IEnumerable<string>+ Example.Probe.Array())"));
+        Assert.True(nonVectorPattern.TryGetMemberPattern(out var pattern));
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            pattern!.Match(mapped, typeSystem).Status);
+
+        // 同一目标的向量返回值作为对照，证明负例来自形状而非目标构造。
+        var vectorMapped = typeSystem.Mapper.MapCallable(vectorMethod);
+        Assert.Equal(
+            MatchStatus.Matched,
+            typeSystem.IsAssignableTo(vectorMapped.ReturnType.Type, target).Status);
+    }
+
+    [Fact]
+    public void IsAssignableTo_GenericVariance_RespectsParameterVariance()
+    {
+        var module = TestModuleFactory.Create();
+        using var typeSystem = new CecilTypeSystem(module);
+        var baseType = AddClass(module, "Element", module.TypeSystem.Object);
+        var derivedType = AddClass(module, "SpecificElement", baseType);
+        var numberType = AddStruct(module, "Number");
+        var covariant = AddVariantInterface(module, "IProducer`1", isCovariant: true);
+        var contravariant = AddVariantInterface(
+            module,
+            "IConsumer`1",
+            isCovariant: false);
+
+        var producerOfDerived = typeSystem.Mapper.MapType(
+            InstanceOf(covariant, derivedType));
+        var producerOfBase = typeSystem.Mapper.MapType(
+            InstanceOf(covariant, baseType));
+        var producerOfNumber = typeSystem.Mapper.MapType(
+            InstanceOf(covariant, numberType));
+        var consumerOfBase = typeSystem.Mapper.MapType(
+            InstanceOf(contravariant, baseType));
+        var consumerOfDerived = typeSystem.Mapper.MapType(
+            InstanceOf(contravariant, derivedType));
+        var consumerOfNumber = typeSystem.Mapper.MapType(
+            InstanceOf(contravariant, numberType));
+
+        Assert.Equal(
+            MatchStatus.Matched,
+            typeSystem.IsAssignableTo(producerOfDerived, producerOfBase).Status);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.IsAssignableTo(producerOfBase, producerOfDerived).Status);
+        Assert.Equal(
+            MatchStatus.Matched,
+            typeSystem.IsAssignableTo(consumerOfBase, consumerOfDerived).Status);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.IsAssignableTo(consumerOfDerived, consumerOfBase).Status);
+        // 变型不能通过装箱将值类型实参转换为引用类型实参。
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.IsAssignableTo(producerOfNumber, producerOfBase).Status);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.IsAssignableTo(consumerOfBase, consumerOfNumber).Status);
+    }
+
+    [Fact]
+    public void IsAssignableTo_InvariantGenericArguments_RequireStructuralEquality()
+    {
+        var module = TestModuleFactory.Create();
+        using var typeSystem = new CecilTypeSystem(module);
+        var baseType = AddClass(module, "Element", module.TypeSystem.Object);
+        var derivedType = AddClass(module, "SpecificElement", baseType);
+        var container = AddGenericType(module, "IBox`1", TypeAttributes.Interface |
+            TypeAttributes.Public | TypeAttributes.Abstract);
+
+        var boxOfDerived = typeSystem.Mapper.MapType(
+            InstanceOf(container, derivedType));
+        var boxOfBase = typeSystem.Mapper.MapType(
+            InstanceOf(container, baseType));
+
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.IsAssignableTo(boxOfDerived, boxOfBase).Status);
+        Assert.Equal(
+            MatchStatus.Matched,
+            typeSystem.IsAssignableTo(boxOfDerived, boxOfDerived).Status);
+    }
+
+    private static TypeSignature NamedTarget(
+        CecilTypeSystem typeSystem,
+        ModuleDefinition module,
+        string @namespace,
+        string name)
+    {
+        return typeSystem.Mapper.MapType(
+            new TypeReference(@namespace, name, module, module.TypeSystem.CoreLibrary));
+    }
+
+    private static NamedTypeSignature GenericTarget(
+        CecilTypeSystem typeSystem,
+        ModuleDefinition module,
+        string name,
+        TypeReference argument)
+    {
+        var identity = new TypeIdentity(
+            new AssemblyIdentity(string.Empty),
+            "System.Collections.Generic",
+            name,
+            1,
+            TypeKind.Interface);
+        return new NamedTypeSignature(
+            identity,
+            new[] { typeSystem.Mapper.MapType(argument) },
+            new NamedTypeSignature(identity));
+    }
+
+    private static GenericInstanceType InstanceOf(
+        TypeReference definition,
+        TypeReference argument)
+    {
+        var instance = new GenericInstanceType(definition);
+        instance.GenericArguments.Add(argument);
+        return instance;
+    }
+
+    private static TypeDefinition AddVariantInterface(
+        ModuleDefinition module,
+        string name,
+        bool isCovariant)
+    {
+        var definition = new TypeDefinition(
+            "Example",
+            name,
+            TypeAttributes.Public | TypeAttributes.Interface | TypeAttributes.Abstract,
+            module.TypeSystem.Object);
+        var parameter = new GenericParameter("T", definition);
+        if (isCovariant)
+        {
+            parameter.IsCovariant = true;
+        }
+        else
+        {
+            parameter.IsContravariant = true;
+        }
+
+        definition.GenericParameters.Add(parameter);
+        module.Types.Add(definition);
+        return definition;
+    }
+
+    [Fact]
     public void IsAssignableTo_ConstructedGenericInterface_SubstitutesArguments()
     {
         var module = TestModuleFactory.Create();

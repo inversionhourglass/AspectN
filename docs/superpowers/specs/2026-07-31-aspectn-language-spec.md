@@ -644,6 +644,7 @@ Standard diagnostics include stable categories for:
 - Invalid modifier combinations.
 - Invalid ref kind.
 - Duplicate or illegally scoped variables.
+- Invalid parameter index outside the Int32 range.
 - Missing backend capability.
 - Resolution failure.
 - Regex timeout.

@@ -181,6 +181,51 @@ public sealed class CecilCallableMappingTests
         return EmittedFixture.FindType(typeSystem, "CallableFixture`1");
     }
 
+    [Fact]
+    public void MapCallable_ConstructedDeclaringType_SubstitutesTypeArguments()
+    {
+        // 经 ImportReference 导入 List<string> 的成员后，声明类型泛型参数必须替换为实参，
+        // 而不是残留开放泛型参数 T。
+        var module = ModuleDefinition.ReadModule(
+            typeof(List<>).Assembly.Location);
+        using var typeSystem = new CecilTypeSystem(module);
+        var add = module.ImportReference(
+            typeof(List<string>).GetMethod("Add")!);
+        var getItem = module.ImportReference(
+            typeof(List<string>).GetProperty("Item")!.GetMethod!);
+
+        var addSignature = typeSystem.Mapper.MapCallable(add);
+        var parameter = Assert.IsType<NamedTypeSignature>(
+            Assert.Single(addSignature.Parameters).Type.Type);
+        Assert.Equal("System.String", parameter.Identity.FullMetadataName);
+
+        var getItemSignature = typeSystem.Mapper.MapCallable(getItem);
+        var returnType = Assert.IsType<NamedTypeSignature>(
+            getItemSignature.ReturnType.Type);
+        Assert.Equal("System.String", returnType.Identity.FullMetadataName);
+
+        // 关联属性（索引器）也必须携带封闭声明类型上下文：属性类型不能残留开放泛型参数 T。
+        Assert.NotNull(getItemSignature.AssociatedProperty);
+        var propertyType = Assert.IsType<NamedTypeSignature>(
+            getItemSignature.AssociatedProperty!.PropertyType.Type);
+        Assert.Equal("System.String", propertyType.Identity.FullMetadataName);
+
+        var compilation = AspectN.AspectNCompilation.Create(
+            AspectN.AspectNParser.ParseMemberExpression(
+                "method(void System.Collections.Generic.List<string>.Add(string))"));
+        Assert.True(compilation.TryGetMemberPattern(out var pattern));
+        Assert.Equal(
+            MatchStatus.Matched,
+            pattern!.Match(addSignature, typeSystem).Status);
+        var getterCompilation = AspectN.AspectNCompilation.Create(
+            AspectN.AspectNParser.ParseMemberExpression(
+                "getter(string System.Collections.Generic.List<string>.Item)"));
+        Assert.True(getterCompilation.TryGetMemberPattern(out var getterPattern));
+        Assert.Equal(
+            MatchStatus.Matched,
+            getterPattern!.Match(getItemSignature, typeSystem).Status);
+    }
+
     private static MethodDefinition FindMethod(
         TypeDefinition type,
         string name)

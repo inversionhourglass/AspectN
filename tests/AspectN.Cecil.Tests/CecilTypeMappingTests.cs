@@ -97,8 +97,55 @@ public sealed class CecilTypeMappingTests
         Assert.Equal(
             GenericParameterOwnerKind.Method,
             methodParameter.Parameter.OwnerKind);
-        Assert.Equal("Example.Box`1.Map`1", methodParameter.Parameter.OwnerId);
+        Assert.Equal("Example.Box`1.Map`1()", methodParameter.Parameter.OwnerId);
         Assert.Equal(0, methodParameter.Parameter.Position);
+    }
+
+    [Fact]
+    public void MapType_OverloadedMethodGenericParameters_HaveDistinctOwnerIds()
+    {
+        var module = TestModuleFactory.Create();
+        using var typeSystem = new CecilTypeSystem(module);
+        var definition = AddClass(module, "Example", "Overloads");
+        var singleParameter = new MethodDefinition(
+            "Map",
+            MethodAttributes.Public | MethodAttributes.Static,
+            module.TypeSystem.Void);
+        singleParameter.GenericParameters.Add(
+            new GenericParameter("T", singleParameter));
+        singleParameter.Parameters.Add(new ParameterDefinition(
+            "value",
+            ParameterAttributes.None,
+            singleParameter.GenericParameters[0]));
+        var doubleParameter = new MethodDefinition(
+            "Map",
+            MethodAttributes.Public | MethodAttributes.Static,
+            module.TypeSystem.Void);
+        doubleParameter.GenericParameters.Add(
+            new GenericParameter("T", doubleParameter));
+        doubleParameter.Parameters.Add(new ParameterDefinition(
+            "value",
+            ParameterAttributes.None,
+            doubleParameter.GenericParameters[0]));
+        doubleParameter.Parameters.Add(new ParameterDefinition(
+            "extra",
+            ParameterAttributes.None,
+            module.TypeSystem.Int32));
+        definition.Methods.Add(singleParameter);
+        definition.Methods.Add(doubleParameter);
+
+        var first = Assert.IsType<GenericParameterTypeSignature>(
+            typeSystem.Mapper.MapType(singleParameter.GenericParameters[0]));
+        var second = Assert.IsType<GenericParameterTypeSignature>(
+            typeSystem.Mapper.MapType(doubleParameter.GenericParameters[0]));
+
+        Assert.Equal("Example.Overloads.Map`1(!!0)", first.Parameter.OwnerId);
+        Assert.Equal(
+            "Example.Overloads.Map`1(!!0,System.Int32)",
+            second.Parameter.OwnerId);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.AreEqual(first, second).Status);
     }
 
     [Fact]
@@ -202,6 +249,20 @@ public sealed class CecilTypeMappingTests
 
         Assert.False(moduleReference.IsAlive);
         GC.KeepAlive(context);
+    }
+
+    private static TypeDefinition AddClass(
+        ModuleDefinition module,
+        string @namespace,
+        string name)
+    {
+        var definition = new TypeDefinition(
+            @namespace,
+            name,
+            TypeAttributes.Public | TypeAttributes.Class,
+            module.TypeSystem.Object);
+        module.Types.Add(definition);
+        return definition;
     }
 
     private static TypeDefinition AddGenericType(

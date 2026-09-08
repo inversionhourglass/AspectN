@@ -26,6 +26,37 @@ public sealed class RoslynMappingTests
     }
 
     [Fact]
+    public void MapType_RefOverloadGenericParameters_HaveDistinctOwnerIds()
+    {
+        var compilation = RoslynTestCompilation.Create();
+        var typeSystem = new RoslynTypeSystem(compilation);
+        var probe = RequiredType(compilation, "Fixtures.OwnerProbe");
+        var overloads = probe.GetMembers("M").OfType<IMethodSymbol>().ToArray();
+        var valueOverload = Assert.Single(
+            overloads,
+            method => method.Parameters.Length == 1 &&
+                method.Parameters[0].RefKind ==
+                    Microsoft.CodeAnalysis.RefKind.None);
+        var refOverload = Assert.Single(
+            overloads,
+            method => method.Parameters.Length == 1 &&
+                method.Parameters[0].RefKind ==
+                    Microsoft.CodeAnalysis.RefKind.Ref);
+
+        var first = Assert.IsType<GenericParameterTypeSignature>(
+            typeSystem.Mapper.MapType(valueOverload.TypeParameters[0]));
+        var second = Assert.IsType<GenericParameterTypeSignature>(
+            typeSystem.Mapper.MapType(refOverload.TypeParameters[0]));
+
+        // ref 方式以 & 后缀编入规范身份，与 Reflection/Cecil 的元数据形状一致。
+        Assert.Equal("Fixtures.OwnerProbe.M`1(!!0)", first.Parameter.OwnerId);
+        Assert.Equal("Fixtures.OwnerProbe.M`1(!!0&)", second.Parameter.OwnerId);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.AreEqual(first, second).Status);
+    }
+
+    [Fact]
     public void MapProperty_RefReturningProperties_PreserveRefKind()
     {
         var compilation = RoslynTestCompilation.Create();
@@ -374,6 +405,18 @@ internal static class RoslynTestCompilation
         {
             public class Inner<TKey, TValue>
             {
+            }
+        }
+
+        public class OwnerProbe
+        {
+            public void M<T>(T value)
+            {
+            }
+
+            public void M<T>(ref T value)
+            {
+                _ = value;
             }
         }
 

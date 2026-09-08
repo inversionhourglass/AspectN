@@ -198,8 +198,11 @@ internal readonly struct CecilTypeCacheKey : IEquatable<CecilTypeCacheKey>
                 builder.Append(">)");
                 return;
             case ArrayType array:
+                // 向量数组与非零下界的一维数组是不同形状，不能共用缓存身份。
                 builder.Append("array:");
                 builder.Append(array.Rank);
+                builder.Append(':');
+                builder.Append(array.IsVector);
                 builder.Append('(');
                 AppendShape(builder, array.ElementType);
                 builder.Append(')');
@@ -253,17 +256,7 @@ internal readonly struct CecilTypeCacheKey : IEquatable<CecilTypeCacheKey>
 
     private static string GetOwnerIdentity(GenericParameter parameter)
     {
-        return parameter.Owner switch
-        {
-            TypeReference type => type.FullName,
-            MethodReference method => GetMethodOwnerIdentity(method),
-            _ => parameter.Owner?.GetType().FullName ?? string.Empty
-        };
-    }
-
-    private static string GetMethodOwnerIdentity(MethodReference method)
-    {
-        return $"{method.DeclaringType.FullName}.{method.Name}`" +
-               method.GenericParameters.Count;
+        // 与 CecilTypeMapper 的 owner ID 使用同一公式：参数形状参与身份，避免重载碰撞导致缓存串用。
+        return CecilTypeMapper.GetGenericParameterOwner(parameter);
     }
 }

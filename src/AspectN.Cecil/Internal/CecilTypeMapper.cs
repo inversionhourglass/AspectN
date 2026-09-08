@@ -49,23 +49,28 @@ internal static class CecilTypeMapper
             definition.OriginalDefinition ?? definition);
     }
 
+    internal static string GetGenericParameterOwner(
+        GenericParameter parameter)
+    {
+        return parameter.Owner switch
+        {
+            TypeReference type => type.FullName,
+            MethodReference method => GetMethodOwnerId(method),
+            _ => parameter.Owner?.GetType().FullName ?? string.Empty
+        };
+    }
+
     private static GenericParameterTypeSignature MapGenericParameter(
         GenericParameter parameter)
     {
         var ownerKind = parameter.Type == GenericParameterType.Method
             ? GenericParameterOwnerKind.Method
             : GenericParameterOwnerKind.Type;
-        var ownerId = parameter.Owner switch
-        {
-            TypeReference type => type.FullName,
-            MethodReference method => GetMethodOwnerId(method),
-            _ => parameter.Owner?.GetType().FullName ?? string.Empty
-        };
         return new GenericParameterTypeSignature(
             new GenericParameterSignature(
                 parameter.Name,
                 ownerKind,
-                ownerId,
+                GetGenericParameterOwner(parameter),
                 parameter.Position));
     }
 
@@ -247,7 +252,53 @@ internal static class CecilTypeMapper
 
     private static string GetMethodOwnerId(MethodReference method)
     {
+        // 参数形状参与 owner ID 以区分同名同元数的重载；构造规则与 Reflection、Roslyn 适配器一致。
+        var parameters = method.Parameters
+            .Select(parameter => CanonicalParameterForm(parameter.ParameterType))
+            .ToArray();
         return $"{method.DeclaringType.FullName}.{method.Name}`" +
-               method.GenericParameters.Count;
+               MethodGenericArity(method) +
+               $"({string.Join(",", parameters)})";
+    }
+
+    private static int MethodGenericArity(MethodReference method)
+    {
+        return method is GenericInstanceMethod instance
+            ? instance.ElementMethod.GenericParameters.Count
+            : method.GenericParameters.Count;
+    }
+
+    private static string CanonicalParameterForm(TypeReference type)
+    {
+        switch (type)
+        {
+            case GenericParameter parameter:
+                return (parameter.Type == GenericParameterType.Type
+                    ? "!"
+                    : "!!") + parameter.Position;
+            case ByReferenceType byReference:
+                return CanonicalParameterForm(byReference.ElementType) + "&";
+            case PointerType pointer:
+                return CanonicalParameterForm(pointer.ElementType) + "*";
+            case ArrayType array:
+                return CanonicalParameterForm(array.ElementType) +
+                       ArraySuffix(array.Rank);
+            case GenericInstanceType generic:
+                var arguments = generic.GenericArguments
+                    .Select(CanonicalParameterForm);
+                return $"{CanonicalParameterForm(generic.ElementType)}" +
+                       $"<{string.Join(",", arguments)}>";
+            case TypeSpecification specification:
+                return CanonicalParameterForm(specification.ElementType);
+            default:
+                return type.FullName;
+        }
+    }
+
+    private static string ArraySuffix(int rank)
+    {
+        return "[" + (rank == 1
+            ? string.Empty
+            : new string(',', rank - 1)) + "]";
     }
 }

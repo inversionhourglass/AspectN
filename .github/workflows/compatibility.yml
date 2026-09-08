@@ -64,6 +64,15 @@ jobs:
           repository: inversionhourglass/Rougamo
           ref: c4071b5e3ded79ee30c047cf45685637c542fa26
           path: artifacts/rougamo
+          submodules: recursive
+
+      # Rougamo.Fody 无条件导入 shared/ 下的子模块 projitems，缺少子模块时项目求值直接 MSB4019。
+      # 空的 props 文件阻止嵌套 checkout 向上继承 AspectN 的中央包管理，避免 NU1008。
+      - name: Isolate Rougamo MSBuild configuration
+        shell: bash
+        run: |
+          echo '<Project />' > artifacts/rougamo/Directory.Build.props
+          echo '<Project />' > artifacts/rougamo/Directory.Packages.props
 
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
@@ -147,6 +156,15 @@ jobs:
           repository: inversionhourglass/Rougamo
           ref: c4071b5e3ded79ee30c047cf45685637c542fa26
           path: artifacts/rougamo
+          submodules: recursive
+
+      # 与 fody-cecil 任务一致：空 props 文件阻断中央包管理继承，
+      # 否则 src/Rougamo 的显式包版本会在 restore 时触发 NU1008。
+      - name: Isolate Rougamo MSBuild configuration
+        shell: bash
+        run: |
+          echo '<Project />' > artifacts/rougamo/Directory.Build.props
+          echo '<Project />' > artifacts/rougamo/Directory.Packages.props
 
       - name: Set up .NET
         uses: actions/setup-dotnet@v4

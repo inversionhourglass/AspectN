@@ -234,7 +234,21 @@ internal static class AttributePatternEvaluator
         return !named.Segments.Any(segment =>
             segment.Generic.Kind == BoundGenericArityKind.AnyPositive ||
             (segment.Generic.Arity > 0 &&
-             segment.Generic.Arguments.Count != segment.Generic.Arity));
+             segment.Generic.Arguments.Count != segment.Generic.Arity) ||
+            segment.Generic.Arguments.Any(
+                argument => !IsFullyConcrete(argument)));
+    }
+
+    // 嵌套实参也必须递归具体化；nullable 在具体化路径会错构为 Nullable<T>，
+    // 与模式求值器的引用类型语义不一致，必须回退到类型模式求值器。
+    private static bool IsFullyConcrete(BoundTypePattern pattern)
+    {
+        return pattern switch
+        {
+            BoundNamedTypePattern named => HasSpecifiedGenericArguments(named),
+            BoundArrayTypePattern array => IsFullyConcrete(array.ElementType),
+            _ => false
+        };
     }
 
     private static MatchStatus Unknown(

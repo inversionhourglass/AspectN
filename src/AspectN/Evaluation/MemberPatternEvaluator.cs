@@ -41,6 +41,24 @@ internal static class MemberPatternEvaluator
                     var right = Evaluate(binary.Right, candidate, rightContext);
                     context.MergeDiagnosticsFrom(leftContext);
                     context.MergeDiagnosticsFrom(rightContext);
+                    // 成功分支对变量的约束必须延续到后续合取，否则被 OR 排除的绑定会被重新放行。
+                    var matchedBranches = new List<EvaluationContext>();
+                    if (left == MatchStatus.Matched)
+                    {
+                        matchedBranches.Add(leftContext);
+                    }
+
+                    if (right == MatchStatus.Matched)
+                    {
+                        matchedBranches.Add(rightContext);
+                    }
+
+                    if (matchedBranches.Count > 0)
+                    {
+                        context.ReplaceBindingsWithAlternativesFrom(
+                            matchedBranches);
+                    }
+
                     return MatchLogic.Or(left, right);
                 }
             default:

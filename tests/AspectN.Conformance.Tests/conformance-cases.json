@@ -25,6 +25,15 @@
     "expected": "Matched"
   },
   {
+    "id": "ref-generic-method",
+    "kind": "method",
+    "member": "Swap",
+    "parameterCount": 2,
+    "genericArguments": [ "System.String" ],
+    "expression": "method(void AspectN.TestAssembly.Conformance.ConformanceFixture.Swap<string>(ref string,string))",
+    "expected": "Matched"
+  },
+  {
     "id": "async",
     "kind": "method",
     "member": "AsyncMethod",
@@ -78,6 +87,14 @@
     "member": "get_RefReadonlyValue",
     "parameterCount": 0,
     "expression": "getter(ref readonly int AspectN.TestAssembly.Conformance.ConformanceFixture.RefReadonlyValue)",
+    "expected": "Matched"
+  },
+  {
+    "id": "array-return-assignable-to-ienumerable",
+    "kind": "method",
+    "member": "Arrays",
+    "parameterCount": 1,
+    "expression": "method(System.Collections.IEnumerable+ AspectN.TestAssembly.Conformance.ConformanceFixture.Arrays(..))",
     "expected": "Matched"
   },
   {

@@ -158,10 +158,13 @@ public sealed class CecilSignatureMapper
     {
         var definition = GetDefinition(methodReference);
         var genericInstance = methodReference as GenericInstanceMethod;
+        var declaringInstance = methodReference.DeclaringType
+            as GenericInstanceType;
         var parameters = MapParameters(
             methodReference.Parameters,
             definition?.Parameters,
-            genericInstance);
+            genericInstance,
+            declaringInstance);
         var associatedProperty = FindAssociatedProperty(definition);
         var genericParameters = genericInstance is null
             ? MapGenericParameters(methodReference.GenericParameters)
@@ -172,9 +175,10 @@ public sealed class CecilSignatureMapper
         var originalDefinition = genericInstance is null
             ? null
             : MapCallable(genericInstance.ElementMethod);
-        var returnType = SubstituteMethodGenericParameters(
+        var returnType = SubstituteMemberGenericParameters(
             methodReference.ReturnType,
-            genericInstance);
+            genericInstance,
+            declaringInstance);
 
         return new CallableSignature(
             methodReference.Name,
@@ -201,11 +205,20 @@ public sealed class CecilSignatureMapper
             originalDefinition,
             associatedProperty is null
                 ? null
-                : MapProperty(associatedProperty));
+                : MapPropertyCore(associatedProperty, declaringInstance));
     }
 
     private PropertySignature MapPropertyCore(
         PropertyReference propertyReference)
+    {
+        return MapPropertyCore(
+            propertyReference,
+            propertyReference.DeclaringType as GenericInstanceType);
+    }
+
+    private PropertySignature MapPropertyCore(
+        PropertyReference propertyReference,
+        GenericInstanceType? declaringInstance)
     {
         var definition = GetDefinition(propertyReference);
         var accessor = definition?.GetMethod ?? definition?.SetMethod ??
@@ -216,15 +229,20 @@ public sealed class CecilSignatureMapper
                 definition,
                 _typeSystem.Options.CompositeAccessibility),
             accessor?.IsStatic ?? false,
-            MapType(propertyReference.DeclaringType),
+            // 关联属性携带封闭声明类型上下文时，声明类型也必须是封闭构造，不能残留开放定义。
+            MapType(declaringInstance ?? propertyReference.DeclaringType),
             new TypeUseSignature(
-                MapType(propertyReference.PropertyType),
+                MapType(SubstituteMemberGenericParameters(
+                    propertyReference.PropertyType,
+                    genericInstance: null,
+                    declaringInstance)),
                 CecilRefKindDetector.ForReturn(definition?.GetMethod),
                 TypeUseKind.Property),
             MapParameters(
                 propertyReference.Parameters,
                 definition?.Parameters,
-                genericInstance: null),
+                genericInstance: null,
+                declaringInstance),
             MapAttributes(
                 definition?.CustomAttributes,
                 AttributeTargetKind.Property));
@@ -233,7 +251,8 @@ public sealed class CecilSignatureMapper
     private ParameterSignature[] MapParameters(
         Collection<ParameterDefinition> parameters,
         Collection<ParameterDefinition>? definitions,
-        GenericInstanceMethod? genericInstance)
+        GenericInstanceMethod? genericInstance,
+        GenericInstanceType? declaringInstance)
     {
         var mapped = new ParameterSignature[parameters.Count];
         for (var index = 0; index < parameters.Count; index++)
@@ -242,9 +261,10 @@ public sealed class CecilSignatureMapper
             var definition = definitions is not null && index < definitions.Count
                 ? definitions[index]
                 : parameter;
-            var type = SubstituteMethodGenericParameters(
+            var type = SubstituteMemberGenericParameters(
                 parameter.ParameterType,
-                genericInstance);
+                genericInstance,
+                declaringInstance);
             mapped[index] = new ParameterSignature(
                 parameter.Name ?? string.Empty,
                 index,
@@ -405,65 +425,102 @@ public sealed class CecilSignatureMapper
                             other => ReferenceEquals(other, method)));
     }
 
-    private static TypeReference SubstituteMethodGenericParameters(
+    // 成员签名中的泛型参数可能来自方法或封闭声明类型，两者都要替换为构造实参；
+    // 无需替换时必须返回原引用，重建数组会丢失维度（非 SZ）形状。
+    private static TypeReference SubstituteMemberGenericParameters(
         TypeReference type,
-        GenericInstanceMethod? genericInstance)
+        GenericInstanceMethod? genericInstance,
+        GenericInstanceType? declaringInstance)
     {
-        if (genericInstance is null) return type;
+        if (genericInstance is null && declaringInstance is null)
+        {
+            return type;
+        }
 
         switch (type)
         {
             case GenericParameter parameter
                 when parameter.Type == GenericParameterType.Method &&
                      parameter.Position >= 0 &&
+                     genericInstance is not null &&
                      parameter.Position < genericInstance.GenericArguments.Count:
                 return genericInstance.GenericArguments[parameter.Position];
+            case GenericParameter parameter
+                when parameter.Type == GenericParameterType.Type &&
+                     parameter.Position >= 0 &&
+                     declaringInstance is not null &&
+                     parameter.Position < declaringInstance.GenericArguments.Count:
+                return declaringInstance.GenericArguments[parameter.Position];
             case GenericInstanceType generic:
                 var substitutedGeneric = new GenericInstanceType(
-                    SubstituteMethodGenericParameters(
+                    SubstituteMemberGenericParameters(
                         generic.ElementType,
-                        genericInstance));
+                        genericInstance,
+                        declaringInstance));
                 foreach (var argument in generic.GenericArguments)
                 {
                     substitutedGeneric.GenericArguments.Add(
-                        SubstituteMethodGenericParameters(
+                        SubstituteMemberGenericParameters(
                             argument,
-                            genericInstance));
+                            genericInstance,
+                            declaringInstance));
                 }
 
                 return substitutedGeneric;
             case ArrayType array:
-                return new ArrayType(
-                    SubstituteMethodGenericParameters(
-                        array.ElementType,
-                        genericInstance),
+                var substitutedElement = SubstituteMemberGenericParameters(
+                    array.ElementType,
+                    genericInstance,
+                    declaringInstance);
+                if (ReferenceEquals(substitutedElement, array.ElementType))
+                {
+                    return array;
+                }
+
+                var substitutedArray = new ArrayType(
+                    substitutedElement,
                     array.Rank);
+                for (var index = 0;
+                     index < array.Dimensions.Count;
+                     index++)
+                {
+                    substitutedArray.Dimensions[index] =
+                        array.Dimensions[index];
+                }
+
+                return substitutedArray;
             case ByReferenceType byReference:
                 return new ByReferenceType(
-                    SubstituteMethodGenericParameters(
+                    SubstituteMemberGenericParameters(
                         byReference.ElementType,
-                        genericInstance));
+                        genericInstance,
+                        declaringInstance));
             case PointerType pointer:
                 return new PointerType(
-                    SubstituteMethodGenericParameters(
+                    SubstituteMemberGenericParameters(
                         pointer.ElementType,
-                        genericInstance));
+                        genericInstance,
+                        declaringInstance));
             case OptionalModifierType optional:
                 return new OptionalModifierType(
-                    SubstituteMethodGenericParameters(
+                    SubstituteMemberGenericParameters(
                         optional.ModifierType,
-                        genericInstance),
-                    SubstituteMethodGenericParameters(
+                        genericInstance,
+                        declaringInstance),
+                    SubstituteMemberGenericParameters(
                         optional.ElementType,
-                        genericInstance));
+                        genericInstance,
+                        declaringInstance));
             case RequiredModifierType required:
                 return new RequiredModifierType(
-                    SubstituteMethodGenericParameters(
+                    SubstituteMemberGenericParameters(
                         required.ModifierType,
-                        genericInstance),
-                    SubstituteMethodGenericParameters(
+                        genericInstance,
+                        declaringInstance),
+                    SubstituteMemberGenericParameters(
                         required.ElementType,
-                        genericInstance));
+                        genericInstance,
+                        declaringInstance));
             default:
                 return type;
         }
@@ -471,14 +528,7 @@ public sealed class CecilSignatureMapper
 
     private static string GetOwnerId(GenericParameter parameter)
     {
-        return parameter.Owner switch
-        {
-            TypeReference type => type.FullName,
-            MethodReference method =>
-                $"{method.DeclaringType.FullName}.{method.Name}`" +
-                method.GenericParameters.Count,
-            _ => parameter.Owner?.GetType().FullName ?? string.Empty
-        };
+        return CecilTypeMapper.GetGenericParameterOwner(parameter);
     }
 
     private readonly struct CecilMemberCacheKey(

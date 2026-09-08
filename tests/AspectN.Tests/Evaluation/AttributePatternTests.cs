@@ -185,6 +185,146 @@ public sealed class AttributePatternTests
         Assert.Empty(typeSystem.RequestedAttributeTypes);
     }
 
+    [Fact]
+    public void Match_NestedOpenGenericArgument_UsesEmbeddedAttributes()
+    {
+        var typeSystem = new AttributeTypeSystem(_ => true);
+        var candidate = Candidate(
+            attributes:
+            [
+                new AttributeSignature(
+                    Generic(
+                        "Example",
+                        "ReviewTagAttribute",
+                        Generic(
+                            "System.Collections.Generic",
+                            "List",
+                            Named("System", "Int32"))),
+                    AttributeTargetKind.Callable)
+            ]);
+
+        var result = Match(
+            "attr(callable Example.ReviewTagAttribute<System.Collections.Generic.List<>>)",
+            candidate,
+            typeSystem);
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+        Assert.Empty(typeSystem.RequestedAttributeTypes);
+    }
+
+    [Fact]
+    public void Match_NullableReferenceArgument_UsesEmbeddedAttributes()
+    {
+        var typeSystem = new AttributeTypeSystem(_ => true);
+        var candidate = Candidate(
+            attributes:
+            [
+                new AttributeSignature(
+                    Generic(
+                        "Example",
+                        "ReviewTagAttribute",
+                        Named("System", "String")),
+                    AttributeTargetKind.Callable)
+            ]);
+
+        var result = Match(
+            "attr(callable Example.ReviewTagAttribute<string?>)",
+            candidate,
+            typeSystem);
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+        Assert.Empty(typeSystem.RequestedAttributeTypes);
+    }
+
+    [Fact]
+    public void Match_FullyConcreteNestedArguments_RemainDirectLookup()
+    {
+        var typeSystem = new AttributeTypeSystem(_ => true);
+        var candidate = Candidate();
+
+        var result = Match(
+            "attr(callable Example.ReviewTagAttribute<System.Collections.Generic.List<int>>)",
+            candidate,
+            typeSystem);
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+        var requested = Assert.IsType<NamedTypeSignature>(
+            Assert.Single(typeSystem.RequestedAttributeTypes));
+        var argument = Assert.IsType<NamedTypeSignature>(
+            Assert.Single(requested.TypeArguments));
+        Assert.Equal("System.Collections.Generic.List`1", argument.Identity.FullMetadataName);
+    }
+
+    [Fact]
+    public void Match_OrBranch_ConstrainsExistingVariableForLaterConjunction()
+    {
+        var alpha = Named("Example", "AlphaAttribute");
+        var beta = Named("Example", "BetaAttribute");
+        var typeSystem = new AttributeTypeSystem(_ => false);
+
+        var notMatched = Candidate(
+            returnType: alpha,
+            attributes:
+            [
+                new AttributeSignature(alpha, AttributeTargetKind.Callable),
+                new AttributeSignature(beta, AttributeTargetKind.Callable)
+            ],
+            returnAttributes:
+            [
+                new AttributeSignature(beta, AttributeTargetKind.Return)
+            ]);
+        var matched = Candidate(
+            returnType: alpha,
+            attributes:
+            [
+                new AttributeSignature(alpha, AttributeTargetKind.Callable),
+                new AttributeSignature(beta, AttributeTargetKind.Callable)
+            ],
+            returnAttributes:
+            [
+                new AttributeSignature(alpha, AttributeTargetKind.Return)
+            ]);
+
+        // 成员 OR 与类型 OR 两种形式必须对同一约束给出一致结果。
+        var memberOr =
+            "attr(callable $A) && " +
+            "(callable($A Service.get_Name(..)) || " +
+            "callable($A Service.Missing(..))) && " +
+            "attr(return $A)";
+        var typeOr =
+            "attr(callable $A) && " +
+            "callable(($A || Missing) Service.get_Name(..)) && " +
+            "attr(return $A)";
+
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            Match(memberOr, notMatched, typeSystem).Status);
+        Assert.Equal(
+            MatchStatus.Matched,
+            Match(memberOr, matched, typeSystem).Status);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            Match(typeOr, notMatched, typeSystem).Status);
+        Assert.Equal(
+            MatchStatus.Matched,
+            Match(typeOr, matched, typeSystem).Status);
+    }
+
+    [Fact]
+    public void Match_OutOfRangeParameterIndex_ReportsDiagnosticAndRejectsPattern()
+    {
+        var compilation = AspectNCompilation.Create(
+            AspectNParser.ParseMemberExpression(
+                "attr(parameter[2147483648] Example.RequiredAttribute)"));
+
+        // 越界索引必须产生诊断，且不得退化为 parameter[*] 的通配语义。
+        Assert.Contains(
+            compilation.Diagnostics,
+            diagnostic => diagnostic.Code ==
+                DiagnosticCodes.InvalidParameterIndex);
+        Assert.False(compilation.TryGetMemberPattern(out _));
+    }
+
     private static MatchResult Match(
         string source,
         CallableSignature candidate,
@@ -199,7 +339,8 @@ public sealed class AttributePatternTests
     private static CallableSignature Candidate(
         TypeSignature? returnType = null,
         IEnumerable<AttributeSignature>? attributes = null,
-        IEnumerable<AttributeSignature>? propertyAttributes = null)
+        IEnumerable<AttributeSignature>? propertyAttributes = null,
+        IEnumerable<AttributeSignature>? returnAttributes = null)
     {
         var declaringType = Named("Example", "Service");
         var property = new PropertySignature(
@@ -232,7 +373,7 @@ public sealed class AttributePatternTests
             Array.Empty<GenericParameterSignature>(),
             Array.Empty<TypeSignature>(),
             attributes ?? Array.Empty<AttributeSignature>(),
-            Array.Empty<AttributeSignature>(),
+            returnAttributes ?? Array.Empty<AttributeSignature>(),
             associatedProperty: property);
     }
 

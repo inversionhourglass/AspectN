@@ -602,8 +602,57 @@ public sealed class ReflectionSignatureMapper
 
     private static string GetMethodOwnerId(MethodBase method)
     {
+        // owner ID 必须能区分同名同元数的重载，参数形状参与身份；
+        // 三个适配器按相同规则构造，跨适配器一致性由一致性测试快照保障。
+        var parameters = method.GetParameters()
+            .Select(parameter => CanonicalParameterForm(
+                parameter.ParameterType))
+            .ToArray();
         return $"{MapMetadataName(RequiredDeclaringType(method))}." +
-               $"{method.Name}`{method.GetGenericArguments().Length}";
+               $"{method.Name}`{method.GetGenericArguments().Length}" +
+               $"({string.Join(",", parameters)})";
+    }
+
+    private static string CanonicalParameterForm(Type type)
+    {
+        if (type.IsGenericParameter)
+        {
+            return (type.DeclaringMethod is null ? "!" : "!!") +
+                   type.GenericParameterPosition;
+        }
+
+        if (type.IsByRef)
+        {
+            return CanonicalParameterForm(RequiredElementType(type)) + "&";
+        }
+
+        if (type.IsPointer)
+        {
+            return CanonicalParameterForm(RequiredElementType(type)) + "*";
+        }
+
+        if (type.IsArray)
+        {
+            return CanonicalParameterForm(RequiredElementType(type)) +
+                   ArraySuffix(type.GetArrayRank());
+        }
+
+        if (type.IsGenericType && !type.IsGenericTypeDefinition)
+        {
+            var arguments = type.GetGenericArguments()
+                .Select(CanonicalParameterForm);
+            return $"{CanonicalParameterForm(type.GetGenericTypeDefinition())}" +
+                   $"<{string.Join(",", arguments)}>";
+        }
+
+        return MapMetadataName(type);
+    }
+
+    private static string ArraySuffix(int rank)
+    {
+        return "[" + (rank == 1
+            ? string.Empty
+            : new string(',', rank - 1)) + "]";
     }
 
     private static string MapMetadataName(Type type)

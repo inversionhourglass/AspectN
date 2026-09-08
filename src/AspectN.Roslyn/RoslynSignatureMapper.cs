@@ -456,7 +456,67 @@ public sealed class RoslynSignatureMapper
     private static string GetMethodOwnerId(IMethodSymbol method)
     {
         var definition = method.OriginalDefinition;
+        // 参数形状（含 ref 方式的 & 后缀）参与 owner ID 以区分重载；
+        // 构造规则与 Reflection、Cecil 适配器保持一致。
+        var parameters = definition.Parameters
+            .Select(parameter => CanonicalParameterForm(parameter.Type) +
+                (parameter.RefKind == Microsoft.CodeAnalysis.RefKind.None
+                    ? string.Empty
+                    : "&"))
+            .ToArray();
         return $"{MapIdentity(definition.ContainingType).FullMetadataName}." +
-               $"{definition.Name}`{definition.Arity}";
+               $"{definition.Name}`{definition.Arity}" +
+               $"({string.Join(",", parameters)})";
+    }
+
+    private static string CanonicalParameterForm(ITypeSymbol type)
+    {
+        switch (type)
+        {
+            case ITypeParameterSymbol parameter:
+                return (parameter.TypeParameterKind ==
+                        TypeParameterKind.Method
+                    ? "!!"
+                    : "!") + parameter.Ordinal;
+            case IPointerTypeSymbol pointer:
+                return CanonicalParameterForm(pointer.PointedAtType) + "*";
+            case IArrayTypeSymbol array:
+                return CanonicalParameterForm(array.ElementType) +
+                       "[" + (array.Rank == 1
+                           ? string.Empty
+                           : new string(',', array.Rank - 1)) + "]";
+            case INamedTypeSymbol named:
+                var arguments = named.TypeArguments
+                    .Select(CanonicalParameterForm);
+                var metadataName = MapMetadataName(named.OriginalDefinition);
+                return named.Arity == 0
+                    ? metadataName
+                    : $"{metadataName}<{string.Join(",", arguments)}>";
+            default:
+                return type.ToDisplayString();
+        }
+    }
+
+    private static string MapMetadataName(INamedTypeSymbol typeSymbol)
+    {
+        var names = new Stack<string>();
+        for (var current = typeSymbol.OriginalDefinition;
+             current is not null;
+             current = current.ContainingType)
+        {
+            names.Push(current.MetadataName);
+        }
+
+        var namespaces = new Stack<string>();
+        for (var current = typeSymbol.ContainingNamespace;
+             current is not null && !current.IsGlobalNamespace;
+             current = current.ContainingNamespace)
+        {
+            namespaces.Push(current.Name);
+        }
+
+        var joined = string.Join("/", names.ToArray());
+        var prefix = string.Join(".", namespaces.ToArray());
+        return string.IsNullOrEmpty(prefix) ? joined : $"{prefix}.{joined}";
     }
 }

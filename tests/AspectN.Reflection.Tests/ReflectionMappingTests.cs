@@ -47,7 +47,7 @@ public sealed class ReflectionMappingTests
             GenericParameterOwnerKind.Method,
             methodParameter.Parameter.OwnerKind);
         Assert.EndsWith(
-            ".Echo`1",
+            ".Echo`1(!0,!!0)",
             methodParameter.Parameter.OwnerId,
             StringComparison.Ordinal);
     }
@@ -256,6 +256,80 @@ public sealed class ReflectionMappingTests
     }
 
     [Fact]
+    public void MemberPattern_NestedGenericAttributeFallback_MatchesOpenNestedArgument()
+    {
+        var typeSystem = new ReflectionTypeSystem();
+        var callable = typeSystem.Mapper.MapCallable(
+            RequiredMethod(
+                typeof(ReflectionFixture<int>),
+                nameof(ReflectionFixture<object>.NestedGenericAttributed)));
+
+        Assert.Equal(
+            MatchStatus.Matched,
+            MemberPattern(
+                "attr(callable GenericMarkerAttribute<System.Collections.Generic.List<>>)",
+                callable,
+                typeSystem).Status);
+        Assert.Equal(
+            MatchStatus.Matched,
+            MemberPattern(
+                "attr(callable GenericMarkerAttribute<System.Collections.Generic.List<int>>)",
+                callable,
+                typeSystem).Status);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            MemberPattern(
+                "attr(callable GenericMarkerAttribute<System.Collections.Generic.List<string>>)",
+                callable,
+                typeSystem).Status);
+    }
+
+    [Fact]
+    public void MemberPattern_NullableReferenceAttributeArgument_MatchesPlainReferenceType()
+    {
+        var typeSystem = new ReflectionTypeSystem();
+        var callable = typeSystem.Mapper.MapCallable(
+            RequiredMethod(
+                typeof(ReflectionFixture<int>),
+                nameof(ReflectionFixture<object>.NullableAttributed)));
+
+        Assert.Equal(
+            MatchStatus.Matched,
+            MemberPattern(
+                "attr(callable GenericMarkerAttribute<string?>)",
+                callable,
+                typeSystem).Status);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            MemberPattern(
+                "attr(callable GenericMarkerAttribute<int?>)",
+                callable,
+                typeSystem).Status);
+    }
+
+    [Fact]
+    public void MapType_OverloadedMethodGenericParameters_HaveDistinctOwnerIds()
+    {
+        var typeSystem = new ReflectionTypeSystem();
+        var type = typeof(ReflectionFixture<int>);
+        var single = type.GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .Single(method => method.Name == "SameNameOverload" &&
+                method.GetParameters().Length == 1);
+        var doubleParameter = type.GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .Single(method => method.Name == "SameNameOverload" &&
+                method.GetParameters().Length == 2);
+        var first = Assert.IsType<GenericParameterTypeSignature>(
+            typeSystem.Mapper.MapType(single.GetGenericArguments()[0]));
+        var second = Assert.IsType<GenericParameterTypeSignature>(
+            typeSystem.Mapper.MapType(doubleParameter.GetGenericArguments()[0]));
+
+        Assert.NotEqual(first.Parameter.OwnerId, second.Parameter.OwnerId);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.AreEqual(first, second).Status);
+    }
+
+    [Fact]
     public void MapProperty_RefReturningProperties_PreserveRefKind()
     {
         var typeSystem = new ReflectionTypeSystem();
@@ -330,6 +404,28 @@ public sealed class ReflectionMappingTests
             result.Diagnostics,
             diagnostic => diagnostic.Code ==
                 DiagnosticCodes.MissingBackendCapability);
+    }
+
+    [Fact]
+    public void TypeSystem_GenericVariance_MatchesClrAssignability()
+    {
+        var typeSystem = new ReflectionTypeSystem();
+
+        Assert.Equal(
+            MatchStatus.Matched,
+            typeSystem.IsAssignableTo(
+                typeSystem.Mapper.MapType(typeof(IEnumerable<string>)),
+                typeSystem.Mapper.MapType(typeof(IEnumerable<object>))).Status);
+        Assert.Equal(
+            MatchStatus.Matched,
+            typeSystem.IsAssignableTo(
+                typeSystem.Mapper.MapType(typeof(Action<object>)),
+                typeSystem.Mapper.MapType(typeof(Action<string>))).Status);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.IsAssignableTo(
+                typeSystem.Mapper.MapType(typeof(IEnumerable<object>)),
+                typeSystem.Mapper.MapType(typeof(IEnumerable<string>))).Status);
     }
 
     private static MatchResult MemberPattern(
@@ -444,6 +540,23 @@ internal sealed class ReflectionFixture<T>
     {
         _value++;
     }
+
+    [GenericMarker<List<int>>]
+    public void NestedGenericAttributed()
+    {
+        _value++;
+    }
+
+    [GenericMarker<string>]
+    public void NullableAttributed()
+    {
+        _value++;
+    }
+
+    public static void SameNameOverload<TItem>(TItem value) => _ = value;
+
+    public static void SameNameOverload<TItem>(TItem value, int count) =>
+        _ = (value, count);
 
     public ref int RefValue
     {
