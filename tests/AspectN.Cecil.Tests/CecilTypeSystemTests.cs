@@ -104,7 +104,7 @@ public sealed class CecilTypeSystemTests
     }
 
     [Fact]
-    public void IsAssignableTo_CovariantArray_MatchesBaseElementArray()
+    public void IsAssignableTo_ArrayCandidate_RequiresExactElements()
     {
         var module = TestModuleFactory.Create();
         using var typeSystem = new CecilTypeSystem(module);
@@ -114,15 +114,21 @@ public sealed class CecilTypeSystemTests
             new ArrayType(derivedType, 1));
         var baseArray = typeSystem.Mapper.MapType(new ArrayType(baseType, 1));
 
-        var forward = typeSystem.IsAssignableTo(derivedArray, baseArray);
-        var reverse = typeSystem.IsAssignableTo(baseArray, derivedArray);
-        var rankMismatch = typeSystem.IsAssignableTo(
-            derivedArray,
-            typeSystem.Mapper.MapType(new ArrayType(baseType, 2)));
-
-        Assert.Equal(MatchStatus.Matched, forward.Status);
-        Assert.Equal(MatchStatus.NotMatched, reverse.Status);
-        Assert.Equal(MatchStatus.NotMatched, rankMismatch.Status);
+        // + 只含名义关系：数组之间没有协变，元素不同即不可赋值；同元素数组为恒等。
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.IsAssignableTo(derivedArray, baseArray).Status);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.IsAssignableTo(baseArray, derivedArray).Status);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.IsAssignableTo(
+                derivedArray,
+                typeSystem.Mapper.MapType(new ArrayType(baseType, 2))).Status);
+        Assert.Equal(
+            MatchStatus.Matched,
+            typeSystem.IsAssignableTo(derivedArray, derivedArray).Status);
     }
 
     [Fact]
@@ -209,6 +215,7 @@ public sealed class CecilTypeSystemTests
         var multiDimensional = typeSystem.Mapper.MapType(
             new ArrayType(module.TypeSystem.Int32, 2));
 
+        // SZ 数组实现的泛型集合接口由运行时合成，实参与元素完全一致；变型实例化不属于名义关系。
         Assert.Equal(
             MatchStatus.Matched,
             typeSystem.IsAssignableTo(
@@ -219,7 +226,7 @@ public sealed class CecilTypeSystemTests
                     "IEnumerable",
                     derivedType)).Status);
         Assert.Equal(
-            MatchStatus.Matched,
+            MatchStatus.NotMatched,
             typeSystem.IsAssignableTo(
                 derivedArray,
                 GenericTarget(
@@ -228,7 +235,7 @@ public sealed class CecilTypeSystemTests
                     "IEnumerable",
                     baseType)).Status);
         Assert.Equal(
-            MatchStatus.Matched,
+            MatchStatus.NotMatched,
             typeSystem.IsAssignableTo(
                 derivedArray,
                 GenericTarget(
@@ -288,13 +295,25 @@ public sealed class CecilTypeSystemTests
             typeSystem.IsAssignableTo(
                 nonVectorSignature,
                 GenericTarget(typeSystem, module, "IEnumerable", derivedType)).Status);
-        // 反方向（向量 → 非向量一维）按 CLR 规则允许，元素引用协变即可。
+        // 元素不同的向量 → 非向量一维没有名义关系；同元素时为恒等（向量性差异不阻止恒等）。
         var derivedVector = typeSystem.Mapper.MapType(
             new ArrayType(derivedType, 1));
-        var baseNonVector = typeSystem.Mapper.MapType(nonVector);
+        var baseNonVector = new ArrayType(baseType, 1);
+        baseNonVector.Dimensions[0] = new ArrayDimension(1, null);
+        var stringVector = typeSystem.Mapper.MapType(
+            new ArrayType(module.TypeSystem.String, 1));
+        var stringNonVector = new ArrayType(module.TypeSystem.String, 1);
+        stringNonVector.Dimensions[0] = new ArrayDimension(1, null);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.IsAssignableTo(
+                derivedVector,
+                typeSystem.Mapper.MapType(baseNonVector)).Status);
         Assert.Equal(
             MatchStatus.Matched,
-            typeSystem.IsAssignableTo(derivedVector, baseNonVector).Status);
+            typeSystem.IsAssignableTo(
+                stringVector,
+                typeSystem.Mapper.MapType(stringNonVector)).Status);
         // 非泛型接口由任意秩的数组实现，与向量性无关。
         Assert.Equal(
             MatchStatus.Matched,
@@ -318,13 +337,16 @@ public sealed class CecilTypeSystemTests
         var numberGrid = typeSystem.Mapper.MapType(
             new ArrayType(numberType, 2));
 
-        // 多维引用类型数组支持协变；值类型元素不协变。
+        // 多维数组与其它数组之间没有名义关系；同元素同秩为恒等。
         Assert.Equal(
-            MatchStatus.Matched,
+            MatchStatus.NotMatched,
             typeSystem.IsAssignableTo(derivedGrid, baseGrid).Status);
         Assert.Equal(
             MatchStatus.NotMatched,
             typeSystem.IsAssignableTo(baseGrid, derivedGrid).Status);
+        Assert.Equal(
+            MatchStatus.Matched,
+            typeSystem.IsAssignableTo(derivedGrid, derivedGrid).Status);
         Assert.Equal(
             MatchStatus.NotMatched,
             typeSystem.IsAssignableTo(numberGrid, baseGrid).Status);
@@ -373,54 +395,6 @@ public sealed class CecilTypeSystemTests
         Assert.Equal(
             MatchStatus.Matched,
             typeSystem.IsAssignableTo(vectorMapped.ReturnType.Type, target).Status);
-    }
-
-    [Fact]
-    public void IsAssignableTo_GenericVariance_RespectsParameterVariance()
-    {
-        var module = TestModuleFactory.Create();
-        using var typeSystem = new CecilTypeSystem(module);
-        var baseType = AddClass(module, "Element", module.TypeSystem.Object);
-        var derivedType = AddClass(module, "SpecificElement", baseType);
-        var numberType = AddStruct(module, "Number");
-        var covariant = AddVariantInterface(module, "IProducer`1", isCovariant: true);
-        var contravariant = AddVariantInterface(
-            module,
-            "IConsumer`1",
-            isCovariant: false);
-
-        var producerOfDerived = typeSystem.Mapper.MapType(
-            InstanceOf(covariant, derivedType));
-        var producerOfBase = typeSystem.Mapper.MapType(
-            InstanceOf(covariant, baseType));
-        var producerOfNumber = typeSystem.Mapper.MapType(
-            InstanceOf(covariant, numberType));
-        var consumerOfBase = typeSystem.Mapper.MapType(
-            InstanceOf(contravariant, baseType));
-        var consumerOfDerived = typeSystem.Mapper.MapType(
-            InstanceOf(contravariant, derivedType));
-        var consumerOfNumber = typeSystem.Mapper.MapType(
-            InstanceOf(contravariant, numberType));
-
-        Assert.Equal(
-            MatchStatus.Matched,
-            typeSystem.IsAssignableTo(producerOfDerived, producerOfBase).Status);
-        Assert.Equal(
-            MatchStatus.NotMatched,
-            typeSystem.IsAssignableTo(producerOfBase, producerOfDerived).Status);
-        Assert.Equal(
-            MatchStatus.Matched,
-            typeSystem.IsAssignableTo(consumerOfBase, consumerOfDerived).Status);
-        Assert.Equal(
-            MatchStatus.NotMatched,
-            typeSystem.IsAssignableTo(consumerOfDerived, consumerOfBase).Status);
-        // 变型不能通过装箱将值类型实参转换为引用类型实参。
-        Assert.Equal(
-            MatchStatus.NotMatched,
-            typeSystem.IsAssignableTo(producerOfNumber, producerOfBase).Status);
-        Assert.Equal(
-            MatchStatus.NotMatched,
-            typeSystem.IsAssignableTo(consumerOfBase, consumerOfNumber).Status);
     }
 
     [Fact]
@@ -481,31 +455,6 @@ public sealed class CecilTypeSystemTests
         var instance = new GenericInstanceType(definition);
         instance.GenericArguments.Add(argument);
         return instance;
-    }
-
-    private static TypeDefinition AddVariantInterface(
-        ModuleDefinition module,
-        string name,
-        bool isCovariant)
-    {
-        var definition = new TypeDefinition(
-            "Example",
-            name,
-            TypeAttributes.Public | TypeAttributes.Interface | TypeAttributes.Abstract,
-            module.TypeSystem.Object);
-        var parameter = new GenericParameter("T", definition);
-        if (isCovariant)
-        {
-            parameter.IsCovariant = true;
-        }
-        else
-        {
-            parameter.IsContravariant = true;
-        }
-
-        definition.GenericParameters.Add(parameter);
-        module.Types.Add(definition);
-        return definition;
     }
 
     [Fact]

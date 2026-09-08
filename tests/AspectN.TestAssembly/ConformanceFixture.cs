@@ -59,6 +59,12 @@ public class ConformanceFixture : IConformanceContract<string>
         (left, right) = (right, left);
     }
 
+    public TItem EchoNested<TItem>(ConformanceOuter<string>.Inner<int, double> value)
+    {
+        _value++;
+        return default;
+    }
+
     public int[,][] Arrays(int[,][] value)
     {
         _value += value.Length;

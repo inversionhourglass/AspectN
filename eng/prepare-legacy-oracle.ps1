@@ -23,7 +23,17 @@ function Invoke-Git {
         [string[]] $Arguments
     )
 
-    $output = & git -C $WorkingDirectory @Arguments 2>&1
+    # Windows PowerShell 5.1 会把 2>&1 捕获的原生 stderr 提升为终止错误（克隆进度等信息同样走 stderr），
+    # 局部放宽偏好设置，统一按退出码判定失败。
+    $previousPreference = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        $output = & git -C $WorkingDirectory @Arguments 2>&1
+    }
+    finally {
+        $ErrorActionPreference = $previousPreference
+    }
+
     if ($LASTEXITCODE -ne 0) {
         throw "git $($Arguments -join ' ') failed:`n$($output -join [Environment]::NewLine)"
     }
@@ -201,7 +211,16 @@ try {
         else {
             $cloneRoot = Join-Path $tempRoot 'Shared.Cecil.AspectN'
             New-Item -ItemType Directory -Path $tempRoot | Out-Null
-            $output = & git clone --no-checkout $ORACLE_URL $cloneRoot 2>&1
+            # 与 Invoke-Git 相同：克隆进度走 stderr，局部放宽偏好设置避免 PS 5.1 的 NativeCommandError。
+            $previousPreference = $ErrorActionPreference
+            $ErrorActionPreference = 'Continue'
+            try {
+                $output = & git clone --no-checkout $ORACLE_URL $cloneRoot 2>&1
+            }
+            finally {
+                $ErrorActionPreference = $previousPreference
+            }
+
             if ($LASTEXITCODE -ne 0) {
                 throw "Failed to clone Legacy oracle:`n$($output -join [Environment]::NewLine)"
             }

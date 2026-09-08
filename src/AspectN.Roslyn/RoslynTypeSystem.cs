@@ -68,17 +68,8 @@ public sealed class RoslynTypeSystem : ITypeSystem
 
         try
         {
-            if (Mapper.TryGetTypeSymbol(target, out var targetSymbol) &&
-                targetSymbol is not null)
-            {
-                return IsNativeAssignable(
-                    candidateSymbol,
-                    targetSymbol,
-                    cancellationToken)
-                        ? TypeRelationResult.Matched
-                        : TypeRelationResult.NotMatched;
-            }
-
+            // + 只匹配声明的继承/实现关系；ClassifyCommonConversion 额外包含数组协变与泛型变型，
+            // 与模式路径的合成目标语义不一致，统一按名义闭包遍历（Interfaces 含运行时合成的数组接口）。
             var pending = new Queue<ITypeSymbol>();
             var visited = new HashSet<ITypeSymbol>(
                 SymbolEqualityComparer.Default);
@@ -163,58 +154,6 @@ public sealed class RoslynTypeSystem : ITypeSystem
         }
 
         return unknown ?? TypeRelationResult.NotMatched;
-    }
-
-    private bool IsNativeAssignable(
-        ITypeSymbol candidate,
-        ITypeSymbol target,
-        CancellationToken cancellationToken)
-    {
-        var conversion = Compilation.ClassifyCommonConversion(
-            candidate,
-            target);
-        if (conversion.Exists && conversion.IsImplicit &&
-            (conversion.IsIdentity || conversion.IsReference))
-        {
-            return true;
-        }
-
-        if (target is INamedTypeSymbol nullable &&
-            nullable.OriginalDefinition.SpecialType ==
-                SpecialType.System_Nullable_T &&
-            nullable.TypeArguments.Length == 1 &&
-            SymbolEqualityComparer.Default.Equals(
-                candidate,
-                nullable.TypeArguments[0]))
-        {
-            return true;
-        }
-
-        var pending = new Queue<ITypeSymbol>();
-        var visited = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
-        pending.Enqueue(candidate);
-        while (pending.Count > 0)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            var current = pending.Dequeue();
-            if (!visited.Add(current)) continue;
-            if (SymbolEqualityComparer.Default.Equals(current, target))
-            {
-                return true;
-            }
-
-            if (current.BaseType is not null)
-            {
-                pending.Enqueue(current.BaseType);
-            }
-
-            foreach (var implementation in current.Interfaces)
-            {
-                pending.Enqueue(implementation);
-            }
-        }
-
-        return false;
     }
 
     private IReadOnlyList<AttributeSignature>? GetAttributes(

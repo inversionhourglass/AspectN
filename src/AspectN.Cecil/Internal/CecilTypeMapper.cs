@@ -283,16 +283,77 @@ internal static class CecilTypeMapper
             case ArrayType array:
                 return CanonicalParameterForm(array.ElementType) +
                        ArraySuffix(array.Rank);
-            case GenericInstanceType generic:
-                var arguments = generic.GenericArguments
-                    .Select(CanonicalParameterForm);
-                return $"{CanonicalParameterForm(generic.ElementType)}" +
-                       $"<{string.Join(",", arguments)}>";
+            case GenericInstanceType:
+                return ConstructedNamedForm((GenericInstanceType)type);
             case TypeSpecification specification:
-                return CanonicalParameterForm(specification.ElementType);
+                return ConstructedNamedForm(specification.ElementType);
             default:
-                return type.FullName;
+                return ConstructedNamedForm(type);
         }
+    }
+
+    // 嵌套构造类型的规范形式按包含链逐层携带各自的构造实参；与 Reflection、Roslyn 逐字节一致。
+    // ECMA 编码把包含链的实参扁平挂在内层实例上，需要按各层元数自外向内分发。
+    private static string ConstructedNamedForm(TypeReference typeReference)
+    {
+        var chain = new List<TypeReference>();
+        var collected = new List<TypeReference>();
+        for (var current = typeReference;
+             current is not null;
+             current = current.DeclaringType)
+        {
+            chain.Add(current);
+            if (current is GenericInstanceType instance)
+            {
+                collected.InsertRange(0, instance.GenericArguments);
+            }
+        }
+
+        chain.Reverse();
+
+        var parts = new List<string>();
+        var offset = 0;
+        foreach (var level in chain)
+        {
+            var definition = level is GenericInstanceType instance
+                ? instance.ElementType
+                : level;
+            var form = definition.Name;
+            var ownArity = MetadataArity(definition);
+            if (ownArity > 0 && offset + ownArity <= collected.Count)
+            {
+                var slice = collected.GetRange(offset, ownArity);
+                form += $"<{string.Join(",", slice.Select(CanonicalParameterForm))}>";
+                offset += ownArity;
+            }
+
+            parts.Add(form);
+        }
+
+        var outermost = chain[0] is GenericInstanceType outer
+            ? outer.ElementType
+            : chain[0];
+        var namespaceName = outermost.Namespace ?? string.Empty;
+        var joined = string.Join("/", parts);
+        return string.IsNullOrEmpty(namespaceName)
+            ? joined
+            : $"{namespaceName}.{joined}";
+    }
+
+    private static int MetadataArity(TypeReference definition)
+    {
+        var name = definition.Name;
+        var marker = name.LastIndexOf('`');
+        if (marker < 0) return 0;
+#if NET10_0_OR_GREATER
+        return int.TryParse(name.AsSpan(marker + 1), out var arity)
+            ? arity
+            : 0;
+#else
+        return int.TryParse(name.Substring(marker + 1), out var arity)
+            ? arity
+            : 0;
+#endif
     }
 
     private static string ArraySuffix(int rank)

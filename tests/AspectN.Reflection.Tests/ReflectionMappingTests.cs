@@ -330,6 +330,42 @@ public sealed class ReflectionMappingTests
     }
 
     [Fact]
+    public void MapType_NestedConstructedOverloads_HaveDistinctOwnerIds()
+    {
+        var typeSystem = new ReflectionTypeSystem();
+        var owner = typeof(NestedOwner);
+        var intOverload = owner.GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .Single(method => method.Name == "M" &&
+                method.GetParameters()[0].ParameterType ==
+                    typeof(NestedOuter<int>.NestedInner));
+        var stringOverload = owner.GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .Single(method => method.Name == "M" &&
+                method.GetParameters()[0].ParameterType ==
+                    typeof(NestedOuter<string>.NestedInner));
+        var first = Assert.IsType<GenericParameterTypeSignature>(
+            typeSystem.Mapper.MapType(intOverload.GetGenericArguments()[0]));
+        var second = Assert.IsType<GenericParameterTypeSignature>(
+            typeSystem.Mapper.MapType(stringOverload.GetGenericArguments()[0]));
+
+        // 嵌套类型的构造实参按包含链逐层编入 owner ID。
+        Assert.Equal(
+            "AspectN.Reflection.Tests.NestedOuter`1<System.Int32>/NestedInner",
+            ExtractParameterForm(first.Parameter.OwnerId));
+        Assert.Equal(
+            "AspectN.Reflection.Tests.NestedOuter`1<System.String>/NestedInner",
+            ExtractParameterForm(second.Parameter.OwnerId));
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.AreEqual(first, second).Status);
+    }
+
+    private static string ExtractParameterForm(string ownerId)
+    {
+        var open = ownerId.IndexOf('(');
+        return ownerId[(open + 1)..^1];
+    }
+
+    [Fact]
     public void MapProperty_RefReturningProperties_PreserveRefKind()
     {
         var typeSystem = new ReflectionTypeSystem();
@@ -371,7 +407,7 @@ public sealed class ReflectionMappingTests
     }
 
     [Fact]
-    public void IsAssignableTo_NativeCovariantTarget_ReturnsMatched()
+    public void IsAssignableTo_VarianceInstantiation_ReturnsNotMatched()
     {
         var typeSystem = new ReflectionTypeSystem();
         var candidate = typeSystem.Mapper.MapType(typeof(List<string>));
@@ -379,7 +415,7 @@ public sealed class ReflectionMappingTests
 
         var result = typeSystem.IsAssignableTo(candidate, target);
 
-        Assert.Equal(MatchStatus.Matched, result.Status);
+        Assert.Equal(MatchStatus.NotMatched, result.Status);
     }
 
     [Fact]
@@ -407,25 +443,54 @@ public sealed class ReflectionMappingTests
     }
 
     [Fact]
-    public void TypeSystem_GenericVariance_MatchesClrAssignability()
+    public void TypeSystem_Assignability_UsesDeclaredInheritance()
     {
         var typeSystem = new ReflectionTypeSystem();
 
+        // + 只含名义继承/实现关系；变型实例化（数组协变、泛型协变/逆变）不可赋值。
         Assert.Equal(
             MatchStatus.Matched,
+            typeSystem.IsAssignableTo(
+                typeSystem.Mapper.MapType(typeof(List<string>)),
+                typeSystem.Mapper.MapType(typeof(IEnumerable<string>))).Status);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.IsAssignableTo(
+                typeSystem.Mapper.MapType(typeof(List<string>)),
+                typeSystem.Mapper.MapType(typeof(IEnumerable<object>))).Status);
+        Assert.Equal(
+            MatchStatus.NotMatched,
             typeSystem.IsAssignableTo(
                 typeSystem.Mapper.MapType(typeof(IEnumerable<string>)),
                 typeSystem.Mapper.MapType(typeof(IEnumerable<object>))).Status);
         Assert.Equal(
-            MatchStatus.Matched,
+            MatchStatus.NotMatched,
             typeSystem.IsAssignableTo(
                 typeSystem.Mapper.MapType(typeof(Action<object>)),
                 typeSystem.Mapper.MapType(typeof(Action<string>))).Status);
+    }
+
+    [Fact]
+    public void TypePattern_CompositionalPlus_ExpressesVariance()
+    {
+        var typeSystem = new ReflectionTypeSystem();
+
+        // 变型经类型实参/元素位置的 + 组合表达（规范 12.4）。
+        Assert.Equal(
+            MatchStatus.Matched,
+            TypePattern("PatternBase+[]", typeof(PatternDerived[]), typeSystem).Status);
+        Assert.Equal(
+            MatchStatus.Matched,
+            TypePattern(
+                "System.Collections.Generic.IEnumerable<object+>",
+                typeof(IEnumerable<string>),
+                typeSystem).Status);
         Assert.Equal(
             MatchStatus.NotMatched,
-            typeSystem.IsAssignableTo(
-                typeSystem.Mapper.MapType(typeof(IEnumerable<object>)),
-                typeSystem.Mapper.MapType(typeof(IEnumerable<string>))).Status);
+            TypePattern(
+                "System.Collections.Generic.IEnumerable<object>+",
+                typeof(IEnumerable<string>),
+                typeSystem).Status);
     }
 
     private static MatchResult MemberPattern(
@@ -437,6 +502,17 @@ public sealed class ReflectionMappingTests
             AspectNParser.ParseMemberExpression(source));
         Assert.True(compilation.TryGetMemberPattern(out var pattern));
         return pattern!.Match(candidate, typeSystem);
+    }
+
+    private static MatchResult TypePattern(
+        string source,
+        Type candidate,
+        ReflectionTypeSystem typeSystem)
+    {
+        var compilation = AspectNCompilation.Create(
+            AspectNParser.ParseTypePattern(source));
+        Assert.True(compilation.TryGetTypePattern(out var pattern));
+        return pattern!.Match(typeSystem.Mapper.MapType(candidate), typeSystem);
     }
 
     private static MethodInfo RequiredMethod(Type type, string name)
@@ -481,6 +557,32 @@ internal sealed class ExplosiveMarkerAttribute : Attribute
 [AttributeUsage(AttributeTargets.All)]
 internal sealed class GenericMarkerAttribute<T> : Attribute
 {
+}
+
+internal class PatternBase
+{
+}
+
+internal sealed class PatternDerived : PatternBase
+{
+}
+
+internal sealed class NestedOuter<T>
+{
+    public sealed class NestedInner
+    {
+    }
+}
+
+internal sealed class NestedOwner
+{
+    public static void M<T>(NestedOuter<int>.NestedInner value)
+    {
+    }
+
+    public static void M<T>(NestedOuter<string>.NestedInner value)
+    {
+    }
 }
 
 [ExplosiveMarker]

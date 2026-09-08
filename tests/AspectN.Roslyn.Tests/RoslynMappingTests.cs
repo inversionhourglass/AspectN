@@ -26,6 +26,52 @@ public sealed class RoslynMappingTests
     }
 
     [Fact]
+    public void MapType_NestedConstructedOverloads_HaveDistinctOwnerIds()
+    {
+        var compilation = RoslynTestCompilation.Create("""
+            public class Outer<T>
+            {
+                public class Inner
+                {
+                }
+            }
+
+            public class Owner
+            {
+                public void M<T>(Outer<int>.Inner value) { }
+
+                public void M<T>(Outer<string>.Inner value) { }
+            }
+            """);
+        var typeSystem = new RoslynTypeSystem(compilation);
+        var owner = compilation.GetTypeByMetadataName("Owner");
+        Assert.NotNull(owner);
+        var overloads = owner.GetMembers("M").OfType<IMethodSymbol>().ToArray();
+        var intOverload = Assert.Single(
+            overloads,
+            method => method.Parameters[0].Type.ToDisplayString()
+                .Contains("Outer<int>"));
+        var stringOverload = Assert.Single(
+            overloads,
+            method => method.Parameters[0].Type.ToDisplayString()
+                .Contains("Outer<string>"));
+
+        var first = Assert.IsType<GenericParameterTypeSignature>(
+            typeSystem.Mapper.MapType(intOverload.TypeParameters[0]));
+        var second = Assert.IsType<GenericParameterTypeSignature>(
+            typeSystem.Mapper.MapType(stringOverload.TypeParameters[0]));
+
+        // 嵌套类型的构造实参按包含链逐层编入 owner ID，与 Reflection/Cecil 逐字节一致。
+        Assert.Equal("Owner.M`1(Outer`1<System.Int32>/Inner)", first.Parameter.OwnerId);
+        Assert.Equal(
+            "Owner.M`1(Outer`1<System.String>/Inner)",
+            second.Parameter.OwnerId);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.AreEqual(first, second).Status);
+    }
+
+    [Fact]
     public void MapType_RefOverloadGenericParameters_HaveDistinctOwnerIds()
     {
         var compilation = RoslynTestCompilation.Create();
@@ -247,26 +293,35 @@ public sealed class RoslynMappingTests
             compilation,
             "System.Collections.Generic.List`1").Construct(
                 compilation.GetSpecialType(SpecialType.System_String));
-        var enumerable = RequiredType(
+        var enumerableOfObject = RequiredType(
             compilation,
             "System.Collections.Generic.IEnumerable`1").Construct(
                 compilation.GetSpecialType(SpecialType.System_Object));
+        var enumerableOfString = RequiredType(
+            compilation,
+            "System.Collections.Generic.IEnumerable`1").Construct(
+                compilation.GetSpecialType(SpecialType.System_String));
 
+        // + 只含名义继承/实现：声明的接口实例化可赋值，变型实例化不可。
         var direct = typeSystem.IsAssignableTo(
             typeSystem.Mapper.MapType(list),
-            typeSystem.Mapper.MapType(enumerable));
+            typeSystem.Mapper.MapType(enumerableOfObject));
+        var nominal = typeSystem.IsAssignableTo(
+            typeSystem.Mapper.MapType(list),
+            typeSystem.Mapper.MapType(enumerableOfString));
         var reverse = typeSystem.IsAssignableTo(
-            typeSystem.Mapper.MapType(enumerable),
+            typeSystem.Mapper.MapType(enumerableOfString),
             typeSystem.Mapper.MapType(list));
 
-        Assert.Equal(MatchStatus.Matched, direct.Status);
+        Assert.Equal(MatchStatus.NotMatched, direct.Status);
+        Assert.Equal(MatchStatus.Matched, nominal.Status);
         Assert.Equal(MatchStatus.NotMatched, reverse.Status);
         Assert.Equal(TypeSystemCapabilities.All, typeSystem.Capabilities);
         Assert.Same(compilation, typeSystem.Compilation);
     }
 
     [Fact]
-    public void IsAssignableTo_LanguageConversions_UseClrAssignability()
+    public void IsAssignableTo_LanguageConversions_UseDeclaredInheritance()
     {
         var compilation = RoslynTestCompilation.Create();
         var typeSystem = new RoslynTypeSystem(compilation);
@@ -291,8 +346,9 @@ public sealed class RoslynMappingTests
         Assert.Equal(
             MatchStatus.Matched,
             Assignability(typeSystem, intType, objectType));
+        // Nullable 提升不是名义继承/实现关系。
         Assert.Equal(
-            MatchStatus.Matched,
+            MatchStatus.NotMatched,
             Assignability(typeSystem, intType, nullableInt));
         Assert.Equal(
             MatchStatus.NotMatched,

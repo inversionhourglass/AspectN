@@ -34,6 +34,14 @@
     "expected": "Matched"
   },
   {
+    "id": "nested-constructed-generic-method",
+    "kind": "method",
+    "member": "EchoNested",
+    "parameterCount": 1,
+    "expression": "method(* AspectN.TestAssembly.Conformance.ConformanceFixture.EchoNested<..>(..))",
+    "expected": "Matched"
+  },
+  {
     "id": "async",
     "kind": "method",
     "member": "AsyncMethod",

@@ -89,6 +89,16 @@ public sealed class RegexPatternTests
         return pattern!.Match(candidate, new StubTypeSystem());
     }
 
+    [Fact]
+    public void Match_RegexCharacterClassLeadingBracket_IsLiteral()
+    {
+        // .NET 语义：字符类起始位置的 ] 是字面量（Regex.IsMatch(")", "[])]") 为 true），
+        // 不能把它当作字符类结束符而吞掉选择器的右括号。
+        var result = Match("regex([])])", Callable("Run"));
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+    }
+
     private static CallableSignature ComplexCandidate()
     {
         var assembly = new AssemblyIdentity("Example.Assembly");

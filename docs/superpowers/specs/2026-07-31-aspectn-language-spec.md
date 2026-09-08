@@ -448,11 +448,18 @@ Each alias maps to its corresponding `System` type.
 
 ### 12.4 Assignability
 
-The postfix `+` matches the named type itself or any assignable subtype/implementation:
+The postfix `+` matches the named type itself or any declared subtype/implementation, including runtime-synthesized interface implementations such as the generic collection interfaces of SZ arrays:
 
 ```text
 System.IDisposable+
 *Provider+
+```
+
+`+` requires a named target; array targets such as `Base[]+` are not supported. Variance conversions — array covariance and generic co/contravariance — are not part of `+`. Express them compositionally by placing `+` inside type arguments or array elements:
+
+```text
+Base+[]                     matches Derived[]
+IEnumerable<object+>        matches IEnumerable<string>
 ```
 
 Failure to resolve required base or interface information produces `Unknown`.

@@ -637,15 +637,49 @@ public sealed class ReflectionSignatureMapper
                    ArraySuffix(type.GetArrayRank());
         }
 
-        if (type.IsGenericType && !type.IsGenericTypeDefinition)
+        return ConstructedNamedForm(type);
+    }
+
+    // 嵌套构造类型的规范形式按包含链逐层携带各自的构造实参；与 Cecil、Roslyn 逐字节一致。
+    // .NET 中构造嵌套类型的 DeclaringType 链是开放定义，构造实参只在封闭类型上扁平可见，需按层分发。
+    private static string ConstructedNamedForm(Type type)
+    {
+        var chain = new List<Type>();
+        for (var current = type;
+             current is not null;
+             current = current.DeclaringType)
         {
-            var arguments = type.GetGenericArguments()
-                .Select(CanonicalParameterForm);
-            return $"{CanonicalParameterForm(type.GetGenericTypeDefinition())}" +
-                   $"<{string.Join(",", arguments)}>";
+            chain.Add(current);
         }
 
-        return MapMetadataName(type);
+        chain.Reverse();
+
+        var flattened =
+            type.IsGenericType && !type.ContainsGenericParameters
+                ? type.GetGenericArguments()
+                : Type.EmptyTypes;
+        var parts = new List<string>();
+        var offset = 0;
+        foreach (var level in chain)
+        {
+            var declaringCount =
+                level.DeclaringType?.GetGenericArguments().Length ?? 0;
+            var ownArity = level.GetGenericArguments().Length - declaringCount;
+            var form = level.Name;
+            if (ownArity > 0 && offset + ownArity <= flattened.Length)
+            {
+                var slice = new Type[ownArity];
+                Array.Copy(flattened, offset, slice, 0, ownArity);
+                form += $"<{string.Join(",", slice.Select(CanonicalParameterForm))}>";
+                offset += ownArity;
+            }
+
+            parts.Add(form);
+        }
+
+        var prefix = type.Namespace;
+        var joined = string.Join("/", parts);
+        return string.IsNullOrEmpty(prefix) ? joined : $"{prefix}.{joined}";
     }
 
     private static string ArraySuffix(int rank)

@@ -54,14 +54,8 @@ public sealed class ReflectionTypeSystem : ITypeSystem
 
         try
         {
-            if (Mapper.TryGetType(target, out var targetType) &&
-                targetType is not null)
-            {
-                return targetType.IsAssignableFrom(candidateType)
-                    ? TypeRelationResult.Matched
-                    : TypeRelationResult.NotMatched;
-            }
-
+            // + 只匹配声明的继承/实现关系；IsAssignableFrom 额外包含数组协变与泛型变型，
+            // 与模式路径的合成目标语义不一致，统一按名义闭包遍历（GetInterfaces 含运行时合成的数组接口）。
             var pending = new Queue<Type>();
             var visited = new HashSet<Type>();
             pending.Enqueue(candidateType);

@@ -485,37 +485,45 @@ public sealed class RoslynSignatureMapper
                        "[" + (array.Rank == 1
                            ? string.Empty
                            : new string(',', array.Rank - 1)) + "]";
-            case INamedTypeSymbol named:
-                var arguments = named.TypeArguments
-                    .Select(CanonicalParameterForm);
-                var metadataName = MapMetadataName(named.OriginalDefinition);
-                return named.Arity == 0
-                    ? metadataName
-                    : $"{metadataName}<{string.Join(",", arguments)}>";
+            case INamedTypeSymbol:
+                return ConstructedNamedForm((INamedTypeSymbol)type);
             default:
                 return type.ToDisplayString();
         }
     }
 
-    private static string MapMetadataName(INamedTypeSymbol typeSymbol)
+    // 嵌套构造类型的规范形式按包含链逐层携带各自的构造实参；与 Reflection、Cecil 逐字节一致。
+    private static string ConstructedNamedForm(INamedTypeSymbol named)
     {
-        var names = new Stack<string>();
-        for (var current = typeSymbol.OriginalDefinition;
+        var levels = new Stack<string>();
+        for (var current = named;
              current is not null;
              current = current.ContainingType)
         {
-            names.Push(current.MetadataName);
+            var level = current.MetadataName;
+            if (current.IsGenericType && !current.IsDefinition)
+            {
+                var arguments = current.TypeArguments
+                    .Select(CanonicalParameterForm)
+                    .ToArray();
+                if (arguments.Length > 0)
+                {
+                    level += $"<{string.Join(",", arguments)}>";
+                }
+            }
+
+            levels.Push(level);
         }
 
         var namespaces = new Stack<string>();
-        for (var current = typeSymbol.ContainingNamespace;
+        for (var current = named.ContainingNamespace;
              current is not null && !current.IsGlobalNamespace;
              current = current.ContainingNamespace)
         {
             namespaces.Push(current.Name);
         }
 
-        var joined = string.Join("/", names.ToArray());
+        var joined = string.Join("/", levels.ToArray());
         var prefix = string.Join(".", namespaces.ToArray());
         return string.IsNullOrEmpty(prefix) ? joined : $"{prefix}.{joined}";
     }

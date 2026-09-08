@@ -103,6 +103,7 @@ internal sealed class Lexer
         var start = _position;
         var groupDepth = 0;
         var inCharacterClass = false;
+        var atClassStart = false;
         var escaped = false;
         var foundDelimiter = false;
 
@@ -125,7 +126,19 @@ internal sealed class Lexer
 
             if (inCharacterClass)
             {
-                if (character == ']') inCharacterClass = false;
+                // .NET 语义：字符类起始位置（[ 或 [^ 之后紧邻）的 ] 是字面量而非结束符。
+                if (atClassStart && character == '^')
+                {
+                    _position++;
+                    continue;
+                }
+
+                if (character == ']' && !atClassStart)
+                {
+                    inCharacterClass = false;
+                }
+
+                atClassStart = false;
                 _position++;
                 continue;
             }
@@ -133,6 +146,7 @@ internal sealed class Lexer
             if (character == '[')
             {
                 inCharacterClass = true;
+                atClassStart = true;
                 _position++;
                 continue;
             }
