@@ -474,10 +474,10 @@ public sealed class RoslynSignatureMapper
         switch (type)
         {
             case ITypeParameterSymbol parameter:
-                return (parameter.TypeParameterKind ==
-                        TypeParameterKind.Method
-                    ? "!!"
-                    : "!") + parameter.Ordinal;
+                return parameter.TypeParameterKind ==
+                    TypeParameterKind.Method
+                    ? "!!" + parameter.Ordinal
+                    : "!" + FlattenedOrdinal(parameter);
             case IPointerTypeSymbol pointer:
                 return CanonicalParameterForm(pointer.PointedAtType) + "*";
             case IArrayTypeSymbol array:
@@ -490,6 +490,21 @@ public sealed class RoslynSignatureMapper
             default:
                 return type.ToDisplayString();
         }
+    }
+
+    // Roslyn 的 Ordinal 相对声明类型；.NET 与 Cecil 的泛型参数位置是包含链上的扁平编号，
+    // 类型参数必须加上声明类型外层链的元数偏移才能与两者一致。
+    private static int FlattenedOrdinal(ITypeParameterSymbol parameter)
+    {
+        var offset = 0;
+        for (var containing = parameter.DeclaringType?.ContainingType;
+             containing is not null;
+             containing = containing.ContainingType)
+        {
+            offset += containing.Arity;
+        }
+
+        return offset + parameter.Ordinal;
     }
 
     // 嵌套构造类型的规范形式按包含链逐层携带各自的构造实参；与 Reflection、Cecil 逐字节一致。

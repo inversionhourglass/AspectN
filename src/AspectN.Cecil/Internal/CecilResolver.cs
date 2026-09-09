@@ -39,6 +39,7 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
         var pending = new Queue<TypeReference>();
         var visited = new HashSet<CecilTypeCacheKey>();
         pending.Enqueue(candidateReference);
+        TypeRelationResult? unresolved = null;
 
         while (pending.Count > 0)
         {
@@ -67,7 +68,9 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
             var definition = TryResolve(current, out var failure);
             if (definition is null)
             {
-                return failure!;
+                // 解析失败只影响该节点的进一步展开：其余队列分支仍可能给出确定匹配。
+                unresolved ??= failure;
+                continue;
             }
 
             var constructed = current as GenericInstanceType;
@@ -83,7 +86,8 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
             }
         }
 
-        return TypeRelationResult.NotMatched;
+        // 无确定匹配且存在未解析分支时返回 Unknown，不能静默判为不匹配（规范 12.4）。
+        return unresolved ?? TypeRelationResult.NotMatched;
     }
 
     // 获取声明的继承/实现闭包（不含候选自身）；数组按运行时固定事实产出合成关系。
@@ -105,6 +109,7 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
         var pending = new Queue<TypeReference>();
         var visited = new HashSet<CecilTypeCacheKey>();
         pending.Enqueue(reference);
+        TypeRelationResult? unresolved = null;
         while (pending.Count > 0)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -127,7 +132,9 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
             var definition = TryResolve(current, out var failure);
             if (definition is null)
             {
-                return new InheritanceClosure(ancestors, failure);
+                // 解析失败只影响该节点的进一步展开：其余队列中的已知分支仍然保留。
+                unresolved ??= failure;
+                continue;
             }
 
             var constructed = current as GenericInstanceType;
@@ -143,7 +150,7 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
             }
         }
 
-        return new InheritanceClosure(ancestors, null);
+        return new InheritanceClosure(ancestors, unresolved);
     }
 
     private TypeRelationResult CompareArrayRelations(

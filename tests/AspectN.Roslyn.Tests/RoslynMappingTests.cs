@@ -72,6 +72,44 @@ public sealed class RoslynMappingTests
     }
 
     [Fact]
+    public void MapType_NestedTypeParameterOverloads_HaveFlattenedOwnerIds()
+    {
+        var compilation = RoslynTestCompilation.Create("""
+            public class Outer<T>
+            {
+                public class Inner<U>
+                {
+                    public void M<V>(T x) { }
+
+                    public void M<V>(U x) { }
+                }
+            }
+            """);
+        var typeSystem = new RoslynTypeSystem(compilation);
+        var inner = compilation.GetTypeByMetadataName("Outer`1+Inner`1");
+        Assert.NotNull(inner);
+        var overloads = inner.GetMembers("M").OfType<IMethodSymbol>().ToArray();
+        Assert.Equal(2, overloads.Length);
+
+        var mapped = overloads
+            .Select(method => Assert.IsType<GenericParameterTypeSignature>(
+                typeSystem.Mapper.MapType(method.TypeParameters[0])))
+            .ToArray();
+        var ownerIds = mapped
+            .Select(signature => signature.Parameter.OwnerId)
+            .OrderBy(id => id, StringComparer.Ordinal)
+            .ToArray();
+
+        // Roslyn 的 Ordinal 相对声明类型，必须加包含链元数偏移，
+        // 与 Reflection/Cecil 的 ECMA 扁平编号逐字节一致（T=!0、U=!1）。
+        Assert.Equal("Outer`1/Inner`1.M`1(!0)", ownerIds[0]);
+        Assert.Equal("Outer`1/Inner`1.M`1(!1)", ownerIds[1]);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.AreEqual(mapped[0], mapped[1]).Status);
+    }
+
+    [Fact]
     public void MapType_RefOverloadGenericParameters_HaveDistinctOwnerIds()
     {
         var compilation = RoslynTestCompilation.Create();

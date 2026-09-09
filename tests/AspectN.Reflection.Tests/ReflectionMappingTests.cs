@@ -570,6 +570,36 @@ public sealed class ReflectionMappingTests
             typeSystem.AreEqual(first, second).Status);
     }
 
+    [Fact]
+    public void MapType_NestedTypeParameterOverloads_HaveFlattenedOwnerIds()
+    {
+        var typeSystem = new ReflectionTypeSystem();
+        var inner = typeof(NestedParamOuter<int>.NestedParamInner<string>);
+        var overloads = inner.GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .Where(method => method.Name == "M")
+            .ToArray();
+        var intOverload = overloads.Single(
+            method => method.GetParameters()[0].ParameterType == typeof(int));
+        var stringOverload = overloads.Single(
+            method => method.GetParameters()[0].ParameterType == typeof(string));
+        var first = Assert.IsType<GenericParameterTypeSignature>(
+            typeSystem.Mapper.MapType(intOverload.GetGenericArguments()[0]));
+        var second = Assert.IsType<GenericParameterTypeSignature>(
+            typeSystem.Mapper.MapType(stringOverload.GetGenericArguments()[0]));
+
+        // .NET 的 GenericParameterPosition 是包含链扁平编号（T=0、U=1），
+        // owner ID 与 Cecil/Roslyn 的规范形式逐字节一致。
+        Assert.Equal(
+            "AspectN.Reflection.Tests.NestedParamOuter`1/NestedParamInner`1.M`1(!0)",
+            first.Parameter.OwnerId);
+        Assert.Equal(
+            "AspectN.Reflection.Tests.NestedParamOuter`1/NestedParamInner`1.M`1(!1)",
+            second.Parameter.OwnerId);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.AreEqual(first, second).Status);
+    }
+
     private static MatchResult MemberPattern(
         string source,
         CallableSignature candidate,
@@ -672,6 +702,20 @@ internal static class OpenConstructedOwner
     public static void M<T>(Dictionary<T, string> value)
         where T : notnull
     {
+    }
+}
+
+internal sealed class NestedParamOuter<T>
+{
+    public sealed class NestedParamInner<U>
+    {
+        public static void M<V>(T value)
+        {
+        }
+
+        public static void M<V>(U value)
+        {
+        }
     }
 }
 

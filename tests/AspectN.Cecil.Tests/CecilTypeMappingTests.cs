@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using AspectN.Cecil.Tests.Fixtures;
 using AspectN.Evaluation;
 using AspectN.Metadata;
 using Mono.Cecil;
@@ -249,6 +250,40 @@ public sealed class CecilTypeMappingTests
 
         Assert.False(moduleReference.IsAlive);
         GC.KeepAlive(context);
+    }
+
+    [Fact]
+    public void MapType_NestedTypeParameterOverloads_HaveFlattenedOwnerIds()
+    {
+        using var typeSystem = EmittedFixture.Open();
+        var inner = typeSystem.Module.GetType(
+            "AspectN.Cecil.Tests.NestedParamOuter`1/NestedParamInner`1");
+        Assert.NotNull(inner);
+        var overloads = inner.Methods
+            .Where(method => method.Name == "M")
+            .ToArray();
+        Assert.Equal(2, overloads.Length);
+
+        var mapped = overloads
+            .Select(method => Assert.IsType<GenericParameterTypeSignature>(
+                typeSystem.Mapper.MapType(method.GenericParameters[0])))
+            .ToArray();
+        var ownerIds = mapped
+            .Select(signature => signature.Parameter.OwnerId)
+            .OrderBy(id => id, StringComparer.Ordinal)
+            .ToArray();
+
+        // 嵌套声明的类型参数按 ECMA 扁平编号编码（外层 T=!0、内层 U=!1），
+        // 三个适配器对同一形状产出逐字节一致的 owner ID。
+        Assert.Equal(
+            "AspectN.Cecil.Tests.NestedParamOuter`1/NestedParamInner`1.M`1(!0)",
+            ownerIds[0]);
+        Assert.Equal(
+            "AspectN.Cecil.Tests.NestedParamOuter`1/NestedParamInner`1.M`1(!1)",
+            ownerIds[1]);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.AreEqual(mapped[0], mapped[1]).Status);
     }
 
     private static TypeDefinition AddClass(

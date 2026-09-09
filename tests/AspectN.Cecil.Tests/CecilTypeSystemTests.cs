@@ -226,6 +226,127 @@ public sealed class CecilTypeSystemTests
     }
 
     [Fact]
+    public void TypePattern_ResolutionFailureKeepsKnownInterfaceBranch()
+    {
+        var module = TestModuleFactory.Create();
+        using var typeSystem = new CecilTypeSystem(module);
+        var missing = new AssemblyNameReference(
+            "Missing.Contracts",
+            new Version(1, 0, 0, 0));
+        module.AssemblyReferences.Add(missing);
+        var missingBase = new TypeReference(
+            "Missing",
+            "BaseProvider",
+            module,
+            missing);
+        var known = new TypeDefinition(
+            "Fixture",
+            "IKnown",
+            TypeAttributes.Public | TypeAttributes.Interface | TypeAttributes.Abstract,
+            module.TypeSystem.Object);
+        module.Types.Add(known);
+        var derived = new TypeDefinition(
+            "Fixture",
+            "Derived",
+            TypeAttributes.Public | TypeAttributes.Class,
+            missingBase);
+        derived.Interfaces.Add(new InterfaceImplementation(known));
+        module.Types.Add(derived);
+
+        var mapped = typeSystem.Mapper.MapType(derived);
+
+        // 缺失基类的解析失败只影响其自身展开，不阻断队列中已声明的已知接口分支。
+        Assert.Equal(
+            MatchStatus.Matched,
+            TypePattern("Fixture.IKnown+", mapped, typeSystem));
+        Assert.Equal(
+            MatchStatus.Matched,
+            TypePattern("*Known+", mapped, typeSystem));
+        // 缺失基类之上的关系仍不可知。
+        Assert.Equal(
+            MatchStatus.Unknown,
+            TypePattern("*Other+", mapped, typeSystem));
+
+        // 具体目标路径同样保留已知分支；无确定匹配且有未解析分支时返回 Unknown。
+        Assert.Equal(
+            MatchStatus.Matched,
+            typeSystem.IsAssignableTo(
+                mapped,
+                typeSystem.Mapper.MapType(known)).Status);
+        var unrelated = AddClass(module, "Unrelated", module.TypeSystem.Object);
+        Assert.Equal(
+            MatchStatus.Unknown,
+            typeSystem.IsAssignableTo(
+                mapped,
+                typeSystem.Mapper.MapType(unrelated)).Status);
+
+        // 闭包同时包含已知基类引用与已知接口，并携带解析失败标记。
+        var closure = typeSystem.GetInheritanceClosure(mapped);
+        Assert.NotNull(closure.Failure);
+        Assert.Equal(
+            2,
+            closure.Ancestors.Count(a =>
+                Assert.IsType<NamedTypeSignature>(a).Identity.FullMetadataName
+                    is "Missing.BaseProvider" or "Fixture.IKnown"));
+    }
+
+    [Fact]
+    public void TypePattern_ResolutionFailureKeepsSiblingInterfaces()
+    {
+        var module = TestModuleFactory.Create();
+        using var typeSystem = new CecilTypeSystem(module);
+        var missing = new AssemblyNameReference(
+            "Missing.Contracts",
+            new Version(1, 0, 0, 0));
+        module.AssemblyReferences.Add(missing);
+        var missingInterface = new TypeReference(
+            "Missing",
+            "IProvider",
+            module,
+            missing);
+        var known = new TypeDefinition(
+            "Fixture",
+            "IKnownA",
+            TypeAttributes.Public | TypeAttributes.Interface | TypeAttributes.Abstract,
+            module.TypeSystem.Object);
+        module.Types.Add(known);
+
+        // 接口声明顺序相反的两个候选必须得到一致结果。
+        var missingFirst = AddClass(module, "MissingFirst", module.TypeSystem.Object);
+        missingFirst.Interfaces.Add(
+            new InterfaceImplementation(missingInterface));
+        missingFirst.Interfaces.Add(new InterfaceImplementation(known));
+        var knownFirst = AddClass(module, "KnownFirst", module.TypeSystem.Object);
+        knownFirst.Interfaces.Add(new InterfaceImplementation(known));
+        knownFirst.Interfaces.Add(
+            new InterfaceImplementation(missingInterface));
+
+        foreach (var candidate in new[] { missingFirst, knownFirst })
+        {
+            var mapped = typeSystem.Mapper.MapType(candidate);
+
+            Assert.Equal(
+                MatchStatus.Matched,
+                TypePattern("*KnownA+", mapped, typeSystem));
+            // 缺失接口的引用本身是已知祖先，模式可先命中再终止展开。
+            Assert.Equal(
+                MatchStatus.Matched,
+                TypePattern("*Provider+", mapped, typeSystem));
+            Assert.Equal(
+                MatchStatus.Unknown,
+                TypePattern("*Other+", mapped, typeSystem));
+
+            var closure = typeSystem.GetInheritanceClosure(mapped);
+            Assert.NotNull(closure.Failure);
+            Assert.Equal(
+                2,
+                closure.Ancestors.Count(a =>
+                    Assert.IsType<NamedTypeSignature>(a).Identity.FullMetadataName
+                        is "Missing.IProvider" or "Fixture.IKnownA"));
+        }
+    }
+
+    [Fact]
     public void TypePattern_WildcardAssignable_PartialClosureReturnsUnknown()
     {
         var module = TestModuleFactory.Create();
