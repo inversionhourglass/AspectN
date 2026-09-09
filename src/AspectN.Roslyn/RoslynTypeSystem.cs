@@ -106,18 +106,20 @@ public sealed class RoslynTypeSystem : ITypeSystem
         }
     }
 
-    /// <summary>Enumerates the declared inheritance closure of a type, excluding the type itself.</summary>
+    /// <summary>Gets the declared inheritance closure of a type, excluding the type itself.</summary>
     /// <param name="candidate">Specifies the candidate.</param>
     /// <param name="cancellationToken">Specifies the cancellation token.</param>
-    /// <returns>Returns base types and implemented interfaces in nominal closure order.</returns>
-    public IEnumerable<TypeSignature> EnumerateInheritanceClosure(
+    /// <returns>Returns the known ancestors and the failure, if any, that stopped expansion.</returns>
+    public InheritanceClosure GetInheritanceClosure(
         TypeSignature candidate,
         CancellationToken cancellationToken = default)
     {
         if (!Mapper.TryGetTypeSymbol(candidate, out var candidateSymbol) ||
             candidateSymbol is null)
         {
-            return Array.Empty<TypeSignature>();
+            return new InheritanceClosure(
+                Array.Empty<TypeSignature>(),
+                MissingNativeSymbol(candidate));
         }
 
         var closure = new List<TypeSignature>();
@@ -155,10 +157,13 @@ public sealed class RoslynTypeSystem : ITypeSystem
         }
         catch (Exception exception) when (IsSymbolFailure(exception))
         {
-            // 符号读取失败时产出部分闭包；具体目标的 Unknown 语义由 IsAssignableTo 保留。
+            // 符号读取失败：已产出的祖先仍有效，闭包标记为部分并携带失败诊断。
+            return new InheritanceClosure(
+                closure,
+                SymbolFailure(candidateSymbol, exception));
         }
 
-        return closure;
+        return new InheritanceClosure(closure, null);
     }
 
     /// <summary>Determines whether has direct attribute.</summary>

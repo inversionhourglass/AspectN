@@ -225,6 +225,58 @@ public sealed class CecilTypeSystemTests
             TypePattern("*Missing+", derived, typeSystem));
     }
 
+    [Fact]
+    public void TypePattern_WildcardAssignable_PartialClosureReturnsUnknown()
+    {
+        var module = TestModuleFactory.Create();
+        using var typeSystem = new CecilTypeSystem(module);
+        var missing = new AssemblyNameReference(
+            "Missing.Contracts",
+            new Version(1, 0, 0, 0));
+        module.AssemblyReferences.Add(missing);
+        var missingBase = new TypeReference(
+            "Missing",
+            "BaseProvider",
+            module,
+            missing);
+        var derived = new TypeDefinition(
+            "Fixture",
+            "Derived",
+            TypeAttributes.Public | TypeAttributes.Class,
+            missingBase);
+        module.Types.Add(derived);
+
+        var mapped = typeSystem.Mapper.MapType(derived);
+
+        // 已知基类引用先产出再解析：具体与通配目标都能命中它。
+        Assert.Equal(
+            MatchStatus.Matched,
+            TypePattern("Missing.BaseProvider+", mapped, typeSystem));
+        Assert.Equal(
+            MatchStatus.Matched,
+            TypePattern("*Provider+", mapped, typeSystem));
+
+        // 缺失基类的上层祖先不可知：未命中时返回 Unknown 并携带解析诊断，否定模式正确传播。
+        var indeterminate = MatchPattern("*Other+", mapped, typeSystem);
+        Assert.Equal(MatchStatus.Unknown, indeterminate.Status);
+        Assert.Contains(
+            indeterminate.Diagnostics,
+            diagnostic => diagnostic.Code == "AN3002");
+        Assert.Equal(
+            MatchStatus.Unknown,
+            TypePattern("!(*Other+)", mapped, typeSystem));
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            TypePattern("!(*Provider+)", mapped, typeSystem));
+
+        // 闭包本身：已知基类已产出，同时携带解析失败标记。
+        var closure = typeSystem.GetInheritanceClosure(mapped);
+        var ancestor = Assert.Single(closure.Ancestors);
+        var named = Assert.IsType<NamedTypeSignature>(ancestor);
+        Assert.Equal("Missing.BaseProvider", named.Identity.FullMetadataName);
+        Assert.NotNull(closure.Failure);
+    }
+
     private static MatchStatus TypePattern(
         string source,
         TypeSignature candidate,
@@ -238,6 +290,17 @@ public sealed class CecilTypeSystemTests
         }
 
         return pattern!.Match(candidate, typeSystem).Status;
+    }
+
+    private static MatchResult MatchPattern(
+        string source,
+        TypeSignature candidate,
+        CecilTypeSystem typeSystem)
+    {
+        var compilation = AspectN.AspectNCompilation.Create(
+            AspectN.AspectNParser.ParseTypePattern(source));
+        Assert.True(compilation.TryGetTypePattern(out var pattern));
+        return pattern!.Match(candidate, typeSystem);
     }
 
     [Fact]

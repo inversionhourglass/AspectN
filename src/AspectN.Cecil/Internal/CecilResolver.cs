@@ -86,18 +86,22 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
         return TypeRelationResult.NotMatched;
     }
 
-    // 枚举声明的继承/实现闭包（不含候选自身）；数组按运行时固定事实产出合成关系。
-    // 解析失败时产出部分闭包——具体目标的 Unknown 语义由 IsAssignableTo 保留。
-    public IEnumerable<TypeSignature> EnumerateInheritanceClosure(
+    // 获取声明的继承/实现闭包（不含候选自身）；数组按运行时固定事实产出合成关系。
+    // 祖先引用先产出再解析展开（与 oracle 及具体目标路径的顺序一致）——匹配只需要签名，不需要定义；
+    // 解析失败时该祖先已产出，但其上层关系不可知，闭包标记为部分并携带失败诊断。
+    public InheritanceClosure GetInheritanceClosure(
         TypeSignature candidate,
         CancellationToken cancellationToken)
     {
         if (!_mapper.TryGetTypeReference(candidate, out var reference) ||
             reference is null)
         {
-            yield break;
+            return new InheritanceClosure(
+                Array.Empty<TypeSignature>(),
+                MissingNativeReference(candidate));
         }
 
+        var ancestors = new List<TypeSignature>();
         var pending = new Queue<TypeReference>();
         var visited = new HashSet<CecilTypeCacheKey>();
         pending.Enqueue(reference);
@@ -109,18 +113,22 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
 
             if (current is ArrayType array)
             {
-                foreach (var relation in EnumerateArrayRelations(array))
-                {
-                    yield return relation;
-                }
-
+                ancestors.AddRange(EnumerateArrayRelations(array));
                 continue;
             }
 
             if (current is ByReferenceType or PointerType) continue;
 
-            var definition = TryResolve(current, out _);
-            if (definition is null) continue;
+            if (!ReferenceEquals(current, reference))
+            {
+                ancestors.Add(_mapper.MapType(current));
+            }
+
+            var definition = TryResolve(current, out var failure);
+            if (definition is null)
+            {
+                return new InheritanceClosure(ancestors, failure);
+            }
 
             var constructed = current as GenericInstanceType;
             if (definition.BaseType is not null)
@@ -133,12 +141,9 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
                 pending.Enqueue(
                     Substitute(implementation.InterfaceType, constructed));
             }
-
-            if (!ReferenceEquals(current, reference))
-            {
-                yield return _mapper.MapType(current);
-            }
         }
+
+        return new InheritanceClosure(ancestors, null);
     }
 
     private TypeRelationResult CompareArrayRelations(

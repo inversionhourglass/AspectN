@@ -49,11 +49,11 @@ internal sealed class StubTypeSystem : ITypeSystem
                 "The stub type system does not provide attribute lookup."));
     }
 
-    public IEnumerable<TypeSignature> EnumerateInheritanceClosure(
-        TypeSignature candidate,
-        CancellationToken cancellationToken = default)
+    public InheritanceClosure GetInheritanceClosure(
+            TypeSignature candidate,
+            CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        return Array.Empty<TypeSignature>();
+        return InheritanceClosure.Empty;
     }
 }

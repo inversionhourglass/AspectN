@@ -448,11 +448,14 @@ internal static class TypePatternEvaluator
         EvaluationContext context)
     {
         var cancellationToken = context.CancellationToken;
+        var closure = context.TypeSystem.GetInheritanceClosure(
+            candidate,
+            cancellationToken);
         var hasUnknown = false;
         var matchedBranches = new List<EvaluationContext>();
         foreach (var ancestor in AncestorsIncludingSelf(
                      candidate,
-                     context))
+                     closure.Ancestors))
         {
             cancellationToken.ThrowIfCancellationRequested();
             var branch = context.Fork();
@@ -474,22 +477,29 @@ internal static class TypePatternEvaluator
             return MatchStatus.Matched;
         }
 
-        return !hasUnknown
-            ? MatchStatus.NotMatched
-            : Unknown(
+        // 部分闭包意味着未产出的祖先仍可能匹配，不能静默判为不匹配（规范 12.4）。
+        if (closure.Failure is not null || hasUnknown)
+        {
+            if (closure.Failure is not null)
+            {
+                context.AddDiagnostics(closure.Failure.Diagnostics);
+            }
+
+            return Unknown(
                 pattern,
                 context,
                 "The inheritance closure could not be fully resolved.");
+        }
+
+        return MatchStatus.NotMatched;
     }
 
     private static IEnumerable<TypeSignature> AncestorsIncludingSelf(
         TypeSignature candidate,
-        EvaluationContext context)
+        IReadOnlyList<TypeSignature> ancestors)
     {
         yield return candidate;
-        foreach (var ancestor in context.TypeSystem.EnumerateInheritanceClosure(
-                     candidate,
-                     context.CancellationToken))
+        foreach (var ancestor in ancestors)
         {
             yield return ancestor;
         }

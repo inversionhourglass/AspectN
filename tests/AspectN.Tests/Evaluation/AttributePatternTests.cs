@@ -460,12 +460,12 @@ public sealed class AttributePatternTests
                 : TypeRelationResult.NotMatched;
         }
 
-        public IEnumerable<TypeSignature> EnumerateInheritanceClosure(
+        public InheritanceClosure GetInheritanceClosure(
             TypeSignature candidate,
             CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            return Array.Empty<TypeSignature>();
+            return InheritanceClosure.Empty;
         }
     }
 }

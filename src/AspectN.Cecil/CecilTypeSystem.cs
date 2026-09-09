@@ -78,16 +78,16 @@ public sealed class CecilTypeSystem : ITypeSystem, IDisposable
         return _resolver.IsAssignableTo(candidate, target, cancellationToken);
     }
 
-    /// <summary>Enumerates the declared inheritance closure of a type, excluding the type itself.</summary>
+    /// <summary>Gets the declared inheritance closure of a type, excluding the type itself.</summary>
     /// <param name="candidate">Specifies the candidate.</param>
     /// <param name="cancellationToken">Specifies the cancellation token.</param>
-    /// <returns>Returns base types and implemented interfaces in nominal closure order.</returns>
-    public IEnumerable<TypeSignature> EnumerateInheritanceClosure(
+    /// <returns>Returns the known ancestors and the failure, if any, that stopped expansion.</returns>
+    public InheritanceClosure GetInheritanceClosure(
         TypeSignature candidate,
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        return _resolver.EnumerateInheritanceClosure(
+        return _resolver.GetInheritanceClosure(
             candidate,
             cancellationToken);
     }

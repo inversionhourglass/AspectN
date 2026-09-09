@@ -563,4 +563,9 @@ virtual AspectN.Syntax.SelectorSyntax.Body.get -> AspectN.Syntax.SyntaxNode?
 virtual AspectN.Syntax.SelectorSyntax.CloseParenToken.get -> AspectN.Syntax.SyntaxToken!
 virtual AspectN.Syntax.SelectorSyntax.KeywordToken.get -> AspectN.Syntax.SyntaxToken?
 virtual AspectN.Syntax.SelectorSyntax.OpenParenToken.get -> AspectN.Syntax.SyntaxToken!
-AspectN.TypeSystem.ITypeSystem.EnumerateInheritanceClosure(AspectN.Metadata.TypeSignature! candidate, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IEnumerable<AspectN.Metadata.TypeSignature!>!
+AspectN.TypeSystem.ITypeSystem.GetInheritanceClosure(AspectN.Metadata.TypeSignature! candidate, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.TypeSystem.InheritanceClosure!
+AspectN.TypeSystem.InheritanceClosure
+AspectN.TypeSystem.InheritanceClosure.Ancestors.get -> System.Collections.Generic.IReadOnlyList<AspectN.Metadata.TypeSignature!>!
+static AspectN.TypeSystem.InheritanceClosure.Empty.get -> AspectN.TypeSystem.InheritanceClosure!
+AspectN.TypeSystem.InheritanceClosure.Failure.get -> AspectN.TypeSystem.TypeRelationResult?
+AspectN.TypeSystem.InheritanceClosure.InheritanceClosure(System.Collections.Generic.IReadOnlyList<AspectN.Metadata.TypeSignature!>! ancestors, AspectN.TypeSystem.TypeRelationResult? failure) -> void

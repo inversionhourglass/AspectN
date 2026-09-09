@@ -24,11 +24,11 @@ public interface ITypeSystem
         TypeSignature target,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Enumerates the declared inheritance closure of a type, excluding the type itself.</summary>
+    /// <summary>Gets the declared inheritance closure of a type, excluding the type itself.</summary>
     /// <param name="candidate">The candidate type signature.</param>
     /// <param name="cancellationToken">The token used to cancel the operation.</param>
-    /// <returns>Base types and implemented interfaces in nominal closure order, including runtime-synthesized array relations.</returns>
-    IEnumerable<TypeSignature> EnumerateInheritanceClosure(
+    /// <returns>The known ancestors in nominal closure order and the failure, if any, that stopped expansion.</returns>
+    InheritanceClosure GetInheritanceClosure(
         TypeSignature candidate,
         CancellationToken cancellationToken = default);
 
