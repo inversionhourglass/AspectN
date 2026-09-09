@@ -104,6 +104,7 @@ internal sealed class Lexer
         var groupDepth = 0;
         var inCharacterClass = false;
         var atClassStart = false;
+        var negationSeen = false;
         var escaped = false;
         var foundDelimiter = false;
 
@@ -119,16 +120,20 @@ internal sealed class Lexer
 
             if (character == '\\')
             {
+                // 转义元素也是一个字符类元素，会消耗起始位置（[\d] 的 ] 是结束符）。
                 escaped = true;
+                atClassStart = false;
                 _position++;
                 continue;
             }
 
             if (inCharacterClass)
             {
-                // .NET 语义：字符类起始位置（[ 或 [^ 之后紧邻）的 ] 是字面量而非结束符。
-                if (atClassStart && character == '^')
+                // .NET 语义：字符类起始位置的 ] 是字面量而非结束符；
+                // 起始 ^ 只允许出现一次作为否定符，其后的 ^ 是字面量元素（[^^]）。
+                if (atClassStart && character == '^' && !negationSeen)
                 {
+                    negationSeen = true;
                     _position++;
                     continue;
                 }
@@ -147,6 +152,7 @@ internal sealed class Lexer
             {
                 inCharacterClass = true;
                 atClassStart = true;
+                negationSeen = false;
                 _position++;
                 continue;
             }

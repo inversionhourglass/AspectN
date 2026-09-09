@@ -106,6 +106,30 @@
     "expected": "Matched"
   },
   {
+    "id": "array-return-assignable-to-unqualified-ienumerable",
+    "kind": "method",
+    "member": "Arrays",
+    "parameterCount": 1,
+    "expression": "method(IEnumerable+ AspectN.TestAssembly.Conformance.ConformanceFixture.Arrays(..))",
+    "expected": "Matched"
+  },
+  {
+    "id": "wildcard-assignable-return",
+    "kind": "method",
+    "member": "Attributed",
+    "parameterCount": 1,
+    "expression": "method(*Comparable*+ AspectN.TestAssembly.Conformance.ConformanceFixture.Attributed(..))",
+    "expected": "Matched"
+  },
+  {
+    "id": "open-constructed-generic-method",
+    "kind": "method",
+    "member": "EchoOpen",
+    "parameterCount": 1,
+    "expression": "method(void AspectN.TestAssembly.Conformance.ConformanceFixture.EchoOpen<..>(..))",
+    "expected": "Matched"
+  },
+  {
     "id": "property-setter",
     "kind": "method",
     "member": "set_Name",

@@ -18,3 +18,4 @@ AspectN.Cecil.CecilTypeSystem.IsAssignableTo(AspectN.Metadata.TypeSignature! can
 AspectN.Cecil.CecilTypeSystem.Mapper.get -> AspectN.Cecil.CecilSignatureMapper!
 AspectN.Cecil.CecilTypeSystem.Module.get -> Mono.Cecil.ModuleDefinition!
 AspectN.Cecil.CecilTypeSystem.Options.get -> AspectN.Cecil.CecilMappingOptions!
+AspectN.Cecil.CecilTypeSystem.EnumerateInheritanceClosure(AspectN.Metadata.TypeSignature! candidate, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IEnumerable<AspectN.Metadata.TypeSignature!>!

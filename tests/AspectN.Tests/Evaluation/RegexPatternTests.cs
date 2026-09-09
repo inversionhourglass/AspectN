@@ -99,6 +99,22 @@ public sealed class RegexPatternTests
         Assert.Equal(MatchStatus.Matched, result.Status);
     }
 
+    [Theory]
+    [InlineData("regex([\\d])")]
+    [InlineData("regex([\\]])")]
+    [InlineData("regex([^\\d])")]
+    [InlineData("regex([^^])")]
+    public void Match_RegexCharacterClassFirstElement_ConsumesClassStart(
+        string source)
+    {
+        // 转义元素与起始 ^ 之后的字面量 ^ 都会消耗字符类起始位置，
+        // 其后的 ] 必须是结束符（.NET 接受 [\d]、[\]]、[^\d]、[^^]）。
+        // 复杂候选的规范签名含 System.Int32 与 System.String[]，四类字符都能命中其中字符。
+        var result = Match(source, ComplexCandidate());
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+    }
+
     private static CallableSignature ComplexCandidate()
     {
         var assembly = new AssemblyIdentity("Example.Assembly");

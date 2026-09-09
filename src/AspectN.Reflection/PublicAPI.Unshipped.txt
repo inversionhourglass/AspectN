@@ -11,3 +11,4 @@ AspectN.Reflection.ReflectionTypeSystem.HasDirectAttribute(AspectN.TypeSystem.At
 AspectN.Reflection.ReflectionTypeSystem.IsAssignableTo(AspectN.Metadata.TypeSignature! candidate, AspectN.Metadata.TypeSignature! target, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.TypeSystem.TypeRelationResult!
 AspectN.Reflection.ReflectionTypeSystem.Mapper.get -> AspectN.Reflection.ReflectionSignatureMapper!
 AspectN.Reflection.ReflectionTypeSystem.ReflectionTypeSystem() -> void
+AspectN.Reflection.ReflectionTypeSystem.EnumerateInheritanceClosure(AspectN.Metadata.TypeSignature! candidate, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IEnumerable<AspectN.Metadata.TypeSignature!>!

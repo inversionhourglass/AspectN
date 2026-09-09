@@ -65,6 +65,11 @@ public class ConformanceFixture : IConformanceContract<string>
         return default;
     }
 
+    public void EchoOpen<T>(System.Collections.Generic.Dictionary<T, int> value)
+    {
+        _value += value is null ? 0 : 1;
+    }
+
     public int[,][] Arrays(int[,][] value)
     {
         _value += value.Length;

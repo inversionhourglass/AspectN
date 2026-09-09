@@ -48,4 +48,12 @@ internal sealed class StubTypeSystem : ITypeSystem
                 DiagnosticSeverity.Warning,
                 "The stub type system does not provide attribute lookup."));
     }
+
+    public IEnumerable<TypeSignature> EnumerateInheritanceClosure(
+        TypeSignature candidate,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Array.Empty<TypeSignature>();
+    }
 }

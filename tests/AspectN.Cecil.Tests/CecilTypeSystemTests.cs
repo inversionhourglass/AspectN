@@ -173,6 +173,74 @@ public sealed class CecilTypeSystemTests
     }
 
     [Fact]
+    public void TypePattern_UnqualifiedArrayTargets_MatchSyntheticRelations()
+    {
+        var module = TestModuleFactory.Create();
+        using var typeSystem = new CecilTypeSystem(module);
+        var derivedType = AddClass(module, "Derived", module.TypeSystem.Object);
+        var derivedArray = typeSystem.Mapper.MapType(
+            new ArrayType(derivedType, 1));
+        var multiDimensional = typeSystem.Mapper.MapType(
+            new ArrayType(module.TypeSystem.Int32, 2));
+
+        // 非限定目标名（空命名空间）走与非限定类目标一致的统一比较规则。
+        Assert.Equal(
+            MatchStatus.Matched,
+            TypePattern("Array+", derivedArray, typeSystem));
+        Assert.Equal(
+            MatchStatus.Matched,
+            TypePattern("System.Array+", derivedArray, typeSystem));
+        Assert.Equal(
+            MatchStatus.Matched,
+            TypePattern(
+                "System.Collections.Generic.IEnumerable<Derived>+",
+                derivedArray,
+                typeSystem));
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            TypePattern(
+                "System.Collections.Generic.IEnumerable<System.Int32>+",
+                multiDimensional,
+                typeSystem));
+    }
+
+    [Fact]
+    public void TypePattern_WildcardAssignable_MatchesInheritanceClosure()
+    {
+        var module = TestModuleFactory.Create();
+        using var typeSystem = new CecilTypeSystem(module);
+        var baseType = AddClass(module, "Element", module.TypeSystem.Object);
+        var derivedType = AddClass(module, "SpecificElement", baseType);
+        var derived = typeSystem.Mapper.MapType(derivedType);
+
+        // 通配与 .. 目标沿闭包用模式求值，与 Reflection/Roslyn 一致。
+        Assert.Equal(
+            MatchStatus.Matched,
+            TypePattern("*Element+", derived, typeSystem));
+        Assert.Equal(
+            MatchStatus.Matched,
+            TypePattern("Example..Element+", derived, typeSystem));
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            TypePattern("*Missing+", derived, typeSystem));
+    }
+
+    private static MatchStatus TypePattern(
+        string source,
+        TypeSignature candidate,
+        CecilTypeSystem typeSystem)
+    {
+        var compilation = AspectN.AspectNCompilation.Create(
+            AspectN.AspectNParser.ParseTypePattern(source));
+        if (!compilation.TryGetTypePattern(out var pattern))
+        {
+            return MatchStatus.Unknown;
+        }
+
+        return pattern!.Match(candidate, typeSystem).Status;
+    }
+
+    [Fact]
     public void IsAssignableTo_ArrayCandidate_MatchesArrayOwnedNonGenericInterfaces()
     {
         var module = TestModuleFactory.Create();

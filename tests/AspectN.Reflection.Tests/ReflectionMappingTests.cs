@@ -493,6 +493,83 @@ public sealed class ReflectionMappingTests
                 typeSystem).Status);
     }
 
+    [Fact]
+    public void TypePattern_WildcardAssignable_MatchesInheritanceClosure()
+    {
+        var typeSystem = new ReflectionTypeSystem();
+
+        // 名称通配与命名空间 .. 的 + 目标沿闭包用模式本身求值（与 Legacy 一致）。
+        Assert.Equal(
+            MatchStatus.Matched,
+            TypePattern("System.Exception+", typeof(InvalidOperationException), typeSystem).Status);
+        Assert.Equal(
+            MatchStatus.Matched,
+            TypePattern("*Exception+", typeof(InvalidOperationException), typeSystem).Status);
+        Assert.Equal(
+            MatchStatus.Matched,
+            TypePattern("System..Exception+", typeof(InvalidOperationException), typeSystem).Status);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            TypePattern("*List+", typeof(InvalidOperationException), typeSystem).Status);
+        // string 的闭包（object、IEnumerable、IComparable...）经通配命中 IComparable。
+        Assert.Equal(
+            MatchStatus.Matched,
+            TypePattern("*Comparable*+", typeof(string), typeSystem).Status);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            TypePattern("*Exception+", typeof(string), typeSystem).Status);
+    }
+
+    [Fact]
+    public void TypePattern_UnqualifiedArrayTargets_MatchSyntheticRelations()
+    {
+        var typeSystem = new ReflectionTypeSystem();
+
+        // 非限定目标名（空命名空间）对数组合成关系同样成立。
+        Assert.Equal(
+            MatchStatus.Matched,
+            TypePattern("Array+", typeof(string[]), typeSystem).Status);
+        Assert.Equal(
+            MatchStatus.Matched,
+            TypePattern(
+                "System.Collections.Generic.IEnumerable<string>+",
+                typeof(string[]),
+                typeSystem).Status);
+    }
+
+    [Fact]
+    public void MapType_OpenConstructedOverloads_HaveDistinctOwnerIds()
+    {
+        var typeSystem = new ReflectionTypeSystem();
+        var owner = typeof(OpenConstructedOwner);
+        var overloads = owner.GetMethods(BindingFlags.Public | BindingFlags.Static);
+        var intOverload = overloads.Single(
+            method => method.Name == "M" &&
+                method.GetParameters()[0].ParameterType.GetGenericArguments()[1] ==
+                    typeof(int));
+        var stringOverload = overloads.Single(
+            method => method.Name == "M" &&
+                method.GetParameters()[0].ParameterType.GetGenericArguments()[1] ==
+                    typeof(string));
+        var first = Assert.IsType<GenericParameterTypeSignature>(
+            typeSystem.Mapper.MapType(intOverload.GetGenericArguments()[0]));
+        var second = Assert.IsType<GenericParameterTypeSignature>(
+            typeSystem.Mapper.MapType(stringOverload.GetGenericArguments()[0]));
+
+        // 开放构造类型（含方法泛型参数）保留实参，占位参数用规范形式 !!0 表示。
+        Assert.Equal(
+            "AspectN.Reflection.Tests.OpenConstructedOwner.M`1(" +
+                "System.Collections.Generic.Dictionary`2<!!0,System.Int32>)",
+            first.Parameter.OwnerId);
+        Assert.Equal(
+            "AspectN.Reflection.Tests.OpenConstructedOwner.M`1(" +
+                "System.Collections.Generic.Dictionary`2<!!0,System.String>)",
+            second.Parameter.OwnerId);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.AreEqual(first, second).Status);
+    }
+
     private static MatchResult MemberPattern(
         string source,
         CallableSignature candidate,
@@ -581,6 +658,19 @@ internal sealed class NestedOwner
     }
 
     public static void M<T>(NestedOuter<string>.NestedInner value)
+    {
+    }
+}
+
+internal static class OpenConstructedOwner
+{
+    public static void M<T>(Dictionary<T, int> value)
+        where T : notnull
+    {
+    }
+
+    public static void M<T>(Dictionary<T, string> value)
+        where T : notnull
     {
     }
 }

@@ -91,6 +91,60 @@ public sealed class ReflectionTypeSystem : ITypeSystem
         }
     }
 
+    /// <summary>Enumerates the declared inheritance closure of a type, excluding the type itself.</summary>
+    /// <param name="candidate">Specifies the candidate.</param>
+    /// <param name="cancellationToken">Specifies the cancellation token.</param>
+    /// <returns>Returns base types and implemented interfaces in nominal closure order.</returns>
+    public IEnumerable<TypeSignature> EnumerateInheritanceClosure(
+        TypeSignature candidate,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Mapper.TryGetType(candidate, out var candidateType) ||
+            candidateType is null)
+        {
+            return Array.Empty<TypeSignature>();
+        }
+
+        var closure = new List<TypeSignature>();
+        try
+        {
+            var pending = new Queue<Type>();
+            if (candidateType.BaseType is not null)
+            {
+                pending.Enqueue(candidateType.BaseType);
+            }
+
+            foreach (var implementation in candidateType.GetInterfaces())
+            {
+                pending.Enqueue(implementation);
+            }
+
+            var visited = new HashSet<Type>();
+            while (pending.Count > 0)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var current = pending.Dequeue();
+                if (!visited.Add(current)) continue;
+                closure.Add(Mapper.MapType(current));
+                if (current.BaseType is not null)
+                {
+                    pending.Enqueue(current.BaseType);
+                }
+
+                foreach (var implementation in current.GetInterfaces())
+                {
+                    pending.Enqueue(implementation);
+                }
+            }
+        }
+        catch (Exception exception) when (IsMetadataFailure(exception))
+        {
+            // 元数据读取失败时产出部分闭包；具体目标的 Unknown 语义由 IsAssignableTo 保留。
+        }
+
+        return closure;
+    }
+
     /// <summary>Determines whether has direct attribute.</summary>
     /// <param name="target">Specifies the target.</param>
     /// <param name="attributeType">Specifies the attribute type.</param>

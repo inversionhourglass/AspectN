@@ -9,8 +9,6 @@ namespace AspectN.Cecil.Internal;
 internal sealed class CecilResolver(CecilSignatureMapper mapper)
 {
     private const string RESOLUTION_FAILURE_CODE = "AN3002";
-    private const string GENERIC_COLLECTIONS_NAMESPACE =
-        "System.Collections.Generic";
 
     private readonly CecilSignatureMapper _mapper = mapper;
 
@@ -54,10 +52,11 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
             if (relation.Status == MatchStatus.Matched) return relation;
             if (relation.Status == MatchStatus.Unknown) return relation;
 
-            // 数组、引用与指针的 Resolve() 会退化为元素类型定义，关系必须按包装类型单独判断。
-            if (current is ArrayType)
+            // 数组、引用与指针的 Resolve() 会退化为元素类型定义，关系必须按包装类型单独判断；
+            // 数组的合成关系以签名形式产出并走统一非限定比较（与非限定目标名兼容）。
+            if (current is ArrayType array)
             {
-                return EvaluateArrayAssignment(current, target);
+                return CompareArrayRelations(array, target);
             }
 
             if (current is ByReferenceType or PointerType)
@@ -87,29 +86,132 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
         return TypeRelationResult.NotMatched;
     }
 
-    // 数组没有名义上的数组基类型（唯一基类是 System.Array）；到达此分支时目标数组与候选元素不同，
-    // 恒等已在入口处理，数组到数组不存在名义关系。数组实现的关系只有运行时固定提供的根类型与接口。
-    private TypeRelationResult EvaluateArrayAssignment(
-        TypeReference candidate,
-        TypeSignature target)
+    // 枚举声明的继承/实现闭包（不含候选自身）；数组按运行时固定事实产出合成关系。
+    // 解析失败时产出部分闭包——具体目标的 Unknown 语义由 IsAssignableTo 保留。
+    public IEnumerable<TypeSignature> EnumerateInheritanceClosure(
+        TypeSignature candidate,
+        CancellationToken cancellationToken)
     {
-        if (IsArrayRootTarget(target) || IsArrayOwnedInterfaceTarget(target))
+        if (!_mapper.TryGetTypeReference(candidate, out var reference) ||
+            reference is null)
         {
-            return TypeRelationResult.Matched;
+            yield break;
         }
 
-        if (candidate is ArrayType { IsVector: true } vector &&
-            target is NamedTypeSignature targetNamed &&
-            TryGetSzGenericCollectionTarget(targetNamed, out var elementTarget))
+        var pending = new Queue<TypeReference>();
+        var visited = new HashSet<CecilTypeCacheKey>();
+        pending.Enqueue(reference);
+        while (pending.Count > 0)
         {
-            // SZ 向量数组实现的泛型集合接口由运行时合成（元数据中不存在）；
-            // 合成实现的实参与数组元素完全一致，变型实例化不属于名义关系。
-            return UnqualifiedTypeComparer.AreEqual(
-                _mapper.MapType(vector.ElementType),
-                elementTarget);
+            cancellationToken.ThrowIfCancellationRequested();
+            var current = pending.Dequeue();
+            if (!visited.Add(CecilTypeCacheKey.Create(current))) continue;
+
+            if (current is ArrayType array)
+            {
+                foreach (var relation in EnumerateArrayRelations(array))
+                {
+                    yield return relation;
+                }
+
+                continue;
+            }
+
+            if (current is ByReferenceType or PointerType) continue;
+
+            var definition = TryResolve(current, out _);
+            if (definition is null) continue;
+
+            var constructed = current as GenericInstanceType;
+            if (definition.BaseType is not null)
+            {
+                pending.Enqueue(Substitute(definition.BaseType, constructed));
+            }
+
+            foreach (var implementation in definition.Interfaces)
+            {
+                pending.Enqueue(
+                    Substitute(implementation.InterfaceType, constructed));
+            }
+
+            if (!ReferenceEquals(current, reference))
+            {
+                yield return _mapper.MapType(current);
+            }
+        }
+    }
+
+    private TypeRelationResult CompareArrayRelations(
+        ArrayType candidate,
+        TypeSignature target)
+    {
+        foreach (var relation in EnumerateArrayRelations(candidate))
+        {
+            var comparison = UnqualifiedTypeComparer.AreEqual(relation, target);
+            if (comparison.Status != MatchStatus.NotMatched) return comparison;
         }
 
         return TypeRelationResult.NotMatched;
+    }
+
+    // 数组自身的关系由运行时固定提供：System.Array/Object、非泛型集合接口（任意秩），
+    // 以及 SZ 向量数组的五个泛型集合接口（实参与元素精确一致）；多维数组不实现泛型集合接口。
+    private IEnumerable<TypeSignature> EnumerateArrayRelations(ArrayType array)
+    {
+        var module = array.Module;
+        yield return _mapper.MapType(
+            SyntheticReference(module, "System", "Array"));
+        yield return _mapper.MapType(
+            SyntheticReference(module, "System", "Object"));
+        foreach (var (namespaceName, name) in NonGenericCollectionInterfaces())
+        {
+            yield return _mapper.MapType(
+                SyntheticReference(module, namespaceName, name));
+        }
+
+        if (!array.IsVector) yield break;
+        foreach (var name in GenericCollectionInterfaceNames())
+        {
+            var definition = SyntheticReference(
+                module,
+                "System.Collections.Generic",
+                name + "`1");
+            var instance = new GenericInstanceType(definition);
+            instance.GenericArguments.Add(array.ElementType);
+            yield return _mapper.MapType(instance);
+        }
+    }
+
+    private static TypeReference SyntheticReference(
+        ModuleDefinition module,
+        string @namespace,
+        string name)
+    {
+        return new TypeReference(
+            @namespace,
+            name,
+            module,
+            module.TypeSystem.CoreLibrary);
+    }
+
+    private static IEnumerable<(string Namespace, string Name)>
+        NonGenericCollectionInterfaces()
+    {
+        yield return ("System.Collections", "IEnumerable");
+        yield return ("System.Collections", "ICollection");
+        yield return ("System.Collections", "IList");
+        yield return ("System", "ICloneable");
+        yield return ("System.Collections", "IStructuralComparable");
+        yield return ("System.Collections", "IStructuralEquatable");
+    }
+
+    private static IEnumerable<string> GenericCollectionInterfaceNames()
+    {
+        yield return "IEnumerable";
+        yield return "ICollection";
+        yield return "IList";
+        yield return "IReadOnlyList";
+        yield return "IReadOnlyCollection";
     }
 
     // 同元素数组的恒等还要求形状方向兼容：非向量（非零下界）一维数组不能赋给向量数组。
@@ -134,54 +236,6 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
         return !_mapper.TryGetTypeReference(target, out var reference) ||
                reference is not ArrayType array ||
                array.IsVector;
-    }
-
-    private static bool IsArrayRootTarget(TypeSignature target)
-    {
-        return target is NamedTypeSignature named &&
-               named.TypeArguments.Count == 0 &&
-               named.Identity.ContainingType is null &&
-               named.Identity.GenericArity == 0 &&
-               named.Identity.Namespace == "System" &&
-               named.Identity.MetadataName is "Array" or "Object";
-    }
-
-    // 任意秩的数组都实现这些非泛型接口（System.Array 的继承链之外由运行时直接提供）。
-    private static bool IsArrayOwnedInterfaceTarget(TypeSignature target)
-    {
-        if (target is not NamedTypeSignature named ||
-            named.TypeArguments.Count != 0 ||
-            named.Identity.ContainingType is not null ||
-            named.Identity.GenericArity != 0)
-        {
-            return false;
-        }
-
-        var @namespace = named.Identity.Namespace;
-        var name = named.Identity.MetadataName;
-        return (@namespace == "System.Collections" &&
-                name is "IEnumerable" or "ICollection" or "IList" or
-                    "IStructuralComparable" or "IStructuralEquatable") ||
-               (@namespace == "System" && name == "ICloneable");
-    }
-
-    // 一维零下界（SZ）向量数组实现的泛型集合接口；多维数组不实现任何泛型集合接口。
-    private static bool TryGetSzGenericCollectionTarget(
-        NamedTypeSignature target,
-        out TypeSignature elementTarget)
-    {
-        if (target.TypeArguments.Count == 1 &&
-            target.Identity.ContainingType is null &&
-            target.Identity.Namespace == GENERIC_COLLECTIONS_NAMESPACE &&
-            target.Identity.MetadataName is "IEnumerable" or "ICollection" or
-                "IList" or "IReadOnlyList" or "IReadOnlyCollection")
-        {
-            elementTarget = target.TypeArguments[0];
-            return true;
-        }
-
-        elementTarget = null!;
-        return false;
     }
 
     private static TypeDefinition? TryResolve(

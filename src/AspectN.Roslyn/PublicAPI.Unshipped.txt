@@ -17,3 +17,4 @@ AspectN.Roslyn.RoslynTypeSystem.HasDirectAttribute(AspectN.TypeSystem.AttributeT
 AspectN.Roslyn.RoslynTypeSystem.IsAssignableTo(AspectN.Metadata.TypeSignature! candidate, AspectN.Metadata.TypeSignature! target, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.TypeSystem.TypeRelationResult!
 AspectN.Roslyn.RoslynTypeSystem.Mapper.get -> AspectN.Roslyn.RoslynSignatureMapper!
 AspectN.Roslyn.RoslynTypeSystem.RoslynTypeSystem(Microsoft.CodeAnalysis.Compilation! compilation) -> void
+AspectN.Roslyn.RoslynTypeSystem.EnumerateInheritanceClosure(AspectN.Metadata.TypeSignature! candidate, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IEnumerable<AspectN.Metadata.TypeSignature!>!

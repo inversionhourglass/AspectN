@@ -563,3 +563,4 @@ virtual AspectN.Syntax.SelectorSyntax.Body.get -> AspectN.Syntax.SyntaxNode?
 virtual AspectN.Syntax.SelectorSyntax.CloseParenToken.get -> AspectN.Syntax.SyntaxToken!
 virtual AspectN.Syntax.SelectorSyntax.KeywordToken.get -> AspectN.Syntax.SyntaxToken?
 virtual AspectN.Syntax.SelectorSyntax.OpenParenToken.get -> AspectN.Syntax.SyntaxToken!
+AspectN.TypeSystem.ITypeSystem.EnumerateInheritanceClosure(AspectN.Metadata.TypeSignature! candidate, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IEnumerable<AspectN.Metadata.TypeSignature!>!

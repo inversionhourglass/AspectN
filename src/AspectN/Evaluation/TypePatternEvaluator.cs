@@ -415,21 +415,84 @@ internal static class TypePatternEvaluator
         TypeSignature candidate,
         EvaluationContext context)
     {
-        if (!TryCreateRelationshipTarget(pattern.TargetType, out var target))
+        if (TryCreateRelationshipTarget(pattern.TargetType, out var target))
         {
-            return Unknown(
-                pattern,
-                context,
-                "The assignability target is not a concrete named type.");
+            context.CancellationToken.ThrowIfCancellationRequested();
+            var result = context.TypeSystem.IsAssignableTo(
+                candidate,
+                target!,
+                context.CancellationToken);
+            context.AddDiagnostics(result.Diagnostics);
+            return result.Status;
         }
 
-        context.CancellationToken.ThrowIfCancellationRequested();
-        var result = context.TypeSystem.IsAssignableTo(
-            candidate,
-            target!,
-            context.CancellationToken);
-        context.AddDiagnostics(result.Diagnostics);
-        return result.Status;
+        // 具体化失败的命名模式（名称通配、命名空间 .. 等）沿闭包用模式本身求值，
+        // 与 Legacy 的 CompiledTypePattern 语义一致；非命名目标仍不支持。
+        if (pattern.TargetType is BoundNamedTypePattern)
+        {
+            return EvaluateAssignablePatternWalk(
+                pattern,
+                candidate,
+                context);
+        }
+
+        return Unknown(
+            pattern,
+            context,
+            "The assignability target is not a concrete named type.");
+    }
+
+    private static MatchStatus EvaluateAssignablePatternWalk(
+        BoundAssignableTypePattern pattern,
+        TypeSignature candidate,
+        EvaluationContext context)
+    {
+        var cancellationToken = context.CancellationToken;
+        var hasUnknown = false;
+        var matchedBranches = new List<EvaluationContext>();
+        foreach (var ancestor in AncestorsIncludingSelf(
+                     candidate,
+                     context))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var branch = context.Fork();
+            var status = Evaluate(pattern.TargetType, ancestor, branch);
+            context.MergeDiagnosticsFrom(branch);
+            if (status == MatchStatus.Matched)
+            {
+                matchedBranches.Add(branch);
+            }
+            else if (status == MatchStatus.Unknown)
+            {
+                hasUnknown = true;
+            }
+        }
+
+        if (matchedBranches.Count > 0)
+        {
+            context.ReplaceBindingsWithAlternativesFrom(matchedBranches);
+            return MatchStatus.Matched;
+        }
+
+        return !hasUnknown
+            ? MatchStatus.NotMatched
+            : Unknown(
+                pattern,
+                context,
+                "The inheritance closure could not be fully resolved.");
+    }
+
+    private static IEnumerable<TypeSignature> AncestorsIncludingSelf(
+        TypeSignature candidate,
+        EvaluationContext context)
+    {
+        yield return candidate;
+        foreach (var ancestor in context.TypeSystem.EnumerateInheritanceClosure(
+                     candidate,
+                     context.CancellationToken))
+        {
+            yield return ancestor;
+        }
     }
 
     private static MatchStatus EvaluateNamedCandidate(

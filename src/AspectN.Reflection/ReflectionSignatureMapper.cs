@@ -655,7 +655,7 @@ public sealed class ReflectionSignatureMapper
         chain.Reverse();
 
         var flattened =
-            type.IsGenericType && !type.ContainsGenericParameters
+            type.IsGenericType && !type.IsGenericTypeDefinition
                 ? type.GetGenericArguments()
                 : Type.EmptyTypes;
         var parts = new List<string>();
