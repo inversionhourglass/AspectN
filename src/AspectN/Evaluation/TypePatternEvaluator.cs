@@ -812,7 +812,11 @@ internal static class TypePatternEvaluator
         for (var index = outerIndex; index < named.Segments.Count; index++)
         {
             var segment = named.Segments[index];
-            if (segment.Generic.Kind == BoundGenericArityKind.AnyPositive)
+            // 具体目标要求泛型完全具体化：固定元数必须显式给出全部实参（规范：Name<> 表示一个任意实参），
+            // 否则回退到闭包模式求值；嵌套实参的递归具体化同样由 TryCreateConcreteType 强制。
+            if (segment.Generic.Kind == BoundGenericArityKind.AnyPositive ||
+                (segment.Generic.Arity > 0 &&
+                 segment.Generic.Arguments.Count != segment.Generic.Arity))
             {
                 type = null;
                 return false;

@@ -273,11 +273,13 @@ public sealed class RoslynSignatureMapper
             ? MapIdentity(parameter.ContainingType.OriginalDefinition)
                 .FullMetadataName
             : GetMethodOwnerId(method);
+        // 类型参数的 Position 使用包含链扁平序号，与 Reflection/Cecil 的 ECMA 编号一致；
+        // 方法参数保持方法内序号。结构签名是比较基元，跨适配器必须逐字段一致。
         return new GenericParameterSignature(
             parameter.Name,
             ownerKind,
             ownerId,
-            parameter.Ordinal);
+            method is null ? FlattenedOrdinal(parameter) : parameter.Ordinal);
     }
 
     private ITypeSymbol NormalizeType(ITypeSymbol typeSymbol)

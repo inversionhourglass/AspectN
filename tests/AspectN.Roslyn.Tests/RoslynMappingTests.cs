@@ -72,6 +72,41 @@ public sealed class RoslynMappingTests
     }
 
     [Fact]
+    public void MapType_NestedTypeParameterSignatures_UseFlattenedPositions()
+    {
+        var compilation = RoslynTestCompilation.Create("""
+            public class Outer<T>
+            {
+                public class Inner<U>
+                {
+                }
+            }
+            """);
+        var typeSystem = new RoslynTypeSystem(compilation);
+        var outer = compilation.GetTypeByMetadataName("Outer`1");
+        var inner = compilation.GetTypeByMetadataName("Outer`1+Inner`1");
+        Assert.NotNull(outer);
+        Assert.NotNull(inner);
+        var mappedT = Assert.IsType<GenericParameterTypeSignature>(
+            typeSystem.Mapper.MapType(outer.TypeParameters[0]));
+        var mappedU = Assert.IsType<GenericParameterTypeSignature>(
+            typeSystem.Mapper.MapType(inner.TypeParameters[0]));
+
+        // 实际签名的 Position 也使用包含链扁平序号（T=0、U=1），
+        // 与 Reflection 的 GenericParameterPosition 及 Cecil 的 ECMA 编号一致，
+        // 保证跨适配器结构身份比较逐字段相等。
+        Assert.Equal(GenericParameterOwnerKind.Type, mappedT.Parameter.OwnerKind);
+        Assert.Equal("Outer`1", mappedT.Parameter.OwnerId);
+        Assert.Equal(0, mappedT.Parameter.Position);
+        Assert.Equal(GenericParameterOwnerKind.Type, mappedU.Parameter.OwnerKind);
+        Assert.Equal("Outer`1/Inner`1", mappedU.Parameter.OwnerId);
+        Assert.Equal(1, mappedU.Parameter.Position);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.AreEqual(mappedT, mappedU).Status);
+    }
+
+    [Fact]
     public void MapType_NestedTypeParameterOverloads_HaveFlattenedOwnerIds()
     {
         var compilation = RoslynTestCompilation.Create("""

@@ -600,6 +600,88 @@ public sealed class ReflectionMappingTests
             typeSystem.AreEqual(first, second).Status);
     }
 
+    [Fact]
+    public void TypePattern_FixedArityAssignable_MatchesAnyArguments()
+    {
+        var typeSystem = new ReflectionTypeSystem();
+
+        // 规范 13.1：Name<> 表示一个任意实参；固定元数但未指定实参的形式必须回退闭包模式求值，
+        // 不能被当作零实参的具体目标（此前 <>+ 错误返回 NotMatched）。
+        Assert.Equal(
+            MatchStatus.Matched,
+            TypePattern(
+                "System.Collections.Generic.IEnumerable<>+",
+                typeof(List<string>),
+                typeSystem).Status);
+        Assert.Equal(
+            MatchStatus.Matched,
+            TypePattern(
+                "System.Collections.Generic.IEnumerable<..>+",
+                typeof(List<string>),
+                typeSystem).Status);
+        Assert.Equal(
+            MatchStatus.Matched,
+            TypePattern(
+                "System.Collections.Generic.IEnumerable*<>+",
+                typeof(List<string>),
+                typeSystem).Status);
+        Assert.Equal(
+            MatchStatus.Matched,
+            TypePattern(
+                "System.Collections.Generic.IEnumerable<string>+",
+                typeof(List<string>),
+                typeSystem).Status);
+        // 元数不符与实参不符仍然不匹配。
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            TypePattern(
+                "System.Collections.Generic.IEnumerable<,>+",
+                typeof(List<string>),
+                typeSystem).Status);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            TypePattern(
+                "System.Collections.Generic.IEnumerable<int>+",
+                typeof(List<string>),
+                typeSystem).Status);
+        // 嵌套实参中的固定元数无实参形式同样回退闭包求值：
+        // List<IEnumerable<string>> 的祖先 IEnumerable<IEnumerable<string>> 满足外层与内层模式。
+        Assert.Equal(
+            MatchStatus.Matched,
+            TypePattern(
+                "System.Collections.Generic.IEnumerable<System.Collections.Generic.IEnumerable<>>+",
+                typeof(List<IEnumerable<string>>),
+                typeSystem).Status);
+    }
+
+    [Fact]
+    public void MapType_NestedTypeParameterSignatures_UseFlattenedPositions()
+    {
+        var typeSystem = new ReflectionTypeSystem();
+        var mappedT = Assert.IsType<GenericParameterTypeSignature>(
+            typeSystem.Mapper.MapType(
+                typeof(NestedParamOuter<>).GetGenericArguments()[0]));
+        var mappedU = Assert.IsType<GenericParameterTypeSignature>(
+            typeSystem.Mapper.MapType(
+                typeof(NestedParamOuter<>.NestedParamInner<>)
+                    .GetGenericArguments()[1]));
+
+        // .NET 的类型参数位置是包含链扁平编号：T=0、U=1。
+        Assert.Equal(GenericParameterOwnerKind.Type, mappedT.Parameter.OwnerKind);
+        Assert.Equal(
+            "AspectN.Reflection.Tests.NestedParamOuter`1",
+            mappedT.Parameter.OwnerId);
+        Assert.Equal(0, mappedT.Parameter.Position);
+        Assert.Equal(GenericParameterOwnerKind.Type, mappedU.Parameter.OwnerKind);
+        Assert.Equal(
+            "AspectN.Reflection.Tests.NestedParamOuter`1/NestedParamInner`1",
+            mappedU.Parameter.OwnerId);
+        Assert.Equal(1, mappedU.Parameter.Position);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.AreEqual(mappedT, mappedU).Status);
+    }
+
     private static MatchResult MemberPattern(
         string source,
         CallableSignature candidate,

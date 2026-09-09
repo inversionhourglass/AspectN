@@ -286,6 +286,48 @@ public sealed class CecilTypeMappingTests
             typeSystem.AreEqual(mapped[0], mapped[1]).Status);
     }
 
+    [Fact]
+    public void MapType_NestedTypeParameterSignatures_UseFlattenedPositions()
+    {
+        using var typeSystem = EmittedFixture.Open();
+        var outer = typeSystem.Module.GetType(
+            "AspectN.Cecil.Tests.NestedParamOuter`1");
+        var inner = typeSystem.Module.GetType(
+            "AspectN.Cecil.Tests.NestedParamOuter`1/NestedParamInner`1");
+        Assert.NotNull(outer);
+        Assert.NotNull(inner);
+        var mappedT = Assert.IsType<GenericParameterTypeSignature>(
+            typeSystem.Mapper.MapType(outer.GenericParameters[0]));
+
+        // 签名上下文的类型参数（方法参数位置的 U）按 ECMA 扁平编号编码；
+        // Mono.Cecil 的定义集合 GenericParameters 使用局部序号，不代表映射入口。
+        var uOverload = Assert.Single(
+            inner.Methods,
+            method => method.Name == "M" &&
+                method.Parameters.Count == 1 &&
+                method.Parameters[0].ParameterType is GenericParameter parameter &&
+                parameter.Position == 1);
+        var mappedU = Assert.IsType<GenericParameterTypeSignature>(
+            Assert.Single(
+                typeSystem.Mapper.MapCallable(uOverload).Parameters)
+            .Type.Type);
+
+        // T=0、U=1，与 Reflection/Roslyn 的实际签名逐字段一致。
+        Assert.Equal(GenericParameterOwnerKind.Type, mappedT.Parameter.OwnerKind);
+        Assert.Equal(
+            "AspectN.Cecil.Tests.NestedParamOuter`1",
+            mappedT.Parameter.OwnerId);
+        Assert.Equal(0, mappedT.Parameter.Position);
+        Assert.Equal(GenericParameterOwnerKind.Type, mappedU.Parameter.OwnerKind);
+        Assert.Equal(
+            "AspectN.Cecil.Tests.NestedParamOuter`1/NestedParamInner`1",
+            mappedU.Parameter.OwnerId);
+        Assert.Equal(1, mappedU.Parameter.Position);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.AreEqual(mappedT, mappedU).Status);
+    }
+
     private static TypeDefinition AddClass(
         ModuleDefinition module,
         string @namespace,
