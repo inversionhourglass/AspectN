@@ -279,6 +279,7 @@ public sealed class RoslynSignatureMapper
             parameter.Name,
             ownerKind,
             ownerId,
+            MapAssemblyIdentity(parameter.ContainingAssembly.Identity),
             method is null ? FlattenedOrdinal(parameter) : parameter.Ordinal);
     }
 

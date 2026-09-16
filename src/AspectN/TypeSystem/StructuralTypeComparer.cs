@@ -99,6 +99,7 @@ public static class StructuralTypeComparer
                StringComparer.Ordinal.Equals(
                    leftParameter.OwnerId,
                    rightParameter.OwnerId) &&
+               leftParameter.OwnerAssembly == rightParameter.OwnerAssembly &&
                leftParameter.Position == rightParameter.Position
             ? TypeRelationResult.Matched
             : TypeRelationResult.NotMatched;

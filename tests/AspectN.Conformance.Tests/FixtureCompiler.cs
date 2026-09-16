@@ -138,7 +138,7 @@ public sealed class FixtureCompiler : IDisposable
         _loadContext.Unload();
     }
 
-    private static byte[] Emit(CSharpCompilation compilation)
+    internal static byte[] Emit(CSharpCompilation compilation)
     {
         using var stream = new MemoryStream();
         var result = compilation.Emit(stream);
@@ -165,7 +165,7 @@ public sealed class FixtureCompiler : IDisposable
         return reader.ReadToEnd();
     }
 
-    private static IEnumerable<MetadataReference> TrustedPlatformReferences()
+    internal static IEnumerable<MetadataReference> TrustedPlatformReferences()
     {
         var trustedAssemblies = AppContext.GetData(
             "TRUSTED_PLATFORM_ASSEMBLIES") as string ??

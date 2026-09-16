@@ -68,6 +68,7 @@ internal static class LegacyGenericRules
                             $"T{position + 1}",
                             GenericParameterOwnerKind.Type,
                             identity.FullMetadataName,
+                            identity.Assembly,
                             position)));
             }
         }

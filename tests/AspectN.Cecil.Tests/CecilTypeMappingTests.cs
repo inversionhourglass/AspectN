@@ -328,6 +328,78 @@ public sealed class CecilTypeMappingTests
             typeSystem.AreEqual(mappedT, mappedU).Status);
     }
 
+    [Fact]
+    public void MapCallable_OuterParameterUsedInNestedMember_NormalizesToOuterDeclaration()
+    {
+        using var typeSystem = EmittedFixture.Open();
+        var outer = typeSystem.Module.GetType(
+            "AspectN.Cecil.Tests.NestedParamOuter`1");
+        var inner = typeSystem.Module.GetType(
+            "AspectN.Cecil.Tests.NestedParamOuter`1/NestedParamInner`1");
+        Assert.NotNull(outer);
+        Assert.NotNull(inner);
+        var tOverload = Assert.Single(
+            inner.Methods,
+            method => method.Name == "M" &&
+                method.Parameters.Count == 1 &&
+                method.Parameters[0].ParameterType is GenericParameter parameter &&
+                parameter.Position == 0);
+        var mappedT = Assert.IsType<GenericParameterTypeSignature>(
+            Assert.Single(
+                typeSystem.Mapper.MapCallable(tOverload).Parameters)
+            .Type.Type);
+        var declaredT = Assert.IsType<GenericParameterTypeSignature>(
+            typeSystem.Mapper.MapType(outer.GenericParameters[0]));
+
+        // 内层成员使用的外层 T 在元数据中由 Inner 重声明（槽位 0）；
+        // owner 必须归一到原始声明 Outer，与 Reflection/Roslyn 及声明处映射一致。
+        Assert.Equal(GenericParameterOwnerKind.Type, mappedT.Parameter.OwnerKind);
+        Assert.Equal(
+            "AspectN.Cecil.Tests.NestedParamOuter`1",
+            mappedT.Parameter.OwnerId);
+        Assert.Equal(0, mappedT.Parameter.Position);
+        Assert.Equal(
+            typeof(EmittedFixture).Assembly.GetName().Name,
+            mappedT.Parameter.OwnerAssembly.Name);
+        Assert.Equal(
+            MatchStatus.Matched,
+            typeSystem.AreEqual(mappedT, declaredT).Status);
+    }
+
+    [Fact]
+    public void MapType_SameNamedParametersFromDifferentAssemblies_DoNotShareCache()
+    {
+        using var typeSystem = new CecilTypeSystem(TestModuleFactory.Create());
+        var module = typeSystem.Module;
+        var referenceA = new TypeReference(
+            "Review",
+            "Box`1",
+            module,
+            new AssemblyNameReference("ReviewAssemblyA", new Version(1, 0, 0, 0)));
+        referenceA.GenericParameters.Add(new GenericParameter("T", referenceA));
+        var referenceB = new TypeReference(
+            "Review",
+            "Box`1",
+            module,
+            new AssemblyNameReference("ReviewAssemblyB", new Version(1, 0, 0, 0)));
+        referenceB.GenericParameters.Add(new GenericParameter("T", referenceB));
+
+        var mappedA = Assert.IsType<GenericParameterTypeSignature>(
+            typeSystem.Mapper.MapType(referenceA.GenericParameters[0]));
+        var mappedB = Assert.IsType<GenericParameterTypeSignature>(
+            typeSystem.Mapper.MapType(referenceB.GenericParameters[0]));
+
+        // OwnerId/Position 完全相同；Cecil 缓存键经 GenericParameter.Scope 委托已含
+        // owner 程序集，不会串用。映射签名必须由 OwnerAssembly 区分且结构比较不匹配。
+        Assert.NotSame(mappedA, mappedB);
+        Assert.Equal(mappedA.Parameter.OwnerId, mappedB.Parameter.OwnerId);
+        Assert.Equal("ReviewAssemblyA", mappedA.Parameter.OwnerAssembly.Name);
+        Assert.Equal("ReviewAssemblyB", mappedB.Parameter.OwnerAssembly.Name);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.AreEqual(mappedA, mappedB).Status);
+    }
+
     private static TypeDefinition AddClass(
         ModuleDefinition module,
         string @namespace,

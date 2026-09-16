@@ -288,14 +288,48 @@ public sealed class ReflectionSignatureMapper
         var ownerKind = method is null
             ? GenericParameterOwnerKind.Type
             : GenericParameterOwnerKind.Method;
+        var ownerType = method is null
+            ? NormalizeDeclaringType(parameter)
+            : RequiredDeclaringType(method);
         var ownerId = method is null
-            ? MapIdentity(RequiredDeclaringType(parameter)).FullMetadataName
+            ? MapIdentity(ownerType).FullMetadataName
             : GetMethodOwnerId(method);
         return new GenericParameterSignature(
             parameter.Name,
             ownerKind,
             ownerId,
+            MapAssemblyIdentity(ownerType.Assembly.GetName()),
             parameter.GenericParameterPosition);
+    }
+
+    // CLR 元数据中嵌套类型会重声明外层类型的泛型参数：内层扁平槽位 [0, 外层元数)
+    // 实际声明在外层类型上。沿包含链把这类参数归一到原始声明类型，
+    // 与 Roslyn 的声明视图一致；Position 保持 ECMA 扁平槽位不变。
+    private static Type NormalizeDeclaringType(Type parameter)
+    {
+        var owner = RequiredDeclaringType(parameter);
+        var chain = new List<Type>();
+        for (var current = owner;
+             current is not null;
+             current = current.DeclaringType)
+        {
+            chain.Add(current);
+        }
+
+        chain.Reverse();
+        var position = parameter.GenericParameterPosition;
+        foreach (var level in chain)
+        {
+            var arity = SplitMetadataName(level.Name).GenericArity;
+            if (position < arity)
+            {
+                return level;
+            }
+
+            position -= arity;
+        }
+
+        return owner;
     }
 
     private static TypeIdentity MapIdentity(Type type)

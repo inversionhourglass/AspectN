@@ -169,8 +169,9 @@ AspectN.Metadata.GenericParameterOwnerKind
 AspectN.Metadata.GenericParameterOwnerKind.Method = 1 -> AspectN.Metadata.GenericParameterOwnerKind
 AspectN.Metadata.GenericParameterOwnerKind.Type = 0 -> AspectN.Metadata.GenericParameterOwnerKind
 AspectN.Metadata.GenericParameterSignature
-AspectN.Metadata.GenericParameterSignature.GenericParameterSignature(string! name, AspectN.Metadata.GenericParameterOwnerKind ownerKind, string! ownerId, int position) -> void
+AspectN.Metadata.GenericParameterSignature.GenericParameterSignature(string! name, AspectN.Metadata.GenericParameterOwnerKind ownerKind, string! ownerId, AspectN.Metadata.AssemblyIdentity! ownerAssembly, int position) -> void
 AspectN.Metadata.GenericParameterSignature.Name.get -> string!
+AspectN.Metadata.GenericParameterSignature.OwnerAssembly.get -> AspectN.Metadata.AssemblyIdentity!
 AspectN.Metadata.GenericParameterSignature.OwnerId.get -> string!
 AspectN.Metadata.GenericParameterSignature.OwnerKind.get -> AspectN.Metadata.GenericParameterOwnerKind
 AspectN.Metadata.GenericParameterSignature.Position.get -> int

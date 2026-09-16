@@ -64,6 +64,7 @@ public sealed class SignatureTests
                 "T",
                 GenericParameterOwnerKind.Type,
                 "Example.Container`1",
+                new AssemblyIdentity("Example.Assembly"),
                 0));
         var unsupported = new UnsupportedTypeSignature(
             "delegate*<void>",

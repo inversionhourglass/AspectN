@@ -489,6 +489,10 @@ internal static class SignatureSnapshot
             parameter.Name,
             parameter.OwnerKind,
             parameter.OwnerId,
+            parameter.OwnerAssembly.Name,
+            parameter.OwnerAssembly.Version,
+            parameter.OwnerAssembly.CultureName,
+            parameter.OwnerAssembly.PublicKeyToken,
             parameter.Position);
     }
 

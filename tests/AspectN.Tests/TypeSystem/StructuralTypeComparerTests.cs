@@ -111,12 +111,14 @@ public sealed class StructuralTypeComparerTests
                 "TSource",
                 GenericParameterOwnerKind.Method,
                 "Example.Mapper.Map`1",
+                new AssemblyIdentity("Example.Assembly"),
                 0));
         var right = new GenericParameterTypeSignature(
             new GenericParameterSignature(
                 "TResult",
                 GenericParameterOwnerKind.Method,
                 "Example.Mapper.Map`1",
+                new AssemblyIdentity("Example.Assembly"),
                 0));
 
         var result = StructuralTypeComparer.AreEqual(left, right);
@@ -132,12 +134,37 @@ public sealed class StructuralTypeComparerTests
                 "T",
                 GenericParameterOwnerKind.Type,
                 "Example.First`1",
+                new AssemblyIdentity("Example.Assembly"),
                 0));
         var right = new GenericParameterTypeSignature(
             new GenericParameterSignature(
                 "T",
                 GenericParameterOwnerKind.Type,
                 "Example.Second`1",
+                new AssemblyIdentity("Example.Assembly"),
+                0));
+
+        var result = StructuralTypeComparer.AreEqual(left, right);
+
+        Assert.Equal(MatchStatus.NotMatched, result.Status);
+    }
+
+    [Fact]
+    public void AreEqual_SameOwnerDifferentAssemblies_ReturnsNotMatched()
+    {
+        var left = new GenericParameterTypeSignature(
+            new GenericParameterSignature(
+                "T",
+                GenericParameterOwnerKind.Type,
+                "Review.Box`1",
+                new AssemblyIdentity("ReviewAssemblyA"),
+                0));
+        var right = new GenericParameterTypeSignature(
+            new GenericParameterSignature(
+                "T",
+                GenericParameterOwnerKind.Type,
+                "Review.Box`1",
+                new AssemblyIdentity("ReviewAssemblyB"),
                 0));
 
         var result = StructuralTypeComparer.AreEqual(left, right);

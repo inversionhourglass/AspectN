@@ -81,6 +81,7 @@ public sealed class GenericPatternTests
                         "T",
                         GenericParameterOwnerKind.Type,
                         "Example.Box`1",
+                        new AssemblyIdentity("Example.Assembly"),
                         0))
             ]);
         var constructed = new NamedTypeSignature(

@@ -54,10 +54,64 @@ internal static class CecilTypeMapper
     {
         return parameter.Owner switch
         {
-            TypeReference type => type.FullName,
+            TypeReference type => GetTypeParameterOwner(type, parameter.Position),
             MethodReference method => GetMethodOwnerId(method),
             _ => parameter.Owner?.GetType().FullName ?? string.Empty
         };
+    }
+
+    internal static AssemblyIdentity GetGenericParameterOwnerAssembly(
+        GenericParameter parameter)
+    {
+        return parameter.Owner switch
+        {
+            TypeReference type => MapAssemblyIdentity(type),
+            MethodReference method => MapAssemblyIdentity(method.DeclaringType),
+            _ => new AssemblyIdentity(string.Empty)
+        };
+    }
+
+    // Cecil 元数据中嵌套类型会重声明外层类型的泛型参数：内层扁平槽位 [0, 外层元数)
+    // 实际声明在外层类型上。沿包含链把这类参数归一到原始声明类型，
+    // 与 Roslyn 的声明视图一致；Position 保持 ECMA 扁平槽位不变。
+    private static string GetTypeParameterOwner(TypeReference owner, int position)
+    {
+        var chain = new List<TypeReference>();
+        for (var current = owner;
+             current is not null;
+             current = current.DeclaringType)
+        {
+            chain.Add(current);
+        }
+
+        chain.Reverse();
+        foreach (var level in chain)
+        {
+            var arity = SplitMetadataName(
+                level.Name,
+                GetOwnArityFallback(level)).GenericArity;
+            if (position < arity)
+            {
+                return level.FullName;
+            }
+
+            position -= arity;
+        }
+
+        return owner.FullName;
+    }
+
+    // 元数据名称不含元数后缀时，TypeDefinition 的 GenericParameters 是包含链扁平总数，
+    // 需减去外层扁平数得到自身元数；TypeReference 只携带自身参数。
+    private static int GetOwnArityFallback(TypeReference type)
+    {
+        if (type is TypeDefinition definition)
+        {
+            var outerArity = definition.DeclaringType?.GenericParameters.Count ?? 0;
+            return definition.GenericParameters.Count - outerArity;
+        }
+
+        return type.GenericParameters.Count;
     }
 
     private static GenericParameterTypeSignature MapGenericParameter(
@@ -71,6 +125,7 @@ internal static class CecilTypeMapper
                 parameter.Name,
                 ownerKind,
                 GetGenericParameterOwner(parameter),
+                GetGenericParameterOwnerAssembly(parameter),
                 parameter.Position));
     }
 

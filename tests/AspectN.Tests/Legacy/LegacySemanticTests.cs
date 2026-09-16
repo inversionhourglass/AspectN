@@ -274,6 +274,7 @@ public sealed class LegacySemanticTests
             "TResult",
             GenericParameterOwnerKind.Method,
             "Example.Container`2.Run`1",
+            new AssemblyIdentity("Example.Assembly"),
             0);
         var candidate = Callable(
             "Run",
@@ -480,6 +481,7 @@ public sealed class LegacySemanticTests
                 name,
                 ownerKind,
                 ownerId,
+                new AssemblyIdentity("Example.Assembly"),
                 position));
     }
 

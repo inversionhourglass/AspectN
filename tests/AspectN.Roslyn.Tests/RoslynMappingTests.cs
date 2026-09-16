@@ -107,6 +107,50 @@ public sealed class RoslynMappingTests
     }
 
     [Fact]
+    public void MapCallable_OuterParameterUsedInNestedMember_KeepsOuterDeclarationOwner()
+    {
+        var compilation = RoslynTestCompilation.Create("""
+            public class Outer<T>
+            {
+                public class Inner<U>
+                {
+                    public void M<V>(T x) { }
+
+                    public void M<V>(U x) { }
+                }
+            }
+            """);
+        var typeSystem = new RoslynTypeSystem(compilation);
+        var outer = compilation.GetTypeByMetadataName("Outer`1");
+        var inner = compilation.GetTypeByMetadataName("Outer`1+Inner`1");
+        Assert.NotNull(outer);
+        Assert.NotNull(inner);
+        var tOverload = Assert.Single(
+            inner.GetMembers("M").OfType<IMethodSymbol>(),
+            method =>
+                method.Parameters[0].Type is ITypeParameterSymbol parameter &&
+                parameter.Name == "T");
+        var mappedT = Assert.IsType<GenericParameterTypeSignature>(
+            Assert.Single(typeSystem.Mapper.MapCallable(tOverload).Parameters)
+                .Type
+                .Type);
+        var declaredT = Assert.IsType<GenericParameterTypeSignature>(
+            typeSystem.Mapper.MapType(outer.TypeParameters[0]));
+
+        // Roslyn 符号天然是声明视图：内层成员使用的外层 T 仍归属 Outer，
+        // 与声明处映射逐字段一致；OwnerAssembly 携带程序集身份供跨程序集区分。
+        Assert.Equal(GenericParameterOwnerKind.Type, mappedT.Parameter.OwnerKind);
+        Assert.Equal("Outer`1", mappedT.Parameter.OwnerId);
+        Assert.Equal(0, mappedT.Parameter.Position);
+        Assert.Equal(
+            compilation.Assembly.Name,
+            mappedT.Parameter.OwnerAssembly.Name);
+        Assert.Equal(
+            MatchStatus.Matched,
+            typeSystem.AreEqual(mappedT, declaredT).Status);
+    }
+
+    [Fact]
     public void MapType_NestedTypeParameterOverloads_HaveFlattenedOwnerIds()
     {
         var compilation = RoslynTestCompilation.Create("""

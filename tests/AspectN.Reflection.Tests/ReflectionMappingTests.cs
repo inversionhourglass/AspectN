@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Reflection;
+using System.Reflection.Emit;
 using AspectN.Diagnostics;
 using AspectN.Evaluation;
 using AspectN.Metadata;
@@ -680,6 +681,87 @@ public sealed class ReflectionMappingTests
         Assert.Equal(
             MatchStatus.NotMatched,
             typeSystem.AreEqual(mappedT, mappedU).Status);
+    }
+
+    [Fact]
+    public void MapCallable_OuterParameterUsedInNestedMember_NormalizesToOuterDeclaration()
+    {
+        var typeSystem = new ReflectionTypeSystem();
+        var tOverload = Assert.Single(
+            typeof(NestedParamOuter<>.NestedParamInner<>).GetMethods(),
+            method =>
+                method.Name == "M" &&
+                method.GetParameters()[0]
+                    .ParameterType
+                    .GenericParameterPosition == 0);
+        var mappedT = Assert.IsType<GenericParameterTypeSignature>(
+            Assert.Single(typeSystem.Mapper.MapCallable(tOverload).Parameters)
+                .Type
+                .Type);
+        var declaredT = Assert.IsType<GenericParameterTypeSignature>(
+            typeSystem.Mapper.MapType(
+                typeof(NestedParamOuter<>).GetGenericArguments()[0]));
+
+        // CLR 元数据中嵌套类型重声明外层参数（DeclaringType 为 Inner）；
+        // owner 必须归一到原始声明 Outer，与 Roslyn 声明视图及声明处映射一致。
+        Assert.Equal(GenericParameterOwnerKind.Type, mappedT.Parameter.OwnerKind);
+        Assert.Equal(
+            "AspectN.Reflection.Tests.NestedParamOuter`1",
+            mappedT.Parameter.OwnerId);
+        Assert.Equal(0, mappedT.Parameter.Position);
+        Assert.Equal(
+            typeof(NestedParamOuter<>).Assembly.GetName().Name,
+            mappedT.Parameter.OwnerAssembly.Name);
+        Assert.Equal(
+            MatchStatus.Matched,
+            typeSystem.AreEqual(mappedT, declaredT).Status);
+    }
+
+    [Fact]
+    public void AreEqual_SameNamedParametersFromDifferentAssemblies_ReturnNotMatched()
+    {
+        var first = CreateDynamicBox("ReviewAssemblyA");
+        var second = CreateDynamicBox("ReviewAssemblyB");
+        Assert.NotEqual(first, second);
+        var typeSystem = new ReflectionTypeSystem();
+        var mappedFirst = Assert.IsType<GenericParameterTypeSignature>(
+            typeSystem.Mapper.MapType(first.GetGenericArguments()[0]));
+        var mappedSecond = Assert.IsType<GenericParameterTypeSignature>(
+            typeSystem.Mapper.MapType(second.GetGenericArguments()[0]));
+
+        // OwnerId 与 Position 完全相同，只有 OwnerAssembly 能区分两个程序集的同名声明。
+        Assert.Equal("Review.Box`1", mappedFirst.Parameter.OwnerId);
+        Assert.Equal(
+            mappedFirst.Parameter.OwnerId,
+            mappedSecond.Parameter.OwnerId);
+        Assert.Equal(
+            mappedFirst.Parameter.Position,
+            mappedSecond.Parameter.Position);
+        Assert.Equal(
+            "ReviewAssemblyA",
+            mappedFirst.Parameter.OwnerAssembly.Name);
+        Assert.Equal(
+            "ReviewAssemblyB",
+            mappedSecond.Parameter.OwnerAssembly.Name);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.AreEqual(mappedFirst, mappedSecond).Status);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.IsAssignableTo(mappedFirst, mappedSecond).Status);
+    }
+
+    private static Type CreateDynamicBox(string assemblyName)
+    {
+        var assembly = AssemblyBuilder.DefineDynamicAssembly(
+            new AssemblyName(assemblyName),
+            AssemblyBuilderAccess.Run);
+        var module = assembly.DefineDynamicModule(assemblyName);
+        var type = module.DefineType(
+            "Review.Box`1",
+            TypeAttributes.Public | TypeAttributes.Class);
+        type.DefineGenericParameters("T");
+        return type.CreateType();
     }
 
     private static MatchResult MemberPattern(

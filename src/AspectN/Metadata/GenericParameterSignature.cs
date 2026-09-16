@@ -7,16 +7,20 @@ public sealed class GenericParameterSignature
     /// <param name="name">Specifies the name.</param>
     /// <param name="ownerKind">Specifies the owner kind.</param>
     /// <param name="ownerId">Specifies the owner id.</param>
+    /// <param name="ownerAssembly">Specifies the assembly identity of the owner declaration.</param>
     /// <param name="position">Specifies the position.</param>
     public GenericParameterSignature(
         string name,
         GenericParameterOwnerKind ownerKind,
         string ownerId,
+        AssemblyIdentity ownerAssembly,
         int position)
     {
         Name = name ?? throw new ArgumentNullException(nameof(name));
         OwnerKind = ownerKind;
         OwnerId = ownerId ?? throw new ArgumentNullException(nameof(ownerId));
+        OwnerAssembly = ownerAssembly ??
+            throw new ArgumentNullException(nameof(ownerAssembly));
         GuardNonNegative(position, nameof(position));
         Position = position;
     }
@@ -29,6 +33,9 @@ public sealed class GenericParameterSignature
 
     /// <summary>Gets the owner id.</summary>
     public string OwnerId { get; }
+
+    /// <summary>Gets the assembly identity of the owner declaration.</summary>
+    public AssemblyIdentity OwnerAssembly { get; }
 
     /// <summary>Gets the position.</summary>
     public int Position { get; }

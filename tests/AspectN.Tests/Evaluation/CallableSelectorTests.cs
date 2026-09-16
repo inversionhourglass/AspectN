@@ -70,6 +70,7 @@ public sealed class CallableSelectorTests
             "T",
             GenericParameterOwnerKind.Method,
             "Example.Service.Map`1",
+            new AssemblyIdentity("Example.Assembly"),
             0);
         var originalType = new GenericParameterTypeSignature(genericParameter);
         var original = Callable(

@@ -292,6 +292,7 @@ public sealed class CecilSignatureMapper
                     ? GenericParameterOwnerKind.Method
                     : GenericParameterOwnerKind.Type,
                 GetOwnerId(parameter),
+                CecilTypeMapper.GetGenericParameterOwnerAssembly(parameter),
                 parameter.Position))
             .ToArray();
     }
