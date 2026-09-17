@@ -99,6 +99,53 @@ public sealed class RegexPatternTests
         Assert.Equal(MatchStatus.Matched, result.Status);
     }
 
+    [Fact]
+    public void Match_RegexCommentWithOpenParen_CompilesAndMatches()
+    {
+        // .NET 的 (?#...) 注释由第一个 ) 结束，注释内容里的 ( 不开启分组；
+        // Regex.IsMatch("Load", "(?#()Load") 为 true。
+        var result = Match("regex((?#()Load)", Callable("Load"));
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+    }
+
+    [Fact]
+    public void Match_RegexCommentWithoutParen_StillMatches()
+    {
+        var result = Match("regex((?#explanation)Load)", Callable("Load"));
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+    }
+
+    [Fact]
+    public void Match_RegexNestedGroups_StillMatch()
+    {
+        var result = Match("regex((Lo)(ad))", Callable("Load"));
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+    }
+
+    [Fact]
+    public void Match_RegexCommentFollowedByConjunction_CompilesAndMatches()
+    {
+        var result = Match(
+            "regex((?#()Load) && method(public void Example.Service.Load())",
+            Callable("Load"));
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+    }
+
+    [Fact]
+    public void Match_UnterminatedRegexComment_ReportsUnterminated()
+    {
+        var compilation = AspectNCompilation.Create(
+            AspectNParser.ParseMemberExpression("regex((?#abc"));
+
+        Assert.Contains(
+            compilation.Diagnostics,
+            diagnostic => diagnostic.Code == DiagnosticCodes.UnterminatedRegex);
+    }
+
     [Theory]
     [InlineData("regex([\\d])")]
     [InlineData("regex([\\]])")]

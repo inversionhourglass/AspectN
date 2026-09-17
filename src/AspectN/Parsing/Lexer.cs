@@ -105,6 +105,7 @@ internal sealed class Lexer
         var inCharacterClass = false;
         var atClassStart = false;
         var negationSeen = false;
+        var inComment = false;
         var escaped = false;
         var foundDelimiter = false;
 
@@ -154,6 +155,25 @@ internal sealed class Lexer
                 atClassStart = true;
                 negationSeen = false;
                 _position++;
+                continue;
+            }
+
+            // .NET 语义：(?# 注释由第一个 ) 结束，注释内容不识别转义、不影响分组深度。
+            if (inComment)
+            {
+                if (character == ')')
+                {
+                    inComment = false;
+                }
+
+                _position++;
+                continue;
+            }
+
+            if (character == '(' && Peek(1) == '?' && Peek(2) == '#')
+            {
+                inComment = true;
+                _position += 3;
                 continue;
             }
 
