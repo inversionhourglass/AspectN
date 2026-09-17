@@ -362,20 +362,26 @@ public sealed class LegacySemanticTests
     public void Match_AssignableDeclaringType_UsesTypeSystemRelation()
     {
         var declaringType = Named("PatternUsage", "Implementation");
+        var interfaceType = Named(
+            "PatternUsage",
+            "InterfaceAB",
+            TypeKind.Interface);
         var candidate = Callable(
             "Run",
             CallableKind.OrdinaryMethod,
             declaringType: declaringType);
         var typeSystem = new StubTypeSystem
         {
-            Assignability = (actual, target, _) =>
+            // Legacy 省略泛型子句的 + 目标不再具体化，必须沿继承闭包求值。
+            Assignability = (_, _, _) =>
+                throw new InvalidOperationException(
+                    "Legacy omitted generic clauses must not concretize."),
+            Closure = (actual, _) =>
             {
                 Assert.Same(declaringType, actual);
-                var namedTarget = Assert.IsType<NamedTypeSignature>(target);
-                Assert.Equal(
-                    "PatternUsage.InterfaceAB",
-                    namedTarget.Identity.FullMetadataName);
-                return TypeRelationResult.Matched;
+                return new InheritanceClosure(
+                    new TypeSignature[] { interfaceType },
+                    null);
             }
         };
 

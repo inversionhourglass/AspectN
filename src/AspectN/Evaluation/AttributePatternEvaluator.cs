@@ -25,6 +25,7 @@ internal static class AttributePatternEvaluator
 
         var hasConcreteAttributeType = TryCreateAttributeType(
             pattern.AttributeType,
+            context.LanguageVersion,
             out var attributeType);
 
         if (context.LanguageVersion == AspectNLanguageVersion.Standard &&
@@ -216,6 +217,7 @@ internal static class AttributePatternEvaluator
 
     private static bool TryCreateAttributeType(
         BoundTypePattern pattern,
+        AspectNLanguageVersion languageVersion,
         out TypeSignature? type)
     {
         if (pattern is not BoundNamedTypePattern named ||
@@ -225,7 +227,10 @@ internal static class AttributePatternEvaluator
             return false;
         }
 
-        return TypePatternEvaluator.TryCreateConcreteType(pattern, out type);
+        return TypePatternEvaluator.TryCreateConcreteType(
+            pattern,
+            languageVersion,
+            out type);
     }
 
     // 直接特性查询要求泛型形参完全具体化；通配元数或未指定实参的模式交给类型模式求值器。

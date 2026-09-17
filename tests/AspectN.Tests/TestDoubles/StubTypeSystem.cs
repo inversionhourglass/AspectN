@@ -17,6 +17,12 @@ internal sealed class StubTypeSystem : ITypeSystem
         TypeRelationResult>? Assignability
     { get; init; }
 
+    public Func<
+        TypeSignature,
+        CancellationToken,
+        InheritanceClosure>? Closure
+    { get; init; }
+
     public TypeRelationResult AreEqual(TypeSignature left, TypeSignature right)
     {
         return StructuralTypeComparer.AreEqual(left, right);
@@ -54,6 +60,7 @@ internal sealed class StubTypeSystem : ITypeSystem
             CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        return InheritanceClosure.Empty;
+        return Closure?.Invoke(candidate, cancellationToken) ??
+            InheritanceClosure.Empty;
     }
 }

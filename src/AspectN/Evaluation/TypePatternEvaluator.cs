@@ -7,6 +7,20 @@ namespace AspectN.Evaluation;
 
 internal static class TypePatternEvaluator
 {
+    private static readonly HashSet<string> _KnownValueTypeNames =
+        new(StringComparer.Ordinal)
+        {
+            "Boolean", "Byte", "SByte",
+            "Int16", "UInt16", "Int32", "UInt32", "Int64", "UInt64",
+            "Char", "Single", "Double", "Decimal",
+        };
+
+    private static readonly HashSet<string> _KnownReferenceTypeNames =
+        new(StringComparer.Ordinal)
+        {
+            "String", "Object",
+        };
+
     // 类型匹配必须传播 Unknown 状态，并在分支匹配时复制绑定环境，避免失败分支泄漏变量。
     public static MatchStatus Evaluate(
         BoundTypePattern pattern,
@@ -415,7 +429,10 @@ internal static class TypePatternEvaluator
         TypeSignature candidate,
         EvaluationContext context)
     {
-        if (TryCreateRelationshipTarget(pattern.TargetType, out var target))
+        if (TryCreateRelationshipTarget(
+            pattern.TargetType,
+            context.LanguageVersion,
+            out var target))
         {
             context.CancellationToken.ThrowIfCancellationRequested();
             var result = context.TypeSystem.IsAssignableTo(
@@ -727,9 +744,14 @@ internal static class TypePatternEvaluator
 
     private static bool TryCreateRelationshipTarget(
         BoundTypePattern pattern,
+        AspectNLanguageVersion languageVersion,
         out TypeSignature? target)
     {
-        if (!TryCreateConcreteType(pattern, out target) ||
+        if (!TryCreateConcreteType(
+                pattern,
+                languageVersion,
+                requireSpecifiedGenericArity: true,
+                out target) ||
             target is not NamedTypeSignature)
         {
             target = null;
@@ -741,34 +763,80 @@ internal static class TypePatternEvaluator
 
     internal static bool TryCreateConcreteType(
         BoundTypePattern pattern,
+        AspectNLanguageVersion languageVersion,
+        out TypeSignature? type)
+    {
+        return TryCreateConcreteType(
+            pattern,
+            languageVersion,
+            requireSpecifiedGenericArity: false,
+            out type);
+    }
+
+    private static bool TryCreateConcreteType(
+        BoundTypePattern pattern,
+        AspectNLanguageVersion languageVersion,
+        bool requireSpecifiedGenericArity,
         out TypeSignature? type)
     {
         if (pattern is BoundNamedTypePattern named)
         {
-            return TryCreateConcreteNamedType(named, out type);
+            return TryCreateConcreteNamedType(
+                named,
+                languageVersion,
+                requireSpecifiedGenericArity,
+                out type);
         }
 
         if (pattern is BoundArrayTypePattern array &&
-            TryCreateConcreteType(array.ElementType, out var elementType))
+            TryCreateConcreteType(
+                array.ElementType,
+                languageVersion,
+                requireSpecifiedGenericArity,
+                out var elementType))
         {
             type = new ArrayTypeSignature(elementType!, array.Rank);
             return true;
         }
 
         if (pattern is BoundNullableTypePattern nullable &&
-            TryCreateConcreteType(nullable.UnderlyingType, out var underlying))
+            TryCreateConcreteType(
+                nullable.UnderlyingType,
+                languageVersion,
+                requireSpecifiedGenericArity,
+                out var underlying))
         {
-            var identity = new TypeIdentity(
-                new AssemblyIdentity(string.Empty),
-                "System",
-                "Nullable",
-                1,
-                TypeKind.Unknown);
-            var definition = new NamedTypeSignature(identity);
-            type = new NamedTypeSignature(
-                identity,
-                new[] { underlying! },
-                definition);
+            if (languageVersion == AspectNLanguageVersion.Standard)
+            {
+                // Standard 12.6：引用类型 T? 等价于 T，非空值类型 T? 才是 Nullable<T>。
+                // 具体化没有解析上下文，只有已知基元能静态判定值/引用类别；
+                // 数组是引用类型，直接去掉标注；其余命名类型回退到模式求值。
+                if (underlying is ArrayTypeSignature)
+                {
+                    type = underlying;
+                    return true;
+                }
+
+                if (underlying is NamedTypeSignature underlyingNamed)
+                {
+                    if (IsKnownReferenceType(underlyingNamed.Identity))
+                    {
+                        type = underlying;
+                        return true;
+                    }
+
+                    if (IsKnownValueType(underlyingNamed.Identity))
+                    {
+                        type = CreateNullableWrapper(underlying);
+                        return true;
+                    }
+                }
+
+                type = null;
+                return false;
+            }
+
+            type = CreateNullableWrapper(underlying!);
             return true;
         }
 
@@ -776,8 +844,48 @@ internal static class TypePatternEvaluator
         return false;
     }
 
+    private static NamedTypeSignature CreateNullableWrapper(
+        TypeSignature underlying)
+    {
+        var identity = new TypeIdentity(
+            new AssemblyIdentity(string.Empty),
+            "System",
+            "Nullable",
+            1,
+            TypeKind.Unknown);
+        var definition = new NamedTypeSignature(identity);
+        return new NamedTypeSignature(
+            identity,
+            new[] { underlying },
+            definition);
+    }
+
+    private static bool IsKnownValueType(TypeIdentity identity)
+    {
+        return identity.GenericArity == 0 &&
+            identity.ContainingType is null &&
+            string.Equals(
+                identity.Namespace,
+                "System",
+                StringComparison.Ordinal) &&
+            _KnownValueTypeNames.Contains(identity.MetadataName);
+    }
+
+    private static bool IsKnownReferenceType(TypeIdentity identity)
+    {
+        return identity.GenericArity == 0 &&
+            identity.ContainingType is null &&
+            string.Equals(
+                identity.Namespace,
+                "System",
+                StringComparison.Ordinal) &&
+            _KnownReferenceTypeNames.Contains(identity.MetadataName);
+    }
+
     private static bool TryCreateConcreteNamedType(
         BoundNamedTypePattern named,
+        AspectNLanguageVersion languageVersion,
+        bool requireSpecifiedGenericArity,
         out TypeSignature? type)
     {
         if (named.Segments.Any(segment => segment.Pattern.Contains('*')) ||
@@ -814,7 +922,11 @@ internal static class TypePatternEvaluator
             var segment = named.Segments[index];
             // 具体目标要求泛型完全具体化：固定元数必须显式给出全部实参（规范：Name<> 表示一个任意实参），
             // 否则回退到闭包模式求值；嵌套实参的递归具体化同样由 TryCreateConcreteType 强制。
+            // 关系目标（+）还要求元数确定：Legacy 省略子句的 Any 同样回退到闭包模式求值；
+            // 其余调用方（如特性直接查询）保留 Legacy 省略子句的具体化行为。
             if (segment.Generic.Kind == BoundGenericArityKind.AnyPositive ||
+                (requireSpecifiedGenericArity &&
+                 segment.Generic.Kind == BoundGenericArityKind.Any) ||
                 (segment.Generic.Arity > 0 &&
                  segment.Generic.Arguments.Count != segment.Generic.Arity))
             {
@@ -824,7 +936,11 @@ internal static class TypePatternEvaluator
 
             foreach (var argument in segment.Generic.Arguments)
             {
-                if (!TryCreateConcreteType(argument, out var typeArgument))
+                if (!TryCreateConcreteType(
+                        argument,
+                        languageVersion,
+                        requireSpecifiedGenericArity,
+                        out var typeArgument))
                 {
                     type = null;
                     return false;
