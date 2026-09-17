@@ -1,3 +1,4 @@
+using System.Reflection.Metadata;
 using AspectN.Metadata;
 using Microsoft.CodeAnalysis;
 using CoreAccessibility = AspectN.Metadata.Accessibility;
@@ -145,8 +146,7 @@ public sealed class RoslynSignatureMapper
                 "Roslyn pointer types are unsupported."),
             IFunctionPointerTypeSymbol functionPointer =>
                 new UnsupportedTypeSignature(
-                    functionPointer.ToDisplayString(
-                        SymbolDisplayFormat.FullyQualifiedFormat),
+                    FunctionPointerForm(functionPointer),
                     "Roslyn function pointer types are unsupported."),
             IErrorTypeSymbol error => new UnsupportedTypeSignature(
                 error.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
@@ -488,11 +488,49 @@ public sealed class RoslynSignatureMapper
                        "[" + (array.Rank == 1
                            ? string.Empty
                            : new string(',', array.Rank - 1)) + "]";
+            case IFunctionPointerTypeSymbol functionPointer:
+                return FunctionPointerForm(functionPointer);
             case INamedTypeSymbol:
                 return ConstructedNamedForm((INamedTypeSymbol)type);
             default:
                 return type.ToDisplayString();
         }
+    }
+
+    // 函数指针的规范形式：delegate*[调用约定]<参数...,返回类型>，与 Cecil、Reflection
+    // 逐字节一致；ToDisplayString 含 C# 别名与显示格式，不适合作跨适配器身份。
+    private static string FunctionPointerForm(
+        IFunctionPointerTypeSymbol functionPointer)
+    {
+        var signature = functionPointer.Signature;
+        var forms = signature.Parameters
+            .Select(parameter => CanonicalParameterForm(parameter.Type) +
+                (parameter.RefKind == Microsoft.CodeAnalysis.RefKind.None
+                    ? string.Empty
+                    : "&"))
+            .Append(CanonicalParameterForm(signature.ReturnType) +
+                (signature.ReturnsByRef ? "&" : string.Empty));
+        return "delegate*[" +
+               CallingConventionToken(signature.CallingConvention) +
+               "]<" +
+               string.Join(",", forms) +
+               ">";
+    }
+
+    private static string CallingConventionToken(
+        SignatureCallingConvention convention)
+    {
+        return convention switch
+        {
+            SignatureCallingConvention.Default => "managed",
+            SignatureCallingConvention.CDecl => "cdecl",
+            SignatureCallingConvention.StdCall => "stdcall",
+            SignatureCallingConvention.ThisCall => "thiscall",
+            SignatureCallingConvention.FastCall => "fastcall",
+            SignatureCallingConvention.VarArgs => "vararg",
+            SignatureCallingConvention.Unmanaged => "unmanaged",
+            _ => "unknown"
+        };
     }
 
     // Roslyn 的 Ordinal 相对声明类型；.NET 与 Cecil 的泛型参数位置是包含链上的扁平编号，

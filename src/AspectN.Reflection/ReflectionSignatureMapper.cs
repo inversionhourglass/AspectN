@@ -161,7 +161,7 @@ public sealed class ReflectionSignatureMapper
         if (RuntimeTypeFacts.IsFunctionPointer(type))
         {
             return new UnsupportedTypeSignature(
-                type.ToString(),
+                CanonicalParameterForm(type),
                 "Reflection function pointer types are unsupported.");
         }
 
@@ -673,7 +673,10 @@ public sealed class ReflectionSignatureMapper
         }
 
         // 函数指针的 Name/Namespace 为空，落入命名形式会把 owner ID 折叠成空参形状；
-        // 形状由参数与返回类型的规范形式递归构造，前缀 delegate*< 不与命名形式混淆。
+        // 形状由参数与返回类型的规范形式递归构造，与 Cecil、Roslyn 的
+        // delegate*[约定]<参数...,返回> 逐字节一致。运行时反射不暴露函数指针的
+        // CallKind 字节（GetFunctionPointerCallingConventions 只报告 modreq 形式，
+        // Roslyn 不为函数指针发出），调用约定按 managed 编码。
         if (RuntimeTypeFacts.IsFunctionPointer(type))
         {
             var parameterForms = RuntimeTypeFacts
@@ -681,7 +684,7 @@ public sealed class ReflectionSignatureMapper
                 .Select(CanonicalParameterForm)
                 .Append(CanonicalParameterForm(
                     RuntimeTypeFacts.GetFunctionPointerReturnType(type)));
-            return $"delegate*<{string.Join(",", parameterForms)}>";
+            return $"delegate*[managed]<{string.Join(",", parameterForms)}>";
         }
 
         if (type.IsArray)

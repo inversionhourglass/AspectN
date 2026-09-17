@@ -56,20 +56,25 @@ internal static class LegacyGenericRules
         }
 
         var arguments = new List<TypeSignature>(totalArity);
+        // 合成形参的 Position 必须沿用包含链的扁平 ECMA 槽位（与三个适配器一致），
+        // 否则嵌套泛型定义签名中同一形参的两种形态仅 Position 不同而判不等；
+        // 名字 T1..Tn 随扁平槽位编号，跨层级不重复。
+        var slot = 0;
         foreach (var identity in identities)
         {
-            for (var position = 0;
-                 position < identity.GenericArity;
-                 position++)
+            for (var localPosition = 0;
+                 localPosition < identity.GenericArity;
+                 localPosition++,
+                 slot++)
             {
                 arguments.Add(
                     new GenericParameterTypeSignature(
                         new GenericParameterSignature(
-                            $"T{position + 1}",
+                            $"T{slot + 1}",
                             GenericParameterOwnerKind.Type,
                             identity.FullMetadataName,
                             identity.Assembly,
-                            position)));
+                            slot)));
             }
         }
 

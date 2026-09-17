@@ -194,6 +194,37 @@ public sealed class SelectorParserTests
         Assert.Empty(tree.Diagnostics);
     }
 
+    [Fact]
+    public void ParseMemberExpression_GenericClauseThenAssignableSuffix_HasNoDiagnostics()
+    {
+        // §7 的成员路径类型段含泛型子句与 + 后缀（§12.4），两者组合必须放行。
+        var tree = AspectNParser.ParseMemberExpression(
+            "method(* Repo<int>+.Find(..))");
+
+        Assert.Empty(tree.Diagnostics);
+    }
+
+    [Fact]
+    public void ParseMemberExpression_GenericClauseThenAssignableSuffixLegacy_HasNoDiagnostics()
+    {
+        var tree = AspectNParser.ParseMemberExpression(
+            "execution(* Dictionary<string,int>+.TryGetValue(..))",
+            new AspectNParseOptions(AspectNLanguageVersion.Legacy));
+
+        Assert.Empty(tree.Diagnostics);
+    }
+
+    [Fact]
+    public void ParseMemberExpression_AssignableSuffixWithoutMemberSeparator_ReportsDiagnostic()
+    {
+        var tree = AspectNParser.ParseMemberExpression(
+            "method(* Repo<int>+Find(..))");
+
+        Assert.Contains(
+            tree.Diagnostics,
+            diagnostic => diagnostic.Code == DiagnosticCodes.UnexpectedToken);
+    }
+
     [Theory]
     [InlineData("attr(parameter[-1] System.ObsoleteAttribute)")]
     [InlineData("attr(parameter[-0] System.ObsoleteAttribute)")]

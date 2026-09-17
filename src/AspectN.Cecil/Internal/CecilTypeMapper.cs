@@ -24,7 +24,10 @@ internal static class CecilTypeMapper
             OptionalModifierType optional => mapType(optional.ElementType),
             RequiredModifierType required => mapType(required.ElementType),
             PointerType pointer => Unsupported(pointer),
-            FunctionPointerType functionPointer => Unsupported(functionPointer),
+            // DisplayName 与 Reflection、Roslyn 统一为规范文本（FullName 不含调用约定）。
+            FunctionPointerType functionPointer => new UnsupportedTypeSignature(
+                FunctionPointerForm(functionPointer),
+                "Cecil FunctionPointerType shapes are unsupported."),
             PinnedType pinned => Unsupported(pinned),
             SentinelType sentinel => Unsupported(sentinel),
             TypeSpecification specification => Unsupported(specification),
@@ -341,8 +344,7 @@ internal static class CecilTypeMapper
             case GenericInstanceType:
                 return ConstructedNamedForm((GenericInstanceType)type);
             case FunctionPointerType functionPointer:
-                // 函数指针无元素类型，规范形式取其签名文本（返回类型 + 参数）以区分重载。
-                return functionPointer.FullName;
+                return FunctionPointerForm(functionPointer);
             case TypeSpecification specification:
                 return specification.ElementType is null
                     ? specification.GetType().Name
@@ -350,6 +352,35 @@ internal static class CecilTypeMapper
             default:
                 return ConstructedNamedForm(type);
         }
+    }
+
+    // 函数指针的规范形式：delegate*[调用约定]<参数...,返回类型>，与 Reflection、Roslyn
+    // 逐字节一致；Cecil 的 FullName 不含调用约定，无法区分仅调用约定不同的重载。
+    private static string FunctionPointerForm(FunctionPointerType functionPointer)
+    {
+        var forms = functionPointer.Parameters
+            .Select(parameter => CanonicalParameterForm(parameter.ParameterType))
+            .Append(CanonicalParameterForm(functionPointer.ReturnType));
+        return "delegate*[" +
+               CallingConventionToken(functionPointer.CallingConvention) +
+               "]<" +
+               string.Join(",", forms) +
+               ">";
+    }
+
+    private static string CallingConventionToken(MethodCallingConvention convention)
+    {
+        return convention switch
+        {
+            MethodCallingConvention.Default => "managed",
+            MethodCallingConvention.C => "cdecl",
+            MethodCallingConvention.StdCall => "stdcall",
+            MethodCallingConvention.ThisCall => "thiscall",
+            MethodCallingConvention.FastCall => "fastcall",
+            MethodCallingConvention.VarArg => "vararg",
+            MethodCallingConvention.Unmanaged => "unmanaged",
+            _ => "generic"
+        };
     }
 
     // 嵌套构造类型的规范形式按包含链逐层携带各自的构造实参；与 Reflection、Roslyn 逐字节一致。

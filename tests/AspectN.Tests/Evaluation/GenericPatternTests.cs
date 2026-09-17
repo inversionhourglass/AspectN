@@ -1,3 +1,4 @@
+using AspectN.Binding.Legacy;
 using AspectN.Evaluation;
 using AspectN.Metadata;
 using AspectN.Tests.TestDoubles;
@@ -113,6 +114,28 @@ public sealed class GenericPatternTests
         var result = Match("Box<string>", candidate);
 
         Assert.Equal(MatchStatus.NotMatched, result.Status);
+    }
+
+    [Fact]
+    public void GetEffectiveTypeArguments_NestedDefinitionSynthesizesFlatPositions()
+    {
+        // 嵌套定义签名（Outer`1/Inner`1）的合成形参必须使用包含链的扁平 ECMA 槽位
+        // （内层形参槽位 = 外层元数 + 局部序号），与三个适配器的真实映射一致；
+        // 名字 T1..Tn 随槽位编号，跨层级不重复。
+        var outer = Identity("Example", "Outer", 1);
+        var inner = new NamedTypeSignature(
+            Identity(string.Empty, "Inner", 1, containingType: outer));
+
+        var effective = LegacyGenericRules.GetEffectiveTypeArguments(inner);
+
+        var first = Assert.IsType<GenericParameterTypeSignature>(effective[0]);
+        var second = Assert.IsType<GenericParameterTypeSignature>(effective[1]);
+        Assert.Equal(0, first.Parameter.Position);
+        Assert.Equal(1, second.Parameter.Position);
+        Assert.Equal("Example.Outer`1", first.Parameter.OwnerId);
+        Assert.Equal("Example.Outer`1/Inner`1", second.Parameter.OwnerId);
+        Assert.Equal("T1", first.Parameter.Name);
+        Assert.Equal("T2", second.Parameter.Name);
     }
 
     private static MatchResult Match(

@@ -683,8 +683,9 @@ internal sealed class SelectorParser(Parser parser)
                 continue;
             }
 
-            if (hasGeneric)
+            if (hasGeneric && Current.Kind != SyntaxKind.PlusToken)
             {
+                // 泛型子句后仅允许 + 后缀（声明类型的可赋值目标）与分隔符（§7、§12.4）。
                 ReportUnexpected(Current, "member path separator");
             }
             else if (hasName &&

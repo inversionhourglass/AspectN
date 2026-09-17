@@ -35,4 +35,11 @@ internal static unsafe class FunctionPointerFixture
     {
         return parser(value);
     }
+
+    public static TOutput Convert<TOutput>(
+        delegate* unmanaged[Cdecl]<int, TOutput> parser,
+        int value)
+    {
+        return parser(value);
+    }
 }

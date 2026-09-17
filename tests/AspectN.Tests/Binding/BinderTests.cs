@@ -182,6 +182,18 @@ public sealed class BinderTests
         Assert.NotNull(compilation.BoundRoot);
     }
 
+    [Fact]
+    public void Create_DeclaringTypeGenericClauseAssignableSuffix_HasNoErrorDiagnostics()
+    {
+        // 泛型子句 + 可赋值后缀的组合（Repo<int>+ 即“Repo<int> 或其子类”）。
+        var compilation = CompileMember("method(* Repo<int>+.Get(..))");
+
+        Assert.DoesNotContain(
+            compilation.Diagnostics,
+            diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
+        Assert.NotNull(compilation.BoundRoot);
+    }
+
     private static AspectNCompilation CompileMember(
         string source,
         AspectNLanguageVersion languageVersion = AspectNLanguageVersion.Standard)

@@ -65,6 +65,13 @@ public class ConformanceFixture : IConformanceContract<string>
         return default;
     }
 
+    public unsafe TOutput ConvertWithPointer<TOutput>(
+        delegate*<int, TOutput> parser,
+        int value)
+    {
+        return parser(value);
+    }
+
     public void EchoOpen<T>(System.Collections.Generic.Dictionary<T, int> value)
     {
         _value += value is null ? 0 : 1;

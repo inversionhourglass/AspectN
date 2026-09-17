@@ -217,8 +217,10 @@ internal readonly struct CecilTypeCacheKey : IEquatable<CecilTypeCacheKey>
                 return;
             case FunctionPointerType functionPointer:
                 // 函数指针派生自 TypeSpecification 但 ElementType 恒为 null，不能递归；
-                // FullName 携带返回类型与参数签名，作为形状字面量区分不同函数指针。
+                // FullName 携带返回类型与参数签名，但不含调用约定，需一并进入键。
                 builder.Append("function-pointer:");
+                builder.Append((int)functionPointer.CallingConvention);
+                builder.Append(':');
                 builder.Append(functionPointer.FullName);
                 return;
             case TypeSpecification specification:

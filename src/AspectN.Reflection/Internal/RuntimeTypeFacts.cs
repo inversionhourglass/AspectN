@@ -23,10 +23,31 @@ internal static class RuntimeTypeFacts
     public static bool IsFunctionPointer(Type type)
     {
 #if NETSTANDARD2_0
-        return _IsFunctionPointerProperty is not null &&
-            _IsFunctionPointerProperty.GetValue(type) is true;
+        if (_IsFunctionPointerProperty is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            return _IsFunctionPointerProperty.GetValue(type) is true;
+        }
+        catch (TargetInvocationException)
+        {
+            // MetadataLoadContext ≤ 7 的类型派生自未覆写 IsFunctionPointer 的
+            // TypeDelegator，属性访问抛 NullReferenceException；该后端无法物化
+            // 函数指针类型（签名解码先行失败），按非函数指针处理即可。
+            return false;
+        }
 #else
-        return type.IsFunctionPointer;
+        try
+        {
+            return type.IsFunctionPointer;
+        }
+        catch (NullReferenceException)
+        {
+            return false;
+        }
 #endif
     }
 

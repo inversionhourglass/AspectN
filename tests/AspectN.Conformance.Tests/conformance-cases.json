@@ -286,5 +286,13 @@
     "parameterCount": 1,
     "expression": "callable(string AspectN.TestAssembly.Conformance.ConformanceFixture.op_Implicit(..))",
     "expected": "Matched"
+  },
+  {
+    "id": "function-pointer-parameter",
+    "kind": "method",
+    "member": "ConvertWithPointer",
+    "parameterCount": 2,
+    "expression": "method(* AspectN.TestAssembly.Conformance.ConformanceFixture.ConvertWithPointer<$T>(..))",
+    "expected": "Matched"
   }
 ]

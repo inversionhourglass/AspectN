@@ -50,7 +50,7 @@ public sealed class CecilTypeCacheTests
             signature.Reason,
             StringComparison.Ordinal);
         Assert.Equal(
-            "method System.Int32 *(System.String)",
+            "delegate*[managed]<System.String,System.Int32>",
             signature.DisplayName);
     }
 

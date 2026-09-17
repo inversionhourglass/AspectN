@@ -558,6 +558,58 @@ public sealed class RoslynMappingTests
         return Assert.IsType<NamedTypeSignature>(type)
             .Identity.FullMetadataName;
     }
+
+    [Fact]
+    public void MapType_FunctionPointerParameterOverloads_HaveUnifiedOwnerIds()
+    {
+        var compilation = RoslynTestCompilation.Create("""
+            public static unsafe class FunctionPointerProbe
+            {
+                public static TOutput Convert<TOutput>(
+                    delegate*<int, TOutput> parser,
+                    int value)
+                {
+                    return parser(value);
+                }
+
+                public static TOutput Convert<TOutput>(
+                    delegate* unmanaged[Cdecl]<int, TOutput> parser,
+                    int value)
+                {
+                    return parser(value);
+                }
+            }
+            """, allowUnsafe: true);
+        var typeSystem = new RoslynTypeSystem(compilation);
+        var probe = compilation.GetTypeByMetadataName("FunctionPointerProbe");
+        Assert.NotNull(probe);
+        var overloads = probe.GetMembers("Convert").OfType<IMethodSymbol>().ToArray();
+        var cdecl = Assert.IsType<GenericParameterTypeSignature>(
+            typeSystem.Mapper.MapType(Assert.Single(
+                    overloads,
+                    method => method.Parameters[0].Type.ToDisplayString()
+                        .Contains("Cdecl", StringComparison.Ordinal))
+                .TypeParameters[0]));
+        var managed = Assert.IsType<GenericParameterTypeSignature>(
+            typeSystem.Mapper.MapType(Assert.Single(
+                    overloads,
+                    method => !method.Parameters[0].Type.ToDisplayString()
+                        .Contains("Cdecl", StringComparison.Ordinal))
+                .TypeParameters[0]));
+
+        // 与 Cecil/Reflection 逐字节一致的统一文本；仅调用约定不同的重载必须区分。
+        Assert.Equal(
+            "FunctionPointerProbe.Convert`1(" +
+            "delegate*[cdecl]<System.Int32,!!0>,System.Int32)",
+            cdecl.Parameter.OwnerId);
+        Assert.Equal(
+            "FunctionPointerProbe.Convert`1(" +
+            "delegate*[managed]<System.Int32,!!0>,System.Int32)",
+            managed.Parameter.OwnerId);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.AreEqual(cdecl, managed).Status);
+    }
 }
 
 internal static class RoslynTestCompilation
@@ -680,7 +732,9 @@ internal static class RoslynTestCompilation
         }
         """;
 
-    public static CSharpCompilation Create(string source = SOURCE)
+    public static CSharpCompilation Create(
+        string source = SOURCE,
+        bool allowUnsafe = false)
     {
         var trustedAssemblies = Assert.IsType<string>(
             AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES"));
@@ -695,7 +749,9 @@ internal static class RoslynTestCompilation
             $"AspectN.Roslyn.Tests.{Guid.NewGuid():N}",
             [syntaxTree],
             references,
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+            new CSharpCompilationOptions(
+                OutputKind.DynamicallyLinkedLibrary,
+                allowUnsafe: allowUnsafe));
         var errors = compilation.GetDiagnostics()
             .Where(diagnostic => diagnostic.Severity ==
                 DiagnosticSeverity.Error)

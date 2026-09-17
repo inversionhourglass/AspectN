@@ -33,6 +33,7 @@ public sealed class FixtureCompiler : IDisposable
             references,
             new CSharpCompilationOptions(
                 OutputKind.DynamicallyLinkedLibrary,
+                allowUnsafe: true,
                 deterministic: true));
         var image = Emit(Compilation);
 
@@ -97,6 +98,7 @@ public sealed class FixtureCompiler : IDisposable
             fixtureReferences,
             new CSharpCompilationOptions(
                 OutputKind.DynamicallyLinkedLibrary,
+                allowUnsafe: true,
                 deterministic: true));
         var image = Emit(compilation);
         var resolver = new DefaultAssemblyResolver();

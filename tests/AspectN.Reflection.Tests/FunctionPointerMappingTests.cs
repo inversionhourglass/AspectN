@@ -75,14 +75,14 @@ public sealed unsafe class FunctionPointerMappingTests
             typeSystem.Mapper.MapType(intOverload.GetGenericArguments()[0]));
 
         // 函数指针形状必须进入 owner ID：不同函数指针重载的泛型参数不得判等，
-        // 也不得退化为与无参方法相同的空括号形式。
+        // 也不得退化为与无参方法相同的空括号形式；文本与 Cecil/Roslyn 逐字节一致。
         Assert.Equal(
             "AspectN.Reflection.Tests.FunctionPointerOwnerFixture.M`1(" +
-                "delegate*<System.String,System.Int32>)",
+                "delegate*[managed]<System.String,System.Int32>)",
             first.Parameter.OwnerId);
         Assert.Equal(
             "AspectN.Reflection.Tests.FunctionPointerOwnerFixture.M`1(" +
-                "delegate*<System.Int32,System.Void>)",
+                "delegate*[managed]<System.Int32,System.Void>)",
             second.Parameter.OwnerId);
         Assert.Equal(
             MatchStatus.NotMatched,
@@ -104,11 +104,42 @@ public sealed unsafe class FunctionPointerMappingTests
                 pointerOverload.GetGenericArguments()[0]));
 
         // 函数指针的指针经 * 后缀递归组合：元素先归约为函数指针形式
-        //（delegate*<int> 是无参、返回 int 的函数指针，末位类型为返回类型）。
+        //（delegate*[managed]<System.Int32> 是无参、返回 int 的函数指针，末位类型为返回类型）。
         Assert.Equal(
             "AspectN.Reflection.Tests.FunctionPointerOwnerFixture.M`1(" +
-                "delegate*<System.Int32>*)",
+                "delegate*[managed]<System.Int32>*)",
             mapped.Parameter.OwnerId);
+    }
+
+    [Fact]
+    public void MapType_TypeThrowingOnIsFunctionPointer_MapsWithoutCrash()
+    {
+        var typeSystem = new ReflectionTypeSystem();
+        var hostile = new ThrowingFunctionPointerType();
+
+        // MetadataLoadContext ≤ 7 的类型派生自未覆写 IsFunctionPointer 的
+        // TypeDelegator，属性访问抛 NullReferenceException；探测失败必须按
+        // 非函数指针回退，普通类型的映射不得因此崩溃。
+        Assert.Throws<NullReferenceException>(
+            () => hostile.IsFunctionPointer);
+        var signature = typeSystem.Mapper.MapType(hostile);
+
+        var named = Assert.IsType<NamedTypeSignature>(signature);
+        Assert.Equal("System.Int32", named.Identity.FullMetadataName);
+    }
+
+    // 模拟 MLC ≤ 7 的 TypeDelegator 派生类型：IsFunctionPointer 访问即抛。
+    private sealed class ThrowingFunctionPointerType : TypeDelegator
+    {
+        public ThrowingFunctionPointerType()
+            : base(typeof(int))
+        {
+        }
+
+        public override bool IsFunctionPointer =>
+#pragma warning disable CA2201 // 复现 TypeDelegator 基类实现的真实崩溃形态
+            throw new NullReferenceException();
+#pragma warning restore CA2201
     }
 }
 
