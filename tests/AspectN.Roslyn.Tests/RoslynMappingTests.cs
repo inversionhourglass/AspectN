@@ -610,6 +610,58 @@ public sealed class RoslynMappingTests
             MatchStatus.NotMatched,
             typeSystem.AreEqual(cdecl, managed).Status);
     }
+
+    [Fact]
+    public void MapType_FunctionPointerRefReturnOverloads_HaveDistinctOwnerIds()
+    {
+        var compilation = RoslynTestCompilation.Create("""
+            public static unsafe class RefReturnProbe
+            {
+                public static TOutput Convert<TOutput>(
+                    delegate*<ref int, TOutput> parser,
+                    int value)
+                {
+                    return parser(ref value);
+                }
+
+                public static TOutput Convert<TOutput>(
+                    delegate*<ref int, ref readonly TOutput> parser,
+                    int value)
+                {
+                    return parser(ref value);
+                }
+            }
+            """, allowUnsafe: true);
+        var typeSystem = new RoslynTypeSystem(compilation);
+        var probe = compilation.GetTypeByMetadataName("RefReturnProbe");
+        Assert.NotNull(probe);
+        var overloads = probe.GetMembers("Convert").OfType<IMethodSymbol>().ToArray();
+        Assert.Equal(2, overloads.Length);
+        var refReadonlyReturn = Assert.IsType<GenericParameterTypeSignature>(
+            typeSystem.Mapper.MapType(overloads
+                .Single(method => method.Parameters[0].Type.ToDisplayString()
+                    .Contains("ref readonly", StringComparison.Ordinal))
+                .TypeParameters[0]));
+        var plainReturn = Assert.IsType<GenericParameterTypeSignature>(
+            typeSystem.Mapper.MapType(overloads
+                .Single(method => !method.Parameters[0].Type.ToDisplayString()
+                    .Contains("ref readonly", StringComparison.Ordinal))
+                .TypeParameters[0]));
+
+        // ref readonly 返回在符号上报 ReturnsByRef=false/RefKind=In，& 的判定必须走
+        // RefKind；只读性不同的重载不得折叠，且文本与 Cecil 一致（!!0& 带 &）。
+        Assert.Equal(
+            "RefReturnProbe.Convert`1(" +
+            "delegate*[managed]<System.Int32&,!!0&>,System.Int32)",
+            refReadonlyReturn.Parameter.OwnerId);
+        Assert.Equal(
+            "RefReturnProbe.Convert`1(" +
+            "delegate*[managed]<System.Int32&,!!0>,System.Int32)",
+            plainReturn.Parameter.OwnerId);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.AreEqual(refReadonlyReturn, plainReturn).Status);
+    }
 }
 
 internal static class RoslynTestCompilation

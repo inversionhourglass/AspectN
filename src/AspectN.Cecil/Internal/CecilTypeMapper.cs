@@ -345,6 +345,12 @@ internal static class CecilTypeMapper
                 return ConstructedNamedForm((GenericInstanceType)type);
             case FunctionPointerType functionPointer:
                 return FunctionPointerForm(functionPointer);
+            case RequiredModifierType required:
+                // 函数指针签名内的 in/ref readonly 以 modreq 包裹元素；修饰符不参与
+                // 身份形状，按元素递归，否则泛型参数会按名字而非 !!n 槽位编码。
+                return CanonicalParameterForm(required.ElementType);
+            case OptionalModifierType optional:
+                return CanonicalParameterForm(optional.ElementType);
             case TypeSpecification specification:
                 return specification.ElementType is null
                     ? specification.GetType().Name
@@ -379,7 +385,9 @@ internal static class CecilTypeMapper
             MethodCallingConvention.FastCall => "fastcall",
             MethodCallingConvention.VarArg => "vararg",
             MethodCallingConvention.Unmanaged => "unmanaged",
-            _ => "generic"
+            MethodCallingConvention.Generic => "generic",
+            // 未知字节与 Roslyn 的兜底 token 一致，避免同形状跨适配器文本分裂。
+            _ => "unknown"
         };
     }
 

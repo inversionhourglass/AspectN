@@ -78,7 +78,7 @@ public sealed class CecilFunctionPointerTests
         var overloads = fixture.Methods
             .Where(method => method.Name == "Convert")
             .ToArray();
-        Assert.Equal(3, overloads.Length);
+        Assert.Equal(5, overloads.Length);
 
         var mapped = overloads
             .Select(method => Assert.IsType<GenericParameterTypeSignature>(
@@ -91,19 +91,28 @@ public sealed class CecilFunctionPointerTests
 
         // 函数指针参数在 owner ID 中以统一文本标记（与 Reflection/Roslyn 逐字节一致），
         // 不递归空的 ElementType，且不同函数指针形状必须区分同名同元数的泛型重载；
-        // 仅调用约定不同的重载（managed vs cdecl）也必须区分。
+        // 仅调用约定（managed vs cdecl）或仅返回只读性（T vs ref readonly T）不同的
+        // 重载也必须区分；ref readonly 的 modreq 不得使泛型参数退化为按名编码。
         Assert.Equal(
             "AspectN.Cecil.Tests.Fixtures.FunctionPointerFixture.Convert`1(" +
             "delegate*[cdecl]<System.Int32,!!0>,System.Int32)",
             ownerIds[0]);
         Assert.Equal(
             "AspectN.Cecil.Tests.Fixtures.FunctionPointerFixture.Convert`1(" +
-            "delegate*[managed]<System.Int32,!!0>,System.Int32)",
+            "delegate*[managed]<System.Int32&,!!0&>,System.Int32)",
             ownerIds[1]);
         Assert.Equal(
             "AspectN.Cecil.Tests.Fixtures.FunctionPointerFixture.Convert`1(" +
-            "delegate*[managed]<System.String,!!0>,System.String)",
+            "delegate*[managed]<System.Int32&,!!0>,System.Int32)",
             ownerIds[2]);
+        Assert.Equal(
+            "AspectN.Cecil.Tests.Fixtures.FunctionPointerFixture.Convert`1(" +
+            "delegate*[managed]<System.Int32,!!0>,System.Int32)",
+            ownerIds[3]);
+        Assert.Equal(
+            "AspectN.Cecil.Tests.Fixtures.FunctionPointerFixture.Convert`1(" +
+            "delegate*[managed]<System.String,!!0>,System.String)",
+            ownerIds[4]);
         Assert.All(
             mapped,
             signature => Assert.Equal(
@@ -119,10 +128,29 @@ public sealed class CecilFunctionPointerTests
             signature => signature.Parameter.OwnerId.Contains(
                 "delegate*[managed]<System.Int32,",
                 StringComparison.Ordinal));
-        Assert.True(cdeclIndex >= 0 && managedIndex >= 0);
+        var byValueReturnIndex = Array.FindIndex(
+            mapped,
+            signature => signature.Parameter.OwnerId.Contains(
+                "delegate*[managed]<System.Int32&,!!0>,",
+                StringComparison.Ordinal));
+        var refReadonlyReturnIndex = Array.FindIndex(
+            mapped,
+            signature => signature.Parameter.OwnerId.Contains(
+                "delegate*[managed]<System.Int32&,!!0&>,",
+                StringComparison.Ordinal));
+        Assert.True(
+            cdeclIndex >= 0 &&
+            managedIndex >= 0 &&
+            byValueReturnIndex >= 0 &&
+            refReadonlyReturnIndex >= 0);
         Assert.Equal(
             MatchStatus.NotMatched,
             typeSystem.AreEqual(mapped[cdeclIndex], mapped[managedIndex]).Status);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            typeSystem.AreEqual(
+                mapped[byValueReturnIndex],
+                mapped[refReadonlyReturnIndex]).Status);
     }
 
     private static MethodDefinition FindMethod(

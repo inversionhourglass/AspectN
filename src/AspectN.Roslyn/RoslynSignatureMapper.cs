@@ -509,7 +509,11 @@ public sealed class RoslynSignatureMapper
                     ? string.Empty
                     : "&"))
             .Append(CanonicalParameterForm(signature.ReturnType) +
-                (signature.ReturnsByRef ? "&" : string.Empty));
+                // ref readonly 返回上报 ReturnsByRef=false / RefKind=In，
+                // 判定必须与参数侧一致地走 RefKind，否则只读性不同的重载会折叠。
+                (signature.RefKind == Microsoft.CodeAnalysis.RefKind.None
+                    ? string.Empty
+                    : "&"));
         return "delegate*[" +
                CallingConventionToken(signature.CallingConvention) +
                "]<" +
