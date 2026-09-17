@@ -193,6 +193,8 @@ jobs:
             [System.Text.Encoding]::ASCII)
 
       - name: Build pinned Rougamo fixture assemblies
+        # bash 封装带 -e -o pipefail，任一命令失败立即中止；pwsh 只保留最后一条命令的退出码。
+        shell: bash
         run: |
           dotnet build artifacts/rougamo/test/TestAssemblies/SignatureUsage/SignatureUsage.csproj -c Release -f net8.0
           dotnet build artifacts/rougamo/test/TestAssemblies/PatternUsage/PatternUsage.csproj -c Release -f net8.0

@@ -112,6 +112,20 @@ internal sealed class Lexer
         while (!IsAtEnd)
         {
             var character = Current;
+
+            // .NET 语义：(?# 注释由第一个 ) 结束；注释内容对转义、字符类、
+            // 分组全部不透明，因此内容消费必须先于其他一切分支检查。
+            if (inComment)
+            {
+                if (character == ')')
+                {
+                    inComment = false;
+                }
+
+                _position++;
+                continue;
+            }
+
             if (escaped)
             {
                 escaped = false;
@@ -158,18 +172,7 @@ internal sealed class Lexer
                 continue;
             }
 
-            // .NET 语义：(?# 注释由第一个 ) 结束，注释内容不识别转义、不影响分组深度。
-            if (inComment)
-            {
-                if (character == ')')
-                {
-                    inComment = false;
-                }
-
-                _position++;
-                continue;
-            }
-
+            // (?# 的识别必须保持在转义与字符类检查之后：\( 与 [( 不能开启注释。
             if (character == '(' && Peek(1) == '?' && Peek(2) == '#')
             {
                 inComment = true;

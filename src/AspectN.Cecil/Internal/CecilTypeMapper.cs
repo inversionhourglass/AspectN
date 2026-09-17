@@ -340,8 +340,13 @@ internal static class CecilTypeMapper
                        ArraySuffix(array.Rank);
             case GenericInstanceType:
                 return ConstructedNamedForm((GenericInstanceType)type);
+            case FunctionPointerType functionPointer:
+                // 函数指针无元素类型，规范形式取其签名文本（返回类型 + 参数）以区分重载。
+                return functionPointer.FullName;
             case TypeSpecification specification:
-                return ConstructedNamedForm(specification.ElementType);
+                return specification.ElementType is null
+                    ? specification.GetType().Name
+                    : ConstructedNamedForm(specification.ElementType);
             default:
                 return ConstructedNamedForm(type);
         }

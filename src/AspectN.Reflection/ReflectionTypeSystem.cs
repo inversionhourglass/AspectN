@@ -2,6 +2,7 @@ using System.Reflection;
 using AspectN.Diagnostics;
 using AspectN.Evaluation;
 using AspectN.Metadata;
+using AspectN.Reflection.Internal;
 using AspectN.TypeSystem;
 
 namespace AspectN.Reflection;
@@ -44,7 +45,13 @@ public sealed class ReflectionTypeSystem : ITypeSystem
     {
         cancellationToken.ThrowIfCancellationRequested();
         var structural = CompareUnqualified(candidate, target);
-        if (structural.Status != MatchStatus.NotMatched) return structural;
+        if (structural.Status != MatchStatus.NotMatched)
+        {
+            // 结构相等不足以证明可赋值：同元素的一维非向量数组不能赋给向量数组。
+            return IsArrayIdentityAdmissible(candidate, target)
+                ? structural
+                : TypeRelationResult.NotMatched;
+        }
 
         if (!Mapper.TryGetType(candidate, out var candidateType) ||
             candidateType is null)
@@ -89,6 +96,30 @@ public sealed class ReflectionTypeSystem : ITypeSystem
         {
             return ReflectionFailure(candidateType, exception);
         }
+    }
+
+    // 同元素数组的恒等还要求形状方向兼容：非向量（非零下界）一维数组不能赋给向量数组。
+    private bool IsArrayIdentityAdmissible(
+        TypeSignature candidate,
+        TypeSignature target)
+    {
+        if (candidate is not ArrayTypeSignature ||
+            target is not ArrayTypeSignature ||
+            !Mapper.TryGetType(candidate, out var candidateType) ||
+            candidateType is not { IsArray: true } array)
+        {
+            return true;
+        }
+
+        return RuntimeTypeFacts.IsVector(array) || !IsVectorTarget(target);
+    }
+
+    // 判定数组目标是否为向量：模式构造的秩 1 目标无法表达下界，按向量处理。
+    private bool IsVectorTarget(TypeSignature target)
+    {
+        return !Mapper.TryGetType(target, out var targetType) ||
+               targetType is not { IsArray: true } array ||
+               RuntimeTypeFacts.IsVector(array);
     }
 
     /// <summary>Gets the declared inheritance closure of a type, excluding the type itself.</summary>

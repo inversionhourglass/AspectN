@@ -548,6 +548,7 @@ internal sealed class Binder(
                         scope,
                         underNegation));
             case AssignableTypePatternSyntax assignable:
+                ReportInvalidAssignableTarget(assignable);
                 return new BoundAssignableTypePattern(
                     assignable.FullSpan,
                     BindTypePattern(
@@ -1065,6 +1066,34 @@ internal sealed class Binder(
             DiagnosticSeverity.Error,
             message,
             syntax.FullSpan);
+    }
+
+    // 规范 §12.1/§12.4：绑定器校验后缀适用性；+ 要求命名目标，数组目标不支持，也不能重复叠加。
+    // nullable 目标（int?+）是合法组合，不在此报告。
+    private void ReportInvalidAssignableTarget(AssignableTypePatternSyntax syntax)
+    {
+        var target = syntax.TargetType;
+        while (target is ParenthesizedTypePatternSyntax parenthesized)
+        {
+            target = parenthesized.Pattern;
+        }
+
+        if (target is ArrayTypePatternSyntax)
+        {
+            _diagnostics.Add(
+                DiagnosticCodes.InvalidTypeSuffix,
+                DiagnosticSeverity.Error,
+                "The '+' suffix requires a named type target; array targets are not supported.",
+                syntax.PlusToken.Span);
+        }
+        else if (target is AssignableTypePatternSyntax)
+        {
+            _diagnostics.Add(
+                DiagnosticCodes.InvalidTypeSuffix,
+                DiagnosticSeverity.Error,
+                "The '+' suffix cannot be applied more than once.",
+                syntax.PlusToken.Span);
+        }
     }
 
     private sealed class VariableScope

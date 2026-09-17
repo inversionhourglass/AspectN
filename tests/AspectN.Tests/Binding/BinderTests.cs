@@ -119,6 +119,69 @@ public sealed class BinderTests
         Assert.Equal(0, named.Segments[0].Generic.Arity);
     }
 
+    [Theory]
+    [InlineData("int[]+")]
+    [InlineData("System.Int32[]+")]
+    [InlineData("string[,]+")]
+    [InlineData("(int[])+")]
+    public void Create_AssignableSuffixOnArrayTarget_ReportsDiagnostic(
+        string source)
+    {
+        var compilation = CompileType(source);
+
+        AssertDiagnostic(compilation, DiagnosticCodes.InvalidTypeSuffix);
+        Assert.Null(compilation.BoundRoot);
+    }
+
+    [Theory]
+    [InlineData("int++")]
+    [InlineData("System.IDisposable++")]
+    [InlineData("(int+)+")]
+    public void Create_RepeatedAssignableSuffix_ReportsDiagnostic(string source)
+    {
+        var compilation = CompileType(source);
+
+        AssertDiagnostic(compilation, DiagnosticCodes.InvalidTypeSuffix);
+        Assert.Null(compilation.BoundRoot);
+    }
+
+    [Fact]
+    public void Create_AssignableSuffixOnArrayReturnType_ReportsDiagnostic()
+    {
+        var compilation = CompileMember("method(int[]+ Service.Get(..))");
+
+        AssertDiagnostic(compilation, DiagnosticCodes.InvalidTypeSuffix);
+        Assert.Null(compilation.BoundRoot);
+    }
+
+    [Theory]
+    [InlineData("int+")]
+    [InlineData("int+[]")]
+    [InlineData("int?+")]
+    [InlineData("System.String?+")]
+    [InlineData("System.Collections.Generic.List<string?[]>+")]
+    public void Create_SupportedTypeSuffixCombination_HasNoErrorDiagnostics(
+        string source)
+    {
+        var compilation = CompileType(source);
+
+        Assert.DoesNotContain(
+            compilation.Diagnostics,
+            diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
+        Assert.NotNull(compilation.BoundRoot);
+    }
+
+    [Fact]
+    public void Create_DeclaringTypeAssignableSuffix_HasNoErrorDiagnostics()
+    {
+        var compilation = CompileMember("method(* Service+.Get(..))");
+
+        Assert.DoesNotContain(
+            compilation.Diagnostics,
+            diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
+        Assert.NotNull(compilation.BoundRoot);
+    }
+
     private static AspectNCompilation CompileMember(
         string source,
         AspectNLanguageVersion languageVersion = AspectNLanguageVersion.Standard)

@@ -136,6 +136,46 @@ public sealed class RegexPatternTests
     }
 
     [Fact]
+    public void Match_RegexCommentWithEscapedParen_CompilesAndMatches()
+    {
+        // .NET 语义：注释内容对转义不透明，(?#a\) 的 ) 结束注释；
+        // Regex.IsMatch("Load", "(?#a\\)Load") 为 true。
+        var result = Match("regex((?#a\\)Load)", Callable("Load"));
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+    }
+
+    [Fact]
+    public void Match_RegexCommentWithWindowsPath_CompilesAndMatches()
+    {
+        // 注释内容里的反斜杠不被转义分支吞掉注释终止符：
+        // Regex.IsMatch("Load", "(?#C:\\path\\)Load") 为 true。
+        var result = Match("regex((?#C:\\path\\)Load)", Callable("Load"));
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+    }
+
+    [Fact]
+    public void Match_RegexCommentWithBracketAndParen_CompilesAndMatches()
+    {
+        // 注释内容里的 [ 不开启字符类，注释由第一个 ) 结束；
+        // 剩余的 a 命中规范签名中的字母（Regex.IsMatch(签名, "(?# [ )a") 为 true）。
+        var result = Match("regex((?# [ )a)", Callable("Load"));
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+    }
+
+    [Fact]
+    public void Match_RegexEscapedCommentMarker_DoesNotEnterComment()
+    {
+        // (?# 的识别必须位于转义检查之后：\( 是转义的左括号，不能开启注释；
+        // 模式 x\(?#z 是合法正则但不匹配签名（含字面量 #）。
+        var result = Match("regex(x\\(?#z)", Callable("Load"));
+
+        Assert.Equal(MatchStatus.NotMatched, result.Status);
+    }
+
+    [Fact]
     public void Match_UnterminatedRegexComment_ReportsUnterminated()
     {
         var compilation = AspectNCompilation.Create(

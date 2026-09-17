@@ -513,6 +513,7 @@ static AspectN.AspectNCompilation.Create(AspectN.Syntax.AspectNSyntaxTree! synta
 static AspectN.AspectNParser.ParseMemberExpression(string! source, AspectN.AspectNParseOptions? options = null) -> AspectN.Syntax.AspectNSyntaxTree!
 static AspectN.AspectNParser.ParseTypePattern(string! source, AspectN.AspectNParseOptions? options = null) -> AspectN.Syntax.AspectNSyntaxTree!
 static AspectN.Diagnostics.DiagnosticCodes.BadCharacter.get -> string!
+static AspectN.Diagnostics.DiagnosticCodes.CompositeAccessibilityMigration.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.ExecutionSelectorMigration.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.InvalidEscapeSequence.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.InvalidInteger.get -> string!
@@ -521,6 +522,7 @@ static AspectN.Diagnostics.DiagnosticCodes.InvalidParameterIndex.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.InvalidRefKind.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.InvalidRegex.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.InvalidTargetDomain.get -> string!
+static AspectN.Diagnostics.DiagnosticCodes.InvalidTypeSuffix.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.InvalidVariable.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.InvalidVariableScope.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.MissingBackendCapability.get -> string!

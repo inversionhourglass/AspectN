@@ -215,10 +215,26 @@ internal readonly struct CecilTypeCacheKey : IEquatable<CecilTypeCacheKey>
                 builder.Append(':');
                 builder.Append(parameter.Position);
                 return;
+            case FunctionPointerType functionPointer:
+                // 函数指针派生自 TypeSpecification 但 ElementType 恒为 null，不能递归；
+                // FullName 携带返回类型与参数签名，作为形状字面量区分不同函数指针。
+                builder.Append("function-pointer:");
+                builder.Append(functionPointer.FullName);
+                return;
             case TypeSpecification specification:
                 builder.Append(typeReference.GetType().FullName);
                 builder.Append('(');
-                AppendShape(builder, specification.ElementType);
+                if (specification.ElementType is null)
+                {
+                    // 其他无元素类型的规格类型同样短路为字面量标记，
+                    // 映射阶段统一产出 UnsupportedTypeSignature。
+                    builder.Append("null-element");
+                }
+                else
+                {
+                    AppendShape(builder, specification.ElementType);
+                }
+
                 builder.Append(')');
                 return;
             default:

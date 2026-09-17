@@ -99,6 +99,66 @@ public sealed class CallableSelectorTests
     }
 
     [Fact]
+    public void Match_DefinitionGenericClauseVariable_BindsFormalParameter()
+    {
+        var methodParameter = new GenericParameterSignature(
+            "T",
+            GenericParameterOwnerKind.Method,
+            "Example.Converter.Convert`1",
+            new AssemblyIdentity("Example.Assembly"),
+            0);
+        var parameterType = new GenericParameterTypeSignature(methodParameter);
+        var candidate = Callable(
+            "Convert",
+            CallableKind.OrdinaryMethod,
+            returnType: parameterType,
+            parameters: new[] { Parameter(parameterType, 0) },
+            genericParameters: new[] { methodParameter },
+            declaringType: Named("Example", "Converter"));
+
+        var result = Match("method($T Converter.Convert<$T>($T))", candidate);
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+    }
+
+    [Fact]
+    public void Match_DefinitionDeclaringTypeVariableArgument_BindsFormalParameter()
+    {
+        var declaringType = Definition("Example", "Repo", 1);
+        var typeParameter = new GenericParameterSignature(
+            "T",
+            GenericParameterOwnerKind.Type,
+            "Example.Repo`1",
+            declaringType.Identity.Assembly,
+            0);
+        var parameterType = new GenericParameterTypeSignature(typeParameter);
+        var candidate = Callable(
+            "Find",
+            CallableKind.OrdinaryMethod,
+            returnType: parameterType,
+            parameters: new[] { Parameter(parameterType, 0) },
+            declaringType: declaringType);
+
+        var result = Match("method($T Repo<$T>.Find($T))", candidate);
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+    }
+
+    [Fact]
+    public void Match_DefinitionDeclaringTypeConcreteArgument_ReturnsNotMatched()
+    {
+        var candidate = Callable(
+            "Find",
+            CallableKind.OrdinaryMethod,
+            returnType: Named("System", "Int32", TypeKind.Struct),
+            declaringType: Definition("Example", "Repo", 1));
+
+        var result = Match("method(* Repo<int>.Find(..))", candidate);
+
+        Assert.Equal(MatchStatus.NotMatched, result.Status);
+    }
+
+    [Fact]
     public void Match_MemberPath_EvaluatesRecursiveNamespaceAndNestedType()
     {
         var outerIdentity = new TypeIdentity(
@@ -200,5 +260,19 @@ public sealed class CallableSelectorTests
                 name,
                 0,
                 kind));
+    }
+
+    private static NamedTypeSignature Definition(
+        string @namespace,
+        string name,
+        int arity)
+    {
+        return new NamedTypeSignature(
+            new TypeIdentity(
+                new AssemblyIdentity("Example.Assembly"),
+                @namespace,
+                name,
+                arity,
+                TypeKind.Class));
     }
 }

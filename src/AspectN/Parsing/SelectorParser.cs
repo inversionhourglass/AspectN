@@ -150,7 +150,15 @@ internal sealed class SelectorParser(Parser parser)
                 parts.Add(MatchToken(SyntaxKind.OpenBracketToken));
                 if (Current.Kind is SyntaxKind.IntegerToken or SyntaxKind.StarToken)
                 {
-                    parts.Add(NextToken());
+                    var index = NextToken();
+                    parts.Add(index);
+                    // "-0" 的数值仍是 0，负号必须按文本判断，与 Legacy para 分支一致地拒绝负索引。
+                    if (index.Kind == SyntaxKind.IntegerToken &&
+                        index.Text.Length > 0 &&
+                        index.Text[0] == '-')
+                    {
+                        ReportUnexpected(index, "non-negative parameter index");
+                    }
                 }
                 else
                 {
@@ -273,6 +281,19 @@ internal sealed class SelectorParser(Parser parser)
                 var tokens = new List<SyntaxToken> { NextToken() };
                 if (!IsModifier(Current.Text))
                 {
+                    // Standard 下的连写复合访问性按旧拼写识别，给出可操作的迁移诊断（规范 §17）。
+                    if (TryGetCompoundAccessibilityReplacement(
+                            Current.Text,
+                            out var negatedReplacement))
+                    {
+                        tokens.Add(NextToken());
+                        AddCompoundAccessibilityMigration(
+                            tokens[1],
+                            negatedReplacement);
+                        modifiers.Add(new ModifierSyntax(tokens));
+                        continue;
+                    }
+
                     ReportUnexpected(Current, "accessibility or static modifier");
                     modifiers.Add(new ModifierSyntax(tokens));
                     break;
@@ -293,9 +314,24 @@ internal sealed class SelectorParser(Parser parser)
                 continue;
             }
 
-            if (Current.Kind != SyntaxKind.IdentifierToken ||
-                !IsModifier(Current.Text))
+            if (Current.Kind != SyntaxKind.IdentifierToken)
             {
+                break;
+            }
+
+            if (!IsModifier(Current.Text))
+            {
+                if (TryGetCompoundAccessibilityReplacement(
+                        Current.Text,
+                        out var replacement))
+                {
+                    var misspelled = NextToken();
+                    AddCompoundAccessibilityMigration(misspelled, replacement);
+                    modifiers.Add(
+                        new ModifierSyntax(new List<SyntaxToken> { misspelled }));
+                    continue;
+                }
+
                 break;
             }
 
@@ -651,12 +687,33 @@ internal sealed class SelectorParser(Parser parser)
             {
                 ReportUnexpected(Current, "member path separator");
             }
+            else if (hasName &&
+                     Current.Kind != SyntaxKind.PlusToken &&
+                     Current.Span.Start != parts[parts.Count - 1].FullSpan.End)
+            {
+                // 名称段只能经 . / .. / / 分隔延续；空格分隔的裸标识符会被静默黏连（§3.4、§7）。
+                ReportUnexpected(Current, "member path separator");
+            }
 
             parts.Add(NextToken());
             hasName = true;
         }
 
-        if (parts.Count == 0) ReportUnexpected(Current, "member path");
+        if (parts.Count == 0)
+        {
+            ReportUnexpected(Current, "member path");
+        }
+        else if (parts[parts.Count - 1] is SyntaxToken
+        {
+            Kind: SyntaxKind.DotToken or
+                    SyntaxKind.DotDotToken or
+                    SyntaxKind.SlashToken
+        })
+        {
+            // 分隔符后缺少名称会绑定出永不匹配的空成员名。
+            ReportUnexpected(Current, "member name");
+        }
+
         return parts;
     }
 
@@ -749,6 +806,40 @@ internal sealed class SelectorParser(Parser parser)
                 "Use accessor(...) instead of property(...).",
                 keyword);
         }
+    }
+
+    // Standard 不再接受 Legacy 的连写复合访问性（规范 §17）；识别旧拼写以给出迁移诊断。
+    private bool TryGetCompoundAccessibilityReplacement(
+        string text,
+        out string replacement)
+    {
+        if (LanguageVersion == AspectNLanguageVersion.Standard)
+        {
+            if (text == "privateprotected")
+            {
+                replacement = "private protected";
+                return true;
+            }
+
+            if (text == "protectedinternal")
+            {
+                replacement = "protected internal";
+                return true;
+            }
+        }
+
+        replacement = string.Empty;
+        return false;
+    }
+
+    private void AddCompoundAccessibilityMigration(
+        SyntaxToken token,
+        string replacement)
+    {
+        _parser.AddSelectorDiagnostic(
+            DiagnosticCodes.CompositeAccessibilityMigration,
+            $"Use '{replacement}' instead of '{token.Text}'.",
+            token);
     }
 
     private SelectorFamily GetSelectorFamily(string text)

@@ -27,6 +27,9 @@ public static class DiagnosticCodes
     /// <summary>Gets the property selector migration.</summary>
     public static string PropertySelectorMigration => "AN4002";
 
+    /// <summary>Gets the composite accessibility modifier migration.</summary>
+    public static string CompositeAccessibilityMigration => "AN4003";
+
     /// <summary>Gets the missing backend capability.</summary>
     public static string MissingBackendCapability => "AN3001";
 
@@ -62,4 +65,7 @@ public static class DiagnosticCodes
 
     /// <summary>Gets the invalid parameter index.</summary>
     public static string InvalidParameterIndex => "AN2009";
+
+    /// <summary>Gets the invalid type-pattern suffix.</summary>
+    public static string InvalidTypeSuffix => "AN2010";
 }

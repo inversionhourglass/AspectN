@@ -16,7 +16,7 @@ jobs:
   build:
     name: Build release artifacts
     runs-on: windows-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
@@ -36,6 +36,38 @@ jobs:
             throw "Tag '$env:GITHUB_REF_NAME' is not a supported NuGet version tag."
           }
           "version=$($Matches.version)" >> $env:GITHUB_OUTPUT
+
+      - name: Restore
+        run: dotnet restore AspectN.sln -p:CecilVersion=0.11.5 -p:RoslynVersion=4.12.0
+
+      - name: Build core, adapters, and conformance
+        # bash 封装带 -e -o pipefail，任一命令失败立即中止；pwsh 只保留最后一条命令的退出码。
+        shell: bash
+        run: |
+          dotnet build tests/AspectN.Tests/AspectN.Tests.csproj -c Release --no-restore
+          dotnet build tests/AspectN.Cecil.Tests/AspectN.Cecil.Tests.csproj -c Release --no-restore
+          dotnet build tests/AspectN.Cecil.Fody.Tests/AspectN.Cecil.Fody.Tests.csproj -c Release --no-restore
+          dotnet build tests/AspectN.Reflection.Tests/AspectN.Reflection.Tests.csproj -c Release --no-restore
+          dotnet build tests/AspectN.Roslyn.Tests/AspectN.Roslyn.Tests.csproj -c Release --no-restore
+          dotnet build tests/AspectN.Conformance.Tests/AspectN.Conformance.Tests.csproj -c Release --no-restore
+
+      - name: Test core, adapters, and conformance
+        shell: bash
+        run: |
+          dotnet test tests/AspectN.Tests/AspectN.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=core.trx" --results-directory artifacts/test-results/${{ runner.os }}
+          dotnet test tests/AspectN.Cecil.Tests/AspectN.Cecil.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=cecil.trx" --results-directory artifacts/test-results/${{ runner.os }}
+          dotnet test tests/AspectN.Cecil.Fody.Tests/AspectN.Cecil.Fody.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=cecil-fody.trx" --results-directory artifacts/test-results/${{ runner.os }}
+          dotnet test tests/AspectN.Reflection.Tests/AspectN.Reflection.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=reflection.trx" --results-directory artifacts/test-results/${{ runner.os }}
+          dotnet test tests/AspectN.Roslyn.Tests/AspectN.Roslyn.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=roslyn.trx" --results-directory artifacts/test-results/${{ runner.os }}
+          dotnet test tests/AspectN.Conformance.Tests/AspectN.Conformance.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=conformance.trx" --results-directory artifacts/test-results/${{ runner.os }}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ runner.os }}
+          path: artifacts/test-results/${{ runner.os }}/*.trx
+          if-no-files-found: error
 
       - name: Verify package configuration and consumers
         run: powershell -NoProfile -File eng/verify-packages.ps1
@@ -117,9 +149,13 @@ jobs:
             [System.IO.File]::WriteAllBytes(
               $certificatePath,
               [Convert]::FromBase64String($env:SIGNING_CERTIFICATE))
-            $packages = Get-ChildItem -LiteralPath artifacts/release -Filter *.nupkg
-            if ($packages.Count -ne 5) {
-              throw "Expected five release nupkg files; found $($packages.Count)."
+            $packages = @(
+              Get-ChildItem -LiteralPath artifacts/release -File |
+                Where-Object { $_.Extension -in @('.nupkg', '.snupkg') })
+            $nupkgCount = @($packages | Where-Object Extension -eq '.nupkg').Count
+            $snupkgCount = @($packages | Where-Object Extension -eq '.snupkg').Count
+            if ($nupkgCount -ne 5 -or $snupkgCount -ne 5) {
+              throw "Expected five release nupkg and five snupkg files; found $nupkgCount nupkg and $snupkgCount snupkg."
             }
             foreach ($package in $packages) {
               dotnet nuget sign $package.FullName --certificate-path $certificatePath --certificate-password $env:SIGNING_PASSWORD --timestamper http://timestamp.digicert.com --overwrite
@@ -168,7 +204,10 @@ jobs:
           if ([string]::IsNullOrWhiteSpace($env:NUGET_API_KEY)) {
             throw "The protected environment has no NuGet API key."
           }
-          foreach ($package in Get-ChildItem -LiteralPath artifacts/release -Filter *.nupkg) {
+          $packages = @(
+            Get-ChildItem -LiteralPath artifacts/release -File |
+              Where-Object { $_.Extension -in @('.nupkg', '.snupkg') })
+          foreach ($package in $packages) {
             dotnet nuget push $package.FullName --api-key $env:NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
             if ($LASTEXITCODE -ne 0) {
               throw "Publishing '$($package.Name)' failed."

@@ -445,7 +445,14 @@ internal static class TypePatternEvaluator
 
         // 具体化失败的命名模式（名称通配、命名空间 .. 等）沿闭包用模式本身求值，
         // 与 Legacy 的 CompiledTypePattern 语义一致；非命名目标仍不支持。
-        if (pattern.TargetType is BoundNamedTypePattern)
+        // Standard 的 nullable 目标只有已知基元能静态判定值/引用类别，名单之外
+        // 具体化失败时同样回退闭包求值，候选侧由 EvaluateNullable 按 TypeKind 分派。
+        if (pattern.TargetType is BoundNamedTypePattern ||
+            (context.LanguageVersion == AspectNLanguageVersion.Standard &&
+             pattern.TargetType is BoundNullableTypePattern
+             {
+                 UnderlyingType: BoundNamedTypePattern
+             }))
         {
             return EvaluateAssignablePatternWalk(
                 pattern,
@@ -607,10 +614,9 @@ internal static class TypePatternEvaluator
         }
 
         if (!requiresArguments) return MatchStatus.Matched;
-        var candidateArguments = context.LanguageVersion ==
-            AspectNLanguageVersion.Legacy
-            ? LegacyGenericRules.GetEffectiveTypeArguments(candidate)
-            : candidate.TypeArguments.ToArray();
+        // 与成员泛型子句同理：定义签名没有实参时回退到按声明链合成的形式参数。
+        var candidateArguments = LegacyGenericRules.GetEffectiveTypeArguments(
+            candidate);
         if (candidateArguments.Length != totalArity)
         {
             return Unknown(

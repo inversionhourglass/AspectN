@@ -1,3 +1,4 @@
+using AspectN.Diagnostics;
 using AspectN.Syntax;
 
 namespace AspectN.Tests.Parsing;
@@ -98,6 +99,122 @@ public sealed class SelectorParserTests
         var tree = AspectNParser.ParseMemberExpression("METHOD()");
 
         Assert.IsType<ExtensionSelectorSyntax>(tree.Root);
+        Assert.Empty(tree.Diagnostics);
+    }
+
+    [Theory]
+    [InlineData(
+        "method(privateprotected * *.*(..))",
+        "privateprotected",
+        "private protected")]
+    [InlineData(
+        "method(protectedinternal * *.*(..))",
+        "protectedinternal",
+        "protected internal")]
+    [InlineData(
+        "method(static protectedinternal * *.*(..))",
+        "protectedinternal",
+        "protected internal")]
+    [InlineData(
+        "method(!privateprotected * *.*(..))",
+        "privateprotected",
+        "private protected")]
+    [InlineData(
+        "accessor(privateprotected string Model.Name)",
+        "privateprotected",
+        "private protected")]
+    public void ParseMemberExpression_CompoundAccessibilityInStandard_ReportsMigration(
+        string source,
+        string misspelled,
+        string replacement)
+    {
+        var tree = AspectNParser.ParseMemberExpression(source);
+
+        var diagnostic = Assert.Single(tree.Diagnostics);
+        Assert.Equal(
+            DiagnosticCodes.CompositeAccessibilityMigration,
+            diagnostic.Code);
+        Assert.Contains(misspelled, diagnostic.Message, StringComparison.Ordinal);
+        Assert.Contains(replacement, diagnostic.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("method(private protected * *.*(..))")]
+    [InlineData("method(protected internal * *.*(..))")]
+    [InlineData("method(!protected internal * *.*(..))")]
+    public void ParseMemberExpression_SpacedCompoundAccessibility_HasNoDiagnostics(
+        string source)
+    {
+        var tree = AspectNParser.ParseMemberExpression(source);
+
+        Assert.Empty(tree.Diagnostics);
+    }
+
+    [Theory]
+    [InlineData("method(void Fixtures.Foo Bar.M(..))")]
+    [InlineData("method(void Service.Foo Bar(..))")]
+    [InlineData("method(* *..* Foo(..))")]
+    public void ParseMemberExpression_SpaceGluedMemberName_ReportsDiagnostic(
+        string source)
+    {
+        var tree = AspectNParser.ParseMemberExpression(source);
+
+        Assert.Contains(
+            tree.Diagnostics,
+            diagnostic => diagnostic.Code == DiagnosticCodes.UnexpectedToken);
+    }
+
+    [Theory]
+    [InlineData("method(* A.(..))")]
+    [InlineData("method(* A..(..))")]
+    [InlineData("method(* A.B.(..))")]
+    public void ParseMemberExpression_MissingNameAfterSeparator_ReportsDiagnostic(
+        string source)
+    {
+        var tree = AspectNParser.ParseMemberExpression(source);
+
+        Assert.Contains(
+            tree.Diagnostics,
+            diagnostic => diagnostic.Code == DiagnosticCodes.UnexpectedToken);
+    }
+
+    [Theory]
+    [InlineData("method(void Fixtures.FooBar.M(..))")]
+    [InlineData("method(* Service.Get*(..))")]
+    [InlineData("method(* *..*.*Async(..))")]
+    [InlineData("method($T Converter.Convert<$T>($T))")]
+    [InlineData("method(* Service.Generic<T>.Run(..))")]
+    [InlineData("method(* Service+.Get(..))")]
+    [InlineData("method(* Service . Get(..))")]
+    public void ParseMemberExpression_WellFormedMemberPath_HasNoDiagnostics(
+        string source)
+    {
+        var tree = AspectNParser.ParseMemberExpression(source);
+
+        Assert.Empty(tree.Diagnostics);
+    }
+
+    [Theory]
+    [InlineData("attr(parameter[-1] System.ObsoleteAttribute)")]
+    [InlineData("attr(parameter[-0] System.ObsoleteAttribute)")]
+    public void ParseMemberExpression_NegativeParameterIndex_ReportsDiagnostic(
+        string source)
+    {
+        var tree = AspectNParser.ParseMemberExpression(source);
+
+        Assert.Contains(
+            tree.Diagnostics,
+            diagnostic => diagnostic.Code == DiagnosticCodes.UnexpectedToken);
+    }
+
+    [Theory]
+    [InlineData("attr(parameter[0] System.ObsoleteAttribute)")]
+    [InlineData("attr(parameter[*] System.ObsoleteAttribute)")]
+    public void ParseMemberExpression_NonNegativeParameterIndex_HasNoDiagnostics(
+        string source)
+    {
+        var tree = AspectNParser.ParseMemberExpression(source);
+
         Assert.Empty(tree.Diagnostics);
     }
 }

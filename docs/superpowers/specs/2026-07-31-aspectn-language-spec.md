@@ -617,7 +617,7 @@ Attribute matching does not instantiate attribute objects. Inherited-attribute s
 regex-selector = "regex", "(", regex-body, ")" ;
 ```
 
-`regex-body` preserves its original characters. The closing delimiter is the unmatched outer `)` after honoring escapes, character classes, and nested regex groups.
+`regex-body` preserves its original characters. The closing delimiter is the unmatched outer `)` after honoring escapes, character classes, nested regex groups, and `(?#...)` comments. Comment content is opaque — escapes, character classes, and groups are not recognized inside it — and the comment ends at the first `)`. `(?#` opens a comment only outside an escape and outside a character class, so `\(` and `[(` never start one.
 
 Regex applies to a versioned, culture-invariant canonical member signature:
 

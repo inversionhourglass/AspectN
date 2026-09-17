@@ -309,10 +309,10 @@ internal static class MemberPatternEvaluator
         };
         if (!arityMatches) return MatchStatus.NotMatched;
         if (pattern.Arguments.Count == 0) return MatchStatus.Matched;
-        var candidateArguments = context.LanguageVersion ==
-            AspectNLanguageVersion.Legacy
-            ? LegacyGenericRules.GetEffectiveCallableArguments(candidate)
-            : candidate.GenericArguments.ToArray();
+        // 定义签名（织入期实际面对的形式）不带实参，两个版本都回退到形式参数，
+        // 与规范 13.2「变量可绑定形式泛型参数或构造具体类型」一致。
+        var candidateArguments = LegacyGenericRules.GetEffectiveCallableArguments(
+            candidate);
         if (candidateArguments.Length != pattern.Arguments.Count)
         {
             return Unknown(

@@ -96,14 +96,23 @@ public sealed class GenericPatternTests
     }
 
     [Fact]
-    public void Match_MissingConstructedArguments_ReturnsUnknown()
+    public void Match_DefinitionSignatureVariableArgument_BindsFormalParameter()
+    {
+        var candidate = Definition("Example", "Box", 1);
+
+        var result = Match("Box<$T>", candidate);
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+    }
+
+    [Fact]
+    public void Match_DefinitionSignatureConcreteArgument_DoesNotMatchFormalParameter()
     {
         var candidate = Definition("Example", "Box", 1);
 
         var result = Match("Box<string>", candidate);
 
-        Assert.Equal(MatchStatus.Unknown, result.Status);
-        Assert.NotEmpty(result.Diagnostics);
+        Assert.Equal(MatchStatus.NotMatched, result.Status);
     }
 
     private static MatchResult Match(

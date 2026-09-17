@@ -158,6 +158,13 @@ public sealed class ReflectionSignatureMapper
                 "Reflection pointer types are unsupported.");
         }
 
+        if (RuntimeTypeFacts.IsFunctionPointer(type))
+        {
+            return new UnsupportedTypeSignature(
+                type.ToString(),
+                "Reflection function pointer types are unsupported.");
+        }
+
         if (type.IsGenericType && !type.IsGenericTypeDefinition)
         {
             var definitionType = type.GetGenericTypeDefinition();
@@ -663,6 +670,18 @@ public sealed class ReflectionSignatureMapper
         if (type.IsPointer)
         {
             return CanonicalParameterForm(RequiredElementType(type)) + "*";
+        }
+
+        // 函数指针的 Name/Namespace 为空，落入命名形式会把 owner ID 折叠成空参形状；
+        // 形状由参数与返回类型的规范形式递归构造，前缀 delegate*< 不与命名形式混淆。
+        if (RuntimeTypeFacts.IsFunctionPointer(type))
+        {
+            var parameterForms = RuntimeTypeFacts
+                .GetFunctionPointerParameterTypes(type)
+                .Select(CanonicalParameterForm)
+                .Append(CanonicalParameterForm(
+                    RuntimeTypeFacts.GetFunctionPointerReturnType(type)));
+            return $"delegate*<{string.Join(",", parameterForms)}>";
         }
 
         if (type.IsArray)

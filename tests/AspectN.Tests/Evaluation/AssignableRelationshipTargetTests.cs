@@ -122,6 +122,78 @@ public sealed class AssignableRelationshipTargetTests
     }
 
     [Fact]
+    public void Match_NullableQualifiedReferenceTarget_DropsNullableAnnotation()
+    {
+        var (result, target) = MatchWithObservedTarget(
+            "System.String?+",
+            Named("Example", "Resource", 0),
+            relation: TypeRelationResult.Matched);
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+        var namedTarget = Assert.IsType<NamedTypeSignature>(target);
+        Assert.Equal("System.String", namedTarget.Identity.FullMetadataName);
+    }
+
+    [Fact]
+    public void Match_NullableNonBclReferenceTarget_MatchesDerivedViaPatternWalk()
+    {
+        var (result, target) = MatchWithObservedTarget(
+            "Fixtures.Base?+",
+            Named("Fixtures", "Derived", 0),
+            closure: new InheritanceClosure(
+                new TypeSignature[] { Named("Fixtures", "Base", 0) },
+                null));
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+        Assert.Null(target);
+    }
+
+    [Fact]
+    public void Match_NullableNonBclReferenceTarget_WithoutMatchingAncestor_ReturnsNotMatched()
+    {
+        var (result, target) = MatchWithObservedTarget(
+            "Fixtures.Base?+",
+            Named("Fixtures", "Unrelated", 0),
+            closure: new InheritanceClosure(
+                new TypeSignature[] { Named("Fixtures", "Other", 0) },
+                null));
+
+        Assert.Equal(MatchStatus.NotMatched, result.Status);
+        Assert.Null(target);
+        Assert.Empty(result.Diagnostics);
+    }
+
+    [Fact]
+    public void Match_NullableNonBclValueTarget_MatchesConstructedNullableViaWalk()
+    {
+        var nullableGuid = Named(
+            "System",
+            "Nullable",
+            1,
+            TypeKind.Struct,
+            Named("System", "Guid", 0, TypeKind.Struct));
+
+        var (result, target) = MatchWithObservedTarget(
+            "System.Guid?+",
+            nullableGuid);
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+        Assert.Null(target);
+    }
+
+    [Fact]
+    public void Match_NullableNonBclValueTarget_AgainstPlainStruct_ReturnsNotMatched()
+    {
+        var (result, target) = MatchWithObservedTarget(
+            "System.Guid?+",
+            Named("System", "Guid", 0, TypeKind.Struct));
+
+        Assert.Equal(MatchStatus.NotMatched, result.Status);
+        Assert.Null(target);
+        Assert.Empty(result.Diagnostics);
+    }
+
+    [Fact]
     public void Match_LegacyNullableValueTarget_PreservesNullableWrapper()
     {
         var (result, target) = MatchWithObservedTarget(
@@ -148,6 +220,20 @@ public sealed class AssignableRelationshipTargetTests
         var namedTarget = Assert.IsType<NamedTypeSignature>(target);
         var argument = Assert.Single(namedTarget.TypeArguments);
         Assert.Equal("System.Nullable`1", Name(argument));
+    }
+
+    [Fact]
+    public void Match_LegacyNullableNamedTarget_KeepsExistingUnknownBehavior()
+    {
+        var (result, target) = MatchWithObservedTarget(
+            "Fixtures.Base?+",
+            Named("Example", "Resource", 0),
+            version: AspectNLanguageVersion.Legacy,
+            relation: TypeRelationResult.Matched);
+
+        Assert.Equal(MatchStatus.Unknown, result.Status);
+        Assert.Null(target);
+        Assert.NotEmpty(result.Diagnostics);
     }
 
     [Fact]
