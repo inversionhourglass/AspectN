@@ -77,6 +77,102 @@ public sealed class RegexPatternTests
             diagnostic => diagnostic.Code == DiagnosticCodes.RegexTimeout);
     }
 
+    [Fact]
+    public void Format_OpenGenericDefinition_RenamesParametersPositionally()
+    {
+        // class Cls<TM> { public TA M<TA, TB>(TM m, TB b) => default; }
+        var candidate = OpenGenericCandidate();
+
+        var standard = CanonicalSignatureFormatter.Format(
+            candidate,
+            AspectNLanguageVersion.Standard);
+
+        Assert.Equal("public T2 X.Y.Z.Cls<T1>.M<T2, T3>(T1, T3)", standard);
+    }
+
+    [Fact]
+    public void Format_OpenGenericDefinition_LegacyKeepsCompactSeparators()
+    {
+        var candidate = OpenGenericCandidate();
+
+        var legacy = CanonicalSignatureFormatter.Format(
+            candidate,
+            AspectNLanguageVersion.Legacy);
+
+        Assert.Equal("public T2 X.Y.Z.Cls<T1>.M<T2,T3>(T1,T3)", legacy);
+    }
+
+    [Fact]
+    public void Format_NestedOpenGeneric_NumbersFlatSlotsAcrossLevels()
+    {
+        // class Outer<TA> { class Inner<TB, TC> { public TD M<TD>(TB b, TC c, TA a); } }
+        var candidate = NestedOpenGenericCandidate();
+
+        var standard = CanonicalSignatureFormatter.Format(
+            candidate,
+            AspectNLanguageVersion.Standard);
+
+        Assert.Equal(
+            "public T4 X.Y.Z.Outer<T1>/Inner<T2, T3>.M<T4>(T2, T3, T1)",
+            standard);
+    }
+
+    [Fact]
+    public void Format_SingleGenericParameter_StandardNumbersT1LegacyUsesBareT()
+    {
+        // class Cls<A> { public void M(A a); }
+        var candidate = SingleGenericCandidate();
+
+        var standard = CanonicalSignatureFormatter.Format(
+            candidate,
+            AspectNLanguageVersion.Standard);
+        var legacy = CanonicalSignatureFormatter.Format(
+            candidate,
+            AspectNLanguageVersion.Legacy);
+
+        Assert.Equal("public System.Void X.Y.Z.Cls<T1>.M(T1)", standard);
+        Assert.Equal("public System.Void X.Y.Z.Cls<T>.M(T)", legacy);
+    }
+
+    [Fact]
+    public void Format_ShadowedMethodGenericParameter_BindsToMethodSlot()
+    {
+        // class Cls<TM> { public void M<TM>(TM x); } —— 方法级 TM 遮蔽类型级 TM。
+        var candidate = ShadowedGenericCandidate();
+
+        var standard = CanonicalSignatureFormatter.Format(
+            candidate,
+            AspectNLanguageVersion.Standard);
+
+        Assert.Equal("public System.Void X.Y.Z.Cls<T1>.M<T2>(T2)", standard);
+    }
+
+    [Fact]
+    public void Format_ConstructedGenericUse_RenamesNestedArgument()
+    {
+        // class Cls<TM> { public void M(List<TM> items); }
+        var candidate = ConstructedUseCandidate();
+
+        var standard = CanonicalSignatureFormatter.Format(
+            candidate,
+            AspectNLanguageVersion.Standard);
+
+        Assert.Equal(
+            "public System.Void X.Y.Z.Cls<T1>.M(" +
+            "System.Collections.Generic.List<T1>)",
+            standard);
+    }
+
+    [Fact]
+    public void Match_Regex_AppliesToPositionalGenericNames()
+    {
+        var result = Match(
+            "regex(^public T2 X\\.Y\\.Z\\.Cls<T1>\\.M<T2, T3>\\(T1, T3\\)$)",
+            OpenGenericCandidate());
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+    }
+
     private static MatchResult Match(
         string source,
         CallableSignature candidate,
@@ -279,6 +375,288 @@ public sealed class RegexPatternTests
                 RefKind.None,
                 TypeUseKind.Return),
             Array.Empty<ParameterSignature>(),
+            Array.Empty<GenericParameterSignature>(),
+            Array.Empty<TypeSignature>(),
+            Array.Empty<AttributeSignature>(),
+            Array.Empty<AttributeSignature>());
+    }
+
+    private static CallableSignature OpenGenericCandidate()
+    {
+        var assembly = new AssemblyIdentity("Example.Assembly");
+        var clsIdentity = new TypeIdentity(
+            assembly,
+            "X.Y.Z",
+            "Cls",
+            1,
+            TypeKind.Class);
+        var methodOwner = "X.Y.Z.Cls`1.M`2";
+        var typeParameter = new GenericParameterSignature(
+            "TM",
+            GenericParameterOwnerKind.Type,
+            clsIdentity.FullMetadataName,
+            assembly,
+            0);
+        var firstMethodParameter = new GenericParameterSignature(
+            "TA",
+            GenericParameterOwnerKind.Method,
+            methodOwner,
+            assembly,
+            0);
+        var secondMethodParameter = new GenericParameterSignature(
+            "TB",
+            GenericParameterOwnerKind.Method,
+            methodOwner,
+            assembly,
+            1);
+        return new CallableSignature(
+            "M",
+            CallableKind.OrdinaryMethod,
+            Accessibility.Public,
+            isStatic: false,
+            isAsync: false,
+            new NamedTypeSignature(clsIdentity),
+            new TypeUseSignature(
+                new GenericParameterTypeSignature(firstMethodParameter),
+                RefKind.None,
+                TypeUseKind.Return),
+            new[]
+            {
+                new ParameterSignature(
+                    "m",
+                    0,
+                    new TypeUseSignature(
+                        new GenericParameterTypeSignature(typeParameter),
+                        RefKind.None,
+                        TypeUseKind.Parameter)),
+                new ParameterSignature(
+                    "b",
+                    1,
+                    new TypeUseSignature(
+                        new GenericParameterTypeSignature(secondMethodParameter),
+                        RefKind.None,
+                        TypeUseKind.Parameter))
+            },
+            new[] { firstMethodParameter, secondMethodParameter },
+            Array.Empty<TypeSignature>(),
+            Array.Empty<AttributeSignature>(),
+            Array.Empty<AttributeSignature>());
+    }
+
+    private static CallableSignature NestedOpenGenericCandidate()
+    {
+        var assembly = new AssemblyIdentity("Example.Assembly");
+        var outerIdentity = new TypeIdentity(
+            assembly,
+            "X.Y.Z",
+            "Outer",
+            1,
+            TypeKind.Class);
+        var innerIdentity = new TypeIdentity(
+            assembly,
+            string.Empty,
+            "Inner",
+            2,
+            TypeKind.Class,
+            outerIdentity);
+        // 类型形参的 Position 使用包含链扁平 ECMA 槽位，OwnerId 使用声明层
+        // 的 FullMetadataName，与三个适配器的真实映射一致。
+        var outerParameter = new GenericParameterSignature(
+            "TA",
+            GenericParameterOwnerKind.Type,
+            outerIdentity.FullMetadataName,
+            assembly,
+            0);
+        var firstInnerParameter = new GenericParameterSignature(
+            "TB",
+            GenericParameterOwnerKind.Type,
+            innerIdentity.FullMetadataName,
+            assembly,
+            1);
+        var secondInnerParameter = new GenericParameterSignature(
+            "TC",
+            GenericParameterOwnerKind.Type,
+            innerIdentity.FullMetadataName,
+            assembly,
+            2);
+        var methodParameter = new GenericParameterSignature(
+            "TD",
+            GenericParameterOwnerKind.Method,
+            "X.Y.Z.Outer`1/Inner`2.M`1",
+            assembly,
+            0);
+        return new CallableSignature(
+            "M",
+            CallableKind.OrdinaryMethod,
+            Accessibility.Public,
+            isStatic: false,
+            isAsync: false,
+            new NamedTypeSignature(innerIdentity),
+            new TypeUseSignature(
+                new GenericParameterTypeSignature(methodParameter),
+                RefKind.None,
+                TypeUseKind.Return),
+            new[]
+            {
+                new ParameterSignature(
+                    "b",
+                    0,
+                    new TypeUseSignature(
+                        new GenericParameterTypeSignature(firstInnerParameter),
+                        RefKind.None,
+                        TypeUseKind.Parameter)),
+                new ParameterSignature(
+                    "c",
+                    1,
+                    new TypeUseSignature(
+                        new GenericParameterTypeSignature(secondInnerParameter),
+                        RefKind.None,
+                        TypeUseKind.Parameter)),
+                new ParameterSignature(
+                    "a",
+                    2,
+                    new TypeUseSignature(
+                        new GenericParameterTypeSignature(outerParameter),
+                        RefKind.None,
+                        TypeUseKind.Parameter))
+            },
+            new[] { methodParameter },
+            Array.Empty<TypeSignature>(),
+            Array.Empty<AttributeSignature>(),
+            Array.Empty<AttributeSignature>());
+    }
+
+    private static CallableSignature SingleGenericCandidate()
+    {
+        var assembly = new AssemblyIdentity("Example.Assembly");
+        var clsIdentity = new TypeIdentity(
+            assembly,
+            "X.Y.Z",
+            "Cls",
+            1,
+            TypeKind.Class);
+        var parameter = new GenericParameterSignature(
+            "A",
+            GenericParameterOwnerKind.Type,
+            clsIdentity.FullMetadataName,
+            assembly,
+            0);
+        return new CallableSignature(
+            "M",
+            CallableKind.OrdinaryMethod,
+            Accessibility.Public,
+            isStatic: false,
+            isAsync: false,
+            new NamedTypeSignature(clsIdentity),
+            new TypeUseSignature(
+                Named("System", "Void", TypeKind.Struct),
+                RefKind.None,
+                TypeUseKind.Return),
+            new[]
+            {
+                new ParameterSignature(
+                    "a",
+                    0,
+                    new TypeUseSignature(
+                        new GenericParameterTypeSignature(parameter),
+                        RefKind.None,
+                        TypeUseKind.Parameter))
+            },
+            Array.Empty<GenericParameterSignature>(),
+            Array.Empty<TypeSignature>(),
+            Array.Empty<AttributeSignature>(),
+            Array.Empty<AttributeSignature>());
+    }
+
+    private static CallableSignature ShadowedGenericCandidate()
+    {
+        var assembly = new AssemblyIdentity("Example.Assembly");
+        var clsIdentity = new TypeIdentity(
+            assembly,
+            "X.Y.Z",
+            "Cls",
+            1,
+            TypeKind.Class);
+        var methodParameter = new GenericParameterSignature(
+            "TM",
+            GenericParameterOwnerKind.Method,
+            "X.Y.Z.Cls`1.M`1",
+            assembly,
+            0);
+        return new CallableSignature(
+            "M",
+            CallableKind.OrdinaryMethod,
+            Accessibility.Public,
+            isStatic: false,
+            isAsync: false,
+            new NamedTypeSignature(clsIdentity),
+            new TypeUseSignature(
+                Named("System", "Void", TypeKind.Struct),
+                RefKind.None,
+                TypeUseKind.Return),
+            new[]
+            {
+                new ParameterSignature(
+                    "x",
+                    0,
+                    new TypeUseSignature(
+                        new GenericParameterTypeSignature(methodParameter),
+                        RefKind.None,
+                        TypeUseKind.Parameter))
+            },
+            new[] { methodParameter },
+            Array.Empty<TypeSignature>(),
+            Array.Empty<AttributeSignature>(),
+            Array.Empty<AttributeSignature>());
+    }
+
+    private static CallableSignature ConstructedUseCandidate()
+    {
+        var assembly = new AssemblyIdentity("Example.Assembly");
+        var clsIdentity = new TypeIdentity(
+            assembly,
+            "X.Y.Z",
+            "Cls",
+            1,
+            TypeKind.Class);
+        var listIdentity = new TypeIdentity(
+            assembly,
+            "System.Collections.Generic",
+            "List",
+            1,
+            TypeKind.Class);
+        var typeParameter = new GenericParameterSignature(
+            "TM",
+            GenericParameterOwnerKind.Type,
+            clsIdentity.FullMetadataName,
+            assembly,
+            0);
+        return new CallableSignature(
+            "M",
+            CallableKind.OrdinaryMethod,
+            Accessibility.Public,
+            isStatic: false,
+            isAsync: false,
+            new NamedTypeSignature(clsIdentity),
+            new TypeUseSignature(
+                Named("System", "Void", TypeKind.Struct),
+                RefKind.None,
+                TypeUseKind.Return),
+            new[]
+            {
+                new ParameterSignature(
+                    "items",
+                    0,
+                    new TypeUseSignature(
+                        new NamedTypeSignature(
+                            listIdentity,
+                            new[]
+                            {
+                                new GenericParameterTypeSignature(typeParameter)
+                            }),
+                        RefKind.None,
+                        TypeUseKind.Parameter))
+            },
             Array.Empty<GenericParameterSignature>(),
             Array.Empty<TypeSignature>(),
             Array.Empty<AttributeSignature>(),

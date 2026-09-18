@@ -625,7 +625,9 @@ Regex applies to a versioned, culture-invariant canonical member signature:
 <accessibility> [static] [async] <return-type> <declaring-type>.<member-name><generic-part>(<parameters>)
 ```
 
-Ref kinds are rendered before affected parameter or return types. Nested types use `/`. Type names are fully qualified except generic variables in definition signatures.
+Ref kinds are rendered before affected parameter or return types. Nested types use `/`. Type names are fully qualified except generic formal parameters in definition signatures, which are renamed positionally to `T1..TN`: declaring-type parameters first (outermost type, left to right, then nested levels), followed by method parameters. Every occurrence of one parameter renders the same name, in the declaring-type clause, the method generic clause, and use positions alike. Constructed signatures render the actual type arguments.
+
+Positional numbering is deliberate: patterns stay valid when source renames a generic parameter, and authors only need the arity of each type and the method. Standard numbers every parameter (`T1` even for a sole one); Legacy additionally renders a sole parameter as bare `T`. `T` followed by digits is reserved for this encoding — a concrete type whose fully qualified name is exactly such a token (only possible in the global namespace) is not distinguishable from a positional parameter by regex; use a structured selector for such members.
 
 Regex evaluation has a mandatory finite timeout. Timeout produces `Unknown` with a diagnostic.
 
