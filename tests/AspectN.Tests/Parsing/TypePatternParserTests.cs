@@ -79,10 +79,22 @@ public sealed class TypePatternParserTests
     [Fact]
     public void ParseTypePattern_TaskLike_CapturesResultType()
     {
-        var tree = AspectNParser.ParseTypePattern("tasklike<void>");
+        var tree = AspectNParser.ParseTypePattern("tasklike<string>");
 
         var taskLike = Assert.IsType<TaskLikeTypePatternSyntax>(tree.Root);
         Assert.IsType<NamedTypePatternSyntax>(taskLike.ResultType);
+        Assert.Empty(tree.Diagnostics);
+    }
+
+    [Fact]
+    public void ParseTypePattern_BareTaskLike_HasNoResultType()
+    {
+        var tree = AspectNParser.ParseTypePattern("tasklike");
+
+        var taskLike = Assert.IsType<TaskLikeTypePatternSyntax>(tree.Root);
+        Assert.Null(taskLike.ResultType);
+        Assert.Null(taskLike.LessThanToken);
+        Assert.Null(taskLike.GreaterThanToken);
         Assert.Empty(tree.Diagnostics);
     }
 

@@ -66,6 +66,30 @@
     "expected": "NotMatched"
   },
   {
+    "id": "tasklike-bare-task",
+    "kind": "method",
+    "member": "Flush",
+    "parameterCount": 0,
+    "expression": "method(tasklike AspectN.TestAssembly.Conformance.ConformanceFixture.Flush())",
+    "expected": "Matched"
+  },
+  {
+    "id": "tasklike-bare-valuetask",
+    "kind": "method",
+    "member": "Ping",
+    "parameterCount": 0,
+    "expression": "method(tasklike AspectN.TestAssembly.Conformance.ConformanceFixture.Ping())",
+    "expected": "Matched"
+  },
+  {
+    "id": "tasklike-bare-not-matched",
+    "kind": "method",
+    "member": "TaskLikeMethod",
+    "parameterCount": 0,
+    "expression": "method(tasklike AspectN.TestAssembly.Conformance.ConformanceFixture.TaskLikeMethod())",
+    "expected": "NotMatched"
+  },
+  {
     "id": "direct-attribute",
     "kind": "method",
     "member": "Attributed",

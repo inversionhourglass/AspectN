@@ -132,6 +132,16 @@ public class ConformanceFixture : IConformanceContract<string>
         return Task.FromResult(_value);
     }
 
+    public Task Flush()
+    {
+        return Task.CompletedTask;
+    }
+
+    public ValueTask Ping()
+    {
+        return ValueTask.CompletedTask;
+    }
+
     [ConformanceMarker]
     [return: ConformanceMarker]
     public int Attributed([ConformanceMarker] string value)

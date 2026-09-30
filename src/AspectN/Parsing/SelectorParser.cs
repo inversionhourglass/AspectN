@@ -591,8 +591,16 @@ internal sealed class SelectorParser(Parser parser)
 
         var first = NextToken();
         if (first.Text == "tasklike" &&
-            Current.Kind == SyntaxKind.LessThanToken)
+            (LanguageVersion == AspectNLanguageVersion.Standard ||
+             Current.Kind == SyntaxKind.LessThanToken))
         {
+            // 规范 §12.1：Standard 裸 tasklike 匹配非泛型 Task/ValueTask；
+            // Legacy 无裸形式，tasklike 后只有跟 < 才是关键字，否则按命名类型解析。
+            if (Current.Kind != SyntaxKind.LessThanToken)
+            {
+                return new TaskLikeTypePatternSyntax(first, null, null, null);
+            }
+
             var lessThan = NextToken();
             var result = ParseTypePattern();
             return new TaskLikeTypePatternSyntax(

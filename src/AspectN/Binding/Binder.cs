@@ -626,12 +626,27 @@ internal sealed class Binder(
                     tuple.Elements.Select(element =>
                         BindTypePattern(element, scope, underNegation)));
             case TaskLikeTypePatternSyntax taskLike:
+                if (taskLike.ResultType is null)
+                {
+                    return new BoundTaskLikeTypePattern(taskLike.FullSpan, null);
+                }
+
+                var taskLikeResult = BindTypePattern(
+                    taskLike.ResultType,
+                    scope,
+                    underNegation);
+                if (!_isLegacy && IsVoidNamedPattern(taskLikeResult))
+                {
+                    _diagnostics.Add(
+                        DiagnosticCodes.TaskLikeVoidMigration,
+                        DiagnosticSeverity.Error,
+                        "Use 'tasklike' instead of 'tasklike<void>'.",
+                        taskLike.ResultType.FullSpan);
+                }
+
                 return new BoundTaskLikeTypePattern(
                     taskLike.FullSpan,
-                    BindTypePattern(
-                        taskLike.ResultType,
-                        scope,
-                        underNegation));
+                    taskLikeResult);
             case ParenthesizedTypePatternSyntax parenthesized:
                 return BindTypePattern(
                     parenthesized.Pattern,
@@ -1096,6 +1111,14 @@ internal sealed class Binder(
                 Accessibility.PrivateProtected,
             _ => Accessibility.Unknown
         };
+    }
+
+    private static bool IsVoidNamedPattern(BoundTypePattern pattern)
+    {
+        return pattern is BoundNamedTypePattern named &&
+               StringComparer.Ordinal.Equals(
+                   named.CanonicalName,
+                   "System.Void");
     }
 
     private static BoundAttributeTargetKind GetStandardAttributeTarget(

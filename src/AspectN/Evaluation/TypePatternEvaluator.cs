@@ -318,7 +318,9 @@ internal static class TypePatternEvaluator
             return MatchStatus.NotMatched;
         }
 
-        if (IsVoidPattern(pattern.ResultType))
+        // 裸 tasklike 与已拒绝的 tasklike<void> 同义：仅匹配非泛型 Task/ValueTask。
+        var resultType = pattern.ResultType;
+        if (resultType is null || IsVoidPattern(resultType))
         {
             return named.Identity.GenericArity == 0
                 ? MatchStatus.Matched
@@ -338,7 +340,7 @@ internal static class TypePatternEvaluator
                 "The task-like result type is unavailable.");
         }
 
-        return Evaluate(pattern.ResultType, named.TypeArguments[0], context);
+        return Evaluate(resultType, named.TypeArguments[0], context);
     }
 
     private static bool TryFlattenTuple(

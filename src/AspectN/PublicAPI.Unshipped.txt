@@ -430,11 +430,11 @@ AspectN.Syntax.SyntaxToken.SyntaxToken(AspectN.Syntax.SyntaxKind kind, AspectN.T
 AspectN.Syntax.SyntaxToken.Text.get -> string!
 AspectN.Syntax.SyntaxToken.Value.get -> object?
 AspectN.Syntax.TaskLikeTypePatternSyntax
-AspectN.Syntax.TaskLikeTypePatternSyntax.GreaterThanToken.get -> AspectN.Syntax.SyntaxToken!
-AspectN.Syntax.TaskLikeTypePatternSyntax.LessThanToken.get -> AspectN.Syntax.SyntaxToken!
-AspectN.Syntax.TaskLikeTypePatternSyntax.ResultType.get -> AspectN.Syntax.TypePatternSyntax!
+AspectN.Syntax.TaskLikeTypePatternSyntax.GreaterThanToken.get -> AspectN.Syntax.SyntaxToken?
+AspectN.Syntax.TaskLikeTypePatternSyntax.LessThanToken.get -> AspectN.Syntax.SyntaxToken?
+AspectN.Syntax.TaskLikeTypePatternSyntax.ResultType.get -> AspectN.Syntax.TypePatternSyntax?
 AspectN.Syntax.TaskLikeTypePatternSyntax.TaskLikeKeyword.get -> AspectN.Syntax.SyntaxToken!
-AspectN.Syntax.TaskLikeTypePatternSyntax.TaskLikeTypePatternSyntax(AspectN.Syntax.SyntaxToken! taskLikeKeyword, AspectN.Syntax.SyntaxToken! lessThanToken, AspectN.Syntax.TypePatternSyntax! resultType, AspectN.Syntax.SyntaxToken! greaterThanToken) -> void
+AspectN.Syntax.TaskLikeTypePatternSyntax.TaskLikeTypePatternSyntax(AspectN.Syntax.SyntaxToken! taskLikeKeyword, AspectN.Syntax.SyntaxToken? lessThanToken, AspectN.Syntax.TypePatternSyntax? resultType, AspectN.Syntax.SyntaxToken? greaterThanToken) -> void
 AspectN.Syntax.TupleTypePatternSyntax
 AspectN.Syntax.TupleTypePatternSyntax.CloseParenToken.get -> AspectN.Syntax.SyntaxToken!
 AspectN.Syntax.TupleTypePatternSyntax.Elements.get -> System.Collections.Generic.IReadOnlyList<AspectN.Syntax.TypePatternSyntax!>!
@@ -529,6 +529,7 @@ static AspectN.Diagnostics.DiagnosticCodes.MissingBackendCapability.get -> strin
 static AspectN.Diagnostics.DiagnosticCodes.MissingExtension.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.RegexTimeout.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.SelectorUnavailable.get -> string!
+static AspectN.Diagnostics.DiagnosticCodes.TaskLikeVoidMigration.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.UnexpectedToken.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.UnknownSelector.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.UnterminatedRegex.get -> string!

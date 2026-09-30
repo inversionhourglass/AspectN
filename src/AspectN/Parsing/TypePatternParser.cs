@@ -126,7 +126,8 @@ internal sealed class TypePatternParser
         {
             var first = NextToken();
             if (first.Text == "tasklike" &&
-                Current.Kind == SyntaxKind.LessThanToken)
+                (_options.LanguageVersion == AspectNLanguageVersion.Standard ||
+                 Current.Kind == SyntaxKind.LessThanToken))
             {
                 return ParseTaskLike(first);
             }
@@ -307,6 +308,12 @@ internal sealed class TypePatternParser
 
     private TaskLikeTypePatternSyntax ParseTaskLike(SyntaxToken keyword)
     {
+        // 裸 tasklike（仅 Standard）：匹配非泛型 Task/ValueTask。
+        if (Current.Kind != SyntaxKind.LessThanToken)
+        {
+            return new TaskLikeTypePatternSyntax(keyword, null, null, null);
+        }
+
         var lessThan = NextToken();
         TypePatternSyntax resultType;
         if (Current.Kind == SyntaxKind.GreaterThanToken)

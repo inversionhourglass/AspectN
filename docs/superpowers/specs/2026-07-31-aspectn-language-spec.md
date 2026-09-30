@@ -250,10 +250,10 @@ Task-like return matching is expressed as a type pattern:
 
 ```text
 method(tasklike<string> Service.Get(..))
-method(tasklike<void> Service.Flush(..))
+method(tasklike Service.Flush(..))
 ```
 
-`tasklike<T>` matches `Task<T>` or `ValueTask<T>` regardless of whether the method was compiled with `async`. `tasklike<void>` matches non-generic `Task` or `ValueTask`. Custom awaitables are outside 1.0 task-like syntax.
+`tasklike<T>` matches `Task<T>` or `ValueTask<T>` regardless of whether the method was compiled with `async`. Bare `tasklike` matches non-generic `Task` or `ValueTask`; `tasklike<void>` is rejected with a migration diagnostic. Custom awaitables are outside 1.0 task-like syntax.
 
 Legacy `async T` retains its historical Task/ValueTask return-shape behavior.
 
@@ -419,7 +419,7 @@ tuple-type-pattern =
     { ",", type-pattern }, ")" ;
 
 tasklike-type-pattern =
-    "tasklike", "<", type-pattern, ">" ;
+    "tasklike", [ "<", type-pattern, ">" ] ;
 
 pattern-variable =
     "$", identifier ;
@@ -682,6 +682,7 @@ Migration diagnostics include an actionable replacement where one exists:
 ```text
 privateprotected -> private protected
 protectedinternal -> protected internal
+tasklike<void> -> tasklike
 ```
 
 ## 18. Legacy Conformance

@@ -24,6 +24,9 @@ public static class DiagnosticCodes
     /// <summary>Gets the composite accessibility modifier migration.</summary>
     public static string CompositeAccessibilityMigration => "AN4003";
 
+    /// <summary>Gets the tasklike void result migration.</summary>
+    public static string TaskLikeVoidMigration => "AN4004";
+
     /// <summary>Gets the missing backend capability.</summary>
     public static string MissingBackendCapability => "AN3001";
 

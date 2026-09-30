@@ -141,14 +141,14 @@ public sealed class TupleTypePatternSyntax : TypePatternSyntax
 
 /// <summary>Represents a task like type pattern syntax node.</summary>
 /// <param name="taskLikeKeyword">Specifies the task like keyword.</param>
-/// <param name="lessThanToken">Specifies the less than token.</param>
-/// <param name="resultType">Specifies the result type.</param>
-/// <param name="greaterThanToken">Specifies the greater than token.</param>
+/// <param name="lessThanToken">Specifies the less than token; null for the bare non-generic form.</param>
+/// <param name="resultType">Specifies the result type; null for the bare non-generic form.</param>
+/// <param name="greaterThanToken">Specifies the greater than token; null for the bare non-generic form.</param>
 public sealed class TaskLikeTypePatternSyntax(
     SyntaxToken taskLikeKeyword,
-    SyntaxToken lessThanToken,
-    TypePatternSyntax resultType,
-    SyntaxToken greaterThanToken) : TypePatternSyntax(
+    SyntaxToken? lessThanToken,
+    TypePatternSyntax? resultType,
+    SyntaxToken? greaterThanToken) : TypePatternSyntax(
         SyntaxKind.TaskLikeTypePattern,
         SyntaxChildren.Create(
                 taskLikeKeyword,
@@ -159,14 +159,14 @@ public sealed class TaskLikeTypePatternSyntax(
     /// <summary>Gets the task like keyword.</summary>
     public SyntaxToken TaskLikeKeyword { get; } = taskLikeKeyword;
 
-    /// <summary>Gets the less than token.</summary>
-    public SyntaxToken LessThanToken { get; } = lessThanToken;
+    /// <summary>Gets the less than token, or null for the bare non-generic form.</summary>
+    public SyntaxToken? LessThanToken { get; } = lessThanToken;
 
-    /// <summary>Gets the result type.</summary>
-    public TypePatternSyntax ResultType { get; } = resultType;
+    /// <summary>Gets the result type, or null for the bare non-generic form.</summary>
+    public TypePatternSyntax? ResultType { get; } = resultType;
 
-    /// <summary>Gets the greater than token.</summary>
-    public SyntaxToken GreaterThanToken { get; } = greaterThanToken;
+    /// <summary>Gets the greater than token, or null for the bare non-generic form.</summary>
+    public SyntaxToken? GreaterThanToken { get; } = greaterThanToken;
 }
 
 /// <summary>Represents a variable type pattern syntax node.</summary>

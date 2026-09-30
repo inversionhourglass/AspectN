@@ -123,7 +123,7 @@ public sealed class NullableTupleTasklikeTests
     [Theory]
     [InlineData("Task", TypeKind.Class)]
     [InlineData("ValueTask", TypeKind.Struct)]
-    public void Match_TaskLikeVoid_MatchesNonGenericTaskTypes(
+    public void Match_BareTaskLike_MatchesNonGenericTaskTypes(
         string metadataName,
         TypeKind kind)
     {
@@ -132,9 +132,27 @@ public sealed class NullableTupleTasklikeTests
             metadataName,
             kind);
 
-        var result = Match("tasklike<void>", candidate);
+        var result = Match("tasklike", candidate);
 
         Assert.Equal(MatchStatus.Matched, result.Status);
+    }
+
+    [Theory]
+    [InlineData("Task", TypeKind.Class)]
+    [InlineData("ValueTask", TypeKind.Struct)]
+    public void Match_BareTaskLike_DoesNotMatchGenericTaskTypes(
+        string metadataName,
+        TypeKind kind)
+    {
+        var candidate = Constructed(
+            "System.Threading.Tasks",
+            metadataName,
+            kind,
+            Named("System", "String"));
+
+        var result = Match("tasklike", candidate);
+
+        Assert.Equal(MatchStatus.NotMatched, result.Status);
     }
 
     [Fact]

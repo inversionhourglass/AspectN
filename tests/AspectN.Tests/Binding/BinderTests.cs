@@ -42,6 +42,17 @@ public sealed class BinderTests
     }
 
     [Theory]
+    [InlineData("method(tasklike<void> Service.Flush(..))")]
+    [InlineData("method(tasklike<System.Void> Service.Flush(..))")]
+    public void Create_TaskLikeVoidInStandard_ReportsMigration(string source)
+    {
+        var compilation = CompileMember(source);
+
+        AssertDiagnostic(compilation, DiagnosticCodes.TaskLikeVoidMigration);
+        Assert.Null(compilation.BoundRoot);
+    }
+
+    [Theory]
     [InlineData("method(out int Service.Get(..))")]
     [InlineData("method(in int Service.Get(..))")]
     public void Create_OutOrInReturnType_ReportsDiagnostic(string source)

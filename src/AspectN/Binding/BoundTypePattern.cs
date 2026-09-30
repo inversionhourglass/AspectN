@@ -106,10 +106,9 @@ internal sealed class BoundTupleTypePattern(
 
 internal sealed class BoundTaskLikeTypePattern(
     TextSpan span,
-    BoundTypePattern resultType) : BoundTypePattern(span)
+    BoundTypePattern? resultType) : BoundTypePattern(span)
 {
-    public BoundTypePattern ResultType { get; } = resultType ??
-            throw new ArgumentNullException(nameof(resultType));
+    public BoundTypePattern? ResultType { get; } = resultType;
 }
 
 internal sealed class BoundUnaryTypePattern(TextSpan span, BoundTypePattern operand) : BoundTypePattern(span)

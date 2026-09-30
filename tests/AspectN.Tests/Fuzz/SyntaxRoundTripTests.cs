@@ -53,6 +53,7 @@ public sealed class SyntaxRoundTripTests
         },
         { AspectNParseKind.TypePattern, "int?[]" },
         { AspectNParseKind.TypePattern, "(int, string)" },
+        { AspectNParseKind.TypePattern, "tasklike" },
         { AspectNParseKind.TypePattern, "tasklike<void>" },
         { AspectNParseKind.TypePattern, "ref readonly int" },
         { AspectNParseKind.TypePattern, "Name<..>" }
