@@ -548,7 +548,7 @@ git commit -m "feat(parser): parse Standard type patterns"
 Cover every Standard selector:
 
 ```text
-callable(public async tasklike<string> Service.Get(..))
+callable(public tasklike<string> Service.Get(..))
 method(ref readonly int Buffer.Get())
 execution(* Service..*.*(..))
 property(public string Model.Name)
@@ -875,7 +875,7 @@ Port the accessibility matrix from Rougamo `SignatureBasicTests.cs`, but express
 - Return types allow only `ref` and `ref readonly`.
 - Reference `T?` equals `T`; value `T?` equals `Nullable<T>`.
 - Tuple syntax means only `ValueTuple`.
-- `tasklike<T>` and actual `async` are independent.
+- `tasklike<T>` matches `Task<T>`/`ValueTask<T>` regardless of the compiler `async` flag; Standard has no `async` modifier.
 
 **Step 3: Add Legacy semantics**
 

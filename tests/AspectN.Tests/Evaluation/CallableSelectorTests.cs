@@ -95,20 +95,6 @@ public sealed class CallableSelectorTests
         Assert.Equal(expected, result.Status);
     }
 
-    [Theory]
-    [InlineData(true, MatchStatus.Matched)]
-    [InlineData(false, MatchStatus.NotMatched)]
-    public void Match_StandardAsyncModifier_UsesCallableAsyncFlag(
-        bool isAsync,
-        MatchStatus expected)
-    {
-        var result = Match(
-            "method(async * Service.Run(..))",
-            Callable("Run", CallableKind.OrdinaryMethod, isAsync));
-
-        Assert.Equal(expected, result.Status);
-    }
-
     [Fact]
     public void Match_ConstructedCallable_UsesSubstitutedSignature()
     {

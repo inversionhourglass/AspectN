@@ -128,10 +128,7 @@ internal static class MemberPatternEvaluator
                 pattern.Modifiers,
                 candidate.Accessibility,
                 candidate.IsStatic,
-                context.LanguageVersion) ||
-            (pattern.RequiresAsync &&
-             context.LanguageVersion == AspectNLanguageVersion.Standard &&
-             !candidate.IsAsync))
+                context.LanguageVersion))
         {
             return MatchStatus.NotMatched;
         }

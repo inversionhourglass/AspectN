@@ -352,7 +352,7 @@ internal sealed class Binder(
             .Select(parameter =>
                 BindTypeUse(parameter.TypeUse, scope, false))
             .ToArray();
-        var requiresAsync = syntax.Parts
+        var requiresAsync = _isLegacy && syntax.Parts
             .TakeWhile(part => !ReferenceEquals(part, returnSyntax))
             .OfType<SyntaxToken>()
             .Any(token => EqualsKeyword(token.Text, "async"));

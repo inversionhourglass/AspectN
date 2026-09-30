@@ -44,7 +44,7 @@ Standard is the default for new AspectN APIs. It uses:
 - Standard C# accessibility phrases, with `|` joining accessibility alternatives.
 - Explicit `$T` pattern variables.
 - C# `ValueTuple` meaning for tuple syntax.
-- Separate async-method and task-like-return concepts.
+- Task-like return matching via `tasklike<T>`; no `async` modifier.
 - Explicit `ref`, `out`, `in`, and `ref readonly`.
 
 An expression is always compiled with a language version. The compiled cache key includes that version.
@@ -226,7 +226,6 @@ Standard accepts `execution(...)` and `property(...)` directly, so Legacy member
 ```ebnf
 callable-signature =
     { modifier },
-    [ "async" ],
     type-use-pattern,
     member-path-pattern,
     [ generic-pattern-list ],
@@ -245,11 +244,7 @@ return-ref-kind =
     | "ref", "readonly" ;
 ```
 
-`async` in Standard means the callable is compiler-recognized as asynchronous. It does not rewrite the return type. For example:
-
-```text
-method(public async System.Threading.Tasks.Task<string> Service.Get(..))
-```
+Standard has no `async` modifier: writing `async` in a signature is an error. Asynchrony is matched through the return type instead.
 
 Task-like return matching is expressed as a type pattern:
 
@@ -716,8 +711,6 @@ cctor(MyCompany.Services.UserService)
 
 method(tasklike<string> *..*.*Async(..))
 
-method(public async System.Threading.Tasks.Task<string> Service.Load(..))
-
 method($T Converter.Convert<$T>($T))
 
 method(* Service.Copy(ref int, out string))
@@ -740,7 +733,7 @@ method(* Service.*(..)) && !attr(callable ObsoleteAttribute)
 | Space-separated accessibilities | Alternatives | `|` alternation; compounds parenthesized |
 | Generic variables | Implicit identifiers | Explicit `$name` |
 | Tuple syntax | Tuple or ValueTuple | ValueTuple only |
-| `async T` | Task/ValueTask return sugar | Actual `async` modifier plus `tasklike<T>` return pattern |
+| `async T` | Task/ValueTask return sugar | No `async` modifier; `tasklike<T>` return pattern |
 | Reference `T?` | Historical Nullable behavior | Same CLR reference type as `T` |
 | Ref kinds | Not formally modeled | `ref`, `out`, `in`, `ref readonly` |
 | Generic name without clause | Any arity | Arity zero, except `*` |

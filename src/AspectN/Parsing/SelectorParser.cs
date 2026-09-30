@@ -253,7 +253,20 @@ internal sealed class SelectorParser(Parser parser)
     {
         var parts = new List<SyntaxNode>();
         parts.AddRange(ParseModifiers());
-        if (IsIdentifier("async")) parts.Add(NextToken());
+        if (IsIdentifier("async"))
+        {
+            if (LanguageVersion == AspectNLanguageVersion.Standard)
+            {
+                // Standard 不提供 async 修饰符（规范 §7）；识别该写法并给出明确诊断，
+                // 避免被静默当作名为 async 的返回类型。Legacy 的 async 返回糖不受影响。
+                ReportUnexpected(
+                    Current,
+                    "return type ('async' is not supported in Standard)");
+            }
+
+            parts.Add(NextToken());
+        }
+
         parts.Add(ParseTypeUse());
         parts.AddRange(ParseMemberPath());
         parts.AddRange(ParseParameterPatternList());

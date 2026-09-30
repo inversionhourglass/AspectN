@@ -18,7 +18,7 @@ specific metadata backend in the language or compiled pattern API.
 Selectors can be combined with `&&`, `||`, `!`, and parentheses.
 
 ```text
-method(public async System.Threading.Tasks.Task<string> Service.Load(..))
+method(tasklike<string> Service.Load(..))
 method($T Converter.Convert<$T>($T))
 getter(string Example.Model.Name) && attr(property Example.MarkerAttribute)
 ctor(Example.Service(string, ref int))

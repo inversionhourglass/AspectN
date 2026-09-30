@@ -42,22 +42,6 @@
     "expected": "Matched"
   },
   {
-    "id": "async",
-    "kind": "method",
-    "member": "AsyncMethod",
-    "parameterCount": 0,
-    "expression": "method(async System.Threading.Tasks.Task<int> AspectN.TestAssembly.Conformance.ConformanceFixture.AsyncMethod())",
-    "expected": "Matched"
-  },
-  {
-    "id": "task-like-not-async",
-    "kind": "method",
-    "member": "TaskLikeMethod",
-    "parameterCount": 0,
-    "expression": "method(async * AspectN.TestAssembly.Conformance.ConformanceFixture.TaskLikeMethod())",
-    "expected": "NotMatched"
-  },
-  {
     "id": "accessibility-alternation",
     "kind": "method",
     "member": "InternalMethod",

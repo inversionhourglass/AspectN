@@ -8,7 +8,7 @@ public sealed class SelectorParserTests
     public static TheoryData<string, Type> StandardSelectorCases => new()
     {
         {
-            "callable(public async tasklike<string> Service.Get(..))",
+            "callable(public tasklike<string> Service.Get(..))",
             typeof(CallableSelectorSyntax)
         },
         {
@@ -16,7 +16,7 @@ public sealed class SelectorParserTests
             typeof(MethodSelectorSyntax)
         },
         {
-            "execution(public async tasklike<string> Service.Get(..))",
+            "execution(public tasklike<string> Service.Get(..))",
             typeof(CallableSelectorSyntax)
         },
         {
@@ -177,6 +177,20 @@ public sealed class SelectorParserTests
         var diagnostic = Assert.Single(tree.Diagnostics);
         Assert.Equal(DiagnosticCodes.UnexpectedToken, diagnostic.Code);
         Assert.Contains(messagePart, diagnostic.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("method(async string Service.Get(..))")]
+    [InlineData("method(public async tasklike<string> Service.Get(..))")]
+    [InlineData("execution(async * Service.Run(..))")]
+    public void ParseMemberExpression_AsyncInStandard_ReportsUnexpected(
+        string source)
+    {
+        var tree = AspectNParser.ParseMemberExpression(source);
+
+        var diagnostic = Assert.Single(tree.Diagnostics);
+        Assert.Equal(DiagnosticCodes.UnexpectedToken, diagnostic.Code);
+        Assert.Contains("async", diagnostic.Message, StringComparison.Ordinal);
     }
 
     [Theory]
