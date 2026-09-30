@@ -16,8 +16,12 @@ public sealed class SelectorParserTests
             typeof(MethodSelectorSyntax)
         },
         {
-            "accessor(public string Model.Name)",
-            typeof(AccessorSelectorSyntax)
+            "execution(public async tasklike<string> Service.Get(..))",
+            typeof(CallableSelectorSyntax)
+        },
+        {
+            "property(public string Model.Name)",
+            typeof(PropertySelectorSyntax)
         },
         { "getter(* Model.Name)", typeof(GetterSelectorSyntax) },
         { "setter(* Model.Name)", typeof(SetterSelectorSyntax) },
@@ -61,23 +65,18 @@ public sealed class SelectorParserTests
         Assert.Equal(3, extension.Separators.Count);
     }
 
-    [Theory]
-    [InlineData("execution(* Service.Get(..))", "AN4001")]
-    [InlineData("property(* Model.Name)", "AN4002")]
-    public void ParseMemberExpression_LegacySelectorInStandard_ReportsMigration(
-        string source,
-        string expectedCode)
+    [Fact]
+    public void ParseMemberExpression_RemovedAccessorKeyword_IsExtension()
     {
-        var tree = AspectNParser.ParseMemberExpression(source);
+        var tree = AspectNParser.ParseMemberExpression("accessor()");
 
-        Assert.Contains(
-            tree.Diagnostics,
-            diagnostic => diagnostic.Code == expectedCode);
+        Assert.IsType<ExtensionSelectorSyntax>(tree.Root);
+        Assert.Empty(tree.Diagnostics);
     }
 
     [Theory]
     [InlineData("EXECUTION(* Service.Get(..))", typeof(CallableSelectorSyntax))]
-    [InlineData("PROPERTY(* Model.Name)", typeof(AccessorSelectorSyntax))]
+    [InlineData("PROPERTY(* Model.Name)", typeof(PropertySelectorSyntax))]
     [InlineData("ATTR(para 0 RequiredAttribute)", typeof(AttributeSelectorSyntax))]
     [InlineData("METHOD(* Service.Get<!>(..))", typeof(MethodSelectorSyntax))]
     [InlineData("METHOD(privateprotected * Service.Get(..))", typeof(MethodSelectorSyntax))]
@@ -120,7 +119,7 @@ public sealed class SelectorParserTests
         "privateprotected",
         "private protected")]
     [InlineData(
-        "accessor(privateprotected string Model.Name)",
+        "property(privateprotected string Model.Name)",
         "privateprotected",
         "private protected")]
     public void ParseMemberExpression_CompoundAccessibilityInStandard_ReportsMigration(

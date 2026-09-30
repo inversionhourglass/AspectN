@@ -17,7 +17,7 @@ public sealed class SyntaxRoundTripTests
         },
         {
             AspectNParseKind.MemberExpression,
-            "accessor(public string MyCompany.Models.User.Name)"
+            "property(public string MyCompany.Models.User.Name)"
         },
         {
             AspectNParseKind.MemberExpression,

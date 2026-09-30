@@ -49,6 +49,52 @@ public sealed class CallableSelectorTests
         Assert.Equal(expected, result.Status);
     }
 
+    public static TheoryData<CallableKind, MatchStatus> ExecutionKinds => new()
+    {
+        { CallableKind.OrdinaryMethod, MatchStatus.Matched },
+        { CallableKind.PropertyGetter, MatchStatus.Matched },
+        { CallableKind.PropertySetter, MatchStatus.Matched },
+        { CallableKind.EventAdder, MatchStatus.Matched },
+        { CallableKind.EventRemover, MatchStatus.Matched },
+        { CallableKind.EventRaiser, MatchStatus.Matched },
+        { CallableKind.Operator, MatchStatus.Matched },
+        { CallableKind.Conversion, MatchStatus.Matched },
+        { CallableKind.InstanceConstructor, MatchStatus.Matched },
+        { CallableKind.StaticConstructor, MatchStatus.Matched }
+    };
+
+    [Theory]
+    [MemberData(nameof(ExecutionKinds))]
+    public void Match_Execution_UsesAllDomain(
+        CallableKind kind,
+        MatchStatus expected)
+    {
+        var result = Match(
+            "execution(* *.*(..))",
+            Callable(ConstructorName(kind), kind));
+
+        Assert.Equal(expected, result.Status);
+    }
+
+    [Theory]
+    [InlineData(CallableKind.OrdinaryMethod, MatchStatus.Matched)]
+    [InlineData(CallableKind.InstanceConstructor, MatchStatus.NotMatched)]
+    [InlineData(CallableKind.StaticConstructor, MatchStatus.NotMatched)]
+    public void Match_Execution_AppliesCallableSignatureToConstructors(
+        CallableKind kind,
+        MatchStatus expected)
+    {
+        var returnType = kind == CallableKind.OrdinaryMethod
+            ? Named("System", "String")
+            : null;
+
+        var result = Match(
+            "execution(string Service.*(..))",
+            Callable(ConstructorName(kind), kind, returnType: returnType));
+
+        Assert.Equal(expected, result.Status);
+    }
+
     [Theory]
     [InlineData(true, MatchStatus.Matched)]
     [InlineData(false, MatchStatus.NotMatched)]
@@ -236,6 +282,13 @@ public sealed class CallableSelectorTests
             Array.Empty<AttributeSignature>(),
             Array.Empty<AttributeSignature>(),
             originalDefinition);
+    }
+
+    private static string ConstructorName(CallableKind kind)
+    {
+        return kind == CallableKind.InstanceConstructor ? ".ctor"
+            : kind == CallableKind.StaticConstructor ? ".cctor"
+            : "Run";
     }
 
     private static ParameterSignature Parameter(

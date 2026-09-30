@@ -4,20 +4,20 @@ using AspectN.Tests.TestDoubles;
 
 namespace AspectN.Tests.Evaluation;
 
-public sealed class AccessorSelectorTests
+public sealed class PropertySelectorTests
 {
     [Theory]
     [InlineData(CallableKind.PropertyGetter, MatchStatus.Matched)]
     [InlineData(CallableKind.PropertySetter, MatchStatus.Matched)]
     [InlineData(CallableKind.OrdinaryMethod, MatchStatus.NotMatched)]
-    public void Match_Accessor_AcceptsPropertyAccessorsOnly(
+    public void Match_Property_AcceptsPropertyAccessorsOnly(
         CallableKind kind,
         MatchStatus expected)
     {
         var property = Property("Name", Named("System", "String"));
         var candidate = Callable(kind, property);
 
-        var result = Match("accessor(string Service.Name)", candidate);
+        var result = Match("property(string Service.Name)", candidate);
 
         Assert.Equal(expected, result.Status);
     }
@@ -42,7 +42,7 @@ public sealed class AccessorSelectorTests
     }
 
     [Fact]
-    public void Match_Accessor_UsesAssociatedPropertyNameAndType()
+    public void Match_Property_UsesAssociatedPropertyNameAndType()
     {
         var property = Property("Name", Named("System", "String"));
         var candidate = Callable(
@@ -51,7 +51,7 @@ public sealed class AccessorSelectorTests
             name: "set_Name",
             returnType: Named("System", "Void", TypeKind.Struct));
 
-        var result = Match("accessor(string Service.Name)", candidate);
+        var result = Match("property(string Service.Name)", candidate);
 
         Assert.Equal(MatchStatus.Matched, result.Status);
         Assert.Same(property, candidate.AssociatedProperty);

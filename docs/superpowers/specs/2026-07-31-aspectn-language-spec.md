@@ -38,8 +38,8 @@ Legacy is selected explicitly by the Rougamo compatibility facade.
 
 Standard is the default for new AspectN APIs. It uses:
 
-- `callable(...)` instead of `execution(...)`.
-- `accessor(...)` instead of `property(...)`.
+- `callable(...)` for non-constructor method-like members, or `execution(...)` to cover constructors as well.
+- `property(...)` for property getters and setters together.
 - `ctor(...)` and `cctor(...)`.
 - Standard C# accessibility phrases.
 - Explicit `$T` pattern variables.
@@ -163,8 +163,9 @@ Implementations may short-circuit only when doing so preserves diagnostics requi
 ```ebnf
 selector =
       callable-selector
+    | execution-selector
     | method-selector
-    | accessor-selector
+    | property-selector
     | getter-selector
     | setter-selector
     | ctor-selector
@@ -173,13 +174,14 @@ selector =
     | regex-selector
     | extension-selector ;
 
-callable-selector = "callable", "(", callable-signature, ")" ;
-method-selector   = "method",   "(", callable-signature, ")" ;
-accessor-selector = "accessor", "(", property-signature, ")" ;
-getter-selector   = "getter",   "(", property-signature, ")" ;
-setter-selector   = "setter",   "(", property-signature, ")" ;
-ctor-selector     = "ctor",     "(", ctor-signature, ")" ;
-cctor-selector    = "cctor",    "(", type-pattern, ")" ;
+callable-selector  = "callable",  "(", callable-signature, ")" ;
+execution-selector = "execution", "(", callable-signature, ")" ;
+method-selector    = "method",    "(", callable-signature, ")" ;
+property-selector  = "property",  "(", property-signature, ")" ;
+getter-selector    = "getter",    "(", property-signature, ")" ;
+setter-selector    = "setter",    "(", property-signature, ")" ;
+ctor-selector      = "ctor",      "(", ctor-signature, ")" ;
+cctor-selector     = "cctor",     "(", type-pattern, ")" ;
 
 extension-selector =
     qualified-extension-name,
@@ -195,8 +197,9 @@ extension-argument =
 ### 6.1 Selector domains
 
 - `callable(...)` matches non-constructor method-like members: ordinary methods, property/event accessors, operators, and conversions.
+- `execution(...)` matches every method-like member, including instance and static constructors. Constructor candidates match a callable signature by their metadata name (`.ctor`/`.cctor`) and `void` return type.
 - `method(...)` matches ordinary methods only.
-- `accessor(...)` matches a property getter or setter.
+- `property(...)` matches a property getter or setter.
 - `getter(...)` matches only a property getter.
 - `setter(...)` matches only a property setter.
 - `ctor(...)` matches instance constructors.
@@ -208,15 +211,15 @@ Whether a member has a body or can be woven is not implied by any selector. Roug
 
 | Legacy | Standard migration |
 |---|---|
-| `execution(...)` | `callable(...)`, plus explicit `ctor(...)`/`cctor(...)` where constructors are intended |
-| `property(...)` | `accessor(...)` |
+| `execution(...)` | `execution(...)` (same all-members domain); use `callable(...)` plus explicit `ctor(...)`/`cctor(...)` for finer-grained intent |
+| `property(...)` | `property(...)` |
 | `method(...)` | `method(...)` |
 | `getter(...)` | `getter(...)` |
 | `setter(...)` | `setter(...)` |
 | `ctor(...)` | `ctor(...)` |
 | `cctor(...)` | `cctor(...)` |
 
-Standard reports a migration diagnostic for `execution` and `property` rather than accepting them as aliases.
+Standard accepts `execution(...)` and `property(...)` directly, so Legacy member expressions using them migrate without renaming.
 
 ## 7. Callable Signatures
 
@@ -271,7 +274,7 @@ property-signature =
 
 The type position is the property type, not the setter method's CLR return type.
 
-`accessor(...)` evaluates the associated property metadata and then selects both getter and setter methods. The unified model represents the property and its accessors separately.
+`property(...)` evaluates the associated property metadata and then selects both getter and setter methods. The unified model represents the property and its accessors separately.
 
 ## 9. Constructor Signatures
 
@@ -661,8 +664,6 @@ Standard diagnostics include stable categories for:
 Migration diagnostics include an actionable replacement where one exists:
 
 ```text
-execution(...) -> callable(...)
-property(...)  -> accessor(...)
 privateprotected -> private protected
 protectedinternal -> protected internal
 ```
@@ -680,7 +681,9 @@ method(public static string MyCompany.Services.UserService.Get*(..))
 
 callable(!public * *..*.*(..))
 
-accessor(public string MyCompany.Models.User.Name)
+execution(public string MyCompany.Services.*.*(..))
+
+property(public string MyCompany.Models.User.Name)
 
 getter(* *..*.CreatedAt)
 
@@ -709,8 +712,8 @@ method(* Service.*(..)) && !attr(callable ObsoleteAttribute)
 
 | Concern | Legacy | Standard |
 |---|---|---|
-| Umbrella callable selector | `execution` | `callable` |
-| All property accessors | `property` | `accessor` |
+| Umbrella callable selector | `execution` | `execution`; `callable` excludes constructors |
+| All property accessors | `property` | `property` |
 | Constructors | `ctor`, `cctor` | `ctor`, `cctor` |
 | Composite accessibility | `privateprotected`, `protectedinternal` | `private protected`, `protected internal` |
 | Space-separated accessibilities | Alternatives | Not allowed; use expression OR |

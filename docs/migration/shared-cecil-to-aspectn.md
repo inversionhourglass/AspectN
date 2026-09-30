@@ -74,8 +74,9 @@ dispose it. The mapping cache is owned by that context.
 3. Record intentional corrections in `approved-differences.json`; never update
    the baseline silently.
 4. Decide how each caller handles `Unknown` and retain its diagnostics.
-5. Move expressions to Standard syntax deliberately, using migration
-   diagnostics for renamed selectors and modifiers.
+5. Move expressions to Standard syntax deliberately. Legacy selector keywords
+   work unchanged in Standard; migration diagnostics remain for renamed
+   modifiers such as `privateprotected`.
 6. Re-run the cross-adapter conformance suite if the same rules are consumed
    through Cecil, Roslyn, or Reflection.
 

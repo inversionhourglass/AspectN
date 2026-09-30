@@ -250,8 +250,6 @@ AspectN.Metadata.UnsupportedTypeSignature.UnsupportedTypeSignature(string! displ
 AspectN.Parsing.AspectNParseKind
 AspectN.Parsing.AspectNParseKind.MemberExpression = 0 -> AspectN.Parsing.AspectNParseKind
 AspectN.Parsing.AspectNParseKind.TypePattern = 1 -> AspectN.Parsing.AspectNParseKind
-AspectN.Syntax.AccessorSelectorSyntax
-AspectN.Syntax.AccessorSelectorSyntax.AccessorSelectorSyntax(AspectN.Syntax.SyntaxToken! keywordToken, AspectN.Syntax.SyntaxToken! openParenToken, AspectN.Syntax.PropertySignatureSyntax! signature, AspectN.Syntax.SyntaxToken! closeParenToken) -> void
 AspectN.Syntax.ArrayTypePatternSyntax
 AspectN.Syntax.ArrayTypePatternSyntax.ArrayTypePatternSyntax(AspectN.Syntax.TypePatternSyntax! elementType, AspectN.Syntax.SyntaxToken! openBracketToken, System.Collections.Generic.IEnumerable<AspectN.Syntax.SyntaxToken!>! commaTokens, AspectN.Syntax.SyntaxToken! closeBracketToken) -> void
 AspectN.Syntax.ArrayTypePatternSyntax.CloseBracketToken.get -> AspectN.Syntax.SyntaxToken!
@@ -344,6 +342,8 @@ AspectN.Syntax.ParenthesizedTypePatternSyntax.CloseParenToken.get -> AspectN.Syn
 AspectN.Syntax.ParenthesizedTypePatternSyntax.OpenParenToken.get -> AspectN.Syntax.SyntaxToken!
 AspectN.Syntax.ParenthesizedTypePatternSyntax.ParenthesizedTypePatternSyntax(AspectN.Syntax.SyntaxToken! openParenToken, AspectN.Syntax.TypePatternSyntax! pattern, AspectN.Syntax.SyntaxToken! closeParenToken) -> void
 AspectN.Syntax.ParenthesizedTypePatternSyntax.Pattern.get -> AspectN.Syntax.TypePatternSyntax!
+AspectN.Syntax.PropertySelectorSyntax
+AspectN.Syntax.PropertySelectorSyntax.PropertySelectorSyntax(AspectN.Syntax.SyntaxToken! keywordToken, AspectN.Syntax.SyntaxToken! openParenToken, AspectN.Syntax.PropertySignatureSyntax! signature, AspectN.Syntax.SyntaxToken! closeParenToken) -> void
 AspectN.Syntax.PropertySignatureSyntax
 AspectN.Syntax.PropertySignatureSyntax.PropertySignatureSyntax(System.Collections.Generic.IEnumerable<AspectN.Syntax.SyntaxNode!>! parts) -> void
 AspectN.Syntax.RegexSelectorSyntax
@@ -360,7 +360,6 @@ AspectN.Syntax.SignatureSyntax.SignatureSyntax(AspectN.Syntax.SyntaxKind kind, S
 AspectN.Syntax.StaticConstructorSelectorSyntax
 AspectN.Syntax.StaticConstructorSelectorSyntax.StaticConstructorSelectorSyntax(AspectN.Syntax.SyntaxToken! keywordToken, AspectN.Syntax.SyntaxToken! openParenToken, AspectN.Syntax.TypePatternSyntax! typePattern, AspectN.Syntax.SyntaxToken! closeParenToken) -> void
 AspectN.Syntax.SyntaxKind
-AspectN.Syntax.SyntaxKind.AccessorSelector = 28 -> AspectN.Syntax.SyntaxKind
 AspectN.Syntax.SyntaxKind.AmpersandAmpersandToken = 7 -> AspectN.Syntax.SyntaxKind
 AspectN.Syntax.SyntaxKind.ArrayTypePattern = 50 -> AspectN.Syntax.SyntaxKind
 AspectN.Syntax.SyntaxKind.AssignableTypePattern = 52 -> AspectN.Syntax.SyntaxKind
@@ -400,6 +399,7 @@ AspectN.Syntax.SyntaxKind.ParenthesizedExpression = 25 -> AspectN.Syntax.SyntaxK
 AspectN.Syntax.SyntaxKind.ParenthesizedTypePattern = 53 -> AspectN.Syntax.SyntaxKind
 AspectN.Syntax.SyntaxKind.PipePipeToken = 8 -> AspectN.Syntax.SyntaxKind
 AspectN.Syntax.SyntaxKind.PlusToken = 20 -> AspectN.Syntax.SyntaxKind
+AspectN.Syntax.SyntaxKind.PropertySelector = 28 -> AspectN.Syntax.SyntaxKind
 AspectN.Syntax.SyntaxKind.PropertySignature = 37 -> AspectN.Syntax.SyntaxKind
 AspectN.Syntax.SyntaxKind.QuestionToken = 21 -> AspectN.Syntax.SyntaxKind
 AspectN.Syntax.SyntaxKind.RegexBodyToken = 5 -> AspectN.Syntax.SyntaxKind
@@ -514,7 +514,6 @@ static AspectN.AspectNParser.ParseMemberExpression(string! source, AspectN.Aspec
 static AspectN.AspectNParser.ParseTypePattern(string! source, AspectN.AspectNParseOptions? options = null) -> AspectN.Syntax.AspectNSyntaxTree!
 static AspectN.Diagnostics.DiagnosticCodes.BadCharacter.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.CompositeAccessibilityMigration.get -> string!
-static AspectN.Diagnostics.DiagnosticCodes.ExecutionSelectorMigration.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.InvalidEscapeSequence.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.InvalidInteger.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.InvalidModifierCombination.get -> string!
@@ -527,7 +526,6 @@ static AspectN.Diagnostics.DiagnosticCodes.InvalidVariable.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.InvalidVariableScope.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.MissingBackendCapability.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.MissingExtension.get -> string!
-static AspectN.Diagnostics.DiagnosticCodes.PropertySelectorMigration.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.RegexTimeout.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.SelectorUnavailable.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.UnexpectedToken.get -> string!

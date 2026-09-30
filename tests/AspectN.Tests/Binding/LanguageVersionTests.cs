@@ -5,13 +5,12 @@ namespace AspectN.Tests.Binding;
 
 public sealed class LanguageVersionTests
 {
-    [Theory]
-    [InlineData("callable(* Service.Get(..))")]
-    [InlineData("accessor(* Service.Name)")]
-    public void Create_StandardOnlySelectorInLegacy_ReportsUnavailable(
-        string source)
+    [Fact]
+    public void Create_CallableSelectorInLegacy_ReportsUnavailable()
     {
-        var compilation = CompileMember(source, AspectNLanguageVersion.Legacy);
+        var compilation = CompileMember(
+            "callable(* Service.Get(..))",
+            AspectNLanguageVersion.Legacy);
 
         Assert.Contains(
             compilation.Diagnostics,
@@ -20,9 +19,22 @@ public sealed class LanguageVersionTests
         Assert.Null(compilation.BoundRoot);
     }
 
+    [Fact]
+    public void Create_RemovedAccessorSelector_ReportsUnknownSelector()
+    {
+        var compilation = CompileMember(
+            "accessor(*)",
+            AspectNLanguageVersion.Legacy);
+
+        Assert.Contains(
+            compilation.Diagnostics,
+            diagnostic => diagnostic.Code == DiagnosticCodes.UnknownSelector);
+        Assert.Null(compilation.BoundRoot);
+    }
+
     [Theory]
     [InlineData("EXECUTION(* Service.Get(..))", "Callable")]
-    [InlineData("PROPERTY(* Service.Name)", "Accessor")]
+    [InlineData("PROPERTY(* Service.Name)", "Property")]
     public void Create_LegacySelector_BindsCaseInsensitively(
         string source,
         string expectedKind)
@@ -35,17 +47,29 @@ public sealed class LanguageVersionTests
     }
 
     [Fact]
-    public void Create_LegacySelectorInStandard_ReportsMigration()
+    public void Create_ExecutionSelectorInStandard_BindsAllDomain()
     {
         var compilation = CompileMember(
             "execution(* Service.Get(..))",
             AspectNLanguageVersion.Standard);
 
-        Assert.Contains(
-            compilation.Diagnostics,
-            diagnostic =>
-                diagnostic.Code == DiagnosticCodes.ExecutionSelectorMigration);
-        Assert.Null(compilation.BoundRoot);
+        var selector = Assert.IsType<BoundSelector>(compilation.BoundRoot);
+        Assert.Equal(BoundSelectorKind.Callable, selector.SelectorKind);
+        Assert.Equal(SelectorTargetDomain.All, selector.TargetDomain);
+        Assert.Empty(compilation.Diagnostics);
+    }
+
+    [Fact]
+    public void Create_CallableSelectorInStandard_BindsCallableDomain()
+    {
+        var compilation = CompileMember(
+            "callable(* Service.Get(..))",
+            AspectNLanguageVersion.Standard);
+
+        var selector = Assert.IsType<BoundSelector>(compilation.BoundRoot);
+        Assert.Equal(BoundSelectorKind.Callable, selector.SelectorKind);
+        Assert.Equal(SelectorTargetDomain.Callable, selector.TargetDomain);
+        Assert.Empty(compilation.Diagnostics);
     }
 
     [Fact]

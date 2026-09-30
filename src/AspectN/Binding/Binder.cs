@@ -168,7 +168,8 @@ internal sealed class Binder(
             CallableSelectorSyntax callable => new BoundSelector(
                 callable.FullSpan,
                 BoundSelectorKind.Callable,
-                _isLegacy
+                _isLegacy ||
+                EqualsKeyword(callable.KeywordToken!.Text, "execution")
                     ? SelectorTargetDomain.All
                     : SelectorTargetDomain.Callable,
                 BindCallableSignature(
@@ -181,12 +182,12 @@ internal sealed class Binder(
                 BindCallableSignature(
                     (CallableSignatureSyntax)method.Body!,
                     scope)),
-            AccessorSelectorSyntax accessor => new BoundSelector(
-                accessor.FullSpan,
-                BoundSelectorKind.Accessor,
+            PropertySelectorSyntax property => new BoundSelector(
+                property.FullSpan,
+                BoundSelectorKind.Property,
                 SelectorTargetDomain.PropertyAccessor,
                 BindPropertySignature(
-                    (PropertySignatureSyntax)accessor.Body!,
+                    (PropertySignatureSyntax)property.Body!,
                     scope)),
             GetterSelectorSyntax getter => new BoundSelector(
                 getter.FullSpan,
@@ -807,17 +808,10 @@ internal sealed class Binder(
         var keyword = syntax.KeywordToken?.Text;
         if (keyword is null) return false;
 
-        if (!_isLegacy)
-        {
-            return keyword is "execution" or "property";
-        }
+        if (!_isLegacy) return false;
 
-        var unavailable = syntax switch
-        {
-            CallableSelectorSyntax => LegacyBinder.EqualsKeyword(keyword, "callable"),
-            AccessorSelectorSyntax => LegacyBinder.EqualsKeyword(keyword, "accessor"),
-            _ => false
-        };
+        var unavailable = syntax is CallableSelectorSyntax &&
+            LegacyBinder.EqualsKeyword(keyword, "callable");
         if (unavailable)
         {
             _diagnostics.Add(

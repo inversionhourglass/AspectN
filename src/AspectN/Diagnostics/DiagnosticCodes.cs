@@ -21,12 +21,6 @@ public static class DiagnosticCodes
     /// <summary>Gets the unexpected token.</summary>
     public static string UnexpectedToken => "AN1001";
 
-    /// <summary>Gets the execution selector migration.</summary>
-    public static string ExecutionSelectorMigration => "AN4001";
-
-    /// <summary>Gets the property selector migration.</summary>
-    public static string PropertySelectorMigration => "AN4002";
-
     /// <summary>Gets the composite accessibility modifier migration.</summary>
     public static string CompositeAccessibilityMigration => "AN4003";
 

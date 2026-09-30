@@ -33,7 +33,7 @@ internal enum BoundSelectorKind
 {
     Callable,
     Method,
-    Accessor,
+    Property,
     Getter,
     Setter,
     Constructor,

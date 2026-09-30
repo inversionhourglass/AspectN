@@ -86,7 +86,7 @@ internal static class MemberPatternEvaluator
                     (BoundCallableSignature)selector.Payload,
                     candidate,
                     context),
-            BoundSelectorKind.Accessor or
+            BoundSelectorKind.Property or
             BoundSelectorKind.Getter or
             BoundSelectorKind.Setter => EvaluateProperty(
                 (BoundPropertySignature)selector.Payload,

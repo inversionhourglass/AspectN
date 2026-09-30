@@ -403,7 +403,7 @@ dotnet test tests/AspectN.Tests/AspectN.Tests.csproj -c Release --filter FullyQu
 Use sealed concrete nodes for:
 
 - unary, binary, and parenthesized expressions;
-- callable/method/accessor/getter/setter/ctor/cctor/attribute/regex/extension selectors;
+- callable/execution/method/property/getter/setter/ctor/cctor/attribute/regex/extension selectors;
 - callable, property, constructor, parameter, modifier, generic-list, and type-use syntax;
 - named, wildcard, tuple, task-like, variable, array, nullable, assignable, and parenthesized type syntax.
 
@@ -550,7 +550,8 @@ Cover every Standard selector:
 ```text
 callable(public async tasklike<string> Service.Get(..))
 method(ref readonly int Buffer.Get())
-accessor(public string Model.Name)
+execution(* Service..*.*(..))
+property(public string Model.Name)
 getter(* Model.Name)
 setter(* Model.Name)
 ctor(Service(string, ref int))
@@ -901,8 +902,9 @@ git commit -m "feat(matching): add modifiers ref kinds and type sugar"
 **Step 1: Write domain tests**
 
 - `callable` matches ordinary methods, accessors, event accessors, operators, and conversions, but not constructors.
+- `execution` matches every method-like member, including both constructor kinds.
 - `method` matches ordinary methods only.
-- `accessor` matches getter and setter using associated property type/name/attributes.
+- `property` matches getter and setter using associated property type/name/attributes.
 - `getter` and `setter` narrow the accessor kind.
 - `ctor` and `cctor` are disjoint.
 - Having a body is not implied.
@@ -1808,8 +1810,8 @@ Show parse diagnostics, compile, match, `Unknown`, engine cache ownership, and a
 Include:
 
 ```text
-execution(...) -> callable(...)
-property(...)  -> accessor(...)
+execution(...) (unchanged; covers constructors as well)
+property(...)  (unchanged)
 privateprotected -> private protected
 protectedinternal -> protected internal
 implicit T -> $T

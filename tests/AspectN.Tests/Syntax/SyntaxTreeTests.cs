@@ -94,7 +94,7 @@ public sealed class SyntaxTreeTests
             typeof(ParenthesizedExpressionSyntax),
             typeof(CallableSelectorSyntax),
             typeof(MethodSelectorSyntax),
-            typeof(AccessorSelectorSyntax),
+            typeof(PropertySelectorSyntax),
             typeof(GetterSelectorSyntax),
             typeof(SetterSelectorSyntax),
             typeof(ConstructorSelectorSyntax),

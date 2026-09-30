@@ -8,7 +8,9 @@ specific metadata backend in the language or compiled pattern API.
 - `method(...)` selects ordinary methods.
 - `callable(...)` also covers property and event accessors, operators, and
   conversions.
-- `accessor(...)`, `getter(...)`, and `setter(...)` select property accessors.
+- `execution(...)` covers everything `callable(...)` does, plus instance and
+  static constructors.
+- `property(...)`, `getter(...)`, and `setter(...)` select property accessors.
 - `ctor(...)` and `cctor(...)` select instance and static constructors.
 - `attr(target Type)` checks a direct attribute on a type, callable, property,
   return value, or parameter.

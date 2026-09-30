@@ -31,7 +31,7 @@ public enum SyntaxKind
     ParenthesizedExpression,
     CallableSelector,
     MethodSelector,
-    AccessorSelector,
+    PropertySelector,
     GetterSelector,
     SetterSelector,
     ConstructorSelector,

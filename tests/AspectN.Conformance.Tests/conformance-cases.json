@@ -294,5 +294,37 @@
     "parameterCount": 2,
     "expression": "method(* AspectN.TestAssembly.Conformance.ConformanceFixture.ConvertWithPointer<$T>(..))",
     "expected": "Matched"
+  },
+  {
+    "id": "execution-matches-instance-constructor",
+    "kind": "method",
+    "member": ".ctor",
+    "parameterCount": 0,
+    "expression": "execution(* AspectN.TestAssembly.Conformance.ConformanceFixture.*(..))",
+    "expected": "Matched"
+  },
+  {
+    "id": "execution-matches-property-getter",
+    "kind": "method",
+    "member": "get_Name",
+    "parameterCount": 0,
+    "expression": "execution(* AspectN.TestAssembly.Conformance.ConformanceFixture.*(..))",
+    "expected": "Matched"
+  },
+  {
+    "id": "execution-return-type-excludes-constructor",
+    "kind": "method",
+    "member": ".ctor",
+    "parameterCount": 0,
+    "expression": "execution(string AspectN.TestAssembly.Conformance.ConformanceFixture.*(..))",
+    "expected": "NotMatched"
+  },
+  {
+    "id": "property-selector-matches-getter",
+    "kind": "method",
+    "member": "get_Name",
+    "parameterCount": 0,
+    "expression": "property(string AspectN.TestAssembly.Conformance.ConformanceFixture.Name)",
+    "expected": "Matched"
   }
 ]

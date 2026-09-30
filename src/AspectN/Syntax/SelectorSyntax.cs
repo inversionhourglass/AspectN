@@ -77,17 +77,17 @@ public sealed class MethodSelectorSyntax(
 {
 }
 
-/// <summary>Represents a accessor selector syntax node.</summary>
+/// <summary>Represents a property selector syntax node.</summary>
 /// <param name="keywordToken">Specifies the keyword token.</param>
 /// <param name="openParenToken">Specifies the open paren token.</param>
 /// <param name="signature">Specifies the signature.</param>
 /// <param name="closeParenToken">Specifies the close paren token.</param>
-public sealed class AccessorSelectorSyntax(
+public sealed class PropertySelectorSyntax(
     SyntaxToken keywordToken,
     SyntaxToken openParenToken,
     PropertySignatureSyntax signature,
     SyntaxToken closeParenToken) : SelectorSyntax(
-        SyntaxKind.AccessorSelector,
+        SyntaxKind.PropertySelector,
         keywordToken,
         openParenToken,
         signature,

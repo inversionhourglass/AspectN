@@ -221,7 +221,7 @@ The core member model distinguishes:
 - Static constructors.
 - Original definitions and constructed references.
 
-Property metadata is represented independently and linked to its accessors. In Standard, `accessor(...)` selects property accessors; Legacy `property(...)` retains its historical getter-or-setter meaning.
+Property metadata is represented independently and linked to its accessors. In Standard, `property(...)` selects property accessors with the same getter-or-setter meaning as Legacy `property(...)`.
 
 ### 8.4 Definitions and constructed references
 

@@ -12,7 +12,7 @@ internal sealed class SelectorParser(Parser parser)
     private AspectNLanguageVersion LanguageVersion =>
         _parser.SelectorOptions.LanguageVersion;
 
-    // 选择器解析先识别族类型，再把后续签名解析委托给对应分支，兼容旧语法时保留迁移诊断。
+    // 选择器解析先识别族类型，再把后续签名解析委托给对应分支。
     public SelectorSyntax ParseSelector()
     {
         var nameTokens = ParseQualifiedName();
@@ -27,7 +27,7 @@ internal sealed class SelectorParser(Parser parser)
         {
             SelectorFamily.Callable => ParseCallable(keyword, family),
             SelectorFamily.Method => ParseCallable(keyword, family),
-            SelectorFamily.Accessor => ParseProperty(keyword, family),
+            SelectorFamily.Property => ParseProperty(keyword, family),
             SelectorFamily.Getter => ParseProperty(keyword, family),
             SelectorFamily.Setter => ParseProperty(keyword, family),
             SelectorFamily.Constructor => ParseConstructor(keyword),
@@ -60,7 +60,6 @@ internal sealed class SelectorParser(Parser parser)
         SyntaxToken keyword,
         SelectorFamily family)
     {
-        AddMigrationDiagnosticIfNeeded(keyword);
         var openParen = MatchToken(SyntaxKind.OpenParenToken);
         var signature = ParseCallableSignature();
         var closeParen = MatchToken(SyntaxKind.CloseParenToken);
@@ -81,13 +80,12 @@ internal sealed class SelectorParser(Parser parser)
         SyntaxToken keyword,
         SelectorFamily family)
     {
-        AddMigrationDiagnosticIfNeeded(keyword);
         var openParen = MatchToken(SyntaxKind.OpenParenToken);
         var signature = ParsePropertySignature();
         var closeParen = MatchToken(SyntaxKind.CloseParenToken);
         return family switch
         {
-            SelectorFamily.Accessor => new AccessorSelectorSyntax(
+            SelectorFamily.Property => new PropertySelectorSyntax(
                 keyword,
                 openParen,
                 signature,
@@ -789,26 +787,6 @@ internal sealed class SelectorParser(Parser parser)
                     SyntaxToken.Missing(SyntaxKind.StarToken, position))));
     }
 
-    private void AddMigrationDiagnosticIfNeeded(SyntaxToken keyword)
-    {
-        if (LanguageVersion != AspectNLanguageVersion.Standard) return;
-
-        if (keyword.Text == "execution")
-        {
-            _parser.AddSelectorDiagnostic(
-                DiagnosticCodes.ExecutionSelectorMigration,
-                "Use callable(...) instead of execution(...).",
-                keyword);
-        }
-        else if (keyword.Text == "property")
-        {
-            _parser.AddSelectorDiagnostic(
-                DiagnosticCodes.PropertySelectorMigration,
-                "Use accessor(...) instead of property(...).",
-                keyword);
-        }
-    }
-
     // Standard 不再接受 Legacy 的连写复合访问性（规范 §17）；识别旧拼写以给出迁移诊断。
     private bool TryGetCompoundAccessibilityReplacement(
         string text,
@@ -846,28 +824,15 @@ internal sealed class SelectorParser(Parser parser)
     private SelectorFamily GetSelectorFamily(string text)
     {
         if (EqualsKeyword(text, "callable")) return SelectorFamily.Callable;
+        if (EqualsKeyword(text, "execution")) return SelectorFamily.Callable;
         if (EqualsKeyword(text, "method")) return SelectorFamily.Method;
-        if (EqualsKeyword(text, "accessor")) return SelectorFamily.Accessor;
+        if (EqualsKeyword(text, "property")) return SelectorFamily.Property;
         if (EqualsKeyword(text, "getter")) return SelectorFamily.Getter;
         if (EqualsKeyword(text, "setter")) return SelectorFamily.Setter;
         if (EqualsKeyword(text, "ctor")) return SelectorFamily.Constructor;
         if (EqualsKeyword(text, "cctor")) return SelectorFamily.StaticConstructor;
         if (EqualsKeyword(text, "attr")) return SelectorFamily.Attribute;
         if (EqualsKeyword(text, "regex")) return SelectorFamily.Regex;
-        if (text == "execution" ||
-            (LanguageVersion == AspectNLanguageVersion.Legacy &&
-             string.Equals(text, "execution", StringComparison.OrdinalIgnoreCase)))
-        {
-            return SelectorFamily.Callable;
-        }
-
-        if (text == "property" ||
-            (LanguageVersion == AspectNLanguageVersion.Legacy &&
-             string.Equals(text, "property", StringComparison.OrdinalIgnoreCase)))
-        {
-            return SelectorFamily.Accessor;
-        }
-
         return SelectorFamily.Extension;
     }
 
@@ -960,7 +925,7 @@ internal sealed class SelectorParser(Parser parser)
         Extension,
         Callable,
         Method,
-        Accessor,
+        Property,
         Getter,
         Setter,
         Constructor,
