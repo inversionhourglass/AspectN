@@ -458,7 +458,14 @@ internal sealed class Binder(
             }
 
             BoundModifier modifier;
-            if (content == "static")
+            if (!isNegated &&
+                _syntaxTree.LanguageVersion == AspectNLanguageVersion.Standard &&
+                syntax.Tokens.Any(token => token.Kind == SyntaxKind.PipeToken))
+            {
+                modifier = BindAccessibilityAlternation(syntax);
+                positiveAccessibilityCount++;
+            }
+            else if (content == "static")
             {
                 modifier = new BoundModifier(BoundModifierKind.Static, isNegated);
                 hasPositiveStatic |= !isNegated;
@@ -473,7 +480,9 @@ internal sealed class Binder(
                 if (!isNegated) positiveAccessibilityCount++;
             }
 
-            var key = $"{modifier.Kind}:{modifier.Accessibility}:{isNegated}";
+            var key = modifier.Alternatives is not null
+                ? $"{modifier.Kind}:|{string.Join("|", modifier.Alternatives)}|"
+                : $"{modifier.Kind}:{modifier.Accessibility}:{isNegated}";
             if (!keys.Add(key) &&
                 _syntaxTree.LanguageVersion == AspectNLanguageVersion.Standard)
             {
@@ -503,6 +512,61 @@ internal sealed class Binder(
         }
 
         return modifiers;
+    }
+
+    // 规范 §10：| 多选组整体算作一个正向 accessibility；每个备选经同一 GetAccessibility 映射，
+    // static 或非权限词在此映射为 Unknown 并报错。解析器已保证否定不会进入多选。
+    private BoundModifier BindAccessibilityAlternation(ModifierSyntax syntax)
+    {
+        var alternatives = new List<Accessibility>();
+        var words = new List<string>();
+        foreach (var token in syntax.Tokens)
+        {
+            switch (token.Kind)
+            {
+                case SyntaxKind.PipeToken:
+                    FlushAlternative();
+                    break;
+                case SyntaxKind.OpenParenToken:
+                case SyntaxKind.CloseParenToken:
+                    break;
+                default:
+                    words.Add(token.Text);
+                    break;
+            }
+        }
+
+        FlushAlternative();
+        return new BoundModifier(
+            BoundModifierKind.Accessibility,
+            false,
+            alternatives.Count > 0 ? alternatives[0] : Accessibility.Unknown,
+            alternatives);
+
+        void FlushAlternative()
+        {
+            if (words.Count == 0) return;
+            var text = string.Join(" ", words);
+            words.Clear();
+            var accessibility = GetAccessibility(text);
+            if (accessibility == Accessibility.Unknown)
+            {
+                ReportInvalidModifiers(
+                    syntax,
+                    $"'{text}' is not a valid accessibility alternative.");
+                return;
+            }
+
+            if (alternatives.Contains(accessibility))
+            {
+                ReportInvalidModifiers(
+                    syntax,
+                    $"Accessibility '{text}' is duplicated.");
+                return;
+            }
+
+            alternatives.Add(accessibility);
+        }
     }
 
     private BoundTypePattern BindTypePattern(

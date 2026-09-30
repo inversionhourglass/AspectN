@@ -25,6 +25,13 @@ internal sealed class Lexer
 
     public IReadOnlyList<AspectNDiagnostic> Diagnostics => _diagnostics.ToArray();
 
+    // 供选择器解析做投机性前瞻：将词法位置回退到指定偏移重新扫描。
+    // 前瞻使用独立 Lexer 实例，诊断不会混入主实例。
+    internal void Reset(int position)
+    {
+        _position = position;
+    }
+
     public SyntaxToken Lex()
     {
         SkipWhitespace();
@@ -59,6 +66,8 @@ internal sealed class Lexer
                 when Current == '|':
                 _position++;
                 return CreateToken(SyntaxKind.PipePipeToken, start);
+            case '|':
+                return CreateToken(SyntaxKind.PipeToken, start);
             case '(':
                 return CreateToken(SyntaxKind.OpenParenToken, start);
             case ')':

@@ -41,7 +41,7 @@ Standard is the default for new AspectN APIs. It uses:
 - `callable(...)` for non-constructor method-like members, or `execution(...)` to cover constructors as well.
 - `property(...)` for property getters and setters together.
 - `ctor(...)` and `cctor(...)`.
-- Standard C# accessibility phrases.
+- Standard C# accessibility phrases, with `|` joining accessibility alternatives.
 - Explicit `$T` pattern variables.
 - C# `ValueTuple` meaning for tuple syntax.
 - Separate async-method and task-like-return concepts.
@@ -303,26 +303,47 @@ Standard recognizes:
 ```ebnf
 modifier =
       accessibility
+    | accessibility-alternation
     | "!", accessibility
     | "static"
     | "!", "static" ;
 
 accessibility =
+      single-accessibility
+    | compound-accessibility ;
+
+accessibility-alternation =
+      alternation-atom, "|", alternation-atom, { "|", alternation-atom } ;
+
+alternation-atom =
+      single-accessibility
+    | "(", compound-accessibility, ")" ;
+
+single-accessibility =
       "public"
     | "protected"
     | "internal"
-    | "private"
-    | "protected", "internal"
+    | "private" ;
+
+compound-accessibility =
+      "protected", "internal"
     | "private", "protected" ;
 ```
 
-At most one positive accessibility appears in one Standard signature. To match alternatives, use expression-level OR:
+At most one positive accessibility (or one `|` alternation group) appears in one Standard signature. `|` joins positive alternatives; a candidate matches when its accessibility equals any alternative. A compound accessibility combined with `|` must be parenthesized:
 
 ```text
-method(private * *(..)) || method(protected * *(..))
+method(private|internal * *(..))
+method((private protected)|(protected internal)|public * *(..))
 ```
 
-This rule removes the Legacy ambiguity where:
+Negation applies to a single accessibility phrase only; `!` cannot be combined with `|`:
+
+```text
+method(!protected internal * *(..))
+```
+
+The alternation syntax removes the Legacy ambiguity where:
 
 ```text
 private protected
@@ -716,7 +737,7 @@ method(* Service.*(..)) && !attr(callable ObsoleteAttribute)
 | All property accessors | `property` | `property` |
 | Constructors | `ctor`, `cctor` | `ctor`, `cctor` |
 | Composite accessibility | `privateprotected`, `protectedinternal` | `private protected`, `protected internal` |
-| Space-separated accessibilities | Alternatives | Not allowed; use expression OR |
+| Space-separated accessibilities | Alternatives | `|` alternation; compounds parenthesized |
 | Generic variables | Implicit identifiers | Explicit `$name` |
 | Tuple syntax | Tuple or ValueTuple | ValueTuple only |
 | `async T` | Task/ValueTask return sugar | Actual `async` modifier plus `tasklike<T>` return pattern |

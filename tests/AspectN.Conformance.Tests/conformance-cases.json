@@ -58,6 +58,30 @@
     "expected": "NotMatched"
   },
   {
+    "id": "accessibility-alternation",
+    "kind": "method",
+    "member": "InternalMethod",
+    "parameterCount": 0,
+    "expression": "method(private|internal * AspectN.TestAssembly.Conformance.ConformanceFixture.InternalMethod())",
+    "expected": "Matched"
+  },
+  {
+    "id": "accessibility-alternation-composite",
+    "kind": "method",
+    "member": "PrivateProtectedMethod",
+    "parameterCount": 0,
+    "expression": "method((private protected)|(protected internal)|public * AspectN.TestAssembly.Conformance.ConformanceFixture.PrivateProtectedMethod())",
+    "expected": "Matched"
+  },
+  {
+    "id": "accessibility-alternation-not-matched",
+    "kind": "method",
+    "member": "ProtectedMethod",
+    "parameterCount": 0,
+    "expression": "method(private|internal * AspectN.TestAssembly.Conformance.ConformanceFixture.ProtectedMethod())",
+    "expected": "NotMatched"
+  },
+  {
     "id": "direct-attribute",
     "kind": "method",
     "member": "Attributed",

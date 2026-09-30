@@ -398,6 +398,7 @@ AspectN.Syntax.SyntaxKind.Parameter = 40 -> AspectN.Syntax.SyntaxKind
 AspectN.Syntax.SyntaxKind.ParenthesizedExpression = 25 -> AspectN.Syntax.SyntaxKind
 AspectN.Syntax.SyntaxKind.ParenthesizedTypePattern = 53 -> AspectN.Syntax.SyntaxKind
 AspectN.Syntax.SyntaxKind.PipePipeToken = 8 -> AspectN.Syntax.SyntaxKind
+AspectN.Syntax.SyntaxKind.PipeToken = 56 -> AspectN.Syntax.SyntaxKind
 AspectN.Syntax.SyntaxKind.PlusToken = 20 -> AspectN.Syntax.SyntaxKind
 AspectN.Syntax.SyntaxKind.PropertySelector = 28 -> AspectN.Syntax.SyntaxKind
 AspectN.Syntax.SyntaxKind.PropertySignature = 37 -> AspectN.Syntax.SyntaxKind

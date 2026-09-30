@@ -38,7 +38,9 @@ internal static class ModifierMatcher
 
             hasPositiveAccessibility = true;
             positiveAccessibilityMatched |=
-                modifier.Accessibility == accessibility;
+                modifier.Alternatives is not null
+                    ? modifier.Alternatives.Contains(accessibility)
+                    : modifier.Accessibility == accessibility;
             if (!positiveAccessibilityMatched)
             {
                 return false;

@@ -58,5 +58,6 @@ public enum SyntaxKind
     AssignableTypePattern,
     ParenthesizedTypePattern,
     UnaryTypePattern,
-    BinaryTypePattern
+    BinaryTypePattern,
+    PipeToken
 }

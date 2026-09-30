@@ -308,8 +308,37 @@ internal sealed class SelectorParser(Parser parser)
                     tokens.Add(NextToken());
                 }
 
+                if (LanguageVersion == AspectNLanguageVersion.Standard &&
+                    Current.Kind == SyntaxKind.PipeToken)
+                {
+                    ReportUnexpected(
+                        Current,
+                        "type pattern ('|' cannot follow a negated modifier)");
+                    tokens.Add(NextToken());
+                }
+
                 modifiers.Add(new ModifierSyntax(tokens));
                 continue;
+            }
+
+            if (Current.Kind == SyntaxKind.OpenParenToken)
+            {
+                if (LanguageVersion == AspectNLanguageVersion.Standard &&
+                    IsParenthesizedCompoundAlternationStart())
+                {
+                    var parenthesizedTokens = new List<SyntaxToken>
+                    {
+                        NextToken(),
+                        NextToken(),
+                        NextToken(),
+                        NextToken()
+                    };
+                    ParseAccessibilityAlternatives(parenthesizedTokens);
+                    modifiers.Add(new ModifierSyntax(parenthesizedTokens));
+                    continue;
+                }
+
+                break;
             }
 
             if (Current.Kind != SyntaxKind.IdentifierToken)
@@ -343,10 +372,100 @@ internal sealed class SelectorParser(Parser parser)
                 modifierTokens.Add(NextToken());
             }
 
+            if (LanguageVersion == AspectNLanguageVersion.Standard &&
+                Current.Kind == SyntaxKind.PipeToken)
+            {
+                ParseAccessibilityAlternatives(modifierTokens);
+            }
+
             modifiers.Add(new ModifierSyntax(modifierTokens));
         }
 
         return modifiers;
+    }
+
+    // 规范 §10：Standard 用 | 连接多个正向 accessibility 备选；复合权限参与多选时必须加括号，
+    // 如 (private protected)|(protected internal)|public。备选内容（static、否定、未加括号的
+    // 复合短语）的合法性由解析与绑定各自校验。
+    private void ParseAccessibilityAlternatives(List<SyntaxToken> modifierTokens)
+    {
+        if (modifierTokens.Count > 1 &&
+            modifierTokens[0].Kind != SyntaxKind.OpenParenToken)
+        {
+            ReportUnexpected(
+                Current,
+                "'|' (compound accessibility must be parenthesized)");
+        }
+
+        while (Current.Kind == SyntaxKind.PipeToken)
+        {
+            modifierTokens.Add(NextToken());
+            if (Current.Kind == SyntaxKind.OpenParenToken)
+            {
+                modifierTokens.Add(NextToken());
+                var words = 0;
+                while (words < 2 && IsSingleAccessibility(Current.Text))
+                {
+                    modifierTokens.Add(NextToken());
+                    words++;
+                }
+
+                if (words != 2)
+                {
+                    ReportUnexpected(Current, "compound accessibility");
+                }
+
+                if (Current.Kind == SyntaxKind.CloseParenToken)
+                {
+                    modifierTokens.Add(NextToken());
+                }
+                else
+                {
+                    ReportUnexpected(Current, "')'");
+                }
+
+                continue;
+            }
+
+            if (Current.Kind == SyntaxKind.IdentifierToken &&
+                IsSingleAccessibility(Current.Text))
+            {
+                modifierTokens.Add(NextToken());
+                if (Current.Kind == SyntaxKind.IdentifierToken &&
+                    IsSingleAccessibility(Current.Text))
+                {
+                    ReportUnexpected(
+                        Current,
+                        "'|' (compound accessibility must be parenthesized)");
+                    modifierTokens.Add(NextToken());
+                }
+
+                continue;
+            }
+
+            ReportUnexpected(Current, "accessibility alternative");
+            break;
+        }
+    }
+
+    // 前瞻区分修饰符位置的 (：仅当形状恰为 ( 权限词 权限词 ) | 时才视为多选首备选，
+    // 否则 ( 属于返回类型模式（元组/括号类型），保持原有解析路径。
+    private bool IsParenthesizedCompoundAlternationStart()
+    {
+        var tokens = _parser.PeekSelectorTokens(5);
+        return tokens.Count == 5 &&
+               tokens[0].Kind == SyntaxKind.OpenParenToken &&
+               tokens[1].Kind == SyntaxKind.IdentifierToken &&
+               IsSingleAccessibility(tokens[1].Text) &&
+               tokens[2].Kind == SyntaxKind.IdentifierToken &&
+               IsSingleAccessibility(tokens[2].Text) &&
+               tokens[3].Kind == SyntaxKind.CloseParenToken &&
+               tokens[4].Kind == SyntaxKind.PipeToken;
+    }
+
+    private static bool IsSingleAccessibility(string text)
+    {
+        return text is "public" or "protected" or "internal" or "private";
     }
 
     private TypeUseSyntax ParseTypeUse()

@@ -47,4 +47,18 @@ internal sealed partial class Parser
         _current = _lexer.LexRegexBody();
         return openParen;
     }
+
+    // 从当前 token 起点做只读前瞻：用独立 Lexer 重扫，不消耗主词法流。
+    internal IReadOnlyList<SyntaxToken> PeekSelectorTokens(int count)
+    {
+        var lexer = new Lexer(_source);
+        lexer.Reset(Current.Span.Start);
+        var tokens = new List<SyntaxToken>(count);
+        for (var index = 0; index < count; index++)
+        {
+            tokens.Add(lexer.Lex());
+        }
+
+        return tokens;
+    }
 }

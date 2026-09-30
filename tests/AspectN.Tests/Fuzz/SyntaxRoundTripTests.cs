@@ -29,6 +29,14 @@ public sealed class SyntaxRoundTripTests
         },
         {
             AspectNParseKind.MemberExpression,
+            "method(private|internal * Service.Get(..))"
+        },
+        {
+            AspectNParseKind.MemberExpression,
+            "method((private protected)|(protected internal)|public * Service.Get(..))"
+        },
+        {
+            AspectNParseKind.MemberExpression,
             "method(* Service.*(..)) && !attr(callable ObsoleteAttribute)"
         },
         {

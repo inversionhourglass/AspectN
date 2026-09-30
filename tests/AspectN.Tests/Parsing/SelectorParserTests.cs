@@ -150,6 +150,36 @@ public sealed class SelectorParserTests
     }
 
     [Theory]
+    [InlineData("method(private|internal * *.*(..))")]
+    [InlineData("method(private | internal * *.*(..))")]
+    [InlineData("method((private protected)|(protected internal)|public * *.*(..))")]
+    [InlineData("method(private|internal static * *.*(..))")]
+    [InlineData("property(private|internal string Model.Name)")]
+    public void ParseMemberExpression_AccessibilityAlternation_HasNoDiagnostics(
+        string source)
+    {
+        var tree = AspectNParser.ParseMemberExpression(source);
+
+        Assert.Empty(tree.Diagnostics);
+    }
+
+    [Theory]
+    [InlineData("method(private protected|public * *.*(..))", "parenthesized")]
+    [InlineData("method(private|protected internal * *.*(..))", "parenthesized")]
+    [InlineData("method(!private|internal * *.*(..))", "negated")]
+    [InlineData("method(private|static * *.*(..))", "alternative")]
+    public void ParseMemberExpression_InvalidAlternation_ReportsUnexpected(
+        string source,
+        string messagePart)
+    {
+        var tree = AspectNParser.ParseMemberExpression(source);
+
+        var diagnostic = Assert.Single(tree.Diagnostics);
+        Assert.Equal(DiagnosticCodes.UnexpectedToken, diagnostic.Code);
+        Assert.Contains(messagePart, diagnostic.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
     [InlineData("method(void Fixtures.Foo Bar.M(..))")]
     [InlineData("method(void Service.Foo Bar(..))")]
     [InlineData("method(* *..* Foo(..))")]

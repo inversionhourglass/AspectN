@@ -62,13 +62,16 @@ internal enum BoundAttributeTargetKind
 internal sealed class BoundModifier(
     BoundModifierKind kind,
     bool isNegated,
-    Accessibility accessibility = Accessibility.Unknown)
+    Accessibility accessibility = Accessibility.Unknown,
+    IReadOnlyList<Accessibility>? alternatives = null)
 {
     public BoundModifierKind Kind { get; } = kind;
 
     public bool IsNegated { get; } = isNegated;
 
     public Accessibility Accessibility { get; } = accessibility;
+
+    public IReadOnlyList<Accessibility>? Alternatives { get; } = alternatives;
 }
 
 internal sealed class BoundTypeUsePattern(RefKind refKind, BoundTypePattern typePattern)

@@ -123,6 +123,51 @@ public sealed class ModifierMatcherTests
         Assert.Equal(expected, result);
     }
 
+    [Theory]
+    [InlineData(Accessibility.Private, true)]
+    [InlineData(Accessibility.Internal, true)]
+    [InlineData(Accessibility.Public, false)]
+    [InlineData(Accessibility.PrivateProtected, false)]
+    public void Match_StandardAlternation_MatchesAnyAlternative(
+        Accessibility candidate,
+        bool expected)
+    {
+        var signature = Bind(
+            "method(private|internal * Service.Get(..))",
+            AspectNLanguageVersion.Standard);
+
+        var result = ModifierMatcher.IsMatch(
+            signature.Modifiers,
+            candidate,
+            isStatic: false,
+            AspectNLanguageVersion.Standard);
+
+        Assert.Equal(expected, result);
+    }
+
+    [Theory]
+    [InlineData(Accessibility.PrivateProtected, true)]
+    [InlineData(Accessibility.ProtectedInternal, true)]
+    [InlineData(Accessibility.Public, true)]
+    [InlineData(Accessibility.Private, false)]
+    [InlineData(Accessibility.Internal, false)]
+    public void Match_StandardCompoundAlternation_MatchesWholeComposite(
+        Accessibility candidate,
+        bool expected)
+    {
+        var signature = Bind(
+            "method((private protected)|(protected internal)|public * Service.Get(..))",
+            AspectNLanguageVersion.Standard);
+
+        var result = ModifierMatcher.IsMatch(
+            signature.Modifiers,
+            candidate,
+            isStatic: false,
+            AspectNLanguageVersion.Standard);
+
+        Assert.Equal(expected, result);
+    }
+
     private static BoundCallableSignature Bind(
         string source,
         AspectNLanguageVersion languageVersion)

@@ -108,7 +108,6 @@ public sealed class LexerTests
     [Theory]
     [InlineData("#")]
     [InlineData("&")]
-    [InlineData("|")]
     public void Lex_BadCharacter_EmitsBadTokenAndDiagnostic(string source)
     {
         var lexer = CreateLexer(source);
@@ -120,6 +119,18 @@ public sealed class LexerTests
         Assert.Equal(source, token.Text);
         Assert.Equal("AN0001", diagnostic.Code);
         Assert.Equal(new TextSpan(0, 1), diagnostic.Span);
+    }
+
+    [Fact]
+    public void Lex_SinglePipe_EmitsPipeTokenWithoutDiagnostic()
+    {
+        var lexer = CreateLexer("|");
+
+        var token = lexer.Lex();
+
+        Assert.Equal(SyntaxKind.PipeToken, token.Kind);
+        Assert.Equal("|", token.Text);
+        Assert.Empty(lexer.Diagnostics);
     }
 
     [Fact]

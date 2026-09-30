@@ -29,6 +29,9 @@ public sealed class BinderTests
     [InlineData("method(public private * Service.Get(..))")]
     [InlineData("method(static !static * Service.Get(..))")]
     [InlineData("method(public public * Service.Get(..))")]
+    [InlineData("method(private|private * Service.Get(..))")]
+    [InlineData("method(private|internal public * Service.Get(..))")]
+    [InlineData("method(static|public * Service.Get(..))")]
     public void Create_InvalidModifierCombination_ReportsDiagnostic(
         string source)
     {
