@@ -27,6 +27,9 @@ public static class DiagnosticCodes
     /// <summary>Gets the tasklike void result migration.</summary>
     public static string TaskLikeVoidMigration => "AN4004";
 
+    /// <summary>Gets the attribute position migration.</summary>
+    public static string AttributePositionMigration => "AN4005";
+
     /// <summary>Gets the missing backend capability.</summary>
     public static string MissingBackendCapability => "AN3001";
 

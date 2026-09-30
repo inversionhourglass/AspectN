@@ -12,15 +12,15 @@ specific metadata backend in the language or compiled pattern API.
   static constructors.
 - `property(...)`, `getter(...)`, and `setter(...)` select property accessors.
 - `ctor(...)` and `cctor(...)` select instance and static constructors.
-- `attr(target Type)` checks a direct attribute on a type, callable, property,
-  return value, or parameter.
+- `attr(target Type)` checks a direct attribute on a type, callable (`call`),
+  property (`prop`), return value (`ret`), or parameter (`para[n]`).
 
 Selectors can be combined with `&&`, `||`, `!`, and parentheses.
 
 ```text
 method(tasklike<string> Service.Load(..))
 method($T Converter.Convert<$T>($T))
-getter(string Example.Model.Name) && attr(property Example.MarkerAttribute)
+getter(string Example.Model.Name) && attr(prop Example.MarkerAttribute)
 ctor(Example.Service(string, ref int))
 ```
 

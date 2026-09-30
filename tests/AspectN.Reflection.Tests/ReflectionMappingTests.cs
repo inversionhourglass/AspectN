@@ -245,13 +245,13 @@ public sealed class ReflectionMappingTests
         Assert.Equal(
             MatchStatus.Matched,
             MemberPattern(
-                "attr(callable GenericMarkerAttribute<int>)",
+                "attr(call GenericMarkerAttribute<int>)",
                 callable,
                 typeSystem).Status);
         Assert.Equal(
             MatchStatus.NotMatched,
             MemberPattern(
-                "attr(callable GenericMarkerAttribute<string>)",
+                "attr(call GenericMarkerAttribute<string>)",
                 callable,
                 typeSystem).Status);
     }
@@ -268,19 +268,19 @@ public sealed class ReflectionMappingTests
         Assert.Equal(
             MatchStatus.Matched,
             MemberPattern(
-                "attr(callable GenericMarkerAttribute<System.Collections.Generic.List<>>)",
+                "attr(call GenericMarkerAttribute<System.Collections.Generic.List<>>)",
                 callable,
                 typeSystem).Status);
         Assert.Equal(
             MatchStatus.Matched,
             MemberPattern(
-                "attr(callable GenericMarkerAttribute<System.Collections.Generic.List<int>>)",
+                "attr(call GenericMarkerAttribute<System.Collections.Generic.List<int>>)",
                 callable,
                 typeSystem).Status);
         Assert.Equal(
             MatchStatus.NotMatched,
             MemberPattern(
-                "attr(callable GenericMarkerAttribute<System.Collections.Generic.List<string>>)",
+                "attr(call GenericMarkerAttribute<System.Collections.Generic.List<string>>)",
                 callable,
                 typeSystem).Status);
     }
@@ -297,13 +297,13 @@ public sealed class ReflectionMappingTests
         Assert.Equal(
             MatchStatus.Matched,
             MemberPattern(
-                "attr(callable GenericMarkerAttribute<string?>)",
+                "attr(call GenericMarkerAttribute<string?>)",
                 callable,
                 typeSystem).Status);
         Assert.Equal(
             MatchStatus.NotMatched,
             MemberPattern(
-                "attr(callable GenericMarkerAttribute<int?>)",
+                "attr(call GenericMarkerAttribute<int?>)",
                 callable,
                 typeSystem).Status);
     }

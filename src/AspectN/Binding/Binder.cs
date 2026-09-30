@@ -1124,13 +1124,16 @@ internal sealed class Binder(
     private static BoundAttributeTargetKind GetStandardAttributeTarget(
         string text)
     {
+        // exec 与长形式（callable/property/parameter/return）是有诊断兜底的兼容入口；
+        // 长形式的迁移诊断由解析器报告，这里保证错误恢复后语义仍正确。
         return text switch
         {
             "type" => BoundAttributeTargetKind.Type,
-            "callable" => BoundAttributeTargetKind.Callable,
-            "property" => BoundAttributeTargetKind.Property,
-            "parameter" => BoundAttributeTargetKind.Parameter,
-            "return" => BoundAttributeTargetKind.Return,
+            "call" or "callable" => BoundAttributeTargetKind.Callable,
+            "prop" or "property" => BoundAttributeTargetKind.Property,
+            "para" or "parameter" => BoundAttributeTargetKind.Parameter,
+            "ret" or "return" => BoundAttributeTargetKind.Return,
+            "exec" => BoundAttributeTargetKind.Execution,
             _ => BoundAttributeTargetKind.Any
         };
     }

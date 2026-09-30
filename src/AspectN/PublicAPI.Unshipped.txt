@@ -513,6 +513,7 @@ override AspectN.Text.TextSpan.GetHashCode() -> int
 static AspectN.AspectNCompilation.Create(AspectN.Syntax.AspectNSyntaxTree! syntaxTree, AspectN.AspectNCompilationOptions? options = null, AspectN.Extensibility.AspectNExtensionRegistry? extensions = null) -> AspectN.AspectNCompilation!
 static AspectN.AspectNParser.ParseMemberExpression(string! source, AspectN.AspectNParseOptions? options = null) -> AspectN.Syntax.AspectNSyntaxTree!
 static AspectN.AspectNParser.ParseTypePattern(string! source, AspectN.AspectNParseOptions? options = null) -> AspectN.Syntax.AspectNSyntaxTree!
+static AspectN.Diagnostics.DiagnosticCodes.AttributePositionMigration.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.BadCharacter.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.CompositeAccessibilityMigration.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.InvalidEscapeSequence.get -> string!

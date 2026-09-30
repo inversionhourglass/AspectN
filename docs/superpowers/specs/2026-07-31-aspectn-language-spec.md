@@ -593,7 +593,7 @@ attr(ret AttributeType)
 attr(* AttributeType)
 ```
 
-Standard uses explicit positions:
+Standard uses short position names:
 
 ```ebnf
 attribute-selector =
@@ -601,32 +601,39 @@ attribute-selector =
 
 attribute-position =
       "type"
-    | "callable"
-    | "property"
-    | "parameter", "[", ( integer-literal | "*" ), "]"
-    | "return"
-    | "any" ;
+    | "call"
+    | "prop"
+    | "para", "[", ( integer-literal | "*" ), "]"
+    | "para", ( integer-literal | "*" )
+    | "ret"
+    | "exec"
+    | "any"
+    | "*" ;
 ```
 
 ```text
 attr(type AttributeType)
-attr(callable AttributeType)
-attr(property AttributeType)
-attr(parameter[0] AttributeType)
-attr(parameter[*] AttributeType)
-attr(return AttributeType)
+attr(call AttributeType)
+attr(prop AttributeType)
+attr(para[0] AttributeType)
+attr(para[*] AttributeType)
+attr(ret AttributeType)
+attr(exec AttributeType)
 attr(any AttributeType)
 ```
 
 Semantics:
 
 - `type`: direct attributes on the declaring type.
-- `callable`: direct attributes on the current callable.
-- `property`: direct attributes on the associated property when the candidate is a property accessor.
-- `parameter[n]`: direct attributes on parameter `n`.
-- `parameter[*]`: direct attributes on any parameter.
-- `return`: direct attributes on the return location.
-- `any`: any supported direct location.
+- `call`: direct attributes on the current callable.
+- `prop`: direct attributes on the associated property when the candidate is a property accessor.
+- `para[n]`: direct attributes on parameter `n`. The space-separated Legacy form `para n` is accepted silently.
+- `para[*]`: direct attributes on any parameter. The Legacy form `para *` is accepted silently.
+- `ret`: direct attributes on the return location.
+- `exec`: Legacy-consistent execution location — direct attributes on the current callable, plus direct attributes on the associated property when the candidate is a property accessor.
+- `any`: any supported direct location. The Legacy form `*` is accepted silently.
+
+The earlier long position names `callable`, `property`, `parameter`, and `return` are rejected with a migration diagnostic (AN4005) naming the short replacement.
 
 Attribute matching does not instantiate attribute objects. Inherited-attribute semantics are outside Standard 1.0.
 
@@ -683,6 +690,10 @@ Migration diagnostics include an actionable replacement where one exists:
 privateprotected -> private protected
 protectedinternal -> protected internal
 tasklike<void> -> tasklike
+attr(callable ...) -> attr(call ...)
+attr(property ...) -> attr(prop ...)
+attr(parameter ...) -> attr(para ...)
+attr(return ...) -> attr(ret ...)
 ```
 
 ## 18. Legacy Conformance
@@ -718,9 +729,9 @@ method(* Service.Copy(ref int, out string))
 
 method((int, string) Service.GetPair())
 
-attr(parameter[*] System.ComponentModel.DataAnnotations.RequiredAttribute)
+attr(para[*] System.ComponentModel.DataAnnotations.RequiredAttribute)
 
-method(* Service.*(..)) && !attr(callable ObsoleteAttribute)
+method(* Service.*(..)) && !attr(call ObsoleteAttribute)
 ```
 
 ## 20. Standard/Legacy Difference Summary
@@ -738,4 +749,4 @@ method(* Service.*(..)) && !attr(callable ObsoleteAttribute)
 | Reference `T?` | Historical Nullable behavior | Same CLR reference type as `T` |
 | Ref kinds | Not formally modeled | `ref`, `out`, `in`, `ref readonly` |
 | Generic name without clause | Any arity | Arity zero, except `*` |
-| Attribute positions | `exec`, `para`, `ret`, `*` | Full position names |
+| Attribute positions | `exec`, `para`, `ret`, `*` | `call`, `prop`, `para[]`, `ret`, `exec`, `any`; Legacy spellings accepted |

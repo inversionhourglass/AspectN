@@ -28,7 +28,7 @@ public sealed class SelectorParserTests
         { "ctor(Service(string, ref int))", typeof(ConstructorSelectorSyntax) },
         { "cctor(Service)", typeof(StaticConstructorSelectorSyntax) },
         {
-            "attr(parameter[0] RequiredAttribute)",
+            "attr(para[0] RequiredAttribute)",
             typeof(AttributeSelectorSyntax)
         },
         {
@@ -269,8 +269,8 @@ public sealed class SelectorParserTests
     }
 
     [Theory]
-    [InlineData("attr(parameter[-1] System.ObsoleteAttribute)")]
-    [InlineData("attr(parameter[-0] System.ObsoleteAttribute)")]
+    [InlineData("attr(para[-1] System.ObsoleteAttribute)")]
+    [InlineData("attr(para[-0] System.ObsoleteAttribute)")]
     public void ParseMemberExpression_NegativeParameterIndex_ReportsDiagnostic(
         string source)
     {
@@ -282,13 +282,46 @@ public sealed class SelectorParserTests
     }
 
     [Theory]
-    [InlineData("attr(parameter[0] System.ObsoleteAttribute)")]
-    [InlineData("attr(parameter[*] System.ObsoleteAttribute)")]
+    [InlineData("attr(para[0] System.ObsoleteAttribute)")]
+    [InlineData("attr(para[*] System.ObsoleteAttribute)")]
     public void ParseMemberExpression_NonNegativeParameterIndex_HasNoDiagnostics(
         string source)
     {
         var tree = AspectNParser.ParseMemberExpression(source);
 
         Assert.Empty(tree.Diagnostics);
+    }
+
+    [Theory]
+    [InlineData("attr(para 0 System.ObsoleteAttribute)")]
+    [InlineData("attr(para * System.ObsoleteAttribute)")]
+    [InlineData("attr(* System.ObsoleteAttribute)")]
+    [InlineData("attr(exec System.ObsoleteAttribute)")]
+    public void ParseMemberExpression_LegacyCompatAttributePosition_HasNoDiagnostics(
+        string source)
+    {
+        var tree = AspectNParser.ParseMemberExpression(source);
+
+        Assert.Empty(tree.Diagnostics);
+    }
+
+    [Theory]
+    [InlineData("attr(callable System.ObsoleteAttribute)", "callable", "call")]
+    [InlineData("attr(property System.ObsoleteAttribute)", "property", "prop")]
+    [InlineData("attr(parameter[0] System.ObsoleteAttribute)", "parameter", "para")]
+    [InlineData("attr(return System.ObsoleteAttribute)", "return", "ret")]
+    public void ParseMemberExpression_LongAttributePosition_ReportsMigration(
+        string source,
+        string position,
+        string replacement)
+    {
+        var tree = AspectNParser.ParseMemberExpression(source);
+
+        var diagnostic = Assert.Single(tree.Diagnostics);
+        Assert.Equal(
+            DiagnosticCodes.AttributePositionMigration,
+            diagnostic.Code);
+        Assert.Contains(position, diagnostic.Message, StringComparison.Ordinal);
+        Assert.Contains(replacement, diagnostic.Message, StringComparison.Ordinal);
     }
 }

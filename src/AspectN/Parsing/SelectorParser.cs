@@ -133,8 +133,7 @@ internal sealed class SelectorParser(Parser parser)
         var openParen = MatchToken(SyntaxKind.OpenParenToken);
         var parts = new List<SyntaxNode>();
         if (Current.Kind == SyntaxKind.IdentifierToken ||
-            (LanguageVersion == AspectNLanguageVersion.Legacy &&
-             Current.Kind == SyntaxKind.StarToken))
+            Current.Kind == SyntaxKind.StarToken)
         {
             var position = NextToken();
             parts.Add(position);
@@ -143,43 +142,54 @@ internal sealed class SelectorParser(Parser parser)
                 ReportUnexpected(position, "attribute position");
             }
 
-            if (EqualsKeyword(position.Text, "parameter"))
-            {
-                parts.Add(MatchToken(SyntaxKind.OpenBracketToken));
-                if (Current.Kind is SyntaxKind.IntegerToken or SyntaxKind.StarToken)
-                {
-                    var index = NextToken();
-                    parts.Add(index);
-                    // "-0" 的数值仍是 0，负号必须按文本判断，与 Legacy para 分支一致地拒绝负索引。
-                    if (index.Kind == SyntaxKind.IntegerToken &&
-                        index.Text.Length > 0 &&
-                        index.Text[0] == '-')
-                    {
-                        ReportUnexpected(index, "non-negative parameter index");
-                    }
-                }
-                else
-                {
-                    ReportUnexpected(Current, "parameter index or '*'");
-                }
+            ReportAttributePositionMigration(position);
 
-                parts.Add(MatchToken(SyntaxKind.CloseBracketToken));
-            }
-            else if (LanguageVersion == AspectNLanguageVersion.Legacy &&
-                     EqualsKeyword(position.Text, "para"))
+            // Standard 的 para 同时接受括号形式 para[0]/para[*] 与 Legacy 空格形式
+            // para 0/para *（静默兼容，规范 §14）；Legacy 仅有空格形式。
+            var isParameterPosition =
+                LanguageVersion == AspectNLanguageVersion.Legacy
+                    ? EqualsKeyword(position.Text, "para")
+                    : position.Text is "para" or "parameter";
+            if (isParameterPosition)
             {
-                if (Current.Kind is SyntaxKind.IntegerToken or SyntaxKind.StarToken)
+                if (LanguageVersion == AspectNLanguageVersion.Standard &&
+                    Current.Kind == SyntaxKind.OpenBracketToken)
                 {
-                    var index = NextToken();
-                    parts.Add(index);
-                    if (index.Value is long value && value < 0)
+                    parts.Add(MatchToken(SyntaxKind.OpenBracketToken));
+                    if (Current.Kind is SyntaxKind.IntegerToken or SyntaxKind.StarToken)
                     {
-                        ReportUnexpected(index, "non-negative parameter index");
+                        var index = NextToken();
+                        parts.Add(index);
+                        // "-0" 的数值仍是 0，负号必须按文本判断，与 Legacy para 分支一致地拒绝负索引。
+                        if (index.Kind == SyntaxKind.IntegerToken &&
+                            index.Text.Length > 0 &&
+                            index.Text[0] == '-')
+                        {
+                            ReportUnexpected(index, "non-negative parameter index");
+                        }
                     }
+                    else
+                    {
+                        ReportUnexpected(Current, "parameter index or '*'");
+                    }
+
+                    parts.Add(MatchToken(SyntaxKind.CloseBracketToken));
                 }
                 else
                 {
-                    ReportUnexpected(Current, "parameter index or '*'");
+                    if (Current.Kind is SyntaxKind.IntegerToken or SyntaxKind.StarToken)
+                    {
+                        var index = NextToken();
+                        parts.Add(index);
+                        if (index.Value is long value && value < 0)
+                        {
+                            ReportUnexpected(index, "non-negative parameter index");
+                        }
+                    }
+                    else
+                    {
+                        ReportUnexpected(Current, "parameter index or '*'");
+                    }
                 }
             }
         }
@@ -195,6 +205,34 @@ internal sealed class SelectorParser(Parser parser)
             openParen,
             signature,
             MatchToken(SyntaxKind.CloseParenToken));
+    }
+
+    // Standard 的 attr 长形式位置（callable/property/parameter/return）已简写为
+    // call/prop/para/ret；识别长形式并给出可操作的迁移诊断（规范 §17）。
+    private void ReportAttributePositionMigration(SyntaxToken position)
+    {
+        if (LanguageVersion != AspectNLanguageVersion.Standard)
+        {
+            return;
+        }
+
+        var replacement = position.Text switch
+        {
+            "callable" => "call",
+            "property" => "prop",
+            "parameter" => "para",
+            "return" => "ret",
+            _ => null
+        };
+        if (replacement is null)
+        {
+            return;
+        }
+
+        _parser.AddSelectorDiagnostic(
+            DiagnosticCodes.AttributePositionMigration,
+            $"Use '{replacement}' instead of '{position.Text}'.",
+            position);
     }
 
     private RegexSelectorSyntax ParseRegex(SyntaxToken keyword)
@@ -999,13 +1037,20 @@ internal sealed class SelectorParser(Parser parser)
                    text == "*";
         }
 
+        // 长形式 callable/property/parameter/return 仍被识别以给出迁移诊断。
         return text is
             "type" or
+            "call" or
+            "prop" or
+            "para" or
+            "ret" or
+            "any" or
+            "exec" or
+            "*" or
             "callable" or
             "property" or
             "parameter" or
-            "return" or
-            "any";
+            "return";
     }
 
     private bool IsIdentifier(string text)

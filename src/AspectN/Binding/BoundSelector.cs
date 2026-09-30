@@ -56,7 +56,8 @@ internal enum BoundAttributeTargetKind
     Property,
     Parameter,
     Return,
-    Any
+    Any,
+    Execution
 }
 
 internal sealed class BoundModifier(

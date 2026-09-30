@@ -158,6 +158,9 @@ public class ConformanceFixture : IConformanceContract<string>
         private set;
     } = string.Empty;
 
+    [ConformanceMarker]
+    public string Label => string.Empty;
+
     public string this[int index] => index.ToString(CultureInfo.InvariantCulture);
 
     public event EventHandler? Changed;

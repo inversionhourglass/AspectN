@@ -556,7 +556,7 @@ getter(* Model.Name)
 setter(* Model.Name)
 ctor(Service(string, ref int))
 cctor(Service)
-attr(parameter[0] RequiredAttribute)
+attr(para[0] RequiredAttribute)
 regex(^public .*\\.Get\\(.*\\)$)
 vendor.feature("x", -2, true, System.IDisposable+)
 ```

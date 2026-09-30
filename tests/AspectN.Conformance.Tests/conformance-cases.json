@@ -94,7 +94,55 @@
     "kind": "method",
     "member": "Attributed",
     "parameterCount": 1,
-    "expression": "method(* AspectN.TestAssembly.Conformance.ConformanceFixture.Attributed(..)) && attr(callable AspectN.TestAssembly.Conformance.ConformanceMarkerAttribute)",
+    "expression": "method(* AspectN.TestAssembly.Conformance.ConformanceFixture.Attributed(..)) && attr(call AspectN.TestAssembly.Conformance.ConformanceMarkerAttribute)",
+    "expected": "Matched"
+  },
+  {
+    "id": "direct-attribute-exec",
+    "kind": "method",
+    "member": "Attributed",
+    "parameterCount": 1,
+    "expression": "method(* AspectN.TestAssembly.Conformance.ConformanceFixture.Attributed(..)) && attr(exec AspectN.TestAssembly.Conformance.ConformanceMarkerAttribute)",
+    "expected": "Matched"
+  },
+  {
+    "id": "property-attribute-prop",
+    "kind": "method",
+    "member": "get_Label",
+    "parameterCount": 0,
+    "expression": "callable(* AspectN.TestAssembly.Conformance.ConformanceFixture.get_Label()) && attr(prop AspectN.TestAssembly.Conformance.ConformanceMarkerAttribute)",
+    "expected": "Matched"
+  },
+  {
+    "id": "property-attribute-exec-legacy-semantics",
+    "kind": "method",
+    "member": "get_Label",
+    "parameterCount": 0,
+    "expression": "callable(* AspectN.TestAssembly.Conformance.ConformanceFixture.get_Label()) && attr(exec AspectN.TestAssembly.Conformance.ConformanceMarkerAttribute)",
+    "expected": "Matched"
+  },
+  {
+    "id": "property-attribute-call-excludes-property",
+    "kind": "method",
+    "member": "get_Label",
+    "parameterCount": 0,
+    "expression": "callable(* AspectN.TestAssembly.Conformance.ConformanceFixture.get_Label()) && attr(call AspectN.TestAssembly.Conformance.ConformanceMarkerAttribute)",
+    "expected": "NotMatched"
+  },
+  {
+    "id": "parameter-attribute-legacy-space-form",
+    "kind": "method",
+    "member": "Attributed",
+    "parameterCount": 1,
+    "expression": "method(* AspectN.TestAssembly.Conformance.ConformanceFixture.Attributed(..)) && attr(para 0 AspectN.TestAssembly.Conformance.ConformanceMarkerAttribute)",
+    "expected": "Matched"
+  },
+  {
+    "id": "attribute-star-compat",
+    "kind": "method",
+    "member": "Attributed",
+    "parameterCount": 1,
+    "expression": "method(* AspectN.TestAssembly.Conformance.ConformanceFixture.Attributed(..)) && attr(* AspectN.TestAssembly.Conformance.ConformanceMarkerAttribute)",
     "expected": "Matched"
   },
   {

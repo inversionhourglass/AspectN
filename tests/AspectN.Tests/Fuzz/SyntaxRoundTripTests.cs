@@ -37,7 +37,19 @@ public sealed class SyntaxRoundTripTests
         },
         {
             AspectNParseKind.MemberExpression,
-            "method(* Service.*(..)) && !attr(callable ObsoleteAttribute)"
+            "method(* Service.*(..)) && !attr(call ObsoleteAttribute)"
+        },
+        {
+            AspectNParseKind.MemberExpression,
+            "attr(para 0 Example.MarkerAttribute)"
+        },
+        {
+            AspectNParseKind.MemberExpression,
+            "attr(* Example.MarkerAttribute)"
+        },
+        {
+            AspectNParseKind.MemberExpression,
+            "attr(exec Example.MarkerAttribute)"
         },
         {
             AspectNParseKind.TypePattern,

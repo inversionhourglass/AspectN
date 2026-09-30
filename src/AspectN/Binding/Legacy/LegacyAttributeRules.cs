@@ -40,7 +40,8 @@ internal static class LegacyAttributeRules
         }
     }
 
-    private static AttributeTarget[] GetExecutionTargets(
+    // Standard 的 exec 位置刻意复用此实现，与 Legacy 的 exec 语义保持一致。
+    internal static AttributeTarget[] GetExecutionTargets(
         CallableSignature candidate)
     {
         return candidate.AssociatedProperty is null

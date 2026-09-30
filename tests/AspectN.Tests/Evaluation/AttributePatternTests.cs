@@ -9,11 +9,11 @@ public sealed class AttributePatternTests
 {
     [Theory]
     [InlineData("attr(type Example.RequiredAttribute)", AttributeTargetKind.Type)]
-    [InlineData("attr(callable Example.RequiredAttribute)", AttributeTargetKind.Callable)]
-    [InlineData("attr(property Example.RequiredAttribute)", AttributeTargetKind.Property)]
-    [InlineData("attr(parameter[1] Example.RequiredAttribute)", AttributeTargetKind.Parameter)]
-    [InlineData("attr(parameter[*] Example.RequiredAttribute)", AttributeTargetKind.Parameter)]
-    [InlineData("attr(return Example.RequiredAttribute)", AttributeTargetKind.Return)]
+    [InlineData("attr(call Example.RequiredAttribute)", AttributeTargetKind.Callable)]
+    [InlineData("attr(prop Example.RequiredAttribute)", AttributeTargetKind.Property)]
+    [InlineData("attr(para[1] Example.RequiredAttribute)", AttributeTargetKind.Parameter)]
+    [InlineData("attr(para[*] Example.RequiredAttribute)", AttributeTargetKind.Parameter)]
+    [InlineData("attr(ret Example.RequiredAttribute)", AttributeTargetKind.Return)]
     [InlineData("attr(any Example.RequiredAttribute)", AttributeTargetKind.Return)]
     public void Match_AttributePosition_QueriesDirectLocationOnly(
         string source,
@@ -48,11 +48,11 @@ public sealed class AttributePatternTests
         var typeSystem = new AttributeTypeSystem(_ => false);
 
         var matched = Match(
-            "attr(callable $A) && callable($A Service.get_Name(..))",
+            "attr(call $A) && callable($A Service.get_Name(..))",
             Candidate(returnType: second, attributes: attributes),
             typeSystem);
         var notMatched = Match(
-            "attr(callable $A) && callable($A Service.get_Name(..))",
+            "attr(call $A) && callable($A Service.get_Name(..))",
             Candidate(returnType: second, attributes: attributes.Take(1)),
             typeSystem);
 
@@ -92,7 +92,7 @@ public sealed class AttributePatternTests
             target.Parameter!.Position == 0);
 
         var result = Match(
-            "attr(parameter[1] Example.RequiredAttribute)",
+            "attr(para[1] Example.RequiredAttribute)",
             Candidate(),
             typeSystem);
 
@@ -118,12 +118,79 @@ public sealed class AttributePatternTests
     }
 
     [Fact]
+    public void Match_ExecPosition_IncludesAssociatedPropertyAttributes()
+    {
+        // exec 与 Legacy 语义一致：访问器候选同时查询 callable 与所属 property。
+        var typeSystem = new AttributeTypeSystem(target =>
+            target.Kind == AttributeTargetKind.Property);
+
+        var result = Match(
+            "attr(exec Example.RequiredAttribute)",
+            Candidate(),
+            typeSystem);
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+        Assert.Equal(
+            new[]
+            {
+                AttributeTargetKind.Callable,
+                AttributeTargetKind.Property
+            },
+            typeSystem.RequestedTargets.Select(target => target.Kind).ToArray());
+    }
+
+    [Fact]
+    public void Match_CallPosition_ExcludesAssociatedPropertyAttributes()
+    {
+        var typeSystem = new AttributeTypeSystem(target =>
+            target.Kind == AttributeTargetKind.Property);
+
+        var result = Match(
+            "attr(call Example.RequiredAttribute)",
+            Candidate(),
+            typeSystem);
+
+        Assert.Equal(MatchStatus.NotMatched, result.Status);
+        Assert.Equal(
+            AttributeTargetKind.Callable,
+            Assert.Single(typeSystem.RequestedTargets).Kind);
+    }
+
+    [Theory]
+    [InlineData("attr(para 1 Example.RequiredAttribute)")]
+    [InlineData("attr(para[1] Example.RequiredAttribute)")]
+    public void Match_ParaIndexCompatForms_AreEquivalent(string source)
+    {
+        var typeSystem = new AttributeTypeSystem(target =>
+            target.Kind == AttributeTargetKind.Parameter &&
+            target.Parameter!.Position == 1);
+
+        var result = Match(source, Candidate(), typeSystem);
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+    }
+
+    [Fact]
+    public void Match_StarPosition_MatchesAnyLocation()
+    {
+        var typeSystem = new AttributeTypeSystem(target =>
+            target.Kind == AttributeTargetKind.Return);
+
+        var result = Match(
+            "attr(* Example.RequiredAttribute)",
+            Candidate(),
+            typeSystem);
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+    }
+
+    [Fact]
     public void Match_ConcreteGenericAttribute_DirectLookupReceivesTypeArguments()
     {
         var typeSystem = new AttributeTypeSystem(_ => true);
 
         var result = Match(
-            "attr(callable Example.ReviewTagAttribute<int>)",
+            "attr(call Example.ReviewTagAttribute<int>)",
             Candidate(),
             typeSystem);
 
@@ -137,8 +204,8 @@ public sealed class AttributePatternTests
     }
 
     [Theory]
-    [InlineData("attr(callable Example.ReviewTagAttribute<>)")]
-    [InlineData("attr(callable Example.ReviewTagAttribute<..>)")]
+    [InlineData("attr(call Example.ReviewTagAttribute<>)")]
+    [InlineData("attr(call Example.ReviewTagAttribute<..>)")]
     public void Match_GenericWildcardAttribute_UsesEmbeddedAttributes(
         string source)
     {
@@ -161,8 +228,8 @@ public sealed class AttributePatternTests
     }
 
     [Theory]
-    [InlineData("attr(callable ReviewTag*<int>)", MatchStatus.Matched)]
-    [InlineData("attr(callable ReviewTag*<string>)", MatchStatus.NotMatched)]
+    [InlineData("attr(call ReviewTag*<int>)", MatchStatus.Matched)]
+    [InlineData("attr(call ReviewTag*<string>)", MatchStatus.NotMatched)]
     public void Match_WildcardNameGenericAttribute_ComparesEmbeddedArguments(
         string source,
         MatchStatus expected)
@@ -204,7 +271,7 @@ public sealed class AttributePatternTests
             ]);
 
         var result = Match(
-            "attr(callable Example.ReviewTagAttribute<System.Collections.Generic.List<>>)",
+            "attr(call Example.ReviewTagAttribute<System.Collections.Generic.List<>>)",
             candidate,
             typeSystem);
 
@@ -228,7 +295,7 @@ public sealed class AttributePatternTests
             ]);
 
         var result = Match(
-            "attr(callable Example.ReviewTagAttribute<string?>)",
+            "attr(call Example.ReviewTagAttribute<string?>)",
             candidate,
             typeSystem);
 
@@ -243,7 +310,7 @@ public sealed class AttributePatternTests
         var candidate = Candidate();
 
         var result = Match(
-            "attr(callable Example.ReviewTagAttribute<System.Collections.Generic.List<int>>)",
+            "attr(call Example.ReviewTagAttribute<System.Collections.Generic.List<int>>)",
             candidate,
             typeSystem);
 
@@ -287,14 +354,14 @@ public sealed class AttributePatternTests
 
         // 成员 OR 与类型 OR 两种形式必须对同一约束给出一致结果。
         var memberOr =
-            "attr(callable $A) && " +
+            "attr(call $A) && " +
             "(callable($A Service.get_Name(..)) || " +
             "callable($A Service.Missing(..))) && " +
-            "attr(return $A)";
+            "attr(ret $A)";
         var typeOr =
-            "attr(callable $A) && " +
+            "attr(call $A) && " +
             "callable(($A || Missing) Service.get_Name(..)) && " +
-            "attr(return $A)";
+            "attr(ret $A)";
 
         Assert.Equal(
             MatchStatus.NotMatched,
@@ -315,7 +382,7 @@ public sealed class AttributePatternTests
     {
         var compilation = AspectNCompilation.Create(
             AspectNParser.ParseMemberExpression(
-                "attr(parameter[2147483648] Example.RequiredAttribute)"));
+                "attr(para[2147483648] Example.RequiredAttribute)"));
 
         // 越界索引必须产生诊断，且不得退化为 parameter[*] 的通配语义。
         Assert.Contains(

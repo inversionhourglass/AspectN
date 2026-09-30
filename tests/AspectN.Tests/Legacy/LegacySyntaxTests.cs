@@ -39,16 +39,17 @@ public sealed class LegacySyntaxTests
 
     [Theory]
     [InlineData("attr(exec Example.MarkerAttribute)")]
+    [InlineData("attr(para 0 Example.MarkerAttribute)")]
     [InlineData("attr(para * Example.MarkerAttribute)")]
     [InlineData("attr(ret Example.MarkerAttribute)")]
     [InlineData("attr(* Example.MarkerAttribute)")]
-    public void Parse_LegacyAttributePositionInStandard_ReportsDiagnostic(
+    public void Parse_LegacyAttributePositionInStandard_IsAcceptedSilently(
         string source)
     {
         var compilation = Compile(source, AspectNLanguageVersion.Standard);
 
-        Assert.NotEmpty(compilation.Diagnostics);
-        Assert.Null(compilation.BoundRoot);
+        Assert.Empty(compilation.Diagnostics);
+        Assert.NotNull(compilation.BoundRoot);
     }
 
     [Theory]
