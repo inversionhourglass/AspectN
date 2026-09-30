@@ -118,9 +118,9 @@ public sealed class RegexPatternTests
     }
 
     [Fact]
-    public void Format_SingleGenericParameter_StandardNumbersT1LegacyUsesBareT()
+    public void Format_SingleGenericParameter_BothVersionsUseBareT()
     {
-        // class Cls<A> { public void M(A a); }
+        // class Cls<A> { public void M(A a); } —— 总数为 1 时两版本都渲染裸 T。
         var candidate = SingleGenericCandidate();
 
         var standard = CanonicalSignatureFormatter.Format(
@@ -130,7 +130,7 @@ public sealed class RegexPatternTests
             candidate,
             AspectNLanguageVersion.Legacy);
 
-        Assert.Equal("public System.Void X.Y.Z.Cls<T1>.M(T1)", standard);
+        Assert.Equal("public System.Void X.Y.Z.Cls<T>.M(T)", standard);
         Assert.Equal("public System.Void X.Y.Z.Cls<T>.M(T)", legacy);
     }
 
@@ -150,7 +150,7 @@ public sealed class RegexPatternTests
     [Fact]
     public void Format_ConstructedGenericUse_RenamesNestedArgument()
     {
-        // class Cls<TM> { public void M(List<TM> items); }
+        // class Cls<TM> { public void M(List<TM> items); } —— 总数为 1，渲染裸 T。
         var candidate = ConstructedUseCandidate();
 
         var standard = CanonicalSignatureFormatter.Format(
@@ -158,8 +158,8 @@ public sealed class RegexPatternTests
             AspectNLanguageVersion.Standard);
 
         Assert.Equal(
-            "public System.Void X.Y.Z.Cls<T1>.M(" +
-            "System.Collections.Generic.List<T1>)",
+            "public System.Void X.Y.Z.Cls<T>.M(" +
+            "System.Collections.Generic.List<T>)",
             standard);
     }
 
@@ -169,6 +169,16 @@ public sealed class RegexPatternTests
         var result = Match(
             "regex(^public T2 X\\.Y\\.Z\\.Cls<T1>\\.M<T2, T3>\\(T1, T3\\)$)",
             OpenGenericCandidate());
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+    }
+
+    [Fact]
+    public void Match_Regex_SingleGenericParameter_MatchesBareT()
+    {
+        var result = Match(
+            "regex(^public System\\.Void X\\.Y\\.Z\\.Cls<T>\\.M\\(T\\)$)",
+            SingleGenericCandidate());
 
         Assert.Equal(MatchStatus.Matched, result.Status);
     }

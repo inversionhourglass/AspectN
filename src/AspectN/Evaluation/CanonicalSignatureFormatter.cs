@@ -7,8 +7,8 @@ namespace AspectN.Evaluation;
 internal static class CanonicalSignatureFormatter
 {
     // Standard 定义签名的泛型形参按扁平槽位渲染为 T1..Tn（外层类型从左到右、
-    // 再内层、最后方法泛型）；封闭构造仍展开实际实参。与 Legacy 的差异：
-    // 总数为 1 时 Standard 仍是 T1（Legacy 用裸 T），分隔符保留 ", "。
+    // 再内层、最后方法泛型），总数为 1 时渲染为裸 T，与 Legacy 一致；封闭构造
+    // 仍展开实际实参。与 Legacy 的差异仅在分隔符：Standard 保留 ", "。
     public static string Format(
         CallableSignature candidate,
         AspectNLanguageVersion languageVersion)

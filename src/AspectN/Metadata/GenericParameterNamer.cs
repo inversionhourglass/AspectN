@@ -46,8 +46,8 @@ internal static class GenericParameterNamer
     }
 
     // 泛型形参的位置名：类型形参先占 T1..Tm（外层从左到右、再内层），
-    // 方法形参接续 T{m+1}..T{m+n}。Standard 定义签名统一使用该编码；
-    // Legacy 兼容路径另有“总数为 1 时用裸 T”的历史特例，由其自身处理。
+    // 方法形参接续 T{m+1}..T{m+n}；总数（类型+方法合并计数）为 1 时渲染为
+    // 裸 T，与 Legacy 一致。
     public static Dictionary<GenericParameterKey, string> CreatePositionalNames(
         CallableSignature candidate)
     {
@@ -62,6 +62,15 @@ internal static class GenericParameterNamer
             .ToArray();
         var methodParameters = candidate.GenericParameters.ToArray();
         var names = new Dictionary<GenericParameterKey, string>();
+        if (typeParameters.Length + methodParameters.Length == 1)
+        {
+            var single = typeParameters.Length == 1
+                ? typeParameters[0]
+                : methodParameters[0];
+            names[new GenericParameterKey(single)] = "T";
+            return names;
+        }
+
         var slot = 0;
         foreach (var parameter in typeParameters)
         {
