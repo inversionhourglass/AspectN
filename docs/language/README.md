@@ -13,7 +13,8 @@ specific metadata backend in the language or compiled pattern API.
 - `property(...)`, `getter(...)`, and `setter(...)` select property accessors.
 - `ctor(...)` and `cctor(...)` select instance and static constructors.
 - `attr(target Type)` checks a direct attribute on a type, callable (`call`),
-  property (`prop`), return value (`ret`), or parameter (`para[n]`).
+  property (`prop`), return value (`ret`), parameter (`para[n]`), the execution
+  family (`exec`), or any location (`any`, `*`).
 
 Selectors can be combined with `&&`, `||`, `!`, and parentheses.
 

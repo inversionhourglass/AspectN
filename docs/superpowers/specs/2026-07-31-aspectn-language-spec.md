@@ -30,7 +30,7 @@ Legacy preserves approved Shared.Cecil.AspectN syntax and matching behavior for 
 - Space-separated accessibilities as alternatives.
 - Implicit generic variables.
 - `(T1,T2)` matching both `Tuple` and `ValueTuple`.
-- `async T` as Task/ValueTask return sugar.
+- `async T` / `async null` as Task/ValueTask return sugar.
 
 Legacy is selected explicitly by the Rougamo compatibility facade.
 
@@ -44,7 +44,7 @@ Standard is the default for new AspectN APIs. It uses:
 - Standard C# accessibility phrases, with `|` joining accessibility alternatives.
 - Explicit `$T` pattern variables.
 - C# `ValueTuple` meaning for tuple syntax.
-- Task-like return matching via `tasklike<T>`; no `async` modifier.
+- Task-like return matching via `tasklike` or `tasklike<T>`; no `async` modifier.
 - Explicit `ref`, `out`, `in`, and `ref readonly`.
 
 An expression is always compiled with a language version. The compiled cache key includes that version.
@@ -61,6 +61,8 @@ An expression is always compiled with a language version. The compiled cache key
 
 Whitespace may separate tokens unless it participates in a Standard composite phrase such as `private protected`, `protected internal`, or `ref readonly`.
 
+Within a name, the separators `.`/`..`/`/`, the generic opening `<`, and the assignability suffix `+` continue the name only when adjacent to it; whitespace ends the name and separates the surrounding slots. Whitespace inside a `<...>` generic pattern list is free.
+
 Comments are not part of AspectN 1.0 expression syntax.
 
 ### 3.3 Core punctuation
@@ -70,6 +72,7 @@ Comments are not part of AspectN 1.0 expression syntax.
 | `!` | Logical negation |
 | `&&` | Logical conjunction |
 | `||` | Logical disjunction |
+| `|` | Accessibility alternation separator (Standard modifiers) |
 | `(` `)` | Grouping, selector body, parameter list, or tuple |
 | `<` `>` | Generic pattern list |
 | `[` `]` | Array rank or attribute parameter index |
@@ -244,6 +247,8 @@ return-ref-kind =
     | "ref", "readonly" ;
 ```
 
+A member path starts with a name pattern. The declaring type is omitted by writing nothing — `method(* Get(..))` matches members named `Get` on any declaring type; there is no leading-separator spelling. Separators (`.`, `..`, `/`) continue a member path only when adjacent to the names on both sides (§3.2).
+
 Standard has no `async` modifier: writing `async` in a signature is an error. Asynchrony is matched through the return type instead.
 
 Task-like return matching is expressed as a type pattern:
@@ -255,7 +260,7 @@ method(tasklike Service.Flush(..))
 
 `tasklike<T>` matches `Task<T>` or `ValueTask<T>` regardless of whether the method was compiled with `async`. Bare `tasklike` matches non-generic `Task` or `ValueTask`; `tasklike<void>` is rejected with a migration diagnostic. Custom awaitables are outside 1.0 task-like syntax.
 
-Legacy `async T` retains its historical Task/ValueTask return-shape behavior.
+Legacy `async T` and `async null` retain their historical Task/ValueTask return-shape behavior. Legacy has no `tasklike` syntax: an identifier `tasklike` in Legacy is an ordinary type name.
 
 ## 8. Property Signatures
 
@@ -325,7 +330,7 @@ compound-accessibility =
     | "private", "protected" ;
 ```
 
-At most one positive accessibility (or one `|` alternation group) appears in one Standard signature. `|` joins positive alternatives; a candidate matches when its accessibility equals any alternative. A compound accessibility combined with `|` must be parenthesized:
+At most one positive accessibility (or one `|` alternation group) appears in one Standard signature. `|` joins positive alternatives; a candidate matches when its accessibility equals any alternative. A compound accessibility combined with `|` must be parenthesized. Parentheses around a lone compound accessibility are also allowed for readability; a parenthesized single accessibility such as `(public)`, or a pair that is not a compound such as `(internal public)`, is an error — whitespace never joins accessibility alternatives, use `|`:
 
 ```text
 method(private|internal * *(..))
@@ -420,6 +425,8 @@ tuple-type-pattern =
 
 tasklike-type-pattern =
     "tasklike", [ "<", type-pattern, ">" ] ;
+
+The bare (bracket-omitted) form is Standard-only; Legacy treats a bare `tasklike` identifier as an ordinary type name (§7).
 
 pattern-variable =
     "$", identifier ;
@@ -653,7 +660,7 @@ Regex applies to a versioned, culture-invariant canonical member signature:
 
 Ref kinds are rendered before affected parameter or return types. Nested types use `/`. Type names are fully qualified except generic formal parameters in definition signatures, which are renamed positionally to `T1..TN`: declaring-type parameters first (outermost type, left to right, then nested levels), followed by method parameters. Every occurrence of one parameter renders the same name, in the declaring-type clause, the method generic clause, and use positions alike. Constructed signatures render the actual type arguments.
 
-Positional numbering is deliberate: patterns stay valid when source renames a generic parameter, and authors only need the arity of each type and the method. When the total parameter count (type plus method) is exactly one, both versions render the sole parameter as bare `T`; otherwise parameters are numbered `T1..TN`. `T` followed by digits is reserved for this encoding — a concrete type whose fully qualified name is exactly such a token (only possible in the global namespace) is not distinguishable from a positional parameter by regex; use a structured selector for such members.
+Positional numbering is deliberate: patterns stay valid when source renames a generic parameter, and authors only need the arity of each type and the method. When the total parameter count (type plus method) is exactly one, both versions render the sole parameter as bare `T`; otherwise parameters are numbered `T1..TN`. Bare `T` and `T` followed by digits are reserved for this encoding — a concrete type whose fully qualified name is exactly such a token (only possible in the global namespace) is not distinguishable from a positional parameter by regex; use a structured selector for such members.
 
 Regex evaluation has a mandatory finite timeout. Timeout produces `Unknown` with a diagnostic.
 
@@ -745,7 +752,7 @@ method(* Service.*(..)) && !attr(call ObsoleteAttribute)
 | Space-separated accessibilities | Alternatives | `|` alternation; compounds parenthesized |
 | Generic variables | Implicit identifiers | Explicit `$name` |
 | Tuple syntax | Tuple or ValueTuple | ValueTuple only |
-| `async T` | Task/ValueTask return sugar | No `async` modifier; `tasklike<T>` return pattern |
+| `async T` / `async null` | Task/ValueTask return sugar | No `async` modifier; `tasklike<T>` / bare `tasklike` return patterns |
 | Reference `T?` | Historical Nullable behavior | Same CLR reference type as `T` |
 | Ref kinds | Not formally modeled | `ref`, `out`, `in`, `ref readonly` |
 | Generic name without clause | Any arity | Arity zero, except `*` |

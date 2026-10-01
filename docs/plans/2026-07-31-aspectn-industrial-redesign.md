@@ -498,7 +498,7 @@ Outer<T>/Inner<string>
 System.IDisposable+
 int?[]
 (int, string)
-tasklike<void>
+tasklike
 $T
 ref readonly int
 Name<>
@@ -563,7 +563,7 @@ vendor.feature("x", -2, true, System.IDisposable+)
 
 **Step 2: Add versioned parse tests**
 
-- Standard reports migration diagnostics for `execution(...)` and `property(...)`.
+- Standard accepts `execution(...)` and `property(...)` directly; migration diagnostics remain for `tasklike<void>` and the long attribute positions.
 - Legacy accepts `execution`, `property`, `attr(para 0 ...)`, `privateprotected`, and `<!>`.
 - Standard keywords are lowercase and case-sensitive.
 - Legacy selector keywords follow the oracle's case-insensitive behavior.
@@ -896,7 +896,7 @@ git commit -m "feat(matching): add modifiers ref kinds and type sugar"
 **Files:**
 - Create: `src/AspectN/Evaluation/MemberPatternEvaluator.cs`
 - Create: `tests/AspectN.Tests/Evaluation/CallableSelectorTests.cs`
-- Create: `tests/AspectN.Tests/Evaluation/AccessorSelectorTests.cs`
+- Create: `tests/AspectN.Tests/Evaluation/PropertySelectorTests.cs`
 - Create: `tests/AspectN.Tests/Evaluation/ConstructorSelectorTests.cs`
 
 **Step 1: Write domain tests**
@@ -916,7 +916,7 @@ The default match uses substituted return/parameter types while retaining the or
 **Step 3: Implement, pass, and commit**
 
 ```powershell
-dotnet test tests/AspectN.Tests/AspectN.Tests.csproj -c Release --filter "FullyQualifiedName~CallableSelectorTests|FullyQualifiedName~AccessorSelectorTests|FullyQualifiedName~ConstructorSelectorTests"
+dotnet test tests/AspectN.Tests/AspectN.Tests.csproj -c Release --filter "FullyQualifiedName~CallableSelectorTests|FullyQualifiedName~PropertySelectorTests|FullyQualifiedName~ConstructorSelectorTests"
 git add src/AspectN/Evaluation/MemberPatternEvaluator.cs tests/AspectN.Tests/Evaluation
 git commit -m "feat(matching): evaluate member selectors"
 ```
@@ -1814,6 +1814,11 @@ execution(...) (unchanged; covers constructors as well)
 property(...)  (unchanged)
 privateprotected -> private protected
 protectedinternal -> protected internal
+tasklike<void> -> tasklike
+attr(callable ...) -> attr(call ...)
+attr(property ...) -> attr(prop ...)
+attr(parameter ...) -> attr(para ...)
+attr(return ...) -> attr(ret ...)
 implicit T -> $T
 ```
 
