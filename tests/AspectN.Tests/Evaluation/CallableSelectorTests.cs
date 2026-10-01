@@ -281,6 +281,7 @@ public sealed class CallableSelectorTests
             genericArguments ?? Array.Empty<TypeSignature>(),
             Array.Empty<AttributeSignature>(),
             Array.Empty<AttributeSignature>(),
+            typeAttributes: null,
             originalDefinition);
     }
 

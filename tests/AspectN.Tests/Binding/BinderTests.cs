@@ -208,6 +208,40 @@ public sealed class BinderTests
         Assert.NotNull(compilation.BoundRoot);
     }
 
+    [Theory]
+    [InlineData("int[]+", AspectNLanguageVersion.Legacy)]
+    [InlineData("int[][]+", AspectNLanguageVersion.Legacy)]
+    [InlineData("string[,]+", AspectNLanguageVersion.Legacy)]
+    [InlineData("int []", AspectNLanguageVersion.Standard)]
+    [InlineData("int ?", AspectNLanguageVersion.Standard)]
+    public void Create_VersionedSuffixRules_AcceptedInLegacyOrStandardOnly(
+        string source,
+        AspectNLanguageVersion languageVersion)
+    {
+        // Legacy 对齐 Shared：数组目标 + 下沉为元素可赋值（int[]+ 等价 int+[]）；
+        // [ / ? 的邻接限制仅 Legacy 生效（Shared 拒绝 int [] / int ?），
+        // Standard 规范 §3.2 未把 [/? 列入邻接约束，保持接受。
+        var compilation = CompileType(source, languageVersion);
+
+        Assert.DoesNotContain(
+            compilation.Diagnostics,
+            diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
+        Assert.NotNull(compilation.BoundRoot);
+    }
+
+    [Fact]
+    public void Create_LegacyArrayAssignableSuffix_BindsElementAssignable()
+    {
+        var compilation = CompileType("int[]+", AspectNLanguageVersion.Legacy);
+        Assert.NotNull(compilation.BoundRoot);
+
+        // int[]+ 逐层下沉：绑定结果应是数组包裹“可赋值的 int”，而不是数组目标上的 +。
+        var array = Assert.IsType<BoundArrayTypePattern>(compilation.BoundRoot);
+        var element = Assert.IsType<BoundAssignableTypePattern>(array.ElementType);
+        var elementTarget = Assert.IsType<BoundNamedTypePattern>(element.TargetType);
+        Assert.Equal("System.Int32", elementTarget.CanonicalName);
+    }
+
     private static AspectNCompilation CompileMember(
         string source,
         AspectNLanguageVersion languageVersion = AspectNLanguageVersion.Standard)

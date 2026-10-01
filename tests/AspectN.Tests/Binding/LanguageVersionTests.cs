@@ -101,6 +101,8 @@ public sealed class LanguageVersionTests
     {
         var standard = CompileType("Name", AspectNLanguageVersion.Standard);
         var legacy = CompileType("Name", AspectNLanguageVersion.Legacy);
+        var legacyQualified = CompileType(
+            "Example.Name", AspectNLanguageVersion.Legacy);
 
         var standardName = Assert.IsType<BoundNamedTypePattern>(
             standard.BoundRoot);
@@ -109,9 +111,17 @@ public sealed class LanguageVersionTests
             BoundGenericArityKind.Exact,
             standardName.Segments[0].Generic.Kind);
         Assert.Equal(0, standardName.Segments[0].Generic.Arity);
+        // Legacy 的 genericIn 对齐 Shared：裸单段名省略子句表示零泛型
+        // （SingleNonGenericNamePattern），限定名省略仍是任意泛型。
+        Assert.Equal(
+            BoundGenericArityKind.Exact,
+            legacyName.Segments[0].Generic.Kind);
+        Assert.Equal(0, legacyName.Segments[0].Generic.Arity);
+        var qualifiedName = Assert.IsType<BoundNamedTypePattern>(
+            legacyQualified.BoundRoot);
         Assert.Equal(
             BoundGenericArityKind.Any,
-            legacyName.Segments[0].Generic.Kind);
+            qualifiedName.Segments[^1].Generic.Kind);
     }
 
     [Fact]

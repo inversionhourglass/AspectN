@@ -224,6 +224,11 @@ public sealed class ReflectionSignatureMapper
                 : MapAttributes(
                     CustomAttributeData.GetCustomAttributes(returnParameter),
                     AttributeTargetKind.Return),
+            // 声明类型特性：attr(type ...) 通配/复合查询需要（对应旧 Shared 的 AttributeSignatures.Types）。
+            MapAttributes(
+                CustomAttributeData.GetCustomAttributes(
+                    RequiredDeclaringType(method)),
+                AttributeTargetKind.Type),
             originalDefinition,
             associatedProperty is null
                 ? null

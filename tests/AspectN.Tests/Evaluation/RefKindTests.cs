@@ -27,7 +27,8 @@ public sealed class RefKindTests
         var result = ModifierMatcher.IsRefKindMatch(
             parameter,
             candidate,
-            isParameter: true);
+            isParameter: true,
+            AspectNLanguageVersion.Standard);
 
         Assert.Equal(expected, result);
     }
@@ -51,7 +52,8 @@ public sealed class RefKindTests
             ModifierMatcher.IsRefKindMatch(
                 parameter,
                 candidate,
-                isParameter: true));
+                isParameter: true,
+                AspectNLanguageVersion.Standard));
     }
 
     [Fact]
@@ -72,12 +74,14 @@ public sealed class RefKindTests
             ModifierMatcher.IsRefKindMatch(
                 signature.ReturnType,
                 matching,
-                isParameter: false));
+                isParameter: false,
+                AspectNLanguageVersion.Standard));
         Assert.False(
             ModifierMatcher.IsRefKindMatch(
                 signature.ReturnType,
                 byValue,
-                isParameter: false));
+                isParameter: false,
+                AspectNLanguageVersion.Standard));
     }
 
     private static BoundTypeUsePattern BindParameter(string parameterPattern)

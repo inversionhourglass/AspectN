@@ -61,7 +61,7 @@ internal static class AttributePatternEvaluator
 
             var branch = context.Fork();
             MatchStatus targetStatus;
-            if (!TryGetEmbeddedAttributes(target, out var attributes))
+            if (!TryGetEmbeddedAttributes(target, candidate, out var attributes))
             {
                 targetStatus = Unknown(
                     pattern,
@@ -125,6 +125,7 @@ internal static class AttributePatternEvaluator
 
     private static bool TryGetEmbeddedAttributes(
         AttributeTarget target,
+        CallableSignature candidate,
         out IReadOnlyList<AttributeSignature> attributes)
     {
         switch (target.Kind)
@@ -140,6 +141,10 @@ internal static class AttributePatternEvaluator
                 return true;
             case AttributeTargetKind.Return:
                 attributes = target.Callable!.ReturnAttributes;
+                return true;
+            case AttributeTargetKind.Type:
+                // 声明类型特性由映射器随候选签名携带（对应旧 Shared 的 AttributeSignatures.Types）。
+                attributes = candidate.TypeAttributes;
                 return true;
             default:
                 attributes = Array.Empty<AttributeSignature>();

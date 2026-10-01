@@ -289,7 +289,10 @@ internal sealed class SelectorParser(Parser parser)
     {
         var parts = new List<SyntaxNode>();
         parts.AddRange(ParseModifiers());
-        if (IsIdentifier("async"))
+        // Shared 的 async 糖严格小写（ParseAsync 用区分大小写的比较）；ASYNC/Async 变体
+        // 不作为糖消费，走普通类型名路径并由后续 token 触发诊断。
+        if (Current.Kind == SyntaxKind.IdentifierToken &&
+            Current.Text == "async")
         {
             if (LanguageVersion == AspectNLanguageVersion.Standard)
             {
@@ -614,9 +617,23 @@ internal sealed class SelectorParser(Parser parser)
             switch (Current.Kind)
             {
                 case SyntaxKind.OpenBracketToken:
+                    // Legacy 对齐 Shared：类型累积遇到非相邻 token 即截断，int [] / int ? 被旧实现拒绝。
+                    // Standard 规范 §3.2 未把 [/? 列入邻接约束，保持接受。
+                    if (LanguageVersion == AspectNLanguageVersion.Legacy &&
+                        Current.Span.Start != pattern.FullSpan.End)
+                    {
+                        ReportUnexpected(Current, "'[' (must be adjacent to the type pattern)");
+                    }
+
                     pattern = ParseArraySuffix(pattern);
                     continue;
                 case SyntaxKind.QuestionToken:
+                    if (LanguageVersion == AspectNLanguageVersion.Legacy &&
+                        Current.Span.Start != pattern.FullSpan.End)
+                    {
+                        ReportUnexpected(Current, "'?' (must be adjacent to the type pattern)");
+                    }
+
                     pattern = new NullableTypePatternSyntax(pattern, NextToken());
                     continue;
                 case SyntaxKind.PlusToken:

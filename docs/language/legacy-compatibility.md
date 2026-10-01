@@ -44,9 +44,44 @@ Rougamo 的[方法匹配文档](https://github.com/inversionhourglass/Rougamo/wi
 | `attr(ret * extra)`、`method(* Type.Foo(int bool))` 忽略部分内部 token | 拒绝额外 token 和缺少参数分隔逗号，返回定位诊断；不生成容易误匹配的模式。 |
 | 独立类型 Boolean 表达式，如 `!int || string`，旧入口可能抛异常 | 两种类型入口使用相同的正常 Boolean 运算符优先级，返回可用的模式。 |
 
-两项可用匹配器之间的结果修正（重复泛型名、Boolean 否定作用域）在 `tests/AspectN.LegacyOracle.Tests/approved-differences.json` 逐候选登记，并必须被实际语料消费。接受/拒绝变化由 `LegacyGrammarCompatibilityTests` 与本政策共同覆盖，不能把无效新模式伪装为可用匹配器的 false 结果。
+可用匹配器之间的结果修正（重复泛型名、Boolean 否定作用域、ref/out/in 参数按 ref kind 匹配）在 `tests/AspectN.LegacyOracle.Tests/approved-differences.json` 逐候选登记，并必须被实际语料消费。接受/拒绝变化由 `LegacyGrammarCompatibilityTests` 与本政策共同覆盖，不能把无效新模式伪装为可用匹配器的 false 结果。
 
 `Service <T>.Run`、`Service.Run <T>` 在 Shared 中本来就报错，原新解析器却接受。此次恢复一致性：`<` 必须紧邻名称，合法写法为 `Service<T>.Run`、`Service.Run<T>`。不能把这一修复记成主动偏离 Shared 的批准差异。
+
+## 2026-10-01 第二轮对照裁决
+
+第二轮对照（[复查报告](../../artifacts/reviews/aspectn-shared-legacy-recheck-c65d686-2026-10-01.md)）发现的差异按下列裁决处理；回归覆盖在 `LegacyGrammarCompatibilityTests`。
+
+### 补齐的兼容遗漏（与 Shared 对齐）
+
+| 表达式 / 场景 | 规则 |
+|---|---|
+| `attr(type *)`、`attr(* *)` 对声明类型带特性的方法 | Type 目标参与通配 / 复合特性枚举；声明类型特性随候选签名映射（对应旧 Shared 的 `AttributeSignatures.Types`），不再返回 Unknown。 |
+| `ctor(*..*())`、`ctor(Service<T1,T2>())` | ctor 声明类型改走 genericOut 规则：声明泛型变量，`*` / `*..*` 视为含嵌套类型的通配。cctor 不套用——Shared 的 cctor 声明类型按 genericIn 处理，维持原状。 |
+| `setter(private * *)` 对 public get / private set 的 setter | property / getter / setter 一律按当前 accessor 自身权限求值（旧 `PropertyPattern.IsMatch` 用 accessor 的 `signature.Modifiers`），不取关联属性整体权限。 |
+| `int[]+`（含参数、返回位置） | Legacy 接受：`+` 下沉到数组元素（`int[]+` 等价 `int+[]`），保留层数与 rank，与 Shared 的 assignableMatch 元素语义一致。Standard 维持规范 §12.4 的数组目标拒绝。 |
+| genericIn 裸单段名：`List`、`Dictionary+`、`*[]` 元素、嵌套实参 `...<string, List>` | 省略泛型子句表示零泛型参数（Shared 的 `SingleNonGenericNamePattern`），不匹配构造类型；限定名（`System.Collections.Generic.List`）省略仍是任意泛型。裸 `void` 例外地保留 Any——Void 恒为零泛型，匹配等价，仅为区分 `async void` 糖与 `void<..>` 等显式子句。声明位置（genericOut）不受影响。 |
+| `*..*`、`*..Foo` 对全局命名空间类型 | 裸 `*..` 前缀匹配任意命名空间（含全局），对齐 Shared `NamespacePattern` 的特例；限定前缀（`A..*`）不享受。genericIn 的 `*..*` 仍不自动包含嵌套类型。 |
+| `method(* *(..))` 对 ref 返回 | 通配返回 `*` 不区分 ref kind（旧 `ExecutionPattern` 不比较返回 RefKind）。具名返回（`int`）双方都不匹配 ref 返回；Standard 维持精确比较（规范 §11 仅豁免通配参数）。 |
+
+### 明确拒绝（Shared 接受，但属于实现泄露或错误）
+
+| 表达式 | 规则 |
+|---|---|
+| `method(any * *(..))`、`method(none * *(..))` 及 `!any` / `!none` | `any` / `none` 是旧实现 `ModifierPattern.Flags` 枚举名泄露为修饰符（查表把全部枚举名小写收录；`none` 的 Flags 值为 0，等价于 `any`），不是文档化访问性关键字。Legacy 拒绝。 |
+| `method(ASYNC void *(..))`、`method(Async void *(..))` | async 糖严格小写（旧 `ParseAsync` 区分大小写）。大写变体按普通类型名解析并因后续 token 报诊断。Legacy 关键字整体仍大小写不敏感，此为例外对齐。 |
+| `int []`、`int ?`（空格后缀）及签名位置对应写法 | `[` 与 `?` 必须与类型模式邻接，对齐 Shared 的类型累积截断。仅 Legacy 生效；Standard 规范 §3.2 未把 `[` / `?` 列入邻接约束，保持接受。数组括号内部的空格（`int[ , ]`）不受影响。 |
+
+### 保留的增强与修复（有意偏离 Shared）
+
+| 表达式 / 场景 | 规则 |
+|---|---|
+| `method((int,string)[] *(..))`、`(int,string)?` 等 tuple 后缀 | 结构化后缀语义。Shared 在返回位置拒绝、独立入口忽略尾随后缀（匹配裸 tuple），按 Shared 的遗漏处理；Legacy 统一按结构化语义接受。 |
+| `List<int || string>` | 泛型实参内的 Boolean 组合是既有 Boolean 规则在此位置的延伸，保留；Shared 抛 `ArgumentException`。 |
+| `method(* *(ref int))`、out / in 参数 | 按 ref kind 匹配。Shared 把 `(ref int)` 解析为双槽参数（`ref` 名 + 隐式 Any），永不匹配单参数方法。差分语料逐候选登记（`approved-differences.json`，`LegacyFixture::0x06000013`）。 |
+| `int+[]`、`int+?`、`int?+` | 按 AST 逐层组合：`int+[]` 是元素可赋值的数组（不是"名为 int+ 的类型的数组"）、`int+?` / `int?+` 是组合 nullable。Shared 只识别末尾一个 `+` / `?`，更早的后缀拼进字面名称。`int?[]` 的字面名称规则（上轮）维持。 |
+| `X?+` 对非 Nullable 候选（如 `Box?+` 对 `int`） | 直接 NotMatched。nullable 目标具体化失败时回退闭包求值（原先仅 Standard），候选按 nullable 分派，不再因目标不可具体化返回 Unknown。 |
+| `method(null *(..))` 对 CLR 名为 `null` 的类型（C# `class @null`） | 裸 `null` 作为普通类型名参与匹配（当前实现保持）。Shared 的 `NullTypePattern` 永不匹配、`!null` 恒为 true；不为该极端场景引入硬编码特判。 |
 
 ## 保留的增强与括号含义
 

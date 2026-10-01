@@ -202,6 +202,10 @@ public sealed class CecilSignatureMapper
             MapAttributes(
                 definition?.MethodReturnType.CustomAttributes,
                 AttributeTargetKind.Return),
+            // 声明类型特性：attr(type ...) 通配/复合查询需要（对应旧 Shared 的 AttributeSignatures.Types）。
+            MapAttributes(
+                definition?.DeclaringType?.CustomAttributes,
+                AttributeTargetKind.Type),
             originalDefinition,
             associatedProperty is null
                 ? null

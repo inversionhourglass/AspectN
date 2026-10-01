@@ -156,7 +156,8 @@ internal static class MemberPatternEvaluator
         if (!ModifierMatcher.IsRefKindMatch(
                 pattern.ReturnType,
                 candidate.ReturnType,
-                isParameter: false))
+                isParameter: false,
+                context.LanguageVersion))
         {
             return MatchStatus.NotMatched;
         }
@@ -196,15 +197,19 @@ internal static class MemberPatternEvaluator
                 "The associated property signature is unavailable for this accessor.");
         }
 
+        // Shared 对 property/getter/setter 一律用当前 accessor 自身的权限求值
+        // （旧 PropertyPattern.IsMatch 用 accessor 的 signature.Modifiers），
+        // 不能取关联属性的整体权限：public get / private set 时两者不同。
         if (!ModifierMatcher.IsMatch(
                 pattern.Modifiers,
-                property.Accessibility,
-                property.IsStatic,
+                candidate.Accessibility,
+                candidate.IsStatic,
                 context.LanguageVersion) ||
             !ModifierMatcher.IsRefKindMatch(
                 pattern.PropertyType,
                 property.PropertyType,
-                isParameter: false))
+                isParameter: false,
+                context.LanguageVersion))
         {
             return MatchStatus.NotMatched;
         }
@@ -267,7 +272,8 @@ internal static class MemberPatternEvaluator
             if (!ModifierMatcher.IsRefKindMatch(
                     patterns[index],
                     candidates[index].Type,
-                    isParameter: true))
+                    isParameter: true,
+                    context.LanguageVersion))
             {
                 return MatchStatus.NotMatched;
             }

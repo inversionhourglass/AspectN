@@ -356,7 +356,7 @@ internal sealed class Binder(
         var requiresAsync = _isLegacy && syntax.Parts
             .TakeWhile(part => !ReferenceEquals(part, returnSyntax))
             .OfType<SyntaxToken>()
-            .Any(token => EqualsKeyword(token.Text, "async"));
+            .Any(token => token.Text == "async");
         return new BoundCallableSignature(
             syntax.FullSpan,
             modifiers,
@@ -390,11 +390,20 @@ internal sealed class Binder(
         VariableScope scope)
     {
         // 声明类型在源码顺序上先于参数，其引入的变量必须先进入作用域，参数内的引用才是合法引用。
+        // 与 method 的声明类型一致走 genericOut 规则：声明泛型变量，* / *..* 视为通配（含嵌套类型）。
+        // cctor 不套用此规则——Shared 的 cctor 声明类型按 genericIn 处理。
         var declaringType = syntax.Parts.OfType<TypePatternSyntax>().First();
-        var declaringTypePattern = BindTypePattern(
-            declaringType,
-            scope,
-            IsUnderNegation);
+        var declaringTypePattern = declaringType is NamedTypePatternSyntax named
+            ? BindNamedTypePattern(
+                named,
+                scope,
+                IsUnderNegation,
+                declaresLegacyVariables: _isLegacy,
+                allowUniversalWildcard: true)
+            : BindTypePattern(
+                declaringType,
+                scope,
+                IsUnderNegation);
         var parameters = syntax.Parts
             .OfType<ParameterSyntax>()
             .Select(parameter =>
@@ -614,11 +623,26 @@ internal sealed class Binder(
             case NullableTypePatternSyntax nullable:
                 return new BoundNullableTypePattern(
                     nullable.FullSpan,
-                    BindTypePattern(
-                        nullable.UnderlyingType,
-                        scope,
-                        underNegation));
+                    // 与数组元素一致：带后缀的 * 在 Legacy 下是零泛型名单段名（*? 只匹配非泛型的 Nullable<T>）。
+                    _isLegacy && nullable.UnderlyingType is WildcardTypePatternSyntax nullableWildcard
+                        ? CreateLegacySuffixedWildcardName(nullableWildcard.FullSpan)
+                        : BindTypePattern(
+                            nullable.UnderlyingType,
+                            scope,
+                            underNegation));
             case AssignableTypePatternSyntax assignable:
+                // Legacy 对齐 Shared：+ 跟在数组后缀之后（int[]+）时，可赋值性下沉到数组元素
+                // （等价 int+[]），保留层数与 rank；Standard 维持 §12.4 的数组目标限制。
+                if (_isLegacy &&
+                    UnwrapParenthesized(assignable.TargetType) is ArrayTypePatternSyntax arrayTarget)
+                {
+                    return BindLegacyArrayElementAssignable(
+                        assignable,
+                        arrayTarget,
+                        scope,
+                        underNegation);
+                }
+
                 ReportInvalidAssignableTarget(assignable);
                 return new BoundAssignableTypePattern(
                     assignable.FullSpan,
@@ -700,6 +724,33 @@ internal sealed class Binder(
         return (BoundArrayTypePattern)bound;
     }
 
+    // 仅交换最外层（int[]+ -> int+[]）；嵌套数组（int[][]+）经元素绑定再次进入
+    // Assignable 分支，+ 逐层下沉到最内层元素，与 Shared 的 assignableMatch 元素语义一致。
+    private BoundArrayTypePattern BindLegacyArrayElementAssignable(
+        AssignableTypePatternSyntax assignable,
+        ArrayTypePatternSyntax array,
+        VariableScope scope,
+        bool underNegation)
+    {
+        var element = new AssignableTypePatternSyntax(
+            array.ElementType,
+            assignable.PlusToken);
+        return new BoundArrayTypePattern(
+            array.FullSpan,
+            BindTypePattern(element, scope, underNegation),
+            array.Rank);
+    }
+
+    private static TypePatternSyntax UnwrapParenthesized(TypePatternSyntax syntax)
+    {
+        while (syntax is ParenthesizedTypePatternSyntax parenthesized)
+        {
+            syntax = parenthesized.Pattern;
+        }
+
+        return syntax;
+    }
+
     private BoundTypePattern BindArrayElementType(
         TypePatternSyntax syntax, VariableScope scope, bool underNegation)
     {
@@ -710,10 +761,8 @@ internal sealed class Binder(
             {
                 NamedTypePatternSyntax namedSyntax => (BoundNamedTypePattern)BindNamedTypePattern(
                     namedSyntax, scope, underNegation, declaresLegacyVariables: false),
-                WildcardTypePatternSyntax wildcard => new BoundNamedTypePattern(
-                    wildcard.FullSpan,
-                    [new BoundNameSegment("*", LegacyBinder.CreateOmittedGenericPattern())],
-                    Array.Empty<string>(), "*"),
+                WildcardTypePatternSyntax wildcard => CreateLegacySuffixedWildcardName(
+                    wildcard.FullSpan),
                 _ => null
             };
             if (named is not null)
@@ -727,7 +776,25 @@ internal sealed class Binder(
             }
         }
 
+        // Shared 中带后缀的 * 不再是全通配（DefaultTypePattern 多于一个 token），
+        // 而是零泛型名单段名：*[] 只匹配元素非泛型的数组；仅独立的 * 保持全通配。
+        if (_isLegacy && syntax is WildcardTypePatternSyntax bareWildcard)
+        {
+            return CreateLegacySuffixedWildcardName(bareWildcard.FullSpan);
+        }
+
         return BindTypePattern(syntax, scope, underNegation);
+    }
+
+    // 对应 Shared 的 NewPrimitiveOrAnyNs("*")：零泛型名单段通配名。
+    private static BoundNamedTypePattern CreateLegacySuffixedWildcardName(
+        AspectN.Text.TextSpan span)
+    {
+        return new BoundNamedTypePattern(
+            span,
+            [new BoundNameSegment("*", new BoundGenericPattern(BoundGenericArityKind.Exact, 0))],
+            Array.Empty<string>(),
+            "*");
     }
 
     private BoundBinaryTypePattern BindBinaryTypePattern(
@@ -783,6 +850,14 @@ internal sealed class Binder(
                     Array.Empty<string>(), "*");
         }
 
+        // Shared 的 genericIn 规则：裸单段名（List）省略泛型子句表示零泛型参数
+        // （SingleNonGenericNamePattern）；限定名（System...List）省略仍是任意泛型。
+        // genericOut（声明位置）不受此规则约束。裸 void 除外：Void 恒为零泛型，
+        // 保留 Any 以区分 async void 糖与 void<..> 等显式泛型子句。
+        var requireZeroArityWhenOmitted = _isLegacy &&
+            !declaresLegacyVariables &&
+            syntax.Segments.Count == 1 &&
+            string.Concat(syntax.Segments[0].NameParts.Select(token => token.Text)) != "void";
         var segments = syntax.Segments.Select(segment =>
         {
             var pattern = string.Concat(
@@ -794,7 +869,8 @@ internal sealed class Binder(
                     pattern == "*",
                     scope,
                     underNegation,
-                    declaresLegacyVariables));
+                    declaresLegacyVariables,
+                    requireZeroArityWhenOmitted));
         }).ToArray();
         var separators = syntax.Separators.Select(token => token.Text).ToArray();
         var sourceName = BuildCanonicalName(segments, separators);
@@ -815,13 +891,16 @@ internal sealed class Binder(
         bool nameIsWildcard,
         VariableScope scope,
         bool underNegation = false,
-        bool declaresLegacyVariables = false)
+        bool declaresLegacyVariables = false,
+        bool requireZeroArityWhenOmitted = false)
     {
         if (syntax is null)
         {
             if (_isLegacy)
             {
-                return LegacyBinder.CreateOmittedGenericPattern();
+                return requireZeroArityWhenOmitted
+                    ? new BoundGenericPattern(BoundGenericArityKind.Exact, 0)
+                    : LegacyBinder.CreateOmittedGenericPattern();
             }
 
             return new BoundGenericPattern(
@@ -1220,11 +1299,7 @@ internal sealed class Binder(
     // nullable 目标（int?+）是合法组合，不在此报告。
     private void ReportInvalidAssignableTarget(AssignableTypePatternSyntax syntax)
     {
-        var target = syntax.TargetType;
-        while (target is ParenthesizedTypePatternSyntax parenthesized)
-        {
-            target = parenthesized.Pattern;
-        }
+        var target = UnwrapParenthesized(syntax.TargetType);
 
         if (target is ArrayTypePatternSyntax)
         {

@@ -53,11 +53,14 @@ internal static class ModifierMatcher
     public static bool IsRefKindMatch(
         BoundTypeUsePattern pattern,
         TypeUseSignature candidate,
-        bool isParameter)
+        bool isParameter,
+        AspectNLanguageVersion languageVersion)
     {
-        if (isParameter &&
-            pattern.RefKind == RefKind.None &&
-            pattern.TypePattern is BoundWildcardTypePattern)
+        // 通配参数可忽略 ref kind（规范 §11）；Shared 的通配返回同样不区分 ref
+        // （旧 ExecutionPattern 不比较返回 RefKind），Legacy 返回位沿用该豁免。
+        if (pattern.RefKind == RefKind.None &&
+            pattern.TypePattern is BoundWildcardTypePattern &&
+            (isParameter || languageVersion == AspectNLanguageVersion.Legacy))
         {
             return true;
         }

@@ -15,6 +15,7 @@ namespace AspectN.Metadata;
 /// <param name="genericArguments">Specifies the generic arguments.</param>
 /// <param name="attributes">Specifies the attributes.</param>
 /// <param name="returnAttributes">Specifies the return attributes.</param>
+/// <param name="typeAttributes">Specifies the declaring type attributes.</param>
 /// <param name="originalDefinition">Specifies the original definition.</param>
 /// <param name="associatedProperty">Specifies the associated property.</param>
 public sealed class CallableSignature(
@@ -30,6 +31,7 @@ public sealed class CallableSignature(
     IEnumerable<TypeSignature> genericArguments,
     IEnumerable<AttributeSignature> attributes,
     IEnumerable<AttributeSignature> returnAttributes,
+    IEnumerable<AttributeSignature>? typeAttributes = null,
     CallableSignature? originalDefinition = null,
     PropertySignature? associatedProperty = null)
 {
@@ -43,6 +45,8 @@ public sealed class CallableSignature(
             parameters.ToArray());
     private readonly IReadOnlyList<AttributeSignature> _returnAttributes = new ReadOnlyCollection<AttributeSignature>(
             returnAttributes.ToArray());
+    private readonly IReadOnlyList<AttributeSignature> _typeAttributes = new ReadOnlyCollection<AttributeSignature>(
+            (typeAttributes ?? Array.Empty<AttributeSignature>()).ToArray());
 
     /// <summary>Gets the callable name.</summary>
     public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
@@ -83,6 +87,10 @@ public sealed class CallableSignature(
     /// <summary>Gets the return attributes.</summary>
     public IReadOnlyList<AttributeSignature> ReturnAttributes =>
         _returnAttributes;
+
+    /// <summary>Gets the declaring type attributes.</summary>
+    public IReadOnlyList<AttributeSignature> TypeAttributes =>
+        _typeAttributes;
 
     /// <summary>Gets the original definition.</summary>
     public CallableSignature? OriginalDefinition { get; } = originalDefinition;

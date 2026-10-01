@@ -207,6 +207,10 @@ public sealed class RoslynSignatureMapper
             MapAttributes(
                 methodSymbol.GetReturnTypeAttributes(),
                 AttributeTargetKind.Return),
+            // 声明类型特性：attr(type ...) 通配/复合查询需要（对应旧 Shared 的 AttributeSignatures.Types）。
+            MapAttributes(
+                methodSymbol.ContainingType.GetAttributes(),
+                AttributeTargetKind.Type),
             constructed
                 ? MapCallable(methodSymbol.OriginalDefinition)
                 : null,

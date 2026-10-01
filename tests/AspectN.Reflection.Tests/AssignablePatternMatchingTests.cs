@@ -40,10 +40,13 @@ public sealed class AssignablePatternMatchingTests
     }
 
     [Fact]
-    public void MemberPattern_LegacyOmittedGenericClauseInAssignableTarget_MatchesConstructedType()
+    public void MemberPattern_LegacyOmittedGenericClauseInAssignableTarget_RequiresNonGenericType()
     {
+        // 用户批准 2026-10-01：Legacy genericIn 裸单段名省略子句表示零泛型
+        // （对齐 Shared 的 SingleNonGenericNamePattern），Dictionary+ 不再匹配
+        // 构造类型 Dictionary<,>；Standard 语义与此一致。
         Assert.Equal(
-            MatchStatus.Matched,
+            MatchStatus.NotMatched,
             Match(
                 "method(Dictionary+ ReflectionAssignableFixture.GetMap())",
                 nameof(ReflectionAssignableFixture.GetMap),

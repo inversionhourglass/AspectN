@@ -14,5 +14,13 @@
     "oldResult": false,
     "newResult": true,
     "rationale": "User approved 2026-10-01: use ! > && > ||. Shared incorrectly lets ! consume the remaining full type expression. See docs/language/legacy-compatibility.md."
+  },
+  {
+    "pattern": "method(* AspectN.TestAssembly.LegacyFixture.RefKinds(ref int, out string, in double))",
+    "candidateId": "AspectN.TestAssembly::AspectN.TestAssembly.LegacyFixture::0x06000013",
+    "compositeAccessibility": false,
+    "oldResult": false,
+    "newResult": true,
+    "rationale": "User approved 2026-10-01: ref/out/in parameter patterns match by ref kind (approved Legacy enhancement). Shared parses (ref int) as two parameter slots ('ref' plus an implicit Any) and never matches single parameters. See docs/language/legacy-compatibility.md."
   }
 ]

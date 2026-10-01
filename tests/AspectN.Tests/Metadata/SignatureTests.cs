@@ -121,6 +121,7 @@ public sealed class SignatureTests
             Array.Empty<TypeSignature>(),
             Array.Empty<AttributeSignature>(),
             Array.Empty<AttributeSignature>(),
+            typeAttributes: null,
             null,
             property);
 

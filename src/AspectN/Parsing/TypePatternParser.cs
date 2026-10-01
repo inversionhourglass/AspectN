@@ -103,9 +103,23 @@ internal sealed class TypePatternParser
             switch (Current.Kind)
             {
                 case SyntaxKind.OpenBracketToken:
+                    // Legacy 对齐 Shared：类型累积遇到非相邻 token 即截断，int [] / int ? 被旧实现拒绝。
+                    // Standard 规范 §3.2 未把 [/? 列入邻接约束，保持接受。
+                    if (_options.LanguageVersion == AspectNLanguageVersion.Legacy &&
+                        Current.Span.Start != pattern.FullSpan.End)
+                    {
+                        ReportUnexpected(Current, "'[' (must be adjacent to the type pattern)");
+                    }
+
                     pattern = ParseArraySuffix(pattern);
                     continue;
                 case SyntaxKind.QuestionToken:
+                    if (_options.LanguageVersion == AspectNLanguageVersion.Legacy &&
+                        Current.Span.Start != pattern.FullSpan.End)
+                    {
+                        ReportUnexpected(Current, "'?' (must be adjacent to the type pattern)");
+                    }
+
                     pattern = new NullableTypePatternSyntax(pattern, NextToken());
                     continue;
                 case SyntaxKind.PlusToken:

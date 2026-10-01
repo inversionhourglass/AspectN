@@ -223,22 +223,25 @@ public sealed class AssignableRelationshipTargetTests
     }
 
     [Fact]
-    public void Match_LegacyNullableNamedTarget_KeepsExistingUnknownBehavior()
+    public void Match_LegacyNullableNamedTarget_NonNullableCandidateNotMatched()
     {
+        // 用户批准 2026-10-01：nullable 目标具体化失败时回退闭包求值，
+        // 非 Nullable<T> 的候选直接 NotMatched，不再因目标不可具体化返回 Unknown。
         var (result, target) = MatchWithObservedTarget(
             "Fixtures.Base?+",
             Named("Example", "Resource", 0),
             version: AspectNLanguageVersion.Legacy,
             relation: TypeRelationResult.Matched);
 
-        Assert.Equal(MatchStatus.Unknown, result.Status);
+        Assert.Equal(MatchStatus.NotMatched, result.Status);
         Assert.Null(target);
-        Assert.NotEmpty(result.Diagnostics);
     }
 
     [Fact]
-    public void Match_LegacyOmittedGenericClause_MatchesConstructedSelfViaWalk()
+    public void Match_LegacyOmittedGenericClause_RequiresNonGenericSelf()
     {
+        // 用户批准 2026-10-01：genericIn 裸单段名省略子句表示零泛型（Shared 的
+        // SingleNonGenericNamePattern），Dictionary+ 不再匹配构造类型 Dictionary<,>。
         var candidate = Named(
             "Example",
             "Dictionary",
@@ -252,13 +255,13 @@ public sealed class AssignableRelationshipTargetTests
             candidate,
             version: AspectNLanguageVersion.Legacy);
 
-        Assert.Equal(MatchStatus.Matched, result.Status);
-        Assert.Null(target);
+        Assert.Equal(MatchStatus.NotMatched, result.Status);
     }
 
     [Fact]
-    public void Match_LegacyOmittedNestedGenericArgument_MatchesConstructedSelfViaWalk()
+    public void Match_LegacyOmittedNestedGenericArgument_RequiresNonGenericArgument()
     {
+        // 嵌套泛型实参里的裸单段名同样要求零泛型：List 不匹配 List<int>。
         var candidate = Named(
             "System.Collections.Generic",
             "Dictionary",
@@ -277,8 +280,7 @@ public sealed class AssignableRelationshipTargetTests
             candidate,
             version: AspectNLanguageVersion.Legacy);
 
-        Assert.Equal(MatchStatus.Matched, result.Status);
-        Assert.Null(target);
+        Assert.Equal(MatchStatus.NotMatched, result.Status);
     }
 
     [Fact]

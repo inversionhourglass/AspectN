@@ -489,14 +489,13 @@ internal static class TypePatternEvaluator
 
         // 具体化失败的命名模式（名称通配、命名空间 .. 等）沿闭包用模式本身求值，
         // 与 Legacy 的 CompiledTypePattern 语义一致；非命名目标仍不支持。
-        // Standard 的 nullable 目标只有已知基元能静态判定值/引用类别，名单之外
-        // 具体化失败时同样回退闭包求值，候选侧由 EvaluateNullable 按 TypeKind 分派。
+        // nullable 目标（X?+）具体化失败时同样回退闭包求值：候选侧由 EvaluateNullable
+        // 分派，非 Nullable<T> 的候选直接 NotMatched，而不是因目标不可具体化返回 Unknown。
         if (pattern.TargetType is BoundNamedTypePattern ||
-            (context.LanguageVersion == AspectNLanguageVersion.Standard &&
-             pattern.TargetType is BoundNullableTypePattern
-             {
-                 UnderlyingType: BoundNamedTypePattern
-             }))
+            pattern.TargetType is BoundNullableTypePattern
+            {
+                UnderlyingType: BoundNamedTypePattern
+            })
         {
             return EvaluateAssignablePatternWalk(
                 pattern,
@@ -625,7 +624,8 @@ internal static class TypePatternEvaluator
         if (!MatchesNamespaceAndOuterType(
                 pattern,
                 outerTypeIndex,
-                candidateTypes[0]))
+                candidateTypes[0],
+                context.LanguageVersion))
         {
             return MatchStatus.NotMatched;
         }
@@ -699,9 +699,20 @@ internal static class TypePatternEvaluator
     private static bool MatchesNamespaceAndOuterType(
         BoundNamedTypePattern pattern,
         int outerTypeIndex,
-        TypeIdentity outerType)
+        TypeIdentity outerType,
+        AspectNLanguageVersion languageVersion)
     {
         if (outerTypeIndex == 0) return true;
+
+        // Shared 的 NamespacePattern 对裸 *.. 前缀直接匹配任意命名空间（含全局命名空间）：
+        // *..* / *..Foo 可命中无命名空间的非嵌套类型；限定前缀（A..*）不享受该特例。
+        if (languageVersion == AspectNLanguageVersion.Legacy &&
+            outerTypeIndex == 1 &&
+            pattern.Separators[0] == ".." &&
+            pattern.Segments[0].Pattern == "*")
+        {
+            return true;
+        }
 
         var namespaceSegments = string.IsNullOrEmpty(outerType.Namespace)
             ? Array.Empty<string>()
