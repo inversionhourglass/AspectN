@@ -161,8 +161,9 @@ internal static class MemberPatternEvaluator
             return MatchStatus.NotMatched;
         }
 
-        var returnStatus = pattern.RequiresAsync &&
-            context.LanguageVersion == AspectNLanguageVersion.Legacy
+        // RequiresAsync 只在 Legacy 树上为 true（Binder 以 _isLegacy 门控）。Standard 没有
+        // async 修饰符，编译器 async 标志只进入规范签名的正则渲染，不参与结构化匹配。
+        var returnStatus = pattern.RequiresAsync
             ? TypePatternEvaluator.EvaluateLegacyAsyncReturn(
                 pattern.ReturnType.TypePattern,
                 candidate.ReturnType.Type,

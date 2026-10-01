@@ -44,26 +44,13 @@ internal static class LegacyCanonicalSignatureFormatter
                 parameter.OwnerKind == GenericParameterOwnerKind.Type)
             .ToArray();
         var methodParameters = candidate.GenericParameters.ToArray();
-        var totalCount = typeParameters.Length + methodParameters.Length;
         var names = new Dictionary<GenericParameterKey, string>();
-        if (totalCount == 1)
+        // 位置命名规则（T1..Tn、总数为 1 渲染裸 T）与 Standard 共享同一实现（§15）。
+        foreach (var (parameter, name) in GenericParameterNamer.EnumeratePositionalNames(
+                     typeParameters,
+                     methodParameters))
         {
-            var parameter = typeParameters.FirstOrDefault() ??
-                methodParameters[0];
-            names[new GenericParameterKey(parameter)] = "T";
-            return names;
-        }
-
-        for (var index = 0; index < typeParameters.Length; index++)
-        {
-            names[new GenericParameterKey(typeParameters[index])] =
-                $"T{index + 1}";
-        }
-
-        for (var index = 0; index < methodParameters.Length; index++)
-        {
-            names[new GenericParameterKey(methodParameters[index])] =
-                $"T{typeParameters.Length + index + 1}";
+            names[new GenericParameterKey(parameter)] = name;
         }
 
         return names;

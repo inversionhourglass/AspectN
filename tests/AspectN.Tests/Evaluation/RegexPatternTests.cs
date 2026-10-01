@@ -135,6 +135,23 @@ public sealed class RegexPatternTests
     }
 
     [Fact]
+    public void Format_MethodOnlySingleGenericParameter_BothVersionsUseBareT()
+    {
+        // class Cls { public void M<A>(A a); } —— 仅方法泛型、总数为 1，同样渲染裸 T。
+        var candidate = MethodOnlyGenericCandidate();
+
+        var standard = CanonicalSignatureFormatter.Format(
+            candidate,
+            AspectNLanguageVersion.Standard);
+        var legacy = CanonicalSignatureFormatter.Format(
+            candidate,
+            AspectNLanguageVersion.Legacy);
+
+        Assert.Equal("public System.Void X.Y.Z.Cls.M<T>(T)", standard);
+        Assert.Equal("public System.Void X.Y.Z.Cls.M<T>(T)", legacy);
+    }
+
+    [Fact]
     public void Format_ShadowedMethodGenericParameter_BindsToMethodSlot()
     {
         // class Cls<TM> { public void M<TM>(TM x); } —— 方法级 TM 遮蔽类型级 TM。
@@ -573,6 +590,48 @@ public sealed class RegexPatternTests
                         TypeUseKind.Parameter))
             },
             Array.Empty<GenericParameterSignature>(),
+            Array.Empty<TypeSignature>(),
+            Array.Empty<AttributeSignature>(),
+            Array.Empty<AttributeSignature>());
+    }
+
+    private static CallableSignature MethodOnlyGenericCandidate()
+    {
+        var assembly = new AssemblyIdentity("Example.Assembly");
+        var clsIdentity = new TypeIdentity(
+            assembly,
+            "X.Y.Z",
+            "Cls",
+            0,
+            TypeKind.Class);
+        var parameter = new GenericParameterSignature(
+            "A",
+            GenericParameterOwnerKind.Method,
+            clsIdentity.FullMetadataName + ".M`1",
+            assembly,
+            0);
+        return new CallableSignature(
+            "M",
+            CallableKind.OrdinaryMethod,
+            Accessibility.Public,
+            isStatic: false,
+            isAsync: false,
+            new NamedTypeSignature(clsIdentity),
+            new TypeUseSignature(
+                Named("System", "Void", TypeKind.Struct),
+                RefKind.None,
+                TypeUseKind.Return),
+            new[]
+            {
+                new ParameterSignature(
+                    "a",
+                    0,
+                    new TypeUseSignature(
+                        new GenericParameterTypeSignature(parameter),
+                        RefKind.None,
+                        TypeUseKind.Parameter))
+            },
+            new[] { parameter },
             Array.Empty<TypeSignature>(),
             Array.Empty<AttributeSignature>(),
             Array.Empty<AttributeSignature>());
