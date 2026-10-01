@@ -1,1 +1,18 @@
-[]
+[
+  {
+    "pattern": "method(* *<T,T>(..))",
+    "candidateId": "AspectN.TestAssembly::AspectN.TestAssembly.LegacyFixture`2::0x06000016",
+    "compositeAccessibility": false,
+    "oldResult": true,
+    "newResult": false,
+    "rationale": "User approved 2026-10-01: repeated generic names refer to the same variable and cannot match two distinct generic parameters; actual declarations cannot repeat a name. See docs/language/legacy-compatibility.md."
+  },
+  {
+    "pattern": "method(* && !string || int *(..))",
+    "candidateId": "AspectN.TestAssembly::AspectN.TestAssembly.LegacyFixture::0x0600000D",
+    "compositeAccessibility": false,
+    "oldResult": false,
+    "newResult": true,
+    "rationale": "User approved 2026-10-01: use ! > && > ||. Shared incorrectly lets ! consume the remaining full type expression. See docs/language/legacy-compatibility.md."
+  }
+]

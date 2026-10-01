@@ -14,6 +14,16 @@ internal sealed partial class Parser
         return NextToken();
     }
 
+    internal SyntaxToken NextSelectorNameToken()
+    {
+        if (Current.Kind == SyntaxKind.IntegerToken)
+        {
+            _numericNameStarts.Add(Current.Span.Start);
+        }
+
+        return NextToken();
+    }
+
     internal SyntaxToken MatchSelectorToken(SyntaxKind expectedKind)
     {
         return MatchToken(expectedKind);

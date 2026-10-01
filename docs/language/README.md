@@ -55,6 +55,9 @@ application policy. Diagnostics on the result explain the missing fact.
 an explicit compatibility language for migrating Shared.Cecil.AspectN
 expressions. New applications should use `Standard`.
 
+Legacy compatibility decisions, approved Shared corrections, and concrete
+examples are recorded in the [Legacy compatibility policy](legacy-compatibility.md).
+
 The complete grammar, precedence, modifier rules, generic-variable semantics,
 canonical regex form, and diagnostic contract are defined by the
 [normative language specification](../superpowers/specs/2026-07-31-aspectn-language-spec.md).

@@ -7,6 +7,7 @@ namespace AspectN.Parsing;
 internal sealed partial class Parser
 {
     private readonly DiagnosticBag _diagnostics = new();
+    private readonly HashSet<int> _numericNameStarts = new();
     private readonly Lexer _lexer;
     private readonly AspectNParseOptions _options;
     private readonly SourceText _source;
@@ -120,7 +121,9 @@ internal sealed partial class Parser
     {
         return _diagnostics
             .ToArray()
-            .Concat(_lexer.Diagnostics)
+            .Concat(_lexer.Diagnostics.Where(diagnostic =>
+                diagnostic.Code != DiagnosticCodes.InvalidInteger ||
+                diagnostic.Span is not { } span || !_numericNameStarts.Contains(span.Start)))
             .OrderBy(diagnostic => diagnostic.Span?.Start ?? int.MaxValue)
             .ThenBy(diagnostic => diagnostic.Code, StringComparer.Ordinal)
             .ToArray();

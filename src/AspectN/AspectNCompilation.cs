@@ -94,6 +94,17 @@ public sealed class AspectNCompilation
 
         var effectiveOptions = options ?? new AspectNCompilationOptions();
         var effectiveExtensions = extensions ?? AspectNExtensionRegistry.Empty;
+        // Error recovery nodes preserve source text but are not valid binding input.
+        if (syntaxTree.Diagnostics.Any(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error))
+        {
+            return new AspectNCompilation(
+                syntaxTree,
+                effectiveOptions,
+                effectiveExtensions,
+                null,
+                syntaxTree.Diagnostics.ToArray());
+        }
+
         var binder = new Binder(syntaxTree, effectiveExtensions);
         var boundRoot = binder.Bind();
         var diagnostics = syntaxTree.Diagnostics

@@ -12,6 +12,103 @@ public sealed class LegacySemanticTests
         Named("System", "Void", TypeKind.Struct);
 
     [Theory]
+    [InlineData("T")]
+    [InlineData("T1")]
+    [InlineData("T42")]
+    public void Match_UndeclaredGenericLookingName_IsLiteral(string name)
+    {
+        var integer = Callable("Run", CallableKind.OrdinaryMethod,
+            returnType: Named("System", "Int32", TypeKind.Struct));
+        var literal = Callable("Run", CallableKind.OrdinaryMethod,
+            returnType: Named("Example", name));
+
+        Assert.Equal(MatchStatus.NotMatched, Match($"method({name} *(..))", integer).Status);
+        Assert.Equal(MatchStatus.Matched, Match($"method({name} *(..))", literal).Status);
+    }
+
+    [Theory]
+    [InlineData("method(* *..*(..))")]
+    [InlineData("method(* *..StaticMethod(..))")]
+    [InlineData("method(* *.StaticMethod(..))")]
+    public void Match_WildcardDeclaringPath_MatchesMethod(string source)
+    {
+        var candidate = Callable("StaticMethod", CallableKind.OrdinaryMethod, isStatic: true);
+
+        Assert.Equal(MatchStatus.Matched, Match(source, candidate).Status);
+        if (source.Contains("StaticMethod", StringComparison.Ordinal))
+        {
+            Assert.Equal(MatchStatus.NotMatched,
+                Match(source.Replace("StaticMethod", "Missing", StringComparison.Ordinal), candidate).Status);
+        }
+    }
+
+    [Fact]
+    public void Match_NegatedReturnType_ExcludesOnlySpecifiedType()
+    {
+        var integer = Callable("Run", CallableKind.OrdinaryMethod,
+            returnType: Named("System", "Int32", TypeKind.Struct));
+        var text = Callable("Run", CallableKind.OrdinaryMethod,
+            returnType: Named("System", "String"));
+
+        Assert.Equal(MatchStatus.NotMatched, Match("method(!int *(..))", integer).Status);
+        Assert.Equal(MatchStatus.Matched, Match("method(!int *(..))", text).Status);
+    }
+
+    [Fact]
+    public void Match_LegacyBareType_PreservesSharedArrayElementMatching()
+    {
+        var integer = Named("System", "Int32", TypeKind.Struct);
+        var array = new ArrayTypeSignature(new ArrayTypeSignature(integer, 1), 2);
+        var candidate = Callable("Run", CallableKind.OrdinaryMethod, returnType: array);
+
+        Assert.Equal(MatchStatus.Matched, Match("method(int *(..))", candidate).Status);
+        Assert.Equal(MatchStatus.NotMatched, Match("method(!int *(..))", candidate).Status);
+        Assert.Equal(MatchStatus.NotMatched, Match("method(int[,] *(..))", candidate).Status);
+        Assert.Equal(MatchStatus.Matched, Match("method(int[,][] *(..))", candidate).Status);
+    }
+
+    [Fact]
+    public void Match_LegacyAsyncVoid_PreservesReturnShapeWithoutAsyncFlag()
+    {
+        var candidate = Callable("Run", CallableKind.OrdinaryMethod, isAsync: false);
+
+        Assert.Equal(MatchStatus.Matched, Match("method(async void *(..))", candidate).Status);
+    }
+
+    [Theory]
+    [InlineData("method(* *..*(..))")]
+    [InlineData("method(* *..*.*(..))")]
+    [InlineData("method(* *.Run(..))")]
+    public void Match_UniversalDeclaringType_IncludesNestedTypes(string source)
+    {
+        var outer = Named("Example", "Outer");
+        var identity = new TypeIdentity(new AssemblyIdentity("Example.Assembly"),
+            "Example", "Inner", 0, TypeKind.Class, outer.Identity);
+        var nested = new NamedTypeSignature(identity);
+        var candidate = Callable("Run", CallableKind.OrdinaryMethod, declaringType: nested);
+
+        Assert.Equal(MatchStatus.Matched, Match(source, candidate).Status);
+    }
+
+    [Theory]
+    [InlineData("method(T *<,T>(..))", 1)]
+    [InlineData("method(T *<T,>(..))", 0)]
+    public void Match_OmittedGenericSlot_PreservesDeclaredVariablePosition(string source, int position)
+    {
+        var first = GenericParameter("First", GenericParameterOwnerKind.Method, "Run", 0);
+        var second = GenericParameter("Second", GenericParameterOwnerKind.Method, "Run", 1);
+        var matching = Callable("Run", CallableKind.OrdinaryMethod,
+            returnType: position == 0 ? first : second,
+            genericParameters: [first.Parameter, second.Parameter]);
+        var other = Callable("Run", CallableKind.OrdinaryMethod,
+            returnType: position == 0 ? second : first,
+            genericParameters: [first.Parameter, second.Parameter]);
+
+        Assert.Equal(MatchStatus.Matched, Match(source, matching).Status);
+        Assert.Equal(MatchStatus.NotMatched, Match(source, other).Status);
+    }
+
+    [Theory]
     [InlineData("execution(* Service.Run(..))", CallableKind.OrdinaryMethod, true)]
     [InlineData("execution(* Service.*(..))", CallableKind.PropertyGetter, true)]
     [InlineData("execution(* Service.*(..))", CallableKind.InstanceConstructor, true)]

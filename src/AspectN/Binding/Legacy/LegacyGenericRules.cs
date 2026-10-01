@@ -29,9 +29,7 @@ internal static class LegacyGenericRules
         }
 
         var candidate = segment.NameParts[0].Text;
-        if (declaration ||
-            isAlreadyDeclared(candidate) ||
-            IsHistoricalImplicitName(candidate))
+        if (declaration || isAlreadyDeclared(candidate))
         {
             name = candidate;
             return true;
@@ -80,11 +78,4 @@ internal static class LegacyGenericRules
                     "ValueTuple"));
     }
 
-    private static bool IsHistoricalImplicitName(string name)
-    {
-        return name == "T" ||
-               (name.Length > 1 &&
-                name[0] == 'T' &&
-                name.Skip(1).All(char.IsDigit));
-    }
 }

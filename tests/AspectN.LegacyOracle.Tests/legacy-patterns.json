@@ -312,6 +312,78 @@
       ],
       "compositeAccessibility": true,
       "source": "AspectN.Tests/test/Tests/Cases public package sweep"
+    },
+    {
+      "pattern": "method(T *(..))",
+      "assemblies": [
+        "AspectN.TestAssembly"
+      ],
+      "compositeAccessibility": false,
+      "source": "Shared review regression 2026-10-01"
+    },
+    {
+      "pattern": "method(T1 *(..))",
+      "assemblies": [
+        "AspectN.TestAssembly"
+      ],
+      "compositeAccessibility": false,
+      "source": "Shared review regression 2026-10-01"
+    },
+    {
+      "pattern": "method(!int *(..))",
+      "assemblies": [
+        "AspectN.TestAssembly"
+      ],
+      "compositeAccessibility": false,
+      "source": "Shared review regression 2026-10-01"
+    },
+    {
+      "pattern": "method(* *..*(..))",
+      "assemblies": [
+        "AspectN.TestAssembly"
+      ],
+      "compositeAccessibility": false,
+      "source": "Shared review regression 2026-10-01"
+    },
+    {
+      "pattern": "method(* *..StaticMethod(..))",
+      "assemblies": [
+        "AspectN.TestAssembly"
+      ],
+      "compositeAccessibility": false,
+      "source": "Shared review regression 2026-10-01"
+    },
+    {
+      "pattern": "method(* *<,T>(..))",
+      "assemblies": [
+        "AspectN.TestAssembly"
+      ],
+      "compositeAccessibility": false,
+      "source": "Shared review regression 2026-10-01"
+    },
+    {
+      "pattern": "method(* *<T,>(..))",
+      "assemblies": [
+        "AspectN.TestAssembly"
+      ],
+      "compositeAccessibility": false,
+      "source": "Shared review regression 2026-10-01"
+    },
+    {
+      "pattern": "method(* *..*.NestedInstance(..))",
+      "assemblies": [
+        "AspectN.TestAssembly"
+      ],
+      "compositeAccessibility": false,
+      "source": "Shared review regression 2026-10-01"
+    },
+    {
+      "pattern": "method(async void *(..))",
+      "assemblies": [
+        "AspectN.TestAssembly"
+      ],
+      "compositeAccessibility": false,
+      "source": "Shared async void return shape regression 2026-10-01"
     }
   ],
   "cases": [
@@ -476,6 +548,18 @@
       "candidateId": "AspectN.TestAssembly::AspectN.TestAssembly.LegacyFixture`2::0x06000016",
       "compositeAccessibility": false,
       "source": "Task 23 open generic Legacy regex regression"
+    },
+    {
+      "pattern": "method(* *<T,T>(..))",
+      "candidateId": "AspectN.TestAssembly::AspectN.TestAssembly.LegacyFixture`2::0x06000016",
+      "compositeAccessibility": false,
+      "source": "User-approved Shared correction 2026-10-01; docs/language/legacy-compatibility.md"
+    },
+    {
+      "pattern": "method(* && !string || int *(..))",
+      "candidateId": "AspectN.TestAssembly::AspectN.TestAssembly.LegacyFixture::0x0600000D",
+      "compositeAccessibility": false,
+      "source": "User-approved Shared correction 2026-10-01; docs/language/legacy-compatibility.md"
     }
   ]
 }

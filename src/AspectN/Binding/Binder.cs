@@ -6,6 +6,7 @@ using AspectN.Extensibility;
 using AspectN.Metadata;
 using AspectN.Parsing;
 using AspectN.Syntax;
+using AspectN.Text;
 
 namespace AspectN.Binding;
 
@@ -687,10 +688,7 @@ internal sealed class Binder(
             elementType = array.ElementType;
         }
 
-        BoundTypePattern bound = BindTypePattern(
-            elementType,
-            scope,
-            underNegation);
+        BoundTypePattern bound = BindArrayElementType(elementType, scope, underNegation);
         foreach (var suffix in suffixes)
         {
             bound = new BoundArrayTypePattern(
@@ -700,6 +698,36 @@ internal sealed class Binder(
         }
 
         return (BoundArrayTypePattern)bound;
+    }
+
+    private BoundTypePattern BindArrayElementType(
+        TypePatternSyntax syntax, VariableScope scope, bool underNegation)
+    {
+        // Shared reads '?' before an array suffix as part of the literal name.
+        if (_isLegacy && syntax is NullableTypePatternSyntax nullable)
+        {
+            BoundNamedTypePattern? named = nullable.UnderlyingType switch
+            {
+                NamedTypePatternSyntax namedSyntax => (BoundNamedTypePattern)BindNamedTypePattern(
+                    namedSyntax, scope, underNegation, declaresLegacyVariables: false),
+                WildcardTypePatternSyntax wildcard => new BoundNamedTypePattern(
+                    wildcard.FullSpan,
+                    [new BoundNameSegment("*", LegacyBinder.CreateOmittedGenericPattern())],
+                    Array.Empty<string>(), "*"),
+                _ => null
+            };
+            if (named is not null)
+            {
+                var segments = named.Segments.ToArray();
+                var last = segments.Length - 1;
+                segments[last] = new BoundNameSegment(segments[last].Pattern + "?", segments[last].Generic);
+                var separators = named.Separators.ToArray();
+                return new BoundNamedTypePattern(nullable.FullSpan, segments, separators,
+                    BuildCanonicalName(segments, separators));
+            }
+        }
+
+        return BindTypePattern(syntax, scope, underNegation);
     }
 
     private BoundBinaryTypePattern BindBinaryTypePattern(
@@ -734,12 +762,27 @@ internal sealed class Binder(
             right);
     }
 
-    private BoundNamedTypePattern BindNamedTypePattern(
+    private BoundTypePattern BindNamedTypePattern(
         NamedTypePatternSyntax syntax,
         VariableScope scope,
         bool underNegation,
-        bool declaresLegacyVariables)
+        bool declaresLegacyVariables,
+        bool allowUniversalWildcard = true)
     {
+        // Shared treats * and *..* as universal types, including nested types.
+        if (_isLegacy && declaresLegacyVariables &&
+            syntax.Segments.All(segment => segment.GenericArguments is null &&
+                string.Concat(segment.NameParts.Select(token => token.Text)) == "*") &&
+            (syntax.Segments.Count == 1 ||
+             (syntax.Segments.Count == 2 && syntax.Separators[0].Kind == SyntaxKind.DotDotToken)))
+        {
+            return allowUniversalWildcard
+                ? new BoundWildcardTypePattern(syntax.FullSpan)
+                : new BoundNamedTypePattern(syntax.FullSpan,
+                    [new BoundNameSegment("*", LegacyBinder.CreateOmittedGenericPattern())],
+                    Array.Empty<string>(), "*");
+        }
+
         var segments = syntax.Segments.Select(segment =>
         {
             var pattern = string.Concat(
@@ -948,7 +991,8 @@ internal sealed class Binder(
         var memberSeparator = -1;
         for (var index = path.Count - 1; index >= 0; index--)
         {
-            if (path[index] is SyntaxToken { Kind: SyntaxKind.DotToken })
+            if (path[index] is SyntaxToken { Kind: SyntaxKind.DotToken } ||
+                (_isLegacy && path[index] is SyntaxToken { Kind: SyntaxKind.DotDotToken }))
             {
                 memberSeparator = index;
                 break;
@@ -961,7 +1005,13 @@ internal sealed class Binder(
             .LastOrDefault();
         var memberName = string.Concat(
             memberNodes.OfType<SyntaxToken>().Select(token => token.Text));
-        var declaringNodes = path.Take(memberSeparator).ToArray();
+        var namespaceWildcard = memberSeparator >= 0 &&
+            path[memberSeparator] is SyntaxToken { Kind: SyntaxKind.DotDotToken };
+        var declaringNodes = namespaceWildcard
+            ? path.Take(memberSeparator + 1).Append<SyntaxNode>(
+                new SyntaxToken(SyntaxKind.StarToken,
+                    new TextSpan(path[memberSeparator].FullSpan.End, 0), "*")).ToArray()
+            : path.Take(memberSeparator).ToArray();
         var assignableSuffix = declaringNodes.LastOrDefault() as SyntaxToken;
         var isAssignable = assignableSuffix?.Kind == SyntaxKind.PlusToken;
         foreach (var plusToken in path
@@ -992,7 +1042,8 @@ internal sealed class Binder(
             declaringSyntax,
             scope,
             IsUnderNegation,
-            declaresLegacyVariables: _isLegacy);
+            declaresLegacyVariables: _isLegacy,
+            allowUniversalWildcard: !isAssignable);
         if (isAssignable)
         {
             var assignableSyntax = new AssignableTypePatternSyntax(
@@ -1035,6 +1086,12 @@ internal sealed class Binder(
             }
 
             nameParts.Add(token);
+        }
+
+        if (nameParts.Count == 0 && separators.Count > 0)
+        {
+            var position = separators[separators.Count - 1].Span.End;
+            nameParts.Add(new SyntaxToken(SyntaxKind.StarToken, new TextSpan(position, 0), "*"));
         }
 
         segments.Add(new NamePatternSegmentSyntax(nameParts, generic));

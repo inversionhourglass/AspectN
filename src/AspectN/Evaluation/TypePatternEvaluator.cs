@@ -110,6 +110,16 @@ internal static class TypePatternEvaluator
                 $"Legacy async return shape is unavailable for type '{unsupported.DisplayName}'.");
         }
 
+        if (resultPattern is BoundNamedTypePattern { CanonicalName: "System.Void" } voidPattern &&
+            voidPattern.Segments.All(segment => segment.Generic.Kind == BoundGenericArityKind.Any))
+        {
+            while (candidate is ArrayTypeSignature array) candidate = array.ElementType;
+            return candidate is NamedTypeSignature voidType &&
+                voidType.Identity.Namespace == "System" &&
+                voidType.Identity.MetadataName == "Void" && voidType.Identity.GenericArity == 0
+                ? MatchStatus.Matched : MatchStatus.NotMatched;
+        }
+
         if (candidate is not NamedTypeSignature named ||
             !IsTaskLikeDefinition(named.Identity))
         {
@@ -144,6 +154,12 @@ internal static class TypePatternEvaluator
         TypeSignature candidate,
         EvaluationContext context)
     {
+        if (context.LanguageVersion == AspectNLanguageVersion.Legacy)
+        {
+            // Shared's bare named patterns compare array element identities.
+            while (candidate is ArrayTypeSignature array) candidate = array.ElementType;
+        }
+
         if (candidate is UnsupportedTypeSignature unsupported)
         {
             return Unknown(
@@ -173,6 +189,26 @@ internal static class TypePatternEvaluator
                 $"Array shape is unavailable for type '{unsupported.DisplayName}'.");
         }
 
+        if (context.LanguageVersion == AspectNLanguageVersion.Legacy)
+        {
+            BoundTypePattern elementPattern = pattern;
+            while (elementPattern is BoundArrayTypePattern arrayPattern)
+            {
+                if (candidate is not ArrayTypeSignature candidateArray ||
+                    candidateArray.Rank != arrayPattern.Rank)
+                {
+                    return MatchStatus.NotMatched;
+                }
+
+                elementPattern = arrayPattern.ElementType;
+                candidate = candidateArray.ElementType;
+            }
+
+            return candidate is ArrayTypeSignature
+                ? MatchStatus.NotMatched
+                : Evaluate(elementPattern, candidate, context);
+        }
+
         return candidate is ArrayTypeSignature array && array.Rank == pattern.Rank
             ? Evaluate(pattern.ElementType, array.ElementType, context)
             : MatchStatus.NotMatched;
@@ -183,6 +219,8 @@ internal static class TypePatternEvaluator
         TypeSignature candidate,
         EvaluationContext context)
     {
+        candidate = GetLegacyElementType(candidate, context);
+
         if (candidate is UnsupportedTypeSignature unsupported)
         {
             return Unknown(
@@ -260,6 +298,8 @@ internal static class TypePatternEvaluator
         TypeSignature candidate,
         EvaluationContext context)
     {
+        candidate = GetLegacyElementType(candidate, context);
+
         if (candidate is UnsupportedTypeSignature unsupported)
         {
             return Unknown(
@@ -431,6 +471,8 @@ internal static class TypePatternEvaluator
         TypeSignature candidate,
         EvaluationContext context)
     {
+        candidate = GetLegacyElementType(candidate, context);
+
         if (TryCreateRelationshipTarget(
             pattern.TargetType,
             context.LanguageVersion,
@@ -986,6 +1028,16 @@ internal static class TypePatternEvaluator
             pattern.Segments
                 .Take(outerTypeIndex)
                 .Select(segment => segment.Pattern));
+    }
+
+    private static TypeSignature GetLegacyElementType(TypeSignature candidate, EvaluationContext context)
+    {
+        if (context.LanguageVersion == AspectNLanguageVersion.Legacy)
+        {
+            while (candidate is ArrayTypeSignature array) candidate = array.ElementType;
+        }
+
+        return candidate;
     }
 
     private static MatchStatus Unknown(
