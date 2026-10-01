@@ -140,6 +140,30 @@ public sealed class AttributePatternTests
     }
 
     [Fact]
+    public void Match_LegacyExecPosition_IncludesAssociatedPropertyAttributes()
+    {
+        // Legacy 的 exec 同样并入所属 property 的直接特性（Rougamo 规则），
+        // 钉住 exec 目标展开在两个语言版本语义一致。
+        var typeSystem = new AttributeTypeSystem(target =>
+            target.Kind == AttributeTargetKind.Property);
+
+        var result = Match(
+            "attr(exec Example.RequiredAttribute)",
+            Candidate(),
+            typeSystem,
+            AspectNLanguageVersion.Legacy);
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+        Assert.Equal(
+            new[]
+            {
+                AttributeTargetKind.Callable,
+                AttributeTargetKind.Property
+            },
+            typeSystem.RequestedTargets.Select(target => target.Kind).ToArray());
+    }
+
+    [Fact]
     public void Match_CallPosition_ExcludesAssociatedPropertyAttributes()
     {
         var typeSystem = new AttributeTypeSystem(target =>
@@ -395,10 +419,13 @@ public sealed class AttributePatternTests
     private static MatchResult Match(
         string source,
         CallableSignature candidate,
-        ITypeSystem typeSystem)
+        ITypeSystem typeSystem,
+        AspectNLanguageVersion languageVersion = AspectNLanguageVersion.Standard)
     {
         var compilation = AspectNCompilation.Create(
-            AspectNParser.ParseMemberExpression(source));
+            AspectNParser.ParseMemberExpression(
+                source,
+                new AspectNParseOptions(languageVersion)));
         Assert.True(compilation.TryGetMemberPattern(out var pattern));
         return pattern!.Match(candidate, typeSystem);
     }

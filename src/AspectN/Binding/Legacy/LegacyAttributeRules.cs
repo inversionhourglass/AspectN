@@ -10,7 +10,7 @@ internal static class LegacyAttributeRules
         if (string.Equals(text, "type", StringComparison.OrdinalIgnoreCase))
             return BoundAttributeTargetKind.Type;
         if (string.Equals(text, "exec", StringComparison.OrdinalIgnoreCase))
-            return BoundAttributeTargetKind.Callable;
+            return BoundAttributeTargetKind.Execution;
         if (string.Equals(text, "para", StringComparison.OrdinalIgnoreCase))
             return BoundAttributeTargetKind.Parameter;
         if (string.Equals(text, "ret", StringComparison.OrdinalIgnoreCase))
@@ -30,7 +30,9 @@ internal static class LegacyAttributeRules
                     AttributeTarget.ForType(candidate.DeclaringType)
                 };
             case BoundAttributeTargetKind.Callable:
-                return GetExecutionTargets(candidate);
+                return new[] { AttributeTarget.ForCallable(candidate) };
+            case BoundAttributeTargetKind.Execution:
+                return AttributeTargetRules.GetExecutionTargets(candidate);
             case BoundAttributeTargetKind.Parameter:
                 return GetParameterTargets(pattern.ParameterIndex, candidate);
             case BoundAttributeTargetKind.Return:
@@ -38,19 +40,6 @@ internal static class LegacyAttributeRules
             default:
                 return GetAllTargets(candidate);
         }
-    }
-
-    // Standard 的 exec 位置刻意复用此实现，与 Legacy 的 exec 语义保持一致。
-    internal static AttributeTarget[] GetExecutionTargets(
-        CallableSignature candidate)
-    {
-        return candidate.AssociatedProperty is null
-            ? new[] { AttributeTarget.ForCallable(candidate) }
-            : new[]
-            {
-                AttributeTarget.ForCallable(candidate),
-                AttributeTarget.ForProperty(candidate.AssociatedProperty)
-            };
     }
 
     private static AttributeTarget[] GetParameterTargets(

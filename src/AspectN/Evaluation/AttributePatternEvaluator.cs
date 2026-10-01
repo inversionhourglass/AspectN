@@ -161,9 +161,7 @@ internal static class AttributePatternEvaluator
             case BoundAttributeTargetKind.Callable:
                 return new[] { AttributeTarget.ForCallable(candidate) };
             case BoundAttributeTargetKind.Execution:
-                // Standard 的 exec 刻意与 Legacy 语义一致：访问器候选同时并入
-                // 所属 property 的直接 attribute。
-                return LegacyAttributeRules.GetExecutionTargets(candidate);
+                return AttributeTargetRules.GetExecutionTargets(candidate);
             case BoundAttributeTargetKind.Property:
                 return new[]
                 {
