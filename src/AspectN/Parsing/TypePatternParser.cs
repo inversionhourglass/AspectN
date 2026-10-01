@@ -125,9 +125,10 @@ internal sealed class TypePatternParser
         if (Current.Kind == SyntaxKind.IdentifierToken)
         {
             var first = NextToken();
+            // tasklike 仅 Standard 语法；Legacy 没有 tasklike 写法（async T / async null），
+            // tasklike 在 Legacy 只能是普通类型名。
             if (first.Text == "tasklike" &&
-                (_options.LanguageVersion == AspectNLanguageVersion.Standard ||
-                 Current.Kind == SyntaxKind.LessThanToken))
+                _options.LanguageVersion == AspectNLanguageVersion.Standard)
             {
                 return ParseTaskLike(first);
             }
@@ -151,13 +152,14 @@ internal sealed class TypePatternParser
     private TypePatternSyntax ParseStarOrNamed()
     {
         var star = NextToken();
-        if ((Current.Kind == SyntaxKind.IdentifierToken &&
-             Current.Span.Start == star.Span.End) ||
-            Current.Kind is
-                SyntaxKind.LessThanToken or
-                SyntaxKind.DotToken or
-                SyntaxKind.DotDotToken or
-                SyntaxKind.SlashToken)
+        // 名字延续（标识符、泛型子句、分隔符）必须与 * 相邻；跨空格即槽位边界（§3.4）。
+        if (Current.Span.Start == star.Span.End &&
+            (Current.Kind == SyntaxKind.IdentifierToken ||
+             Current.Kind is
+                 SyntaxKind.LessThanToken or
+                 SyntaxKind.DotToken or
+                 SyntaxKind.DotDotToken or
+                 SyntaxKind.SlashToken))
         {
             return ParseNamed(star);
         }
@@ -178,7 +180,24 @@ internal sealed class TypePatternParser
                SyntaxKind.DotDotToken or
                SyntaxKind.SlashToken)
         {
-            separators.Add(NextToken());
+            // 分隔符必须与前一段名字相邻（§3.4）：跨空格即槽位边界，截断留给下游诊断。
+            if (Current.Span.Start != segments[segments.Count - 1].FullSpan.End)
+            {
+                break;
+            }
+
+            var separator = NextToken();
+            separators.Add(separator);
+            if ((Current.Kind == SyntaxKind.IdentifierToken ||
+                 Current.Kind == SyntaxKind.StarToken) &&
+                Current.Span.Start != separator.Span.End)
+            {
+                // 分隔符后的名字也必须相邻；诊断后继续恢复解析，保持段/分隔符计数成对。
+                ReportUnexpected(
+                    Current,
+                    "name pattern (must follow the separator without whitespace)");
+            }
+
             segments.Add(ParseNameSegment());
         }
 
@@ -213,7 +232,8 @@ internal sealed class TypePatternParser
                     Current.Span.Start));
         }
 
-        var genericArguments = Current.Kind == SyntaxKind.LessThanToken
+        var genericArguments = Current.Kind == SyntaxKind.LessThanToken &&
+            Current.Span.Start == nameParts[nameParts.Count - 1].Span.End
             ? ParseGenericPatternList()
             : null;
         return new NamePatternSegmentSyntax(nameParts, genericArguments);

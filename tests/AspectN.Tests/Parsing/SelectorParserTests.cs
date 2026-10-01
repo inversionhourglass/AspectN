@@ -141,6 +141,9 @@ public sealed class SelectorParserTests
     [InlineData("method(private protected * *.*(..))")]
     [InlineData("method(protected internal * *.*(..))")]
     [InlineData("method(!protected internal * *.*(..))")]
+    [InlineData("method((private protected) * *.*(..))")]
+    [InlineData("method((protected internal) * *.*(..))")]
+    [InlineData("method((private protected) static * *.*(..))")]
     public void ParseMemberExpression_SpacedCompoundAccessibility_HasNoDiagnostics(
         string source)
     {
@@ -168,6 +171,9 @@ public sealed class SelectorParserTests
     [InlineData("method(private|protected internal * *.*(..))", "parenthesized")]
     [InlineData("method(!private|internal * *.*(..))", "negated")]
     [InlineData("method(private|static * *.*(..))", "alternative")]
+    [InlineData("method((public) * *.*(..))", "compound accessibility")]
+    [InlineData("method((internal public) * *.*(..))", "compound accessibility")]
+    [InlineData("method(private| * *.*(..))", "accessibility alternative")]
     public void ParseMemberExpression_InvalidAlternation_ReportsUnexpected(
         string source,
         string messagePart)
@@ -228,13 +234,50 @@ public sealed class SelectorParserTests
     [InlineData("method($T Converter.Convert<$T>($T))")]
     [InlineData("method(* Service.Generic<T>.Run(..))")]
     [InlineData("method(* Service+.Get(..))")]
-    [InlineData("method(* Service . Get(..))")]
     public void ParseMemberExpression_WellFormedMemberPath_HasNoDiagnostics(
         string source)
     {
         var tree = AspectNParser.ParseMemberExpression(source);
 
         Assert.Empty(tree.Diagnostics);
+    }
+
+    [Theory]
+    [InlineData("method(* Service .Get(..))", "must be adjacent")]
+    [InlineData("method(* Service. Get(..))", "member path separator")]
+    [InlineData("method(* IEnumerable<int>+ .Get(..))", "must be adjacent")]
+    [InlineData("method(* System. String.Foo(..))", "member path separator")]
+    public void ParseMemberExpression_WhitespaceAroundMemberSeparator_ReportsDiagnostic(
+        string source,
+        string messagePart)
+    {
+        // 分隔符与其两侧名字必须相邻（§3.4）：空格是槽位边界，不表达成员路径延续。
+        var tree = AspectNParser.ParseMemberExpression(source);
+
+        var diagnostic = Assert.Single(tree.Diagnostics);
+        Assert.Equal(DiagnosticCodes.UnexpectedToken, diagnostic.Code);
+        Assert.Contains(messagePart, diagnostic.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("method(tasklike.Service())")]
+    [InlineData("method(tasklike<T>.X())")]
+    [InlineData("callable(tasklike .Foo())")]
+    [InlineData("method(* .Get(..))")]
+    [InlineData("method($T .Foo())")]
+    [InlineData("method(int .Foo())")]
+    public void ParseMemberExpression_LeadingMemberSeparator_ReportsDiagnostic(
+        string source)
+    {
+        // 省略声明类型就是不写（§7）；成员路径必须以名字开头，前导分隔符没有语义。
+        var tree = AspectNParser.ParseMemberExpression(source);
+
+        var diagnostic = Assert.Single(tree.Diagnostics);
+        Assert.Equal(DiagnosticCodes.UnexpectedToken, diagnostic.Code);
+        Assert.Contains(
+            "cannot start with a separator",
+            diagnostic.Message,
+            StringComparison.Ordinal);
     }
 
     [Fact]
@@ -271,6 +314,8 @@ public sealed class SelectorParserTests
     [Theory]
     [InlineData("attr(para[-1] System.ObsoleteAttribute)")]
     [InlineData("attr(para[-0] System.ObsoleteAttribute)")]
+    [InlineData("attr(para -1 System.ObsoleteAttribute)")]
+    [InlineData("attr(para -0 System.ObsoleteAttribute)")]
     public void ParseMemberExpression_NegativeParameterIndex_ReportsDiagnostic(
         string source)
     {

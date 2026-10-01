@@ -168,6 +168,29 @@ public sealed class ModifierMatcherTests
         Assert.Equal(expected, result);
     }
 
+    [Theory]
+    [InlineData(Accessibility.PrivateProtected, true)]
+    [InlineData(Accessibility.Private, false)]
+    [InlineData(Accessibility.Internal, false)]
+    [InlineData(Accessibility.Public, false)]
+    public void Match_StandardParenthesizedCompoundWithoutPipe_MatchesWholeComposite(
+        Accessibility candidate,
+        bool expected)
+    {
+        // 仅为可读性包裹复合权限（无 |）与裸复合形式语义一致。
+        var signature = Bind(
+            "method((private protected) * Service.Get(..))",
+            AspectNLanguageVersion.Standard);
+
+        var result = ModifierMatcher.IsMatch(
+            signature.Modifiers,
+            candidate,
+            isStatic: false,
+            AspectNLanguageVersion.Standard);
+
+        Assert.Equal(expected, result);
+    }
+
     private static BoundCallableSignature Bind(
         string source,
         AspectNLanguageVersion languageVersion)

@@ -146,6 +146,7 @@ internal sealed class SelectorParser(Parser parser)
 
             // Standard 的 para 同时接受括号形式 para[0]/para[*] 与 Legacy 空格形式
             // para 0/para *（静默兼容，规范 §14）；Legacy 仅有空格形式。
+            // 负索引（含 "-0"）在两种拼写、两个语言版本统一按文本拒绝。
             var isParameterPosition =
                 LanguageVersion == AspectNLanguageVersion.Legacy
                     ? EqualsKeyword(position.Text, "para")
@@ -160,10 +161,7 @@ internal sealed class SelectorParser(Parser parser)
                     {
                         var index = NextToken();
                         parts.Add(index);
-                        // "-0" 的数值仍是 0，负号必须按文本判断，与 Legacy para 分支一致地拒绝负索引。
-                        if (index.Kind == SyntaxKind.IntegerToken &&
-                            index.Text.Length > 0 &&
-                            index.Text[0] == '-')
+                        if (IsNegativeIndex(index))
                         {
                             ReportUnexpected(index, "non-negative parameter index");
                         }
@@ -181,7 +179,7 @@ internal sealed class SelectorParser(Parser parser)
                     {
                         var index = NextToken();
                         parts.Add(index);
-                        if (index.Value is long value && value < 0)
+                        if (IsNegativeIndex(index))
                         {
                             ReportUnexpected(index, "non-negative parameter index");
                         }
@@ -351,10 +349,8 @@ internal sealed class SelectorParser(Parser parser)
                 tokens.Add(NextToken());
                 // 否定作用于完整 accessibility 短语，复合访问修饰符必须整体消费，不能拆成两条约束。
                 if (LanguageVersion == AspectNLanguageVersion.Standard &&
-                    ((tokens[1].Text == "private" &&
-                      IsIdentifier("protected")) ||
-                     (tokens[1].Text == "protected" &&
-                      IsIdentifier("internal"))))
+                    Current.Kind == SyntaxKind.IdentifierToken &&
+                    IsCompoundAccessibilityPair(tokens[1].Text, Current.Text))
                 {
                     tokens.Add(NextToken());
                 }
@@ -364,7 +360,7 @@ internal sealed class SelectorParser(Parser parser)
                 {
                     ReportUnexpected(
                         Current,
-                        "type pattern ('|' cannot follow a negated modifier)");
+                        "'|' (cannot follow a negated modifier)");
                     tokens.Add(NextToken());
                 }
 
@@ -375,21 +371,18 @@ internal sealed class SelectorParser(Parser parser)
             if (Current.Kind == SyntaxKind.OpenParenToken)
             {
                 if (LanguageVersion == AspectNLanguageVersion.Standard &&
-                    IsParenthesizedCompoundAlternationStart())
+                    IsParenthesizedAccessibilityStart())
                 {
                     var parenthesizedTokens = new List<SyntaxToken>
                     {
                         NextToken(),
-                        NextToken(),
-                        NextToken(),
                         NextToken()
                     };
+                    ConsumeParenthesizedAccessibility(parenthesizedTokens);
                     ParseAccessibilityAlternatives(parenthesizedTokens);
                     modifiers.Add(new ModifierSyntax(parenthesizedTokens));
                     continue;
                 }
-
-                break;
             }
 
             if (Current.Kind != SyntaxKind.IdentifierToken)
@@ -415,10 +408,8 @@ internal sealed class SelectorParser(Parser parser)
 
             var modifierTokens = new List<SyntaxToken> { NextToken() };
             if (LanguageVersion == AspectNLanguageVersion.Standard &&
-                ((modifierTokens[0].Text == "private" &&
-                  IsIdentifier("protected")) ||
-                 (modifierTokens[0].Text == "protected" &&
-                  IsIdentifier("internal"))))
+                Current.Kind == SyntaxKind.IdentifierToken &&
+                IsCompoundAccessibilityPair(modifierTokens[0].Text, Current.Text))
             {
                 modifierTokens.Add(NextToken());
             }
@@ -436,8 +427,8 @@ internal sealed class SelectorParser(Parser parser)
     }
 
     // 规范 §10：Standard 用 | 连接多个正向 accessibility 备选；复合权限参与多选时必须加括号，
-    // 如 (private protected)|(protected internal)|public。备选内容（static、否定、未加括号的
-    // 复合短语）的合法性由解析与绑定各自校验。
+    // 如 (private protected)|(protected internal)|public；仅为可读性包裹复合权限（无 |）同样合法。
+    // 备选内容（static、否定、未加括号的复合短语）的合法性由解析与绑定各自校验。
     private void ParseAccessibilityAlternatives(List<SyntaxToken> modifierTokens)
     {
         if (modifierTokens.Count > 1 &&
@@ -454,27 +445,8 @@ internal sealed class SelectorParser(Parser parser)
             if (Current.Kind == SyntaxKind.OpenParenToken)
             {
                 modifierTokens.Add(NextToken());
-                var words = 0;
-                while (words < 2 && IsSingleAccessibility(Current.Text))
-                {
-                    modifierTokens.Add(NextToken());
-                    words++;
-                }
-
-                if (words != 2)
-                {
-                    ReportUnexpected(Current, "compound accessibility");
-                }
-
-                if (Current.Kind == SyntaxKind.CloseParenToken)
-                {
-                    modifierTokens.Add(NextToken());
-                }
-                else
-                {
-                    ReportUnexpected(Current, "')'");
-                }
-
+                modifierTokens.Add(NextToken());
+                ConsumeParenthesizedAccessibility(modifierTokens);
                 continue;
             }
 
@@ -485,9 +457,15 @@ internal sealed class SelectorParser(Parser parser)
                 if (Current.Kind == SyntaxKind.IdentifierToken &&
                     IsSingleAccessibility(Current.Text))
                 {
+                    // 两个权限词只有构成合法复合权限（如 private protected）才谈得上“加括号”，
+                    // 否则是漏写 | 的多选。
                     ReportUnexpected(
                         Current,
-                        "'|' (compound accessibility must be parenthesized)");
+                        IsCompoundAccessibilityPair(
+                            modifierTokens[modifierTokens.Count - 1].Text,
+                            Current.Text)
+                            ? "'|' (compound accessibility must be parenthesized)"
+                            : "'|' (accessibility alternatives must be joined with '|')");
                     modifierTokens.Add(NextToken());
                 }
 
@@ -499,24 +477,71 @@ internal sealed class SelectorParser(Parser parser)
         }
     }
 
-    // 前瞻区分修饰符位置的 (：仅当形状恰为 ( 权限词 权限词 ) | 时才视为多选首备选，
-    // 否则 ( 属于返回类型模式（元组/括号类型），保持原有解析路径。
-    private bool IsParenthesizedCompoundAlternationStart()
+    // 消费括号化访问性的其余部分：调用前已消费 ( 与首个权限词；括号内必须是恰两个
+    // 权限词构成的合法复合权限，单独一个（如 (public)）或非法搭配（如 (internal public)）
+    // 都报错——多选必须用 | 连接，空格在括号内不表达“或”。
+    private void ConsumeParenthesizedAccessibility(List<SyntaxToken> tokens)
     {
-        var tokens = _parser.PeekSelectorTokens(5);
-        return tokens.Count == 5 &&
+        if (Current.Kind == SyntaxKind.IdentifierToken &&
+            IsSingleAccessibility(Current.Text))
+        {
+            var second = NextToken();
+            tokens.Add(second);
+            if (!IsCompoundAccessibilityPair(
+                    tokens[tokens.Count - 2].Text,
+                    second.Text))
+            {
+                ReportUnexpected(second, "compound accessibility");
+            }
+        }
+        else
+        {
+            ReportUnexpected(Current, "compound accessibility");
+        }
+
+        if (Current.Kind == SyntaxKind.CloseParenToken)
+        {
+            tokens.Add(NextToken());
+        }
+        else
+        {
+            ReportUnexpected(Current, "')'");
+        }
+    }
+
+    // 前瞻区分修饰符位置的 (：形状为 ( 权限词 [权限词] ) 时视为访问性（复合权限可加括号
+    // 便于阅读，其后可接 | 交替），否则 ( 属于返回类型模式（元组/括号类型），保持原有解析
+    // 路径。权限词不是合法类型名，该形状不会与合法类型模式冲突。
+    private bool IsParenthesizedAccessibilityStart()
+    {
+        var tokens = _parser.PeekSelectorTokens(4);
+        return tokens.Count == 4 &&
                tokens[0].Kind == SyntaxKind.OpenParenToken &&
                tokens[1].Kind == SyntaxKind.IdentifierToken &&
                IsSingleAccessibility(tokens[1].Text) &&
-               tokens[2].Kind == SyntaxKind.IdentifierToken &&
-               IsSingleAccessibility(tokens[2].Text) &&
-               tokens[3].Kind == SyntaxKind.CloseParenToken &&
-               tokens[4].Kind == SyntaxKind.PipeToken;
+               (tokens[2].Kind == SyntaxKind.CloseParenToken ||
+                (tokens[2].Kind == SyntaxKind.IdentifierToken &&
+                 IsSingleAccessibility(tokens[2].Text) &&
+                 tokens[3].Kind == SyntaxKind.CloseParenToken));
     }
 
     private static bool IsSingleAccessibility(string text)
     {
         return text is "public" or "protected" or "internal" or "private";
+    }
+
+    private static bool IsCompoundAccessibilityPair(string first, string second)
+    {
+        return (first == "private" && second == "protected") ||
+               (first == "protected" && second == "internal");
+    }
+
+    // "-0" 的数值仍是 0，负索引（含 -0）必须按文本判断。
+    private static bool IsNegativeIndex(SyntaxToken index)
+    {
+        return index.Kind == SyntaxKind.IntegerToken &&
+               index.Text.Length > 0 &&
+               index.Text[0] == '-';
     }
 
     private TypeUseSyntax ParseTypeUse()
@@ -592,13 +617,14 @@ internal sealed class SelectorParser(Parser parser)
         if (Current.Kind == SyntaxKind.StarToken)
         {
             var star = NextToken();
-            if ((Current.Kind == SyntaxKind.IdentifierToken &&
-                 Current.Span.Start == star.Span.End) ||
-                Current.Kind is
-                    SyntaxKind.LessThanToken or
-                    SyntaxKind.DotToken or
-                    SyntaxKind.DotDotToken or
-                    SyntaxKind.SlashToken)
+            // 名字延续（标识符、泛型子句、分隔符）必须与 * 相邻；跨空格即槽位边界（§3.4）。
+            if (Current.Span.Start == star.Span.End &&
+                (Current.Kind == SyntaxKind.IdentifierToken ||
+                 Current.Kind is
+                     SyntaxKind.LessThanToken or
+                     SyntaxKind.DotToken or
+                     SyntaxKind.DotDotToken or
+                     SyntaxKind.SlashToken))
             {
                 return ParseNamedType(star);
             }
@@ -629,11 +655,10 @@ internal sealed class SelectorParser(Parser parser)
 
         var first = NextToken();
         if (first.Text == "tasklike" &&
-            (LanguageVersion == AspectNLanguageVersion.Standard ||
-             Current.Kind == SyntaxKind.LessThanToken))
+            LanguageVersion == AspectNLanguageVersion.Standard)
         {
-            // 规范 §12.1：Standard 裸 tasklike 匹配非泛型 Task/ValueTask；
-            // Legacy 无裸形式，tasklike 后只有跟 < 才是关键字，否则按命名类型解析。
+            // 规范 §12.1：tasklike 是 Standard 语法；Legacy 没有 tasklike 写法
+            // （用 async T / async null 表达），tasklike 在 Legacy 只能是普通类型名。
             if (Current.Kind != SyntaxKind.LessThanToken)
             {
                 return new TaskLikeTypePatternSyntax(first, null, null, null);
@@ -663,7 +688,25 @@ internal sealed class SelectorParser(Parser parser)
                SyntaxKind.DotDotToken or
                SyntaxKind.SlashToken)
         {
-            separators.Add(NextToken());
+            // 分隔符必须与前一段名字相邻（§3.4）：跨空格即槽位边界。
+            // 不消费该分隔符，留给成员路径诊断与恢复。
+            if (Current.Span.Start != segments[segments.Count - 1].FullSpan.End)
+            {
+                break;
+            }
+
+            var separator = NextToken();
+            separators.Add(separator);
+            if ((Current.Kind == SyntaxKind.IdentifierToken ||
+                 Current.Kind == SyntaxKind.StarToken) &&
+                Current.Span.Start != separator.Span.End)
+            {
+                // 分隔符后的名字也必须相邻；诊断后继续恢复解析，保持段/分隔符计数成对。
+                ReportUnexpected(
+                    Current,
+                    "name pattern (must follow the separator without whitespace)");
+            }
+
             segments.Add(ParseNameSegment());
         }
 
@@ -696,7 +739,8 @@ internal sealed class SelectorParser(Parser parser)
 
         return new NamePatternSegmentSyntax(
             parts,
-            Current.Kind == SyntaxKind.LessThanToken
+            Current.Kind == SyntaxKind.LessThanToken &&
+            Current.Span.Start == parts[parts.Count - 1].Span.End
                 ? ParseGenericPatternList()
                 : null);
     }
@@ -853,6 +897,22 @@ internal sealed class SelectorParser(Parser parser)
                 SyntaxKind.DotDotToken or
                 SyntaxKind.SlashToken)
             {
+                if (parts.Count == 0)
+                {
+                    // 省略声明类型就是不写（§7）；成员路径必须以名字开头，
+                    // 前导分隔符没有对应语义。
+                    ReportUnexpected(
+                        Current,
+                        "member name (a member path cannot start with a separator)");
+                }
+                else if (Current.Span.Start != parts[parts.Count - 1].FullSpan.End)
+                {
+                    // 分隔符必须与前一部件相邻（§3.4）：跨空格的 '.' 属于槽位边界。
+                    ReportUnexpected(
+                        Current,
+                        "member path separator (must be adjacent)");
+                }
+
                 parts.Add(NextToken());
                 hasName = false;
                 hasGeneric = false;
@@ -864,11 +924,10 @@ internal sealed class SelectorParser(Parser parser)
                 // 泛型子句后仅允许 + 后缀（声明类型的可赋值目标）与分隔符（§7、§12.4）。
                 ReportUnexpected(Current, "member path separator");
             }
-            else if (hasName &&
-                     Current.Kind != SyntaxKind.PlusToken &&
+            else if (parts.Count > 0 &&
                      Current.Span.Start != parts[parts.Count - 1].FullSpan.End)
             {
-                // 名称段只能经 . / .. / / 分隔延续；空格分隔的裸标识符会被静默黏连（§3.4、§7）。
+                // 名字（含 + 后缀）必须与前一部件相邻：跨空格的延续属于另一个槽位（§3.4、§7）。
                 ReportUnexpected(Current, "member path separator");
             }
 

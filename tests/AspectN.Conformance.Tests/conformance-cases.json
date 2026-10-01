@@ -90,6 +90,22 @@
     "expected": "NotMatched"
   },
   {
+    "id": "tasklike-generic",
+    "kind": "method",
+    "member": "AsyncMethod",
+    "parameterCount": 0,
+    "expression": "method(tasklike<int> AspectN.TestAssembly.Conformance.ConformanceFixture.AsyncMethod())",
+    "expected": "Matched"
+  },
+  {
+    "id": "tasklike-generic-not-matched",
+    "kind": "method",
+    "member": "AsyncMethod",
+    "parameterCount": 0,
+    "expression": "method(tasklike<long> AspectN.TestAssembly.Conformance.ConformanceFixture.AsyncMethod())",
+    "expected": "NotMatched"
+  },
+  {
     "id": "direct-attribute",
     "kind": "method",
     "member": "Attributed",
@@ -135,6 +151,22 @@
     "member": "Attributed",
     "parameterCount": 1,
     "expression": "method(* AspectN.TestAssembly.Conformance.ConformanceFixture.Attributed(..)) && attr(para 0 AspectN.TestAssembly.Conformance.ConformanceMarkerAttribute)",
+    "expected": "Matched"
+  },
+  {
+    "id": "parameter-attribute-bracket-form",
+    "kind": "method",
+    "member": "Attributed",
+    "parameterCount": 1,
+    "expression": "method(* AspectN.TestAssembly.Conformance.ConformanceFixture.Attributed(..)) && attr(para[0] AspectN.TestAssembly.Conformance.ConformanceMarkerAttribute)",
+    "expected": "Matched"
+  },
+  {
+    "id": "parameter-attribute-bracket-wildcard",
+    "kind": "method",
+    "member": "Attributed",
+    "parameterCount": 1,
+    "expression": "method(* AspectN.TestAssembly.Conformance.ConformanceFixture.Attributed(..)) && attr(para[*] AspectN.TestAssembly.Conformance.ConformanceMarkerAttribute)",
     "expected": "Matched"
   },
   {

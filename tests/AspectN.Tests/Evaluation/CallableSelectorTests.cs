@@ -96,6 +96,20 @@ public sealed class CallableSelectorTests
     }
 
     [Fact]
+    public void Match_ExecutionVoidReturn_MatchesConstructorsPositively()
+    {
+        // 构造函数按元数据名（.ctor/.cctor）与 void 返回匹配：execution(void ...) 正向命中。
+        var result = Match(
+            "execution(void Service.*(..))",
+            Callable(
+                ConstructorName(CallableKind.InstanceConstructor),
+                CallableKind.InstanceConstructor,
+                returnType: Named("System", "Void")));
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+    }
+
+    [Fact]
     public void Match_ConstructedCallable_UsesSubstitutedSignature()
     {
         var genericParameter = new GenericParameterSignature(

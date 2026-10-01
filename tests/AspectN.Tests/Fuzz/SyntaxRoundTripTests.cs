@@ -73,15 +73,17 @@ public sealed class SyntaxRoundTripTests
 
     [Theory]
     [MemberData(nameof(CanonicalSources))]
-    public void Parse_CanonicalSource_ReparsePreservesSyntaxShape(
+    public void Parse_CanonicalSource_ReparseOfSameTextPreservesSyntaxShape(
         AspectNParseKind parseKind,
         string source)
     {
+        // 语法树不保留规范文本，first.Text 就是输入原文；本测试验证的是
+        // 同一文本重复解析的幂等性，而非“从树重建文本”的 round-trip。
         var first = Parse(parseKind, source);
 
         Assert.Empty(first.Diagnostics);
-        var canonicalSource = first.Text.ToString();
-        var second = Parse(parseKind, canonicalSource);
+        var sameText = first.Text.ToString();
+        var second = Parse(parseKind, sameText);
 
         Assert.Empty(second.Diagnostics);
         Assert.Equal(first.ParseKind, second.ParseKind);

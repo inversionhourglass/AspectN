@@ -186,6 +186,72 @@ public sealed class LegacySemanticTests
         Assert.Equal(MatchStatus.Matched, result.Status);
     }
 
+    [Theory]
+    [InlineData("Task", TypeKind.Class)]
+    [InlineData("ValueTask", TypeKind.Struct)]
+    public void Match_LegacyAsyncNull_MatchesNonGenericTaskTypes(
+        string metadataName,
+        TypeKind kind)
+    {
+        // Legacy 的 async null 对应 Standard 的裸 tasklike：仅匹配非泛型 Task/ValueTask。
+        var candidate = Callable(
+            "Flush",
+            CallableKind.OrdinaryMethod,
+            isAsync: true,
+            returnType: Named("System.Threading.Tasks", metadataName, kind));
+
+        var result = Match(
+            "method(async null Service.Flush(..))",
+            candidate);
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+    }
+
+    [Fact]
+    public void Match_AsyncNullAndBareTaskLike_AgreeAcrossVersions()
+    {
+        // async null ↔ 裸 tasklike、async T ↔ tasklike<T>：同一候选在两个版本给出一致结果。
+        var nonGeneric = Callable(
+            "Flush",
+            CallableKind.OrdinaryMethod,
+            isAsync: true,
+            returnType: Named("System.Threading.Tasks", "Task", TypeKind.Class));
+        var generic = Callable(
+            "Flush",
+            CallableKind.OrdinaryMethod,
+            isAsync: true,
+            returnType: Constructed(
+                "System.Threading.Tasks",
+                "Task",
+                TypeKind.Class,
+                Named("System", "String")));
+
+        Assert.Equal(
+            MatchStatus.Matched,
+            Match("method(async null Service.Flush(..))", nonGeneric).Status);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            Match("method(async null Service.Flush(..))", generic).Status);
+        Assert.Equal(
+            MatchStatus.Matched,
+            Match(
+                "method(tasklike Service.Flush(..))",
+                nonGeneric,
+                languageVersion: AspectNLanguageVersion.Standard).Status);
+        Assert.Equal(
+            MatchStatus.NotMatched,
+            Match(
+                "method(tasklike Service.Flush(..))",
+                generic,
+                languageVersion: AspectNLanguageVersion.Standard).Status);
+        Assert.Equal(
+            MatchStatus.Matched,
+            Match(
+                "method(tasklike<string> Service.Flush(..))",
+                generic,
+                languageVersion: AspectNLanguageVersion.Standard).Status);
+    }
+
     [Fact]
     public void Match_LegacyMixedArrayRanks_PreservesOuterToInnerOrder()
     {
@@ -396,12 +462,13 @@ public sealed class LegacySemanticTests
     private static MatchResult Match(
         string source,
         CallableSignature candidate,
-        ITypeSystem? typeSystem = null)
+        ITypeSystem? typeSystem = null,
+        AspectNLanguageVersion languageVersion = AspectNLanguageVersion.Legacy)
     {
         var compilation = AspectNCompilation.Create(
             AspectNParser.ParseMemberExpression(
                 source,
-                new AspectNParseOptions(AspectNLanguageVersion.Legacy)));
+                new AspectNParseOptions(languageVersion)));
         Assert.True(compilation.TryGetMemberPattern(out var pattern));
         return pattern!.Match(
             candidate,

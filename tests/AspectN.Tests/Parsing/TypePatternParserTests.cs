@@ -99,6 +99,29 @@ public sealed class TypePatternParserTests
     }
 
     [Fact]
+    public void ParseTypePattern_LegacyTaskLike_IsNamedType()
+    {
+        // Legacy 没有 tasklike 写法：tasklike<string> 解析为名为 tasklike 的泛型命名类型。
+        var tree = AspectNParser.ParseTypePattern(
+            "tasklike<string>",
+            new AspectNParseOptions(AspectNLanguageVersion.Legacy));
+
+        Assert.IsType<NamedTypePatternSyntax>(tree.Root);
+        Assert.Empty(tree.Diagnostics);
+    }
+
+    [Fact]
+    public void ParseTypePattern_LegacyBareTaskLike_IsNamedType()
+    {
+        var tree = AspectNParser.ParseTypePattern(
+            "tasklike",
+            new AspectNParseOptions(AspectNLanguageVersion.Legacy));
+
+        Assert.IsType<NamedTypePatternSyntax>(tree.Root);
+        Assert.Empty(tree.Diagnostics);
+    }
+
+    [Fact]
     public void ParseTypePattern_Variable_CapturesExplicitIdentifier()
     {
         var tree = AspectNParser.ParseTypePattern("$T");

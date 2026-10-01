@@ -447,10 +447,15 @@ internal sealed class Binder(
         foreach (var syntax in modifierSyntaxes)
         {
             var isNegated = syntax.Tokens[0].Kind == SyntaxKind.BangToken;
+            // 括号只是复合访问性的分组书写，不参与语义内容；空格/括号都不表达“多选”，
+            // 多选由 PipeToken 分支处理。
             var content = string.Join(
                 " ",
                 syntax.Tokens
-                    .Where(token => token.Kind != SyntaxKind.BangToken)
+                    .Where(token => token.Kind
+                        is not (SyntaxKind.BangToken
+                            or SyntaxKind.OpenParenToken
+                            or SyntaxKind.CloseParenToken))
                     .Select(token => token.Text));
             if (_isLegacy)
             {
@@ -635,7 +640,9 @@ internal sealed class Binder(
                     taskLike.ResultType,
                     scope,
                     underNegation);
-                if (!_isLegacy && IsVoidNamedPattern(taskLikeResult))
+                // tasklike 仅 Standard 语法（Legacy 中 tasklike 是普通类型名），
+                // 解析器不会再为 Legacy 产出该节点；此检查同时兜住手工构造的语法树。
+                if (IsVoidNamedPattern(taskLikeResult))
                 {
                     _diagnostics.Add(
                         DiagnosticCodes.TaskLikeVoidMigration,

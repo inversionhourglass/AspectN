@@ -56,6 +56,8 @@ public sealed class LegacySyntaxTests
     [InlineData("method(* Service.Run(<..>))")]
     [InlineData("method(* Service.Run(ref))")]
     [InlineData("attr(para -1 Example.MarkerAttribute)")]
+    [InlineData("attr(para -0 Example.MarkerAttribute)")]
+    [InlineData("method(private|internal * Service.Run(..))")]
     [InlineData("method(* Service.Run<T,..>(..))")]
     [InlineData("method(* <T>(T))")]
     [InlineData("method(* Service.<T>(T))")]
