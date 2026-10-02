@@ -3,6 +3,7 @@ using AspectN.Evaluation;
 using AspectN.Metadata;
 using AspectN.TypeSystem;
 using Microsoft.CodeAnalysis;
+using CoreMethodKind = AspectN.Metadata.MethodKind;
 using Microsoft.CodeAnalysis.CSharp;
 using Xunit;
 
@@ -107,7 +108,7 @@ public sealed class RoslynMappingTests
     }
 
     [Fact]
-    public void MapCallable_OuterParameterUsedInNestedMember_KeepsOuterDeclarationOwner()
+    public void MapMethod_OuterParameterUsedInNestedMember_KeepsOuterDeclarationOwner()
     {
         var compilation = RoslynTestCompilation.Create("""
             public class Outer<T>
@@ -131,7 +132,7 @@ public sealed class RoslynMappingTests
                 method.Parameters[0].Type is ITypeParameterSymbol parameter &&
                 parameter.Name == "T");
         var mappedT = Assert.IsType<GenericParameterTypeSignature>(
-            Assert.Single(typeSystem.Mapper.MapCallable(tOverload).Parameters)
+            Assert.Single(typeSystem.Mapper.MapMethod(tOverload).Parameters)
                 .Type
                 .Type);
         var declaredT = Assert.IsType<GenericParameterTypeSignature>(
@@ -273,7 +274,7 @@ public sealed class RoslynMappingTests
     }
 
     [Fact]
-    public void MapCallable_ConstructedGenericAndSpecialMembers_MapShape()
+    public void MapMethod_ConstructedGenericAndSpecialMembers_MapShape()
     {
         var compilation = RoslynTestCompilation.Create();
         var typeSystem = new RoslynTypeSystem(compilation);
@@ -283,18 +284,18 @@ public sealed class RoslynMappingTests
         var definition = RequiredMethod(definitionType, "EchoAsync");
         var constructed = RequiredMethod(constructedType, "EchoAsync")
             .Construct(compilation.GetSpecialType(SpecialType.System_Int32));
-        var definitionSignature = typeSystem.Mapper.MapCallable(definition);
-        var signature = typeSystem.Mapper.MapCallable(constructed);
+        var definitionSignature = typeSystem.Mapper.MapMethod(definition);
+        var signature = typeSystem.Mapper.MapMethod(constructed);
         var constructors = definitionType.InstanceConstructors
             .Where(method => !method.IsImplicitlyDeclared)
             .ToArray();
-        var constructor = typeSystem.Mapper.MapCallable(
+        var constructor = typeSystem.Mapper.MapMethod(
             Assert.Single(constructors));
-        var staticConstructor = typeSystem.Mapper.MapCallable(
+        var staticConstructor = typeSystem.Mapper.MapMethod(
             Assert.Single(definitionType.StaticConstructors));
-        var addition = typeSystem.Mapper.MapCallable(
+        var addition = typeSystem.Mapper.MapMethod(
             RequiredMethod(definitionType, "op_Addition"));
-        var conversion = typeSystem.Mapper.MapCallable(
+        var conversion = typeSystem.Mapper.MapMethod(
             RequiredMethod(definitionType, "op_Implicit"));
 
         Assert.Single(definitionSignature.GenericParameters);
@@ -308,23 +309,23 @@ public sealed class RoslynMappingTests
         Assert.Equal("System.String", Name(signature.Parameters[0].Type.Type));
         Assert.Equal("System.Int32", Name(signature.Parameters[1].Type.Type));
         Assert.NotNull(signature.OriginalDefinition);
-        Assert.Equal(CallableKind.InstanceConstructor, constructor.Kind);
-        Assert.Equal(CallableKind.StaticConstructor, staticConstructor.Kind);
-        Assert.Equal(CallableKind.Operator, addition.Kind);
-        Assert.Equal(CallableKind.Conversion, conversion.Kind);
+        Assert.Equal(CoreMethodKind.InstanceConstructor, constructor.Kind);
+        Assert.Equal(CoreMethodKind.StaticConstructor, staticConstructor.Kind);
+        Assert.Equal(CoreMethodKind.Operator, addition.Kind);
+        Assert.Equal(CoreMethodKind.Conversion, conversion.Kind);
     }
 
     [Fact]
-    public void MapCallable_RefKindsAndAsyncFlag_MapExactly()
+    public void MapMethod_RefKindsAndAsyncFlag_MapExactly()
     {
         var compilation = RoslynTestCompilation.Create();
         var typeSystem = new RoslynTypeSystem(compilation);
         var sample = RequiredType(compilation, "Fixtures.Sample`1");
-        var refKinds = typeSystem.Mapper.MapCallable(
+        var refKinds = typeSystem.Mapper.MapMethod(
             RequiredMethod(sample, "RefKinds"));
-        var refReturn = typeSystem.Mapper.MapCallable(
+        var refReturn = typeSystem.Mapper.MapMethod(
             RequiredMethod(sample, "RefReadonlyReturn"));
-        var taskReturning = typeSystem.Mapper.MapCallable(
+        var taskReturning = typeSystem.Mapper.MapMethod(
             RequiredMethod(sample, "TaskReturning"));
 
         Assert.Collection(
@@ -347,28 +348,28 @@ public sealed class RoslynMappingTests
         var indexer = RequiredProperty(sample, "Item");
         var property = typeSystem.Mapper.MapProperty(name);
         var mappedIndexer = typeSystem.Mapper.MapProperty(indexer);
-        var getter = typeSystem.Mapper.MapCallable(
+        var getter = typeSystem.Mapper.MapMethod(
             Assert.IsAssignableFrom<IMethodSymbol>(name.GetMethod));
-        var setter = typeSystem.Mapper.MapCallable(
+        var setter = typeSystem.Mapper.MapMethod(
             Assert.IsAssignableFrom<IMethodSymbol>(name.SetMethod));
         var changed = Assert.IsAssignableFrom<IEventSymbol>(
             Assert.Single(sample.GetMembers("Changed")));
-        var adder = typeSystem.Mapper.MapCallable(
+        var adder = typeSystem.Mapper.MapMethod(
             Assert.IsAssignableFrom<IMethodSymbol>(changed.AddMethod));
-        var remover = typeSystem.Mapper.MapCallable(
+        var remover = typeSystem.Mapper.MapMethod(
             Assert.IsAssignableFrom<IMethodSymbol>(changed.RemoveMethod));
-        var echo = typeSystem.Mapper.MapCallable(
+        var echo = typeSystem.Mapper.MapMethod(
             RequiredMethod(sample, "EchoAsync"));
         var marker = typeSystem.Mapper.MapType(
             RequiredType(compilation, "Fixtures.MarkerAttribute"));
 
         Assert.Equal("System.String", Name(property.PropertyType.Type));
         Assert.Equal("System.Int32", Name(Assert.Single(mappedIndexer.Parameters).Type.Type));
-        Assert.Equal(CallableKind.PropertyGetter, getter.Kind);
+        Assert.Equal(CoreMethodKind.PropertyGetter, getter.Kind);
         Assert.Equal("Name", getter.AssociatedProperty?.Name);
-        Assert.Equal(CallableKind.PropertySetter, setter.Kind);
-        Assert.Equal(CallableKind.EventAdder, adder.Kind);
-        Assert.Equal(CallableKind.EventRemover, remover.Kind);
+        Assert.Equal(CoreMethodKind.PropertySetter, setter.Kind);
+        Assert.Equal(CoreMethodKind.EventAdder, adder.Kind);
+        Assert.Equal(CoreMethodKind.EventRemover, remover.Kind);
         Assert.Equal(
             MatchStatus.Matched,
             typeSystem.HasDirectAttribute(
@@ -377,7 +378,7 @@ public sealed class RoslynMappingTests
         Assert.Equal(
             MatchStatus.Matched,
             typeSystem.HasDirectAttribute(
-                AttributeTarget.ForCallable(echo),
+                AttributeTarget.ForMethod(echo),
                 marker).Status);
         Assert.Equal(
             MatchStatus.Matched,
@@ -397,7 +398,7 @@ public sealed class RoslynMappingTests
         Assert.Equal(
             MatchStatus.Matched,
             typeSystem.HasDirectAttribute(
-                AttributeTarget.ForCallable(getter),
+                AttributeTarget.ForMethod(getter),
                 marker).Status);
     }
 
@@ -509,7 +510,7 @@ public sealed class RoslynMappingTests
         var sample = RequiredType(compilation, "Fixtures.Sample`1");
 
         _ = typeSystem.Mapper.MapType(sample);
-        _ = typeSystem.Mapper.MapCallable(
+        _ = typeSystem.Mapper.MapMethod(
             RequiredMethod(sample, "EchoAsync"));
         _ = typeSystem.Mapper.MapProperty(
             RequiredProperty(sample, "Name"));

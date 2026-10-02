@@ -74,7 +74,7 @@ public sealed class ReflectionMappingTests
     }
 
     [Fact]
-    public void MapCallable_DefinitionConstructedMethodAndConstructors_MapShape()
+    public void MapMethod_DefinitionConstructedMethodAndConstructors_MapShape()
     {
         var typeSystem = new ReflectionTypeSystem();
         var definition = RequiredMethod(
@@ -84,14 +84,14 @@ public sealed class ReflectionMappingTests
                 typeof(ReflectionFixture<string>),
                 nameof(ReflectionFixture<object>.Echo))
             .MakeGenericMethod(typeof(int));
-        var definitionSignature = typeSystem.Mapper.MapCallable(definition);
-        var signature = typeSystem.Mapper.MapCallable(constructed);
-        var constructor = typeSystem.Mapper.MapCallable(
+        var definitionSignature = typeSystem.Mapper.MapMethod(definition);
+        var signature = typeSystem.Mapper.MapMethod(constructed);
+        var constructor = typeSystem.Mapper.MapMethod(
             Assert.Single(
                 typeof(ReflectionFixture<string>).GetConstructors(
                     BindingFlags.Public |
                     BindingFlags.Instance)));
-        var typeInitializer = typeSystem.Mapper.MapCallable(
+        var typeInitializer = typeSystem.Mapper.MapMethod(
             Assert.IsAssignableFrom<ConstructorInfo>(
                 typeof(ReflectionFixture<string>).TypeInitializer));
 
@@ -105,26 +105,26 @@ public sealed class ReflectionMappingTests
             parameter => Assert.Equal("System.String", Name(parameter.Type.Type)),
             parameter => Assert.Equal("System.Int32", Name(parameter.Type.Type)));
         Assert.NotNull(signature.OriginalDefinition);
-        Assert.Equal(CallableKind.InstanceConstructor, constructor.Kind);
-        Assert.Equal(CallableKind.StaticConstructor, typeInitializer.Kind);
+        Assert.Equal(MethodKind.InstanceConstructor, constructor.Kind);
+        Assert.Equal(MethodKind.StaticConstructor, typeInitializer.Kind);
     }
 
     [Fact]
-    public void MapCallable_RefKindsAsyncAndSpecialMethods_MapSemantics()
+    public void MapMethod_RefKindsAsyncAndSpecialMethods_MapSemantics()
     {
         var typeSystem = new ReflectionTypeSystem();
         var type = typeof(ReflectionFixture<int>);
-        var refKinds = typeSystem.Mapper.MapCallable(
+        var refKinds = typeSystem.Mapper.MapMethod(
             RequiredMethod(type, nameof(ReflectionFixture<int>.RefKinds)));
-        var refReturn = typeSystem.Mapper.MapCallable(
+        var refReturn = typeSystem.Mapper.MapMethod(
             RequiredMethod(type, nameof(ReflectionFixture<int>.RefReadonlyReturn)));
-        var asyncMethod = typeSystem.Mapper.MapCallable(
+        var asyncMethod = typeSystem.Mapper.MapMethod(
             RequiredMethod(type, nameof(ReflectionFixture<int>.LoadAsync)));
-        var taskReturning = typeSystem.Mapper.MapCallable(
+        var taskReturning = typeSystem.Mapper.MapMethod(
             RequiredMethod(type, nameof(ReflectionFixture<int>.TaskReturning)));
-        var addition = typeSystem.Mapper.MapCallable(
+        var addition = typeSystem.Mapper.MapMethod(
             RequiredMethod(type, "op_Addition"));
-        var conversion = typeSystem.Mapper.MapCallable(
+        var conversion = typeSystem.Mapper.MapMethod(
             RequiredMethod(type, "op_Implicit"));
 
         Assert.Collection(
@@ -136,8 +136,8 @@ public sealed class ReflectionMappingTests
         Assert.Equal(RefKind.RefReadOnly, refReturn.ReturnType.RefKind);
         Assert.True(asyncMethod.IsAsync);
         Assert.False(taskReturning.IsAsync);
-        Assert.Equal(CallableKind.Operator, addition.Kind);
-        Assert.Equal(CallableKind.Conversion, conversion.Kind);
+        Assert.Equal(MethodKind.Operator, addition.Kind);
+        Assert.Equal(MethodKind.Conversion, conversion.Kind);
     }
 
     [Fact]
@@ -151,25 +151,25 @@ public sealed class ReflectionMappingTests
             type.GetProperty("Item"));
         var property = typeSystem.Mapper.MapProperty(name);
         var mappedIndexer = typeSystem.Mapper.MapProperty(indexer);
-        var getter = typeSystem.Mapper.MapCallable(
+        var getter = typeSystem.Mapper.MapMethod(
             Assert.IsAssignableFrom<MethodInfo>(name.GetMethod));
-        var setter = typeSystem.Mapper.MapCallable(
+        var setter = typeSystem.Mapper.MapMethod(
             Assert.IsAssignableFrom<MethodInfo>(name.SetMethod));
         var @event = Assert.IsAssignableFrom<EventInfo>(
             type.GetEvent(nameof(ReflectionFixture<int>.Changed)));
-        var adder = typeSystem.Mapper.MapCallable(
+        var adder = typeSystem.Mapper.MapMethod(
             Assert.IsAssignableFrom<MethodInfo>(@event.AddMethod));
-        var remover = typeSystem.Mapper.MapCallable(
+        var remover = typeSystem.Mapper.MapMethod(
             Assert.IsAssignableFrom<MethodInfo>(@event.RemoveMethod));
 
         Assert.Equal("System.String", Name(property.PropertyType.Type));
         Assert.Equal("System.Int32", Name(Assert.Single(mappedIndexer.Parameters).Type.Type));
-        Assert.Equal(CallableKind.PropertyGetter, getter.Kind);
+        Assert.Equal(MethodKind.PropertyGetter, getter.Kind);
         Assert.Equal("Name", getter.AssociatedProperty?.Name);
-        Assert.Equal(CallableKind.PropertySetter, setter.Kind);
+        Assert.Equal(MethodKind.PropertySetter, setter.Kind);
         Assert.Equal("Name", setter.AssociatedProperty?.Name);
-        Assert.Equal(CallableKind.EventAdder, adder.Kind);
-        Assert.Equal(CallableKind.EventRemover, remover.Kind);
+        Assert.Equal(MethodKind.EventAdder, adder.Kind);
+        Assert.Equal(MethodKind.EventRemover, remover.Kind);
     }
 
     [Fact]
@@ -180,9 +180,9 @@ public sealed class ReflectionMappingTests
         var method = RequiredMethod(type, nameof(ReflectionFixture<object>.Echo));
         var property = Assert.IsAssignableFrom<PropertyInfo>(
             type.GetProperty(nameof(ReflectionFixture<object>.Name)));
-        var callable = typeSystem.Mapper.MapCallable(method);
+        var callable = typeSystem.Mapper.MapMethod(method);
         var mappedProperty = typeSystem.Mapper.MapProperty(property);
-        var getter = typeSystem.Mapper.MapCallable(
+        var getter = typeSystem.Mapper.MapMethod(
             Assert.IsAssignableFrom<MethodInfo>(property.GetMethod));
         var attributeType = typeSystem.Mapper.MapType(
             typeof(ExplosiveMarkerAttribute));
@@ -195,7 +195,7 @@ public sealed class ReflectionMappingTests
         Assert.Equal(
             MatchStatus.Matched,
             typeSystem.HasDirectAttribute(
-                AttributeTarget.ForCallable(callable),
+                AttributeTarget.ForMethod(callable),
                 attributeType).Status);
         Assert.Equal(
             MatchStatus.Matched,
@@ -215,7 +215,7 @@ public sealed class ReflectionMappingTests
         Assert.Equal(
             MatchStatus.Matched,
             typeSystem.HasDirectAttribute(
-                AttributeTarget.ForCallable(getter),
+                AttributeTarget.ForMethod(getter),
                 attributeType).Status);
     }
 
@@ -226,7 +226,7 @@ public sealed class ReflectionMappingTests
         var method = RequiredMethod(
             typeof(ReflectionFixture<int>),
             nameof(ReflectionFixture<object>.GenericAttributed));
-        var callable = typeSystem.Mapper.MapCallable(method);
+        var callable = typeSystem.Mapper.MapMethod(method);
         var intMarker = typeSystem.Mapper.MapType(
             typeof(GenericMarkerAttribute<int>));
         var stringMarker = typeSystem.Mapper.MapType(
@@ -235,12 +235,12 @@ public sealed class ReflectionMappingTests
         Assert.Equal(
             MatchStatus.Matched,
             typeSystem.HasDirectAttribute(
-                AttributeTarget.ForCallable(callable),
+                AttributeTarget.ForMethod(callable),
                 intMarker).Status);
         Assert.Equal(
             MatchStatus.NotMatched,
             typeSystem.HasDirectAttribute(
-                AttributeTarget.ForCallable(callable),
+                AttributeTarget.ForMethod(callable),
                 stringMarker).Status);
         Assert.Equal(
             MatchStatus.Matched,
@@ -260,7 +260,7 @@ public sealed class ReflectionMappingTests
     public void MemberPattern_NestedGenericAttributeFallback_MatchesOpenNestedArgument()
     {
         var typeSystem = new ReflectionTypeSystem();
-        var callable = typeSystem.Mapper.MapCallable(
+        var callable = typeSystem.Mapper.MapMethod(
             RequiredMethod(
                 typeof(ReflectionFixture<int>),
                 nameof(ReflectionFixture<object>.NestedGenericAttributed)));
@@ -289,7 +289,7 @@ public sealed class ReflectionMappingTests
     public void MemberPattern_NullableReferenceAttributeArgument_MatchesPlainReferenceType()
     {
         var typeSystem = new ReflectionTypeSystem();
-        var callable = typeSystem.Mapper.MapCallable(
+        var callable = typeSystem.Mapper.MapMethod(
             RequiredMethod(
                 typeof(ReflectionFixture<int>),
                 nameof(ReflectionFixture<object>.NullableAttributed)));
@@ -684,7 +684,7 @@ public sealed class ReflectionMappingTests
     }
 
     [Fact]
-    public void MapCallable_OuterParameterUsedInNestedMember_NormalizesToOuterDeclaration()
+    public void MapMethod_OuterParameterUsedInNestedMember_NormalizesToOuterDeclaration()
     {
         var typeSystem = new ReflectionTypeSystem();
         var tOverload = Assert.Single(
@@ -695,7 +695,7 @@ public sealed class ReflectionMappingTests
                     .ParameterType
                     .GenericParameterPosition == 0);
         var mappedT = Assert.IsType<GenericParameterTypeSignature>(
-            Assert.Single(typeSystem.Mapper.MapCallable(tOverload).Parameters)
+            Assert.Single(typeSystem.Mapper.MapMethod(tOverload).Parameters)
                 .Type
                 .Type);
         var declaredT = Assert.IsType<GenericParameterTypeSignature>(
@@ -766,7 +766,7 @@ public sealed class ReflectionMappingTests
 
     private static MatchResult MemberPattern(
         string source,
-        CallableSignature candidate,
+        MethodSignature candidate,
         ITypeSystem typeSystem)
     {
         var compilation = AspectNCompilation.Create(

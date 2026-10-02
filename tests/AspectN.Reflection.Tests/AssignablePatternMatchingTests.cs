@@ -85,7 +85,7 @@ public sealed class AssignablePatternMatchingTests
             BindingFlags.Public | BindingFlags.Instance) ??
             throw new InvalidOperationException(
                 $"Missing fixture method {methodName}.");
-        var candidate = typeSystem.Mapper.MapCallable(method);
+        var candidate = typeSystem.Mapper.MapMethod(method);
         var compilation = AspectNCompilation.Create(
             AspectNParser.ParseMemberExpression(expression, options));
         Assert.True(compilation.TryGetMemberPattern(out var pattern));

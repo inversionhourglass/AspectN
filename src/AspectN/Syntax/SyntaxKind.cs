@@ -39,7 +39,7 @@ public enum SyntaxKind
     AttributeSelector,
     RegexSelector,
     ExtensionSelector,
-    CallableSignature,
+    MethodSignature,
     PropertySignature,
     ConstructorSignature,
     AttributeSignature,

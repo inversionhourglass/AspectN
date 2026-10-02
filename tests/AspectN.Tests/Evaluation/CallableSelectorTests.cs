@@ -6,24 +6,24 @@ namespace AspectN.Tests.Evaluation;
 
 public sealed class CallableSelectorTests
 {
-    public static TheoryData<CallableKind, MatchStatus> CallableKinds => new()
+    public static TheoryData<MethodKind, MatchStatus> MethodKinds => new()
     {
-        { CallableKind.OrdinaryMethod, MatchStatus.Matched },
-        { CallableKind.PropertyGetter, MatchStatus.Matched },
-        { CallableKind.PropertySetter, MatchStatus.Matched },
-        { CallableKind.EventAdder, MatchStatus.Matched },
-        { CallableKind.EventRemover, MatchStatus.Matched },
-        { CallableKind.EventRaiser, MatchStatus.Matched },
-        { CallableKind.Operator, MatchStatus.Matched },
-        { CallableKind.Conversion, MatchStatus.Matched },
-        { CallableKind.InstanceConstructor, MatchStatus.NotMatched },
-        { CallableKind.StaticConstructor, MatchStatus.NotMatched }
+        { MethodKind.OrdinaryMethod, MatchStatus.Matched },
+        { MethodKind.PropertyGetter, MatchStatus.Matched },
+        { MethodKind.PropertySetter, MatchStatus.Matched },
+        { MethodKind.EventAdder, MatchStatus.Matched },
+        { MethodKind.EventRemover, MatchStatus.Matched },
+        { MethodKind.EventRaiser, MatchStatus.Matched },
+        { MethodKind.Operator, MatchStatus.Matched },
+        { MethodKind.Conversion, MatchStatus.Matched },
+        { MethodKind.InstanceConstructor, MatchStatus.NotMatched },
+        { MethodKind.StaticConstructor, MatchStatus.NotMatched }
     };
 
     [Theory]
-    [MemberData(nameof(CallableKinds))]
+    [MemberData(nameof(MethodKinds))]
     public void Match_Callable_UsesCallableDomain(
-        CallableKind kind,
+        MethodKind kind,
         MatchStatus expected)
     {
         var result = Match(
@@ -34,12 +34,12 @@ public sealed class CallableSelectorTests
     }
 
     [Theory]
-    [InlineData(CallableKind.OrdinaryMethod, MatchStatus.Matched)]
-    [InlineData(CallableKind.PropertyGetter, MatchStatus.NotMatched)]
-    [InlineData(CallableKind.Operator, MatchStatus.NotMatched)]
-    [InlineData(CallableKind.InstanceConstructor, MatchStatus.NotMatched)]
+    [InlineData(MethodKind.OrdinaryMethod, MatchStatus.Matched)]
+    [InlineData(MethodKind.PropertyGetter, MatchStatus.NotMatched)]
+    [InlineData(MethodKind.Operator, MatchStatus.NotMatched)]
+    [InlineData(MethodKind.InstanceConstructor, MatchStatus.NotMatched)]
     public void Match_Method_AcceptsOrdinaryMethodsOnly(
-        CallableKind kind,
+        MethodKind kind,
         MatchStatus expected)
     {
         var result = Match(
@@ -49,24 +49,24 @@ public sealed class CallableSelectorTests
         Assert.Equal(expected, result.Status);
     }
 
-    public static TheoryData<CallableKind, MatchStatus> ExecutionKinds => new()
+    public static TheoryData<MethodKind, MatchStatus> ExecutionKinds => new()
     {
-        { CallableKind.OrdinaryMethod, MatchStatus.Matched },
-        { CallableKind.PropertyGetter, MatchStatus.Matched },
-        { CallableKind.PropertySetter, MatchStatus.Matched },
-        { CallableKind.EventAdder, MatchStatus.Matched },
-        { CallableKind.EventRemover, MatchStatus.Matched },
-        { CallableKind.EventRaiser, MatchStatus.Matched },
-        { CallableKind.Operator, MatchStatus.Matched },
-        { CallableKind.Conversion, MatchStatus.Matched },
-        { CallableKind.InstanceConstructor, MatchStatus.Matched },
-        { CallableKind.StaticConstructor, MatchStatus.Matched }
+        { MethodKind.OrdinaryMethod, MatchStatus.Matched },
+        { MethodKind.PropertyGetter, MatchStatus.Matched },
+        { MethodKind.PropertySetter, MatchStatus.Matched },
+        { MethodKind.EventAdder, MatchStatus.Matched },
+        { MethodKind.EventRemover, MatchStatus.Matched },
+        { MethodKind.EventRaiser, MatchStatus.Matched },
+        { MethodKind.Operator, MatchStatus.Matched },
+        { MethodKind.Conversion, MatchStatus.Matched },
+        { MethodKind.InstanceConstructor, MatchStatus.Matched },
+        { MethodKind.StaticConstructor, MatchStatus.Matched }
     };
 
     [Theory]
     [MemberData(nameof(ExecutionKinds))]
     public void Match_Execution_UsesAllDomain(
-        CallableKind kind,
+        MethodKind kind,
         MatchStatus expected)
     {
         var result = Match(
@@ -77,14 +77,14 @@ public sealed class CallableSelectorTests
     }
 
     [Theory]
-    [InlineData(CallableKind.OrdinaryMethod, MatchStatus.Matched)]
-    [InlineData(CallableKind.InstanceConstructor, MatchStatus.NotMatched)]
-    [InlineData(CallableKind.StaticConstructor, MatchStatus.NotMatched)]
-    public void Match_Execution_AppliesCallableSignatureToConstructors(
-        CallableKind kind,
+    [InlineData(MethodKind.OrdinaryMethod, MatchStatus.Matched)]
+    [InlineData(MethodKind.InstanceConstructor, MatchStatus.NotMatched)]
+    [InlineData(MethodKind.StaticConstructor, MatchStatus.NotMatched)]
+    public void Match_Execution_AppliesMethodSignatureToConstructors(
+        MethodKind kind,
         MatchStatus expected)
     {
-        var returnType = kind == CallableKind.OrdinaryMethod
+        var returnType = kind == MethodKind.OrdinaryMethod
             ? Named("System", "String")
             : null;
 
@@ -102,8 +102,8 @@ public sealed class CallableSelectorTests
         var result = Match(
             "execution(void Service.*(..))",
             Callable(
-                ConstructorName(CallableKind.InstanceConstructor),
-                CallableKind.InstanceConstructor,
+                ConstructorName(MethodKind.InstanceConstructor),
+                MethodKind.InstanceConstructor,
                 returnType: Named("System", "Void")));
 
         Assert.Equal(MatchStatus.Matched, result.Status);
@@ -121,13 +121,13 @@ public sealed class CallableSelectorTests
         var originalType = new GenericParameterTypeSignature(genericParameter);
         var original = Callable(
             "Map",
-            CallableKind.OrdinaryMethod,
+            MethodKind.OrdinaryMethod,
             returnType: originalType,
             parameters: new[] { Parameter(originalType, 0) },
             genericParameters: new[] { genericParameter });
         var constructed = Callable(
             "Map",
-            CallableKind.OrdinaryMethod,
+            MethodKind.OrdinaryMethod,
             returnType: Named("System", "String"),
             parameters: new[]
             {
@@ -156,7 +156,7 @@ public sealed class CallableSelectorTests
         var parameterType = new GenericParameterTypeSignature(methodParameter);
         var candidate = Callable(
             "Convert",
-            CallableKind.OrdinaryMethod,
+            MethodKind.OrdinaryMethod,
             returnType: parameterType,
             parameters: new[] { Parameter(parameterType, 0) },
             genericParameters: new[] { methodParameter },
@@ -180,7 +180,7 @@ public sealed class CallableSelectorTests
         var parameterType = new GenericParameterTypeSignature(typeParameter);
         var candidate = Callable(
             "Find",
-            CallableKind.OrdinaryMethod,
+            MethodKind.OrdinaryMethod,
             returnType: parameterType,
             parameters: new[] { Parameter(parameterType, 0) },
             declaringType: declaringType);
@@ -195,7 +195,7 @@ public sealed class CallableSelectorTests
     {
         var candidate = Callable(
             "Find",
-            CallableKind.OrdinaryMethod,
+            MethodKind.OrdinaryMethod,
             returnType: Named("System", "Int32", TypeKind.Struct),
             declaringType: Definition("Example", "Repo", 1));
 
@@ -223,7 +223,7 @@ public sealed class CallableSelectorTests
                 outerIdentity));
         var candidate = Callable(
             "Run",
-            CallableKind.OrdinaryMethod,
+            MethodKind.OrdinaryMethod,
             declaringType: nestedType);
 
         var result = Match(
@@ -236,7 +236,7 @@ public sealed class CallableSelectorTests
     [Fact]
     public void Match_BooleanExpression_CombinesSelectorResults()
     {
-        var candidate = Callable(".ctor", CallableKind.InstanceConstructor);
+        var candidate = Callable(".ctor", MethodKind.InstanceConstructor);
 
         var result = Match(
             "method(* Service.Run(..)) || ctor(Service(..))",
@@ -246,7 +246,7 @@ public sealed class CallableSelectorTests
     }
     private static MatchResult Match(
         string source,
-        CallableSignature candidate)
+        MethodSignature candidate)
     {
         var compilation = AspectNCompilation.Create(
             AspectNParser.ParseMemberExpression(source));
@@ -254,22 +254,22 @@ public sealed class CallableSelectorTests
         return pattern!.Match(candidate, new StubTypeSystem());
     }
 
-    private static CallableSignature Callable(
+    private static MethodSignature Callable(
         string name,
-        CallableKind kind,
+        MethodKind kind,
         bool isAsync = false,
         TypeSignature? returnType = null,
         IEnumerable<ParameterSignature>? parameters = null,
         IEnumerable<GenericParameterSignature>? genericParameters = null,
         IEnumerable<TypeSignature>? genericArguments = null,
-        CallableSignature? originalDefinition = null,
+        MethodSignature? originalDefinition = null,
         TypeSignature? declaringType = null)
     {
-        return new CallableSignature(
+        return new MethodSignature(
             name,
             kind,
             Accessibility.Public,
-            isStatic: kind == CallableKind.StaticConstructor,
+            isStatic: kind == MethodKind.StaticConstructor,
             isAsync,
             declaringType ?? Named("Example", "Service"),
             new TypeUseSignature(
@@ -285,10 +285,10 @@ public sealed class CallableSelectorTests
             originalDefinition);
     }
 
-    private static string ConstructorName(CallableKind kind)
+    private static string ConstructorName(MethodKind kind)
     {
-        return kind == CallableKind.InstanceConstructor ? ".ctor"
-            : kind == CallableKind.StaticConstructor ? ".cctor"
+        return kind == MethodKind.InstanceConstructor ? ".ctor"
+            : kind == MethodKind.StaticConstructor ? ".cctor"
             : "Run";
     }
 

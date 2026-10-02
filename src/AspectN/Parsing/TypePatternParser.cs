@@ -103,10 +103,8 @@ internal sealed class TypePatternParser
             switch (Current.Kind)
             {
                 case SyntaxKind.OpenBracketToken:
-                    // Legacy 对齐 Shared：类型累积遇到非相邻 token 即截断，int [] / int ? 被旧实现拒绝。
-                    // Standard 规范 §3.2 未把 [/? 列入邻接约束，保持接受。
-                    if (_options.LanguageVersion == AspectNLanguageVersion.Legacy &&
-                        Current.Span.Start != pattern.FullSpan.End)
+                    // 类型累积遇到非相邻 token 即截断（两版本一致，对齐 Shared）。
+                    if (Current.Span.Start != pattern.FullSpan.End)
                     {
                         ReportUnexpected(Current, "'[' (must be adjacent to the type pattern)");
                     }
@@ -114,8 +112,7 @@ internal sealed class TypePatternParser
                     pattern = ParseArraySuffix(pattern);
                     continue;
                 case SyntaxKind.QuestionToken:
-                    if (_options.LanguageVersion == AspectNLanguageVersion.Legacy &&
-                        Current.Span.Start != pattern.FullSpan.End)
+                    if (Current.Span.Start != pattern.FullSpan.End)
                     {
                         ReportUnexpected(Current, "'?' (must be adjacent to the type pattern)");
                     }
@@ -270,8 +267,9 @@ internal sealed class TypePatternParser
     private GenericPatternListSyntax ParseGenericPatternList()
     {
         var lessThan = NextToken();
-        if (_options.LanguageVersion == AspectNLanguageVersion.Legacy &&
-            Current.Kind == SyntaxKind.BangToken)
+
+        // <!>：显式零泛型（两版本通用；Legacy 原有语义）。
+        if (Current.Kind == SyntaxKind.BangToken)
         {
             var bang = NextToken();
             return new GenericPatternListSyntax(
@@ -286,6 +284,7 @@ internal sealed class TypePatternParser
 
         if (Current.Kind == SyntaxKind.GreaterThanToken)
         {
+            // <> = 单个 Any 空槽。
             return new GenericPatternListSyntax(
                 lessThan,
                 GenericPatternForm.FixedArity,
@@ -298,6 +297,7 @@ internal sealed class TypePatternParser
 
         if (Current.Kind == SyntaxKind.DotDotToken)
         {
+            // <..> = 至少一个泛型参数。
             var wildcard = NextToken();
             return new GenericPatternListSyntax(
                 lessThan,
@@ -309,57 +309,26 @@ internal sealed class TypePatternParser
                 MatchToken(SyntaxKind.GreaterThanToken));
         }
 
-        if (_options.LanguageVersion == AspectNLanguageVersion.Legacy)
+        // <?> = 任意 arity（含零），仅 Standard；Legacy 的省略子句已是任意，无需该写法。
+        if (_options.LanguageVersion == AspectNLanguageVersion.Standard &&
+            Current.Kind == SyntaxKind.QuestionToken)
         {
-            return ParseLegacyGenericArguments(lessThan);
-        }
-
-        if (Current.Kind == SyntaxKind.CommaToken)
-        {
-            var commas = new List<SyntaxToken>();
-            while (Current.Kind == SyntaxKind.CommaToken)
-            {
-                commas.Add(NextToken());
-            }
-
+            var question = NextToken();
             return new GenericPatternListSyntax(
                 lessThan,
-                GenericPatternForm.FixedArity,
-                commas.Count + 1,
+                GenericPatternForm.AnyArity,
+                0,
                 Array.Empty<TypePatternSyntax>(),
-                commas,
-                null,
+                Array.Empty<SyntaxToken>(),
+                question,
                 MatchToken(SyntaxKind.GreaterThanToken));
         }
 
-        var arguments = new List<TypePatternSyntax>
-        {
-            ParseTypeExpression()
-        };
-        var separators = new List<SyntaxToken>();
-        while (Current.Kind == SyntaxKind.CommaToken)
-        {
-            separators.Add(NextToken());
-            if (Current.Kind == SyntaxKind.GreaterThanToken)
-            {
-                ReportUnexpected(Current, "type pattern after ','");
-                break;
-            }
-
-            arguments.Add(ParseTypeExpression());
-        }
-
-        return new GenericPatternListSyntax(
-            lessThan,
-            GenericPatternForm.Arguments,
-            arguments.Count,
-            arguments,
-            separators,
-            null,
-            MatchToken(SyntaxKind.GreaterThanToken));
+        // 混合空槽（两版本统一）：空槽 = Any 占位，arity = 槽数。
+        return ParseGenericArguments(lessThan);
     }
 
-    private GenericPatternListSyntax ParseLegacyGenericArguments(SyntaxToken lessThan)
+    private GenericPatternListSyntax ParseGenericArguments(SyntaxToken lessThan)
     {
         var arguments = new List<TypePatternSyntax>();
         var separators = new List<SyntaxToken>();
@@ -432,8 +401,8 @@ internal sealed class TypePatternParser
         var first = ParseTypeExpression();
         if (Current.Kind != SyntaxKind.CommaToken)
         {
-            if (_options.LanguageVersion == AspectNLanguageVersion.Legacy &&
-                !LegacyParsingRules.IsBooleanGroup(first))
+            // 括号类型只保留 Boolean 分组含义（两版本一致）；单元素括号按缺元素诊断。
+            if (!LegacyParsingRules.IsBooleanGroup(first))
             {
                 ReportUnexpected(Current, "',' and another tuple element (a tuple needs at least two elements)");
             }

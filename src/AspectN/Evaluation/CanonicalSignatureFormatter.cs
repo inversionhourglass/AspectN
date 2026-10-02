@@ -10,7 +10,7 @@ internal static class CanonicalSignatureFormatter
     // 再内层、最后方法泛型），总数为 1 时渲染为裸 T，与 Legacy 一致；封闭构造
     // 仍展开实际实参。与 Legacy 的差异仅在分隔符：Standard 保留 ", "。
     public static string Format(
-        CallableSignature candidate,
+        MethodSignature candidate,
         AspectNLanguageVersion languageVersion)
     {
         if (languageVersion == AspectNLanguageVersion.Legacy)
@@ -24,7 +24,6 @@ internal static class CanonicalSignatureFormatter
         builder.Append(
             FormatAccessibility(candidate.Accessibility, languageVersion));
         if (candidate.IsStatic) builder.Append(" static");
-        if (candidate.IsAsync) builder.Append(" async");
         builder.Append(' ');
         AppendTypeUse(builder, candidate.ReturnType, genericNames);
         builder.Append(' ');
@@ -48,7 +47,7 @@ internal static class CanonicalSignatureFormatter
 
     private static void AppendCallableGeneric(
         StringBuilder builder,
-        CallableSignature candidate,
+        MethodSignature candidate,
         IReadOnlyDictionary<GenericParameterKey, string> genericNames)
     {
         if (candidate.GenericArguments.Count > 0)

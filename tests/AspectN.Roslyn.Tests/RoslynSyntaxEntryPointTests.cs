@@ -28,8 +28,8 @@ public sealed class RoslynSyntaxEntryPointTests
         var fromCompilation = typeSystem.Mapper.MapType(
             declaration,
             compilation);
-        var callableFromModel = typeSystem.Mapper.MapCallable(method, model);
-        var callableFromCompilation = typeSystem.Mapper.MapCallable(
+        var callableFromModel = typeSystem.Mapper.MapMethod(method, model);
+        var callableFromCompilation = typeSystem.Mapper.MapMethod(
             method,
             compilation);
 

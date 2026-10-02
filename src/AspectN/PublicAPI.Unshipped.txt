@@ -27,7 +27,7 @@ AspectN.AspectNParseOptions.AspectNParseOptions(AspectN.AspectNLanguageVersion l
 AspectN.AspectNParseOptions.LanguageVersion.get -> AspectN.AspectNLanguageVersion
 AspectN.AspectNParser
 AspectN.CompiledMemberPattern
-AspectN.CompiledMemberPattern.Match(AspectN.Metadata.CallableSignature! candidate, AspectN.TypeSystem.ITypeSystem! typeSystem, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.Evaluation.MatchResult!
+AspectN.CompiledMemberPattern.Match(AspectN.Metadata.MethodSignature! candidate, AspectN.TypeSystem.ITypeSystem! typeSystem, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.Evaluation.MatchResult!
 AspectN.CompiledPattern
 AspectN.CompiledPattern.LanguageVersion.get -> AspectN.AspectNLanguageVersion
 AspectN.CompiledPattern.Options.get -> AspectN.AspectNCompilationOptions!
@@ -84,7 +84,7 @@ AspectN.Extensibility.ExtensionCompileContext.QualifiedName.get -> string!
 AspectN.Extensibility.ExtensionCompileContext.SourceSpan.get -> AspectN.Text.TextSpan
 AspectN.Extensibility.ExtensionMatchContext
 AspectN.Extensibility.ExtensionMatchContext.CancellationToken.get -> System.Threading.CancellationToken
-AspectN.Extensibility.ExtensionMatchContext.Candidate.get -> AspectN.Metadata.CallableSignature!
+AspectN.Extensibility.ExtensionMatchContext.Candidate.get -> AspectN.Metadata.MethodSignature!
 AspectN.Extensibility.ExtensionMatchContext.LanguageVersion.get -> AspectN.AspectNLanguageVersion
 AspectN.Extensibility.ExtensionMatchContext.TypeSystem.get -> AspectN.TypeSystem.ITypeSystem!
 AspectN.Extensibility.ExtensionTargetDomain
@@ -133,39 +133,39 @@ AspectN.Metadata.AttributeSignature.AttributeType.get -> AspectN.Metadata.TypeSi
 AspectN.Metadata.AttributeSignature.ParameterIndex.get -> int?
 AspectN.Metadata.AttributeSignature.Target.get -> AspectN.Metadata.AttributeTargetKind
 AspectN.Metadata.AttributeTargetKind
-AspectN.Metadata.AttributeTargetKind.Callable = 1 -> AspectN.Metadata.AttributeTargetKind
+AspectN.Metadata.AttributeTargetKind.Method = 1 -> AspectN.Metadata.AttributeTargetKind
 AspectN.Metadata.AttributeTargetKind.Parameter = 3 -> AspectN.Metadata.AttributeTargetKind
 AspectN.Metadata.AttributeTargetKind.Property = 2 -> AspectN.Metadata.AttributeTargetKind
 AspectN.Metadata.AttributeTargetKind.Return = 4 -> AspectN.Metadata.AttributeTargetKind
 AspectN.Metadata.AttributeTargetKind.Type = 0 -> AspectN.Metadata.AttributeTargetKind
-AspectN.Metadata.CallableKind
-AspectN.Metadata.CallableKind.Conversion = 7 -> AspectN.Metadata.CallableKind
-AspectN.Metadata.CallableKind.EventAdder = 3 -> AspectN.Metadata.CallableKind
-AspectN.Metadata.CallableKind.EventRaiser = 5 -> AspectN.Metadata.CallableKind
-AspectN.Metadata.CallableKind.EventRemover = 4 -> AspectN.Metadata.CallableKind
-AspectN.Metadata.CallableKind.InstanceConstructor = 8 -> AspectN.Metadata.CallableKind
-AspectN.Metadata.CallableKind.Operator = 6 -> AspectN.Metadata.CallableKind
-AspectN.Metadata.CallableKind.OrdinaryMethod = 0 -> AspectN.Metadata.CallableKind
-AspectN.Metadata.CallableKind.PropertyGetter = 1 -> AspectN.Metadata.CallableKind
-AspectN.Metadata.CallableKind.PropertySetter = 2 -> AspectN.Metadata.CallableKind
-AspectN.Metadata.CallableKind.StaticConstructor = 9 -> AspectN.Metadata.CallableKind
-AspectN.Metadata.CallableSignature
-AspectN.Metadata.CallableSignature.Accessibility.get -> AspectN.Metadata.Accessibility
-AspectN.Metadata.CallableSignature.AssociatedProperty.get -> AspectN.Metadata.PropertySignature?
-AspectN.Metadata.CallableSignature.Attributes.get -> System.Collections.Generic.IReadOnlyList<AspectN.Metadata.AttributeSignature!>!
-AspectN.Metadata.CallableSignature.CallableSignature(string! name, AspectN.Metadata.CallableKind kind, AspectN.Metadata.Accessibility accessibility, bool isStatic, bool isAsync, AspectN.Metadata.TypeSignature! declaringType, AspectN.Metadata.TypeUseSignature! returnType, System.Collections.Generic.IEnumerable<AspectN.Metadata.ParameterSignature!>! parameters, System.Collections.Generic.IEnumerable<AspectN.Metadata.GenericParameterSignature!>! genericParameters, System.Collections.Generic.IEnumerable<AspectN.Metadata.TypeSignature!>! genericArguments, System.Collections.Generic.IEnumerable<AspectN.Metadata.AttributeSignature!>! attributes, System.Collections.Generic.IEnumerable<AspectN.Metadata.AttributeSignature!>! returnAttributes, System.Collections.Generic.IEnumerable<AspectN.Metadata.AttributeSignature!>? typeAttributes = null, AspectN.Metadata.CallableSignature? originalDefinition = null, AspectN.Metadata.PropertySignature? associatedProperty = null) -> void
-AspectN.Metadata.CallableSignature.DeclaringType.get -> AspectN.Metadata.TypeSignature!
-AspectN.Metadata.CallableSignature.GenericArguments.get -> System.Collections.Generic.IReadOnlyList<AspectN.Metadata.TypeSignature!>!
-AspectN.Metadata.CallableSignature.GenericParameters.get -> System.Collections.Generic.IReadOnlyList<AspectN.Metadata.GenericParameterSignature!>!
-AspectN.Metadata.CallableSignature.IsAsync.get -> bool
-AspectN.Metadata.CallableSignature.IsStatic.get -> bool
-AspectN.Metadata.CallableSignature.Kind.get -> AspectN.Metadata.CallableKind
-AspectN.Metadata.CallableSignature.Name.get -> string!
-AspectN.Metadata.CallableSignature.OriginalDefinition.get -> AspectN.Metadata.CallableSignature?
-AspectN.Metadata.CallableSignature.Parameters.get -> System.Collections.Generic.IReadOnlyList<AspectN.Metadata.ParameterSignature!>!
-AspectN.Metadata.CallableSignature.ReturnAttributes.get -> System.Collections.Generic.IReadOnlyList<AspectN.Metadata.AttributeSignature!>!
-AspectN.Metadata.CallableSignature.ReturnType.get -> AspectN.Metadata.TypeUseSignature!
-AspectN.Metadata.CallableSignature.TypeAttributes.get -> System.Collections.Generic.IReadOnlyList<AspectN.Metadata.AttributeSignature!>!
+AspectN.Metadata.MethodKind
+AspectN.Metadata.MethodKind.Conversion = 7 -> AspectN.Metadata.MethodKind
+AspectN.Metadata.MethodKind.EventAdder = 3 -> AspectN.Metadata.MethodKind
+AspectN.Metadata.MethodKind.EventRaiser = 5 -> AspectN.Metadata.MethodKind
+AspectN.Metadata.MethodKind.EventRemover = 4 -> AspectN.Metadata.MethodKind
+AspectN.Metadata.MethodKind.InstanceConstructor = 8 -> AspectN.Metadata.MethodKind
+AspectN.Metadata.MethodKind.Operator = 6 -> AspectN.Metadata.MethodKind
+AspectN.Metadata.MethodKind.OrdinaryMethod = 0 -> AspectN.Metadata.MethodKind
+AspectN.Metadata.MethodKind.PropertyGetter = 1 -> AspectN.Metadata.MethodKind
+AspectN.Metadata.MethodKind.PropertySetter = 2 -> AspectN.Metadata.MethodKind
+AspectN.Metadata.MethodKind.StaticConstructor = 9 -> AspectN.Metadata.MethodKind
+AspectN.Metadata.MethodSignature
+AspectN.Metadata.MethodSignature.Accessibility.get -> AspectN.Metadata.Accessibility
+AspectN.Metadata.MethodSignature.AssociatedProperty.get -> AspectN.Metadata.PropertySignature?
+AspectN.Metadata.MethodSignature.Attributes.get -> System.Collections.Generic.IReadOnlyList<AspectN.Metadata.AttributeSignature!>!
+AspectN.Metadata.MethodSignature.MethodSignature(string! name, AspectN.Metadata.MethodKind kind, AspectN.Metadata.Accessibility accessibility, bool isStatic, bool isAsync, AspectN.Metadata.TypeSignature! declaringType, AspectN.Metadata.TypeUseSignature! returnType, System.Collections.Generic.IEnumerable<AspectN.Metadata.ParameterSignature!>! parameters, System.Collections.Generic.IEnumerable<AspectN.Metadata.GenericParameterSignature!>! genericParameters, System.Collections.Generic.IEnumerable<AspectN.Metadata.TypeSignature!>! genericArguments, System.Collections.Generic.IEnumerable<AspectN.Metadata.AttributeSignature!>! attributes, System.Collections.Generic.IEnumerable<AspectN.Metadata.AttributeSignature!>! returnAttributes, System.Collections.Generic.IEnumerable<AspectN.Metadata.AttributeSignature!>? typeAttributes = null, AspectN.Metadata.MethodSignature? originalDefinition = null, AspectN.Metadata.PropertySignature? associatedProperty = null) -> void
+AspectN.Metadata.MethodSignature.DeclaringType.get -> AspectN.Metadata.TypeSignature!
+AspectN.Metadata.MethodSignature.GenericArguments.get -> System.Collections.Generic.IReadOnlyList<AspectN.Metadata.TypeSignature!>!
+AspectN.Metadata.MethodSignature.GenericParameters.get -> System.Collections.Generic.IReadOnlyList<AspectN.Metadata.GenericParameterSignature!>!
+AspectN.Metadata.MethodSignature.IsAsync.get -> bool
+AspectN.Metadata.MethodSignature.IsStatic.get -> bool
+AspectN.Metadata.MethodSignature.Kind.get -> AspectN.Metadata.MethodKind
+AspectN.Metadata.MethodSignature.Name.get -> string!
+AspectN.Metadata.MethodSignature.OriginalDefinition.get -> AspectN.Metadata.MethodSignature?
+AspectN.Metadata.MethodSignature.Parameters.get -> System.Collections.Generic.IReadOnlyList<AspectN.Metadata.ParameterSignature!>!
+AspectN.Metadata.MethodSignature.ReturnAttributes.get -> System.Collections.Generic.IReadOnlyList<AspectN.Metadata.AttributeSignature!>!
+AspectN.Metadata.MethodSignature.ReturnType.get -> AspectN.Metadata.TypeUseSignature!
+AspectN.Metadata.MethodSignature.TypeAttributes.get -> System.Collections.Generic.IReadOnlyList<AspectN.Metadata.AttributeSignature!>!
 AspectN.Metadata.GenericParameterOwnerKind
 AspectN.Metadata.GenericParameterOwnerKind.Method = 1 -> AspectN.Metadata.GenericParameterOwnerKind
 AspectN.Metadata.GenericParameterOwnerKind.Type = 0 -> AspectN.Metadata.GenericParameterOwnerKind
@@ -283,9 +283,9 @@ AspectN.Syntax.BinaryTypePatternSyntax.Left.get -> AspectN.Syntax.TypePatternSyn
 AspectN.Syntax.BinaryTypePatternSyntax.OperatorToken.get -> AspectN.Syntax.SyntaxToken!
 AspectN.Syntax.BinaryTypePatternSyntax.Right.get -> AspectN.Syntax.TypePatternSyntax!
 AspectN.Syntax.CallableSelectorSyntax
-AspectN.Syntax.CallableSelectorSyntax.CallableSelectorSyntax(AspectN.Syntax.SyntaxToken! keywordToken, AspectN.Syntax.SyntaxToken! openParenToken, AspectN.Syntax.CallableSignatureSyntax! signature, AspectN.Syntax.SyntaxToken! closeParenToken) -> void
-AspectN.Syntax.CallableSignatureSyntax
-AspectN.Syntax.CallableSignatureSyntax.CallableSignatureSyntax(System.Collections.Generic.IEnumerable<AspectN.Syntax.SyntaxNode!>! parts) -> void
+AspectN.Syntax.CallableSelectorSyntax.CallableSelectorSyntax(AspectN.Syntax.SyntaxToken! keywordToken, AspectN.Syntax.SyntaxToken! openParenToken, AspectN.Syntax.MethodSignatureSyntax! signature, AspectN.Syntax.SyntaxToken! closeParenToken) -> void
+AspectN.Syntax.MethodSignatureSyntax
+AspectN.Syntax.MethodSignatureSyntax.MethodSignatureSyntax(System.Collections.Generic.IEnumerable<AspectN.Syntax.SyntaxNode!>! parts) -> void
 AspectN.Syntax.ConstructorSelectorSyntax
 AspectN.Syntax.ConstructorSelectorSyntax.ConstructorSelectorSyntax(AspectN.Syntax.SyntaxToken! keywordToken, AspectN.Syntax.SyntaxToken! openParenToken, AspectN.Syntax.ConstructorSignatureSyntax! signature, AspectN.Syntax.SyntaxToken! closeParenToken) -> void
 AspectN.Syntax.ConstructorSignatureSyntax
@@ -300,7 +300,8 @@ AspectN.Syntax.ExtensionSelectorSyntax.NameTokens.get -> System.Collections.Gene
 AspectN.Syntax.ExtensionSelectorSyntax.Separators.get -> System.Collections.Generic.IReadOnlyList<AspectN.Syntax.SyntaxToken!>!
 AspectN.Syntax.GenericPatternForm
 AspectN.Syntax.GenericPatternForm.AnyPositiveArity = 1 -> AspectN.Syntax.GenericPatternForm
-AspectN.Syntax.GenericPatternForm.Arguments = 2 -> AspectN.Syntax.GenericPatternForm
+AspectN.Syntax.GenericPatternForm.AnyArity = 2 -> AspectN.Syntax.GenericPatternForm
+AspectN.Syntax.GenericPatternForm.Arguments = 3 -> AspectN.Syntax.GenericPatternForm
 AspectN.Syntax.GenericPatternForm.FixedArity = 0 -> AspectN.Syntax.GenericPatternForm
 AspectN.Syntax.GenericPatternListSyntax
 AspectN.Syntax.GenericPatternListSyntax.Arguments.get -> System.Collections.Generic.IReadOnlyList<AspectN.Syntax.TypePatternSyntax!>!
@@ -314,7 +315,7 @@ AspectN.Syntax.GenericPatternListSyntax.WildcardToken.get -> AspectN.Syntax.Synt
 AspectN.Syntax.GetterSelectorSyntax
 AspectN.Syntax.GetterSelectorSyntax.GetterSelectorSyntax(AspectN.Syntax.SyntaxToken! keywordToken, AspectN.Syntax.SyntaxToken! openParenToken, AspectN.Syntax.PropertySignatureSyntax! signature, AspectN.Syntax.SyntaxToken! closeParenToken) -> void
 AspectN.Syntax.MethodSelectorSyntax
-AspectN.Syntax.MethodSelectorSyntax.MethodSelectorSyntax(AspectN.Syntax.SyntaxToken! keywordToken, AspectN.Syntax.SyntaxToken! openParenToken, AspectN.Syntax.CallableSignatureSyntax! signature, AspectN.Syntax.SyntaxToken! closeParenToken) -> void
+AspectN.Syntax.MethodSelectorSyntax.MethodSelectorSyntax(AspectN.Syntax.SyntaxToken! keywordToken, AspectN.Syntax.SyntaxToken! openParenToken, AspectN.Syntax.MethodSignatureSyntax! signature, AspectN.Syntax.SyntaxToken! closeParenToken) -> void
 AspectN.Syntax.ModifierSyntax
 AspectN.Syntax.ModifierSyntax.ModifierSyntax(System.Collections.Generic.IEnumerable<AspectN.Syntax.SyntaxToken!>! tokens) -> void
 AspectN.Syntax.ModifierSyntax.Tokens.get -> System.Collections.Generic.IReadOnlyList<AspectN.Syntax.SyntaxToken!>!
@@ -371,7 +372,7 @@ AspectN.Syntax.SyntaxKind.BangToken = 6 -> AspectN.Syntax.SyntaxKind
 AspectN.Syntax.SyntaxKind.BinaryExpression = 24 -> AspectN.Syntax.SyntaxKind
 AspectN.Syntax.SyntaxKind.BinaryTypePattern = 55 -> AspectN.Syntax.SyntaxKind
 AspectN.Syntax.SyntaxKind.CallableSelector = 26 -> AspectN.Syntax.SyntaxKind
-AspectN.Syntax.SyntaxKind.CallableSignature = 36 -> AspectN.Syntax.SyntaxKind
+AspectN.Syntax.SyntaxKind.MethodSignature = 36 -> AspectN.Syntax.SyntaxKind
 AspectN.Syntax.SyntaxKind.CloseBracketToken = 14 -> AspectN.Syntax.SyntaxKind
 AspectN.Syntax.SyntaxKind.CloseParenToken = 10 -> AspectN.Syntax.SyntaxKind
 AspectN.Syntax.SyntaxKind.CommaToken = 15 -> AspectN.Syntax.SyntaxKind
@@ -447,7 +448,8 @@ AspectN.Syntax.TypePatternSyntax.TypePatternSyntax(AspectN.Syntax.SyntaxKind kin
 AspectN.Syntax.TypeUseSyntax
 AspectN.Syntax.TypeUseSyntax.RefKindTokens.get -> System.Collections.Generic.IReadOnlyList<AspectN.Syntax.SyntaxToken!>!
 AspectN.Syntax.TypeUseSyntax.TypePattern.get -> AspectN.Syntax.TypePatternSyntax!
-AspectN.Syntax.TypeUseSyntax.TypeUseSyntax(System.Collections.Generic.IEnumerable<AspectN.Syntax.SyntaxToken!>! refKindTokens, AspectN.Syntax.TypePatternSyntax! typePattern) -> void
+AspectN.Syntax.TypeUseSyntax.NegatedRefTokens.get -> System.Collections.Generic.IReadOnlyList<AspectN.Syntax.SyntaxToken!>!
+AspectN.Syntax.TypeUseSyntax.TypeUseSyntax(System.Collections.Generic.IEnumerable<AspectN.Syntax.SyntaxToken!>! refKindTokens, AspectN.Syntax.TypePatternSyntax! typePattern, System.Collections.Generic.IReadOnlyList<AspectN.Syntax.SyntaxToken!>? negatedRefTokens = null) -> void
 AspectN.Syntax.UnaryExpressionSyntax
 AspectN.Syntax.UnaryExpressionSyntax.Operand.get -> AspectN.Syntax.ExpressionSyntax!
 AspectN.Syntax.UnaryExpressionSyntax.OperatorToken.get -> AspectN.Syntax.SyntaxToken!
@@ -475,7 +477,7 @@ AspectN.Text.TextSpan.Start.get -> int
 AspectN.Text.TextSpan.TextSpan() -> void
 AspectN.Text.TextSpan.TextSpan(int start, int length) -> void
 AspectN.TypeSystem.AttributeTarget
-AspectN.TypeSystem.AttributeTarget.Callable.get -> AspectN.Metadata.CallableSignature?
+AspectN.TypeSystem.AttributeTarget.Method.get -> AspectN.Metadata.MethodSignature?
 AspectN.TypeSystem.AttributeTarget.Kind.get -> AspectN.Metadata.AttributeTargetKind
 AspectN.TypeSystem.AttributeTarget.Parameter.get -> AspectN.Metadata.ParameterSignature?
 AspectN.TypeSystem.AttributeTarget.Property.get -> AspectN.Metadata.PropertySignature?
@@ -525,6 +527,7 @@ static AspectN.Diagnostics.DiagnosticCodes.InvalidRefKind.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.InvalidRegex.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.InvalidTargetDomain.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.InvalidTypeSuffix.get -> string!
+static AspectN.Diagnostics.DiagnosticCodes.InvalidGenericClause.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.InvalidVariable.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.InvalidVariableScope.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.MissingBackendCapability.get -> string!
@@ -555,10 +558,10 @@ static AspectN.Syntax.SyntaxToken.Missing(AspectN.Syntax.SyntaxKind kind, int po
 static AspectN.Text.SourceText.From(string! text) -> AspectN.Text.SourceText!
 static AspectN.Text.TextSpan.operator !=(AspectN.Text.TextSpan left, AspectN.Text.TextSpan right) -> bool
 static AspectN.Text.TextSpan.operator ==(AspectN.Text.TextSpan left, AspectN.Text.TextSpan right) -> bool
-static AspectN.TypeSystem.AttributeTarget.ForCallable(AspectN.Metadata.CallableSignature! callable) -> AspectN.TypeSystem.AttributeTarget!
+static AspectN.TypeSystem.AttributeTarget.ForMethod(AspectN.Metadata.MethodSignature! method) -> AspectN.TypeSystem.AttributeTarget!
 static AspectN.TypeSystem.AttributeTarget.ForParameter(AspectN.Metadata.ParameterSignature! parameter) -> AspectN.TypeSystem.AttributeTarget!
 static AspectN.TypeSystem.AttributeTarget.ForProperty(AspectN.Metadata.PropertySignature! property) -> AspectN.TypeSystem.AttributeTarget!
-static AspectN.TypeSystem.AttributeTarget.ForReturn(AspectN.Metadata.CallableSignature! callable) -> AspectN.TypeSystem.AttributeTarget!
+static AspectN.TypeSystem.AttributeTarget.ForReturn(AspectN.Metadata.MethodSignature! method) -> AspectN.TypeSystem.AttributeTarget!
 static AspectN.TypeSystem.AttributeTarget.ForType(AspectN.Metadata.TypeSignature! type) -> AspectN.TypeSystem.AttributeTarget!
 static AspectN.TypeSystem.StructuralTypeComparer.AreEqual(AspectN.Metadata.TypeSignature! left, AspectN.Metadata.TypeSignature! right) -> AspectN.TypeSystem.TypeRelationResult!
 static AspectN.TypeSystem.TypeRelationResult.Matched.get -> AspectN.TypeSystem.TypeRelationResult!

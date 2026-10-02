@@ -16,7 +16,7 @@ public sealed class NetFrameworkSmokeTests
             typeof(NetFrameworkFixture).GetMethod(
                 nameof(NetFrameworkFixture.Echo)));
         var typeSystem = new Reflection.ReflectionTypeSystem();
-        var candidate = typeSystem.Mapper.MapCallable(method);
+        var candidate = typeSystem.Mapper.MapMethod(method);
 
         var result = pattern!.Match(candidate, typeSystem);
 

@@ -18,9 +18,9 @@ namespace AspectN.Metadata;
 /// <param name="typeAttributes">Specifies the declaring type attributes.</param>
 /// <param name="originalDefinition">Specifies the original definition.</param>
 /// <param name="associatedProperty">Specifies the associated property.</param>
-public sealed class CallableSignature(
+public sealed class MethodSignature(
     string name,
-    CallableKind kind,
+    MethodKind kind,
     Accessibility accessibility,
     bool isStatic,
     bool isAsync,
@@ -32,7 +32,7 @@ public sealed class CallableSignature(
     IEnumerable<AttributeSignature> attributes,
     IEnumerable<AttributeSignature> returnAttributes,
     IEnumerable<AttributeSignature>? typeAttributes = null,
-    CallableSignature? originalDefinition = null,
+    MethodSignature? originalDefinition = null,
     PropertySignature? associatedProperty = null)
 {
     private readonly IReadOnlyList<AttributeSignature> _attributes = new ReadOnlyCollection<AttributeSignature>(
@@ -52,7 +52,7 @@ public sealed class CallableSignature(
     public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
 
     /// <summary>Gets the kind.</summary>
-    public CallableKind Kind { get; } = kind;
+    public MethodKind Kind { get; } = kind;
 
     /// <summary>Gets the accessibility.</summary>
     public Accessibility Accessibility { get; } = accessibility;
@@ -93,7 +93,7 @@ public sealed class CallableSignature(
         _typeAttributes;
 
     /// <summary>Gets the original definition.</summary>
-    public CallableSignature? OriginalDefinition { get; } = originalDefinition;
+    public MethodSignature? OriginalDefinition { get; } = originalDefinition;
 
     /// <summary>Gets the associated property.</summary>
     public PropertySignature? AssociatedProperty { get; } = associatedProperty;

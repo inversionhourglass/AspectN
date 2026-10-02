@@ -3,8 +3,10 @@ using AspectN.Metadata;
 using Microsoft.CodeAnalysis;
 using CoreAccessibility = AspectN.Metadata.Accessibility;
 using CoreAssemblyIdentity = AspectN.Metadata.AssemblyIdentity;
+using CoreMethodKind = AspectN.Metadata.MethodKind;
 using CoreRefKind = AspectN.Metadata.RefKind;
 using CoreTypeKind = AspectN.Metadata.TypeKind;
+using RoslynMethodKind = Microsoft.CodeAnalysis.MethodKind;
 
 namespace AspectN.Roslyn;
 
@@ -13,7 +15,7 @@ public sealed class RoslynSignatureMapper
 {
     private const string HEX_DIGITS = "0123456789abcdef";
 
-    private readonly Dictionary<IMethodSymbol, CallableSignature> _callables =
+    private readonly Dictionary<IMethodSymbol, MethodSignature> _callables =
         new(SymbolEqualityComparer.Default);
     private readonly Compilation _compilation;
     private readonly object _gate = new();
@@ -74,7 +76,7 @@ public sealed class RoslynSignatureMapper
     /// <summary>Maps callable metadata to an AspectN signature.</summary>
     /// <param name="methodSymbol">Specifies the method symbol.</param>
     /// <returns>Returns the result of the operation.</returns>
-    public CallableSignature MapCallable(IMethodSymbol methodSymbol)
+    public MethodSignature MapMethod(IMethodSymbol methodSymbol)
     {
 #if NET10_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(methodSymbol);
@@ -90,7 +92,7 @@ public sealed class RoslynSignatureMapper
                 return cached;
             }
 
-            var created = MapCallableCore(methodSymbol);
+            var created = MapMethodCore(methodSymbol);
             _callables.Add(methodSymbol, created);
             return created;
         }
@@ -173,7 +175,7 @@ public sealed class RoslynSignatureMapper
             RequireNamed(MapType(definition)));
     }
 
-    private CallableSignature MapCallableCore(IMethodSymbol methodSymbol)
+    private MethodSignature MapMethodCore(IMethodSymbol methodSymbol)
     {
         var constructed = methodSymbol.IsGenericMethod &&
             !SymbolEqualityComparer.Default.Equals(
@@ -181,9 +183,9 @@ public sealed class RoslynSignatureMapper
                 methodSymbol.ConstructedFrom);
         var associatedProperty = methodSymbol.AssociatedSymbol as IPropertySymbol;
 
-        return new CallableSignature(
+        return new MethodSignature(
             methodSymbol.Name,
-            MapCallableKind(methodSymbol.MethodKind),
+            MapMethodKind(methodSymbol.MethodKind),
             MapAccessibility(methodSymbol.DeclaredAccessibility),
             methodSymbol.IsStatic,
             methodSymbol.IsAsync,
@@ -203,7 +205,7 @@ public sealed class RoslynSignatureMapper
                 : Array.Empty<TypeSignature>(),
             MapAttributes(
                 methodSymbol.GetAttributes(),
-                AttributeTargetKind.Callable),
+                AttributeTargetKind.Method),
             MapAttributes(
                 methodSymbol.GetReturnTypeAttributes(),
                 AttributeTargetKind.Return),
@@ -212,7 +214,7 @@ public sealed class RoslynSignatureMapper
                 methodSymbol.ContainingType.GetAttributes(),
                 AttributeTargetKind.Type),
             constructed
-                ? MapCallable(methodSymbol.OriginalDefinition)
+                ? MapMethod(methodSymbol.OriginalDefinition)
                 : null,
             associatedProperty is null
                 ? null
@@ -389,20 +391,20 @@ public sealed class RoslynSignatureMapper
         };
     }
 
-    private static CallableKind MapCallableKind(MethodKind methodKind)
+    private static CoreMethodKind MapMethodKind(RoslynMethodKind methodKind)
     {
         return methodKind switch
         {
-            MethodKind.Constructor => CallableKind.InstanceConstructor,
-            MethodKind.StaticConstructor => CallableKind.StaticConstructor,
-            MethodKind.PropertyGet => CallableKind.PropertyGetter,
-            MethodKind.PropertySet => CallableKind.PropertySetter,
-            MethodKind.EventAdd => CallableKind.EventAdder,
-            MethodKind.EventRemove => CallableKind.EventRemover,
-            MethodKind.UserDefinedOperator => CallableKind.Operator,
-            MethodKind.BuiltinOperator => CallableKind.Operator,
-            MethodKind.Conversion => CallableKind.Conversion,
-            _ => CallableKind.OrdinaryMethod
+            RoslynMethodKind.Constructor => CoreMethodKind.InstanceConstructor,
+            RoslynMethodKind.StaticConstructor => CoreMethodKind.StaticConstructor,
+            RoslynMethodKind.PropertyGet => CoreMethodKind.PropertyGetter,
+            RoslynMethodKind.PropertySet => CoreMethodKind.PropertySetter,
+            RoslynMethodKind.EventAdd => CoreMethodKind.EventAdder,
+            RoslynMethodKind.EventRemove => CoreMethodKind.EventRemover,
+            RoslynMethodKind.UserDefinedOperator => CoreMethodKind.Operator,
+            RoslynMethodKind.BuiltinOperator => CoreMethodKind.Operator,
+            RoslynMethodKind.Conversion => CoreMethodKind.Conversion,
+            _ => CoreMethodKind.OrdinaryMethod
         };
     }
 

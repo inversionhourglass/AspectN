@@ -173,15 +173,15 @@ internal sealed class Binder(
                 EqualsKeyword(callable.KeywordToken!.Text, "execution")
                     ? SelectorTargetDomain.All
                     : SelectorTargetDomain.Callable,
-                BindCallableSignature(
-                    (CallableSignatureSyntax)callable.Body!,
+                BindMethodSignature(
+                    (MethodSignatureSyntax)callable.Body!,
                     scope)),
             MethodSelectorSyntax method => new BoundSelector(
                 method.FullSpan,
                 BoundSelectorKind.Method,
                 SelectorTargetDomain.OrdinaryMethod,
-                BindCallableSignature(
-                    (CallableSignatureSyntax)method.Body!,
+                BindMethodSignature(
+                    (MethodSignatureSyntax)method.Body!,
                     scope)),
             PropertySelectorSyntax property => new BoundSelector(
                 property.FullSpan,
@@ -330,8 +330,8 @@ internal sealed class Binder(
                 BindTypePattern(typeSyntax, scope, IsUnderNegation)));
     }
 
-    private BoundCallableSignature BindCallableSignature(
-        CallableSignatureSyntax syntax,
+    private BoundMethodSignature BindMethodSignature(
+        MethodSignatureSyntax syntax,
         VariableScope scope)
     {
         var modifiers = BindModifiers(syntax.Parts.OfType<ModifierSyntax>());
@@ -357,7 +357,7 @@ internal sealed class Binder(
             .TakeWhile(part => !ReferenceEquals(part, returnSyntax))
             .OfType<SyntaxToken>()
             .Any(token => token.Text == "async");
-        return new BoundCallableSignature(
+        return new BoundMethodSignature(
             syntax.FullSpan,
             modifiers,
             requiresAsync,
@@ -441,8 +441,19 @@ internal sealed class Binder(
                 syntax.FullSpan);
         }
 
+        var negatedRef = syntax.NegatedRefTokens.Count > 0;
+        if (negatedRef && _isLegacy)
+        {
+            _diagnostics.Add(
+                DiagnosticCodes.InvalidRefKind,
+                DiagnosticSeverity.Error,
+                "'!ref' is not supported in Legacy.",
+                syntax.NegatedRefTokens[0].Span);
+        }
+
         return new BoundTypeUsePattern(
             refKind,
+            negatedRef,
             BindTypePattern(syntax.TypePattern, scope, IsUnderNegation));
     }
 
@@ -879,6 +890,19 @@ internal sealed class Binder(
             out var alias)
             ? alias
             : sourceName;
+        if (!_isLegacy &&
+            canonicalName == "System.Void" &&
+            syntax.Segments.Any(segment => segment.GenericArguments is not null))
+        {
+            // void 永远非泛型；Standard 拒绝 void 上的一切泛型子句。
+            // Legacy 保留接受：async void 糖需要区分裸 void 与显式子句。
+            _diagnostics.Add(
+                DiagnosticCodes.InvalidGenericClause,
+                DiagnosticSeverity.Error,
+                "The 'void' type cannot have a generic clause.",
+                syntax.FullSpan);
+        }
+
         return new BoundNamedTypePattern(
             syntax.FullSpan,
             segments,
@@ -920,6 +944,9 @@ internal sealed class Binder(
         {
             GenericPatternForm.AnyPositiveArity => new BoundGenericPattern(
                 BoundGenericArityKind.AnyPositive,
+                0),
+            GenericPatternForm.AnyArity => new BoundGenericPattern(
+                BoundGenericArityKind.Any,
                 0),
             GenericPatternForm.Arguments => new BoundGenericPattern(
                 BoundGenericArityKind.Exact,
@@ -1272,7 +1299,7 @@ internal sealed class Binder(
         return text switch
         {
             "type" => BoundAttributeTargetKind.Type,
-            "call" or "callable" => BoundAttributeTargetKind.Callable,
+            "call" or "callable" => BoundAttributeTargetKind.Method,
             "prop" or "property" => BoundAttributeTargetKind.Property,
             "para" or "parameter" => BoundAttributeTargetKind.Parameter,
             "ret" or "return" => BoundAttributeTargetKind.Return,
@@ -1295,8 +1322,9 @@ internal sealed class Binder(
             syntax.FullSpan);
     }
 
-    // 规范 §12.1/§12.4：绑定器校验后缀适用性；+ 要求命名目标，数组目标不支持，也不能重复叠加。
-    // nullable 目标（int?+）是合法组合，不在此报告。
+    // 规范 §12.1/§12.4：绑定器校验后缀适用性；+ 要求命名目标，数组/通配目标不支持，也不能重复叠加。
+    // nullable 目标（int?+）是合法组合，不在此报告。通配目标拒绝仅 Standard：
+    // Legacy 的 *+ 是 Shared 的合法形态（零泛型通配名 + 可赋值），保持原行为。
     private void ReportInvalidAssignableTarget(AssignableTypePatternSyntax syntax)
     {
         var target = UnwrapParenthesized(syntax.TargetType);
@@ -1307,6 +1335,14 @@ internal sealed class Binder(
                 DiagnosticCodes.InvalidTypeSuffix,
                 DiagnosticSeverity.Error,
                 "The '+' suffix requires a named type target; array targets are not supported.",
+                syntax.PlusToken.Span);
+        }
+        else if (!_isLegacy && target is WildcardTypePatternSyntax)
+        {
+            _diagnostics.Add(
+                DiagnosticCodes.InvalidTypeSuffix,
+                DiagnosticSeverity.Error,
+                "The '+' suffix requires a named type target; wildcard targets are not supported.",
                 syntax.PlusToken.Span);
         }
         else if (target is AssignableTypePatternSyntax)

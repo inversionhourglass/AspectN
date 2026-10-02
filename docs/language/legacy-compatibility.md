@@ -1,6 +1,6 @@
 # Legacy 与 Shared.Cecil.AspectN 的兼容性政策
 
-本文件记录 2026-10-01 的用户确认。兼容比较对象为冻结的 Shared.Cecil.AspectN `03a9d1030f92a64449b6220eb45d7198d31653db`。比较表达式接受情况和相同候选的匹配行为，不要求内部代码或 AST 相同。下列明确批准的修正和增强不应再作为待修复的兼容缺陷列举。Standard 与 Legacy 的其他差异另行处理。
+本文件记录 2026-10-01 的用户确认。兼容比较对象为冻结的 Shared.Cecil.AspectN `03a9d1030f92a64449b6220eb45d7198d31653db`。比较表达式接受情况和相同候选的匹配行为，不要求内部代码或 AST 相同。下列明确批准的修正和增强不应再作为待修复的兼容缺陷列举。Standard 与 Legacy 的其他差异另行处理，见 [legacy-standard-differences.md](legacy-standard-differences.md)。
 
 ## 保持 Shared 的合法语法和功能
 

@@ -102,7 +102,7 @@ public sealed class SyntaxTreeTests
             typeof(AttributeSelectorSyntax),
             typeof(RegexSelectorSyntax),
             typeof(ExtensionSelectorSyntax),
-            typeof(CallableSignatureSyntax),
+            typeof(MethodSignatureSyntax),
             typeof(PropertySignatureSyntax),
             typeof(ConstructorSignatureSyntax),
             typeof(ParameterSyntax),

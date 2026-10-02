@@ -201,7 +201,7 @@ public sealed class LegacyGrammarCompatibilityTests
         Assert.True(compilation.TryGetMemberPattern(out var current));
 
         var oldResult = shared.IsMatch(SharedSignatureParser.ParseMethod(candidate.Method, false));
-        var newResult = current!.Match(candidate.TypeSystem.Mapper.MapCallable(candidate.Method), candidate.TypeSystem);
+        var newResult = current!.Match(candidate.TypeSystem.Mapper.MapMethod(candidate.Method), candidate.TypeSystem);
 
         Assert.NotEqual(MatchStatus.Unknown, newResult.Status);
         Assert.Equal(oldResult, newResult.Status == MatchStatus.Matched);
@@ -234,7 +234,7 @@ public sealed class LegacyGrammarCompatibilityTests
 
         Assert.Equal(expected, SharedParser.Parse(source).IsMatch(SharedSignatureParser.ParseMethod(method, false)));
         Assert.Equal(expected ? MatchStatus.Matched : MatchStatus.NotMatched,
-            pattern!.Match(typeSystem.Mapper.MapCallable(method), typeSystem).Status);
+            pattern!.Match(typeSystem.Mapper.MapMethod(method), typeSystem).Status);
     }
 
     [Theory]
@@ -279,7 +279,7 @@ public sealed class LegacyGrammarCompatibilityTests
 
         Assert.Equal(expected, SharedParser.Parse(source).IsMatch(SharedSignatureParser.ParseMethod(method, false)));
         Assert.Equal(expected ? MatchStatus.Matched : MatchStatus.NotMatched,
-            pattern!.Match(typeSystem.Mapper.MapCallable(method), typeSystem).Status);
+            pattern!.Match(typeSystem.Mapper.MapMethod(method), typeSystem).Status);
     }
 
     [Fact]
@@ -298,7 +298,7 @@ public sealed class LegacyGrammarCompatibilityTests
         Assert.True(SharedParser.Parse(SOURCE).IsMatch(SharedSignatureParser.ParseMethod(method, false)));
         Assert.True(CompileMember(SOURCE).TryGetMemberPattern(out var pattern));
         Assert.Equal(MatchStatus.Matched,
-            pattern!.Match(typeSystem.Mapper.MapCallable(method), typeSystem).Status);
+            pattern!.Match(typeSystem.Mapper.MapMethod(method), typeSystem).Status);
     }
 
     [Theory]
@@ -326,7 +326,7 @@ public sealed class LegacyGrammarCompatibilityTests
 
         Assert.Equal(expected, SharedParser.Parse(source).IsMatch(SharedSignatureParser.ParseMethod(method, false)));
         Assert.Equal(expected ? MatchStatus.Matched : MatchStatus.NotMatched,
-            pattern!.Match(typeSystem.Mapper.MapCallable(method), typeSystem).Status);
+            pattern!.Match(typeSystem.Mapper.MapMethod(method), typeSystem).Status);
     }
 
     [Theory]
@@ -374,7 +374,7 @@ public sealed class LegacyGrammarCompatibilityTests
 
         Assert.Equal(expected, SharedParser.Parse(source).IsMatch(SharedSignatureParser.ParseMethod(candidate, false)));
         Assert.Equal(expected ? MatchStatus.Matched : MatchStatus.NotMatched,
-            pattern!.Match(typeSystem.Mapper.MapCallable(candidate), typeSystem).Status);
+            pattern!.Match(typeSystem.Mapper.MapMethod(candidate), typeSystem).Status);
     }
 
     [Theory]
@@ -422,7 +422,7 @@ public sealed class LegacyGrammarCompatibilityTests
 
         Assert.Equal(expected, SharedParser.Parse(source).IsMatch(SharedSignatureParser.ParseMethod(candidate, false)));
         Assert.Equal(expected ? MatchStatus.Matched : MatchStatus.NotMatched,
-            pattern!.Match(typeSystem.Mapper.MapCallable(candidate), typeSystem).Status);
+            pattern!.Match(typeSystem.Mapper.MapMethod(candidate), typeSystem).Status);
     }
 
     [Fact]
@@ -447,7 +447,7 @@ public sealed class LegacyGrammarCompatibilityTests
             Assert.True(compilation.TryGetMemberPattern(out var pattern));
             Assert.Equal(expected, SharedParser.Parse(source).IsMatch(SharedSignatureParser.ParseMethod(method, false)));
             Assert.Equal(expected ? MatchStatus.Matched : MatchStatus.NotMatched,
-                pattern!.Match(typeSystem.Mapper.MapCallable(method), typeSystem).Status);
+                pattern!.Match(typeSystem.Mapper.MapMethod(method), typeSystem).Status);
         }
     }
 
@@ -477,7 +477,7 @@ public sealed class LegacyGrammarCompatibilityTests
             Assert.True(compilation.TryGetMemberPattern(out var pattern));
             Assert.Equal(expected, SharedParser.Parse(source).IsMatch(SharedSignatureParser.ParseMethod(method, false)));
             Assert.Equal(expected ? MatchStatus.Matched : MatchStatus.NotMatched,
-                pattern!.Match(typeSystem.Mapper.MapCallable(method), typeSystem).Status);
+                pattern!.Match(typeSystem.Mapper.MapMethod(method), typeSystem).Status);
         }
 
         var arrayOfList = new ArrayType(listOfInt);
@@ -515,7 +515,7 @@ public sealed class LegacyGrammarCompatibilityTests
             Assert.True(compilation.TryGetMemberPattern(out var pattern));
             Assert.Equal(expected, SharedParser.Parse(source).IsMatch(SharedSignatureParser.ParseMethod(method, false)));
             Assert.Equal(expected ? MatchStatus.Matched : MatchStatus.NotMatched,
-                pattern!.Match(typeSystem.Mapper.MapCallable(method), typeSystem).Status);
+                pattern!.Match(typeSystem.Mapper.MapMethod(method), typeSystem).Status);
         }
     }
 
@@ -543,13 +543,13 @@ public sealed class LegacyGrammarCompatibilityTests
             // 单独 (ref int) 与三参数方法的元数不符：双方都 NotMatched。
             Assert.False(SharedParser.Parse(source).IsMatch(SharedSignatureParser.ParseMethod(method, false)));
             Assert.Equal(MatchStatus.NotMatched,
-                pattern!.Match(typeSystem.Mapper.MapCallable(method), typeSystem).Status);
+                pattern!.Match(typeSystem.Mapper.MapMethod(method), typeSystem).Status);
             return;
         }
 
         Assert.False(SharedParser.Parse(source).IsMatch(SharedSignatureParser.ParseMethod(method, false)));
         Assert.Equal(MatchStatus.Matched,
-            pattern!.Match(typeSystem.Mapper.MapCallable(method), typeSystem).Status);
+            pattern!.Match(typeSystem.Mapper.MapMethod(method), typeSystem).Status);
     }
 
     [Theory]
@@ -621,7 +621,7 @@ public sealed class LegacyGrammarCompatibilityTests
 
         Assert.False(SharedParser.Parse("method(null *(..))").IsMatch(SharedSignatureParser.ParseMethod(method, false)));
         Assert.Equal(MatchStatus.Matched,
-            pattern!.Match(typeSystem.Mapper.MapCallable(method), typeSystem).Status);
+            pattern!.Match(typeSystem.Mapper.MapMethod(method), typeSystem).Status);
     }
 
     private static AspectNCompilation CompileMember(string source)

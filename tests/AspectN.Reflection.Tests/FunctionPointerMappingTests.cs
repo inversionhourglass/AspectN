@@ -40,10 +40,10 @@ public sealed unsafe class FunctionPointerMappingTests
     }
 
     [Fact]
-    public void MapCallable_FunctionPointerParameterAndReturn_MapAsUnsupported()
+    public void MapMethod_FunctionPointerParameterAndReturn_MapAsUnsupported()
     {
         var typeSystem = new ReflectionTypeSystem();
-        var callable = typeSystem.Mapper.MapCallable(
+        var callable = typeSystem.Mapper.MapMethod(
             typeof(FunctionPointerFixture).GetMethod(
                 nameof(FunctionPointerFixture.Echo))!);
 

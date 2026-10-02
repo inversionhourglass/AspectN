@@ -1,12 +1,12 @@
 #nullable enable
 AspectN.Roslyn.RoslynSignatureMapper
-AspectN.Roslyn.RoslynSignatureMapper.MapCallable(Microsoft.CodeAnalysis.IMethodSymbol! methodSymbol) -> AspectN.Metadata.CallableSignature!
+AspectN.Roslyn.RoslynSignatureMapper.MapMethod(Microsoft.CodeAnalysis.IMethodSymbol! methodSymbol) -> AspectN.Metadata.MethodSignature!
 AspectN.Roslyn.RoslynSignatureMapper.MapProperty(Microsoft.CodeAnalysis.IPropertySymbol! propertySymbol) -> AspectN.Metadata.PropertySignature!
 AspectN.Roslyn.RoslynSignatureMapper.MapType(Microsoft.CodeAnalysis.ITypeSymbol! typeSymbol) -> AspectN.Metadata.TypeSignature!
 AspectN.Roslyn.RoslynSignatureMapper.MapTypeUse(Microsoft.CodeAnalysis.ITypeSymbol! typeSymbol, AspectN.Metadata.TypeUseKind useKind) -> AspectN.Metadata.TypeUseSignature!
 AspectN.Roslyn.RoslynSyntaxExtensions
-static AspectN.Roslyn.RoslynSyntaxExtensions.MapCallable(this AspectN.Roslyn.RoslynSignatureMapper! mapper, Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax! declaration, Microsoft.CodeAnalysis.Compilation! compilation) -> AspectN.Metadata.CallableSignature!
-static AspectN.Roslyn.RoslynSyntaxExtensions.MapCallable(this AspectN.Roslyn.RoslynSignatureMapper! mapper, Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax! declaration, Microsoft.CodeAnalysis.SemanticModel! semanticModel) -> AspectN.Metadata.CallableSignature!
+static AspectN.Roslyn.RoslynSyntaxExtensions.MapMethod(this AspectN.Roslyn.RoslynSignatureMapper! mapper, Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax! declaration, Microsoft.CodeAnalysis.Compilation! compilation) -> AspectN.Metadata.MethodSignature!
+static AspectN.Roslyn.RoslynSyntaxExtensions.MapMethod(this AspectN.Roslyn.RoslynSignatureMapper! mapper, Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax! declaration, Microsoft.CodeAnalysis.SemanticModel! semanticModel) -> AspectN.Metadata.MethodSignature!
 static AspectN.Roslyn.RoslynSyntaxExtensions.MapType(this AspectN.Roslyn.RoslynSignatureMapper! mapper, Microsoft.CodeAnalysis.CSharp.Syntax.TypeDeclarationSyntax! declaration, Microsoft.CodeAnalysis.Compilation! compilation) -> AspectN.Metadata.TypeSignature!
 static AspectN.Roslyn.RoslynSyntaxExtensions.MapType(this AspectN.Roslyn.RoslynSignatureMapper! mapper, Microsoft.CodeAnalysis.CSharp.Syntax.TypeDeclarationSyntax! declaration, Microsoft.CodeAnalysis.SemanticModel! semanticModel) -> AspectN.Metadata.TypeSignature!
 AspectN.Roslyn.RoslynTypeSystem

@@ -94,7 +94,7 @@ public sealed class SignatureTests
     }
 
     [Fact]
-    public void CallableSignature_PropertyAccessor_IsSeparateAndLinked()
+    public void MethodSignature_PropertyAccessor_IsSeparateAndLinked()
     {
         var declaringType = SystemType("String");
         var property = new PropertySignature(
@@ -108,9 +108,9 @@ public sealed class SignatureTests
                 TypeUseKind.Property),
             Array.Empty<ParameterSignature>(),
             Array.Empty<AttributeSignature>());
-        var getter = new CallableSignature(
+        var getter = new MethodSignature(
             "get_Length",
-            CallableKind.PropertyGetter,
+            MethodKind.PropertyGetter,
             Accessibility.Public,
             false,
             false,
@@ -126,17 +126,17 @@ public sealed class SignatureTests
             property);
 
         Assert.Same(property, getter.AssociatedProperty);
-        Assert.Equal(CallableKind.PropertyGetter, getter.Kind);
+        Assert.Equal(MethodKind.PropertyGetter, getter.Kind);
         Assert.Equal("Length", property.Name);
         Assert.NotEqual(property.GetType(), getter.GetType());
     }
 
     [Fact]
-    public void CallableKind_Constructors_AreDistinctFromOrdinaryMethod()
+    public void MethodKind_Constructors_AreDistinctFromOrdinaryMethod()
     {
-        Assert.NotEqual(CallableKind.OrdinaryMethod, CallableKind.InstanceConstructor);
-        Assert.NotEqual(CallableKind.OrdinaryMethod, CallableKind.StaticConstructor);
-        Assert.NotEqual(CallableKind.InstanceConstructor, CallableKind.StaticConstructor);
+        Assert.NotEqual(MethodKind.OrdinaryMethod, MethodKind.InstanceConstructor);
+        Assert.NotEqual(MethodKind.OrdinaryMethod, MethodKind.StaticConstructor);
+        Assert.NotEqual(MethodKind.InstanceConstructor, MethodKind.StaticConstructor);
     }
 
     [Fact]

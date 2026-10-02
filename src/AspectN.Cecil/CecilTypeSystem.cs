@@ -169,10 +169,10 @@ public sealed class CecilTypeSystem : ITypeSystem, IDisposable
         return target.Kind switch
         {
             AttributeTargetKind.Type => GetTypeAttributes(target.Type!),
-            AttributeTargetKind.Callable => target.Callable!.Attributes,
+            AttributeTargetKind.Method => target.Method!.Attributes,
             AttributeTargetKind.Property => target.Property!.Attributes,
             AttributeTargetKind.Parameter => target.Parameter!.Attributes,
-            AttributeTargetKind.Return => target.Callable!.ReturnAttributes,
+            AttributeTargetKind.Return => target.Method!.ReturnAttributes,
             _ => null
         };
     }

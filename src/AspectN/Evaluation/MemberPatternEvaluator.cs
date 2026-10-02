@@ -11,7 +11,7 @@ internal static class MemberPatternEvaluator
     // 成员匹配按选择器种类分派，再合并名称、泛型、参数和属性等独立约束的结果。
     public static MatchStatus Evaluate(
         BoundExpression pattern,
-        CallableSignature candidate,
+        MethodSignature candidate,
         EvaluationContext context)
     {
         context.CancellationToken.ThrowIfCancellationRequested();
@@ -71,7 +71,7 @@ internal static class MemberPatternEvaluator
 
     private static MatchStatus EvaluateSelector(
         BoundSelector selector,
-        CallableSignature candidate,
+        MethodSignature candidate,
         EvaluationContext context)
     {
         if ((selector.TargetDomain & GetTargetDomain(candidate.Kind)) == 0)
@@ -83,7 +83,7 @@ internal static class MemberPatternEvaluator
         {
             BoundSelectorKind.Callable or BoundSelectorKind.Method =>
                 EvaluateCallable(
-                    (BoundCallableSignature)selector.Payload,
+                    (BoundMethodSignature)selector.Payload,
                     candidate,
                     context),
             BoundSelectorKind.Property or
@@ -120,8 +120,8 @@ internal static class MemberPatternEvaluator
     }
 
     private static MatchStatus EvaluateCallable(
-        BoundCallableSignature pattern,
-        CallableSignature candidate,
+        BoundMethodSignature pattern,
+        MethodSignature candidate,
         EvaluationContext context)
     {
         if (!ModifierMatcher.IsMatch(
@@ -185,7 +185,7 @@ internal static class MemberPatternEvaluator
 
     private static MatchStatus EvaluateProperty(
         BoundPropertySignature pattern,
-        CallableSignature candidate,
+        MethodSignature candidate,
         EvaluationContext context)
     {
         var property = candidate.AssociatedProperty;
@@ -228,7 +228,7 @@ internal static class MemberPatternEvaluator
 
     private static MatchStatus EvaluateConstructor(
         BoundConstructorSignature pattern,
-        CallableSignature candidate,
+        MethodSignature candidate,
         EvaluationContext context)
     {
         var declaringTypeStatus = TypePatternEvaluator.Evaluate(
@@ -245,7 +245,7 @@ internal static class MemberPatternEvaluator
 
     private static MatchStatus EvaluateStaticConstructor(
         BoundStaticConstructorSignature pattern,
-        CallableSignature candidate,
+        MethodSignature candidate,
         EvaluationContext context)
     {
         return TypePatternEvaluator.Evaluate(
@@ -291,7 +291,7 @@ internal static class MemberPatternEvaluator
 
     private static MatchStatus EvaluateGeneric(
         BoundGenericPattern? pattern,
-        CallableSignature candidate,
+        MethodSignature candidate,
         BoundNode owner,
         EvaluationContext context)
     {
@@ -315,7 +315,7 @@ internal static class MemberPatternEvaluator
         if (pattern.Arguments.Count == 0) return MatchStatus.Matched;
         // 定义签名（织入期实际面对的形式）不带实参，两个版本都回退到形式参数，
         // 与规范 13.2「变量可绑定形式泛型参数或构造具体类型」一致。
-        var candidateArguments = LegacyGenericRules.GetEffectiveCallableArguments(
+        var candidateArguments = LegacyGenericRules.GetEffectiveMethodArguments(
             candidate);
         if (candidateArguments.Length != pattern.Arguments.Count)
         {
@@ -363,7 +363,7 @@ internal static class MemberPatternEvaluator
 
     private static MatchStatus EvaluateExtension(
         BoundExtensionPattern pattern,
-        CallableSignature candidate,
+        MethodSignature candidate,
         EvaluationContext context)
     {
         var availableCapabilities = context.TypeSystem.Capabilities;
@@ -387,21 +387,21 @@ internal static class MemberPatternEvaluator
         return result.Status;
     }
 
-    private static SelectorTargetDomain GetTargetDomain(CallableKind kind)
+    private static SelectorTargetDomain GetTargetDomain(MethodKind kind)
     {
         return kind switch
         {
-            CallableKind.OrdinaryMethod => SelectorTargetDomain.OrdinaryMethod,
-            CallableKind.PropertyGetter => SelectorTargetDomain.PropertyGetter,
-            CallableKind.PropertySetter => SelectorTargetDomain.PropertySetter,
-            CallableKind.EventAdder or
-            CallableKind.EventRemover or
-            CallableKind.EventRaiser => SelectorTargetDomain.EventAccessor,
-            CallableKind.Operator => SelectorTargetDomain.Operator,
-            CallableKind.Conversion => SelectorTargetDomain.Conversion,
-            CallableKind.InstanceConstructor =>
+            MethodKind.OrdinaryMethod => SelectorTargetDomain.OrdinaryMethod,
+            MethodKind.PropertyGetter => SelectorTargetDomain.PropertyGetter,
+            MethodKind.PropertySetter => SelectorTargetDomain.PropertySetter,
+            MethodKind.EventAdder or
+            MethodKind.EventRemover or
+            MethodKind.EventRaiser => SelectorTargetDomain.EventAccessor,
+            MethodKind.Operator => SelectorTargetDomain.Operator,
+            MethodKind.Conversion => SelectorTargetDomain.Conversion,
+            MethodKind.InstanceConstructor =>
                 SelectorTargetDomain.InstanceConstructor,
-            CallableKind.StaticConstructor =>
+            MethodKind.StaticConstructor =>
                 SelectorTargetDomain.StaticConstructor,
             _ => SelectorTargetDomain.None
         };

@@ -125,7 +125,7 @@ public sealed class NestedGenericParameterIdentityTests
                 method.Parameters[0].Type is ITypeParameterSymbol parameter &&
                 parameter.Name == parameterName);
         return Assert.IsType<GenericParameterTypeSignature>(
-                Assert.Single(typeSystem.Mapper.MapCallable(overload).Parameters)
+                Assert.Single(typeSystem.Mapper.MapMethod(overload).Parameters)
                     .Type
                     .Type)
             .Parameter;
@@ -145,7 +145,7 @@ public sealed class NestedGenericParameterIdentityTests
                 method.Parameters[0].ParameterType is GenericParameter parameter &&
                 parameter.Position == position);
         return Assert.IsType<GenericParameterTypeSignature>(
-                Assert.Single(typeSystem.Mapper.MapCallable(overload).Parameters)
+                Assert.Single(typeSystem.Mapper.MapMethod(overload).Parameters)
                     .Type
                     .Type)
             .Parameter;
@@ -165,7 +165,7 @@ public sealed class NestedGenericParameterIdentityTests
                     .ParameterType
                     .GenericParameterPosition == position);
         return Assert.IsType<GenericParameterTypeSignature>(
-                Assert.Single(typeSystem.Mapper.MapCallable(overload).Parameters)
+                Assert.Single(typeSystem.Mapper.MapMethod(overload).Parameters)
                     .Type
                     .Type)
             .Parameter;

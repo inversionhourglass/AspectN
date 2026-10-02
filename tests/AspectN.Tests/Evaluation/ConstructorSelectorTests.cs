@@ -8,14 +8,14 @@ namespace AspectN.Tests.Evaluation;
 public sealed class ConstructorSelectorTests
 {
     [Theory]
-    [InlineData("ctor(Service(..))", CallableKind.InstanceConstructor, MatchStatus.Matched)]
-    [InlineData("ctor(Service(..))", CallableKind.StaticConstructor, MatchStatus.NotMatched)]
-    [InlineData("cctor(Service)", CallableKind.InstanceConstructor, MatchStatus.NotMatched)]
-    [InlineData("cctor(Service)", CallableKind.StaticConstructor, MatchStatus.Matched)]
-    [InlineData("ctor(Service(..))", CallableKind.OrdinaryMethod, MatchStatus.NotMatched)]
+    [InlineData("ctor(Service(..))", MethodKind.InstanceConstructor, MatchStatus.Matched)]
+    [InlineData("ctor(Service(..))", MethodKind.StaticConstructor, MatchStatus.NotMatched)]
+    [InlineData("cctor(Service)", MethodKind.InstanceConstructor, MatchStatus.NotMatched)]
+    [InlineData("cctor(Service)", MethodKind.StaticConstructor, MatchStatus.Matched)]
+    [InlineData("ctor(Service(..))", MethodKind.OrdinaryMethod, MatchStatus.NotMatched)]
     public void Match_Constructors_UseDisjointDomains(
         string source,
-        CallableKind kind,
+        MethodKind kind,
         MatchStatus expected)
     {
         var result = Match(source, Callable(kind));
@@ -27,7 +27,7 @@ public sealed class ConstructorSelectorTests
     public void Match_InstanceConstructor_MatchesParametersAndRefKinds()
     {
         var candidate = Callable(
-            CallableKind.InstanceConstructor,
+            MethodKind.InstanceConstructor,
             new ParameterSignature(
                 "name",
                 0,
@@ -62,7 +62,7 @@ public sealed class ConstructorSelectorTests
 
         var fooOfString = Generic("Example", "Foo", Named("System", "String"));
         var stringParameter = Callable(
-            CallableKind.InstanceConstructor,
+            MethodKind.InstanceConstructor,
             fooOfString,
             new ParameterSignature(
                 "value",
@@ -72,7 +72,7 @@ public sealed class ConstructorSelectorTests
                     RefKind.None,
                     TypeUseKind.Parameter)));
         var intParameter = Callable(
-            CallableKind.InstanceConstructor,
+            MethodKind.InstanceConstructor,
             fooOfString,
             new ParameterSignature(
                 "value",
@@ -109,7 +109,7 @@ public sealed class ConstructorSelectorTests
 
     private static MatchResult Match(
         string source,
-        CallableSignature candidate)
+        MethodSignature candidate)
     {
         var compilation = AspectNCompilation.Create(
             AspectNParser.ParseMemberExpression(source));
@@ -117,12 +117,12 @@ public sealed class ConstructorSelectorTests
         return pattern!.Match(candidate, new StubTypeSystem());
     }
 
-    private static CallableSignature Callable(
-        CallableKind kind,
+    private static MethodSignature Callable(
+        MethodKind kind,
         TypeSignature declaringType,
         params ParameterSignature[] parameters)
     {
-        return new CallableSignature(
+        return new MethodSignature(
             ".ctor",
             kind,
             Accessibility.Public,
@@ -140,15 +140,15 @@ public sealed class ConstructorSelectorTests
             Array.Empty<AttributeSignature>());
     }
 
-    private static CallableSignature Callable(
-        CallableKind kind,
+    private static MethodSignature Callable(
+        MethodKind kind,
         params ParameterSignature[] parameters)
     {
-        return new CallableSignature(
-            kind == CallableKind.StaticConstructor ? ".cctor" : ".ctor",
+        return new MethodSignature(
+            kind == MethodKind.StaticConstructor ? ".cctor" : ".ctor",
             kind,
             Accessibility.Public,
-            isStatic: kind == CallableKind.StaticConstructor,
+            isStatic: kind == MethodKind.StaticConstructor,
             isAsync: false,
             Named("Example", "Service"),
             new TypeUseSignature(

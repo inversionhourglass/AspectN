@@ -1,6 +1,6 @@
 #nullable enable
 AspectN.Reflection.ReflectionSignatureMapper
-AspectN.Reflection.ReflectionSignatureMapper.MapCallable(System.Reflection.MethodBase! method) -> AspectN.Metadata.CallableSignature!
+AspectN.Reflection.ReflectionSignatureMapper.MapMethod(System.Reflection.MethodBase! method) -> AspectN.Metadata.MethodSignature!
 AspectN.Reflection.ReflectionSignatureMapper.MapProperty(System.Reflection.PropertyInfo! property) -> AspectN.Metadata.PropertySignature!
 AspectN.Reflection.ReflectionSignatureMapper.MapType(System.Type! type) -> AspectN.Metadata.TypeSignature!
 AspectN.Reflection.ReflectionSignatureMapper.MapTypeUse(System.Type! type, AspectN.Metadata.TypeUseKind useKind) -> AspectN.Metadata.TypeUseSignature!

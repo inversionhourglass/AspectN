@@ -61,7 +61,7 @@ internal sealed class SelectorParser(Parser parser)
         SelectorFamily family)
     {
         var openParen = MatchToken(SyntaxKind.OpenParenToken);
-        var signature = ParseCallableSignature();
+        var signature = ParseMethodSignature();
         var closeParen = MatchToken(SyntaxKind.CloseParenToken);
         return family == SelectorFamily.Callable
             ? new CallableSelectorSyntax(
@@ -285,7 +285,7 @@ internal sealed class SelectorParser(Parser parser)
         return ParseTypePattern();
     }
 
-    private CallableSignatureSyntax ParseCallableSignature()
+    private MethodSignatureSyntax ParseMethodSignature()
     {
         var parts = new List<SyntaxNode>();
         parts.AddRange(ParseModifiers());
@@ -309,7 +309,7 @@ internal sealed class SelectorParser(Parser parser)
         parts.Add(ParseTypeUse());
         parts.AddRange(ParseMemberPath());
         parts.AddRange(ParseParameterPatternList());
-        return new CallableSignatureSyntax(parts);
+        return new MethodSignatureSyntax(parts);
     }
 
     private PropertySignatureSyntax ParsePropertySignature()
@@ -565,6 +565,20 @@ internal sealed class SelectorParser(Parser parser)
 
     private TypeUseSyntax ParseTypeUse()
     {
+        // !ref（仅 Standard）：显式要求非 by-ref；与具体 ref kind 连写属于矛盾，交由诊断报告。
+        var negatedRefTokens = new List<SyntaxToken>();
+        if (LanguageVersion == AspectNLanguageVersion.Standard &&
+            Current.Kind == SyntaxKind.BangToken)
+        {
+            var following = _parser.PeekSelectorTokens(2)[1];
+            if (following.Kind == SyntaxKind.IdentifierToken &&
+                EqualsKeyword(following.Text, "ref"))
+            {
+                negatedRefTokens.Add(NextToken());
+                negatedRefTokens.Add(NextToken());
+            }
+        }
+
         var refKind = new List<SyntaxToken>();
         if (IsIdentifier("ref") || IsIdentifier("out") || IsIdentifier("in"))
         {
@@ -576,7 +590,15 @@ internal sealed class SelectorParser(Parser parser)
             }
         }
 
-        return new TypeUseSyntax(refKind, ParseTypePattern());
+        if (negatedRefTokens.Count > 0 && refKind.Count > 0)
+        {
+            _parser.AddSelectorDiagnostic(
+                DiagnosticCodes.InvalidRefKind,
+                "'!ref' cannot be combined with an explicit ref kind.",
+                refKind[0]);
+        }
+
+        return new TypeUseSyntax(refKind, ParseTypePattern(), negatedRefTokens);
     }
 
     // 使用优先级爬升解析类型表达式，以保持一元、二元和后缀构造的结合顺序。
@@ -617,10 +639,9 @@ internal sealed class SelectorParser(Parser parser)
             switch (Current.Kind)
             {
                 case SyntaxKind.OpenBracketToken:
-                    // Legacy 对齐 Shared：类型累积遇到非相邻 token 即截断，int [] / int ? 被旧实现拒绝。
-                    // Standard 规范 §3.2 未把 [/? 列入邻接约束，保持接受。
-                    if (LanguageVersion == AspectNLanguageVersion.Legacy &&
-                        Current.Span.Start != pattern.FullSpan.End)
+                    // 类型累积遇到非相邻 token 即截断（两版本一致，对齐 Shared）：
+                    // int [] / int ? 报错；数组括号内部的空格不受影响。
+                    if (Current.Span.Start != pattern.FullSpan.End)
                     {
                         ReportUnexpected(Current, "'[' (must be adjacent to the type pattern)");
                     }
@@ -628,8 +649,7 @@ internal sealed class SelectorParser(Parser parser)
                     pattern = ParseArraySuffix(pattern);
                     continue;
                 case SyntaxKind.QuestionToken:
-                    if (LanguageVersion == AspectNLanguageVersion.Legacy &&
-                        Current.Span.Start != pattern.FullSpan.End)
+                    if (Current.Span.Start != pattern.FullSpan.End)
                     {
                         ReportUnexpected(Current, "'?' (must be adjacent to the type pattern)");
                     }
@@ -796,8 +816,9 @@ internal sealed class SelectorParser(Parser parser)
     private GenericPatternListSyntax ParseGenericPatternList()
     {
         var lessThan = NextToken();
-        if (LanguageVersion == AspectNLanguageVersion.Legacy &&
-            Current.Kind == SyntaxKind.BangToken)
+
+        // <!>：显式零泛型（两版本通用；Legacy 原有语义）。
+        if (Current.Kind == SyntaxKind.BangToken)
         {
             var bang = NextToken();
             return new GenericPatternListSyntax(
@@ -812,6 +833,7 @@ internal sealed class SelectorParser(Parser parser)
 
         if (Current.Kind == SyntaxKind.GreaterThanToken)
         {
+            // <> = 单个 Any 空槽。
             return new GenericPatternListSyntax(
                 lessThan,
                 GenericPatternForm.FixedArity,
@@ -824,6 +846,7 @@ internal sealed class SelectorParser(Parser parser)
 
         if (Current.Kind == SyntaxKind.DotDotToken)
         {
+            // <..> = 至少一个泛型参数。
             var wildcard = NextToken();
             return new GenericPatternListSyntax(
                 lessThan,
@@ -835,48 +858,27 @@ internal sealed class SelectorParser(Parser parser)
                 MatchToken(SyntaxKind.GreaterThanToken));
         }
 
-        if (LanguageVersion == AspectNLanguageVersion.Legacy)
+        // <?> = 任意 arity（含零），仅 Standard；Legacy 的省略子句已是任意，无需该写法。
+        if (LanguageVersion == AspectNLanguageVersion.Standard &&
+            Current.Kind == SyntaxKind.QuestionToken)
         {
-            return ParseLegacyGenericArguments(lessThan);
-        }
-
-        if (Current.Kind == SyntaxKind.CommaToken)
-        {
-            var commas = new List<SyntaxToken>();
-            while (Current.Kind == SyntaxKind.CommaToken)
-            {
-                commas.Add(NextToken());
-            }
-
+            var question = NextToken();
             return new GenericPatternListSyntax(
                 lessThan,
-                GenericPatternForm.FixedArity,
-                commas.Count + 1,
+                GenericPatternForm.AnyArity,
+                0,
                 Array.Empty<TypePatternSyntax>(),
-                commas,
-                null,
+                Array.Empty<SyntaxToken>(),
+                question,
                 MatchToken(SyntaxKind.GreaterThanToken));
         }
 
-        var arguments = new List<TypePatternSyntax> { ParseTypePattern() };
-        var separators = new List<SyntaxToken>();
-        while (Current.Kind == SyntaxKind.CommaToken)
-        {
-            separators.Add(NextToken());
-            arguments.Add(ParseTypePattern());
-        }
-
-        return new GenericPatternListSyntax(
-            lessThan,
-            GenericPatternForm.Arguments,
-            arguments.Count,
-            arguments,
-            separators,
-            null,
-            MatchToken(SyntaxKind.GreaterThanToken));
+        // 混合空槽（两版本统一）：空槽 = Any 占位，arity = 槽数；
+        // 全空槽（<,>、<,,>）等价于纯逗号计数形式。
+        return ParseGenericArguments(lessThan);
     }
 
-    private GenericPatternListSyntax ParseLegacyGenericArguments(SyntaxToken lessThan)
+    private GenericPatternListSyntax ParseGenericArguments(SyntaxToken lessThan)
     {
         var arguments = new List<TypePatternSyntax>();
         var separators = new List<SyntaxToken>();
@@ -913,8 +915,8 @@ internal sealed class SelectorParser(Parser parser)
         var first = ParseTypePattern();
         if (Current.Kind != SyntaxKind.CommaToken)
         {
-            if (LanguageVersion == AspectNLanguageVersion.Legacy &&
-                !LegacyParsingRules.IsBooleanGroup(first))
+            // 括号类型只保留 Boolean 分组含义（两版本一致）；单元素括号按缺元素诊断。
+            if (!LegacyParsingRules.IsBooleanGroup(first))
             {
                 ReportUnexpected(Current, "',' and another tuple element (a tuple needs at least two elements)");
             }
@@ -1048,6 +1050,33 @@ internal sealed class SelectorParser(Parser parser)
             // 分隔符后缺少名称会绑定出永不匹配的空成员名。
             ReportUnexpected(Current, "member name");
         }
+        else if (LanguageVersion == AspectNLanguageVersion.Standard)
+        {
+            // Standard 的名称模型要求 .. 只出现在命名空间中间：紧邻成员名的分隔符
+            // 若是 ..，声明类型就缺了类型名段（少一段，如 *..M、System..*）。
+            // Legacy 保留 Shared 行为：.. 后缺省的段视为通配类型名。
+            for (var index = parts.Count - 1; index >= 0; index--)
+            {
+                if (parts[index] is not SyntaxToken
+                    {
+                        Kind: SyntaxKind.DotToken or
+                              SyntaxKind.DotDotToken or
+                              SyntaxKind.SlashToken
+                    } separator)
+                {
+                    continue;
+                }
+
+                if (separator.Kind == SyntaxKind.DotDotToken)
+                {
+                    ReportUnexpected(
+                        separator,
+                        "'.' (a member name must be joined to its declaring type with '.')");
+                }
+
+                break;
+            }
+        }
 
         return parts;
     }
@@ -1062,27 +1091,18 @@ internal sealed class SelectorParser(Parser parser)
         {
             parts.Add(NextToken());
         }
-        else if (LanguageVersion == AspectNLanguageVersion.Legacy)
-        {
-            ParseLegacyParameterSlots(parts);
-        }
         else
         {
-            while (Current.Kind is not
-                   SyntaxKind.CloseParenToken and not
-                   SyntaxKind.EndOfFileToken)
-            {
-                parts.Add(new ParameterSyntax(ParseTypeUse()));
-                if (Current.Kind != SyntaxKind.CommaToken) break;
-                parts.Add(NextToken());
-            }
+            // 参数空槽（两版本统一）：逗号之间/末尾的空位 = 隐式 * 参数，
+            // (int,) = 两个参数（int 与任意），(,int) 同理。
+            ParseParameterSlots(parts);
         }
 
         parts.Add(MatchToken(SyntaxKind.CloseParenToken));
         return parts;
     }
 
-    private void ParseLegacyParameterSlots(List<SyntaxNode> parts)
+    private void ParseParameterSlots(List<SyntaxNode> parts)
     {
         var expectsParameter = true;
         var sawComma = false;
@@ -1094,7 +1114,7 @@ internal sealed class SelectorParser(Parser parser)
             {
                 if (expectsParameter)
                 {
-                    parts.Add(CreateLegacyWildcardParameter(Current.Span.Start));
+                    parts.Add(CreateWildcardParameter(Current.Span.Start));
                 }
 
                 parts.Add(NextToken());
@@ -1110,11 +1130,11 @@ internal sealed class SelectorParser(Parser parser)
 
         if (sawComma && expectsParameter)
         {
-            parts.Add(CreateLegacyWildcardParameter(Current.Span.Start));
+            parts.Add(CreateWildcardParameter(Current.Span.Start));
         }
     }
 
-    private static ParameterSyntax CreateLegacyWildcardParameter(int position)
+    private static ParameterSyntax CreateWildcardParameter(int position)
     {
         return new ParameterSyntax(
             new TypeUseSyntax(

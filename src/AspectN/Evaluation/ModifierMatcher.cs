@@ -56,11 +56,27 @@ internal static class ModifierMatcher
         bool isParameter,
         AspectNLanguageVersion languageVersion)
     {
-        // 通配参数可忽略 ref kind（规范 §11）；Shared 的通配返回同样不区分 ref
-        // （旧 ExecutionPattern 不比较返回 RefKind），Legacy 返回位沿用该豁免。
-        if (pattern.RefKind == RefKind.None &&
-            pattern.TypePattern is BoundWildcardTypePattern &&
-            (isParameter || languageVersion == AspectNLanguageVersion.Legacy))
+        if (languageVersion == AspectNLanguageVersion.Legacy)
+        {
+            // Legacy（冻结）：通配类型的 ref kind 豁免保留 Shared 行为
+            // （旧 ExecutionPattern 不比较返回 RefKind），其余精确比较。
+            if (pattern.RefKind == RefKind.None &&
+                pattern.TypePattern is BoundWildcardTypePattern)
+            {
+                return true;
+            }
+
+            return pattern.RefKind == candidate.RefKind;
+        }
+
+        // Standard（规范 §11）：未标注 = 不约束（任意 ref kind）；
+        // !ref = 仅非 by-ref；ref/out/in/ref readonly = 精确匹配。
+        if (pattern.NegatedRefKind)
+        {
+            return candidate.RefKind == RefKind.None;
+        }
+
+        if (pattern.RefKind == RefKind.None)
         {
             return true;
         }

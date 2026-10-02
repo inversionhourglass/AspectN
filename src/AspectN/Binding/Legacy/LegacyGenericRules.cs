@@ -44,8 +44,8 @@ internal static class LegacyGenericRules
         return GenericParameterNamer.GetEffectiveTypeArguments(candidate);
     }
 
-    public static TypeSignature[] GetEffectiveCallableArguments(
-        CallableSignature candidate)
+    public static TypeSignature[] GetEffectiveMethodArguments(
+        MethodSignature candidate)
     {
         if (candidate.GenericArguments.Count > 0)
         {

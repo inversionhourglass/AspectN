@@ -119,11 +119,11 @@ public sealed class ExtensionRegistryTests
         Assert.False(extension.Matcher.WasCalled);
     }
 
-    private static CallableSignature Candidate()
+    private static MethodSignature Candidate()
     {
-        return new CallableSignature(
+        return new MethodSignature(
             "Run",
-            CallableKind.OrdinaryMethod,
+            MethodKind.OrdinaryMethod,
             Accessibility.Public,
             isStatic: false,
             isAsync: false,

@@ -7,11 +7,11 @@ namespace AspectN.Tests.Evaluation;
 public sealed class PropertySelectorTests
 {
     [Theory]
-    [InlineData(CallableKind.PropertyGetter, MatchStatus.Matched)]
-    [InlineData(CallableKind.PropertySetter, MatchStatus.Matched)]
-    [InlineData(CallableKind.OrdinaryMethod, MatchStatus.NotMatched)]
+    [InlineData(MethodKind.PropertyGetter, MatchStatus.Matched)]
+    [InlineData(MethodKind.PropertySetter, MatchStatus.Matched)]
+    [InlineData(MethodKind.OrdinaryMethod, MatchStatus.NotMatched)]
     public void Match_Property_AcceptsPropertyAccessorsOnly(
-        CallableKind kind,
+        MethodKind kind,
         MatchStatus expected)
     {
         var property = Property("Name", Named("System", "String"));
@@ -23,13 +23,13 @@ public sealed class PropertySelectorTests
     }
 
     [Theory]
-    [InlineData("getter(string Service.Name)", CallableKind.PropertyGetter, MatchStatus.Matched)]
-    [InlineData("getter(string Service.Name)", CallableKind.PropertySetter, MatchStatus.NotMatched)]
-    [InlineData("setter(string Service.Name)", CallableKind.PropertyGetter, MatchStatus.NotMatched)]
-    [InlineData("setter(string Service.Name)", CallableKind.PropertySetter, MatchStatus.Matched)]
+    [InlineData("getter(string Service.Name)", MethodKind.PropertyGetter, MatchStatus.Matched)]
+    [InlineData("getter(string Service.Name)", MethodKind.PropertySetter, MatchStatus.NotMatched)]
+    [InlineData("setter(string Service.Name)", MethodKind.PropertyGetter, MatchStatus.NotMatched)]
+    [InlineData("setter(string Service.Name)", MethodKind.PropertySetter, MatchStatus.Matched)]
     public void Match_GetterAndSetter_NarrowAccessorKind(
         string source,
-        CallableKind kind,
+        MethodKind kind,
         MatchStatus expected)
     {
         var candidate = Callable(
@@ -46,7 +46,7 @@ public sealed class PropertySelectorTests
     {
         var property = Property("Name", Named("System", "String"));
         var candidate = Callable(
-            CallableKind.PropertySetter,
+            MethodKind.PropertySetter,
             property,
             name: "set_Name",
             returnType: Named("System", "Void", TypeKind.Struct));
@@ -59,7 +59,7 @@ public sealed class PropertySelectorTests
 
     private static MatchResult Match(
         string source,
-        CallableSignature candidate)
+        MethodSignature candidate)
     {
         var compilation = AspectNCompilation.Create(
             AspectNParser.ParseMemberExpression(source));
@@ -67,14 +67,14 @@ public sealed class PropertySelectorTests
         return pattern!.Match(candidate, new StubTypeSystem());
     }
 
-    private static CallableSignature Callable(
-        CallableKind kind,
+    private static MethodSignature Callable(
+        MethodKind kind,
         PropertySignature property,
         string? name = null,
         TypeSignature? returnType = null)
     {
-        return new CallableSignature(
-            name ?? (kind == CallableKind.PropertyGetter
+        return new MethodSignature(
+            name ?? (kind == MethodKind.PropertyGetter
                 ? "get_Name"
                 : "set_Name"),
             kind,

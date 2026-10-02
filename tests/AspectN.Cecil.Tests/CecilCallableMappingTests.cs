@@ -9,16 +9,16 @@ namespace AspectN.Cecil.Tests;
 public sealed class CecilCallableMappingTests
 {
     [Fact]
-    public void MapCallable_OrdinaryMethod_MapsBasicSignature()
+    public void MapMethod_OrdinaryMethod_MapsBasicSignature()
     {
         using var typeSystem = EmittedFixture.Open();
         var type = FixtureType(typeSystem);
         var method = FindMethod(type, "Ordinary");
 
-        var signature = typeSystem.Mapper.MapCallable(method);
+        var signature = typeSystem.Mapper.MapMethod(method);
 
         Assert.Equal("Ordinary", signature.Name);
-        Assert.Equal(CallableKind.OrdinaryMethod, signature.Kind);
+        Assert.Equal(MethodKind.OrdinaryMethod, signature.Kind);
         Assert.Equal(Accessibility.Public, signature.Accessibility);
         Assert.False(signature.IsStatic);
         Assert.False(signature.IsAsync);
@@ -30,31 +30,31 @@ public sealed class CecilCallableMappingTests
     }
 
     [Theory]
-    [InlineData(".ctor", CallableKind.InstanceConstructor)]
-    [InlineData(".cctor", CallableKind.StaticConstructor)]
-    [InlineData("op_Addition", CallableKind.Operator)]
-    [InlineData("op_Implicit", CallableKind.Conversion)]
-    public void MapCallable_SpecialMethod_MapsCallableKind(
+    [InlineData(".ctor", MethodKind.InstanceConstructor)]
+    [InlineData(".cctor", MethodKind.StaticConstructor)]
+    [InlineData("op_Addition", MethodKind.Operator)]
+    [InlineData("op_Implicit", MethodKind.Conversion)]
+    public void MapMethod_SpecialMethod_MapsMethodKind(
         string methodName,
-        CallableKind expectedKind)
+        MethodKind expectedKind)
     {
         using var typeSystem = EmittedFixture.Open();
         var method = FindMethod(FixtureType(typeSystem), methodName);
 
-        var signature = typeSystem.Mapper.MapCallable(method);
+        var signature = typeSystem.Mapper.MapMethod(method);
 
         Assert.Equal(expectedKind, signature.Kind);
     }
 
     [Fact]
-    public void MapCallable_AsyncAndTaskReturning_DistinguishesStateMachine()
+    public void MapMethod_AsyncAndTaskReturning_DistinguishesStateMachine()
     {
         using var typeSystem = EmittedFixture.Open();
         var type = FixtureType(typeSystem);
 
-        var asyncMethod = typeSystem.Mapper.MapCallable(
+        var asyncMethod = typeSystem.Mapper.MapMethod(
             FindMethod(type, "LoadAsync"));
-        var taskReturning = typeSystem.Mapper.MapCallable(
+        var taskReturning = typeSystem.Mapper.MapMethod(
             FindMethod(type, "TaskReturning"));
 
         Assert.True(asyncMethod.IsAsync);
@@ -62,14 +62,14 @@ public sealed class CecilCallableMappingTests
     }
 
     [Fact]
-    public void MapCallable_GenericInstance_UsesEffectiveArgumentSignature()
+    public void MapMethod_GenericInstance_UsesEffectiveArgumentSignature()
     {
         using var typeSystem = EmittedFixture.Open();
         var definition = FindMethod(FixtureType(typeSystem), "Echo");
         var instance = new GenericInstanceMethod(definition);
         instance.GenericArguments.Add(typeSystem.Module.TypeSystem.String);
 
-        var signature = typeSystem.Mapper.MapCallable(instance);
+        var signature = typeSystem.Mapper.MapMethod(instance);
 
         Assert.NotNull(signature.OriginalDefinition);
         Assert.Equal("TMethod", Assert.Single(
@@ -91,14 +91,14 @@ public sealed class CecilCallableMappingTests
     }
 
     [Fact]
-    public void MapCallable_RefKinds_MapsParametersAndReturnSeparately()
+    public void MapMethod_RefKinds_MapsParametersAndReturnSeparately()
     {
         using var typeSystem = EmittedFixture.Open();
         var type = FixtureType(typeSystem);
         var parameters = typeSystem.Mapper
-            .MapCallable(FindMethod(type, "RefKinds"))
+            .MapMethod(FindMethod(type, "RefKinds"))
             .Parameters;
-        var refReturn = typeSystem.Mapper.MapCallable(
+        var refReturn = typeSystem.Mapper.MapMethod(
             FindMethod(type, "RefReadonlyReturn"));
 
         Assert.Collection(
@@ -113,7 +113,7 @@ public sealed class CecilCallableMappingTests
     }
 
     [Fact]
-    public void MapCallable_CompositeAccessibility_IntersectsDeclaringType()
+    public void MapMethod_CompositeAccessibility_IntersectsDeclaringType()
     {
         using var rawTypeSystem = EmittedFixture.Open();
         using var compositeTypeSystem = EmittedFixture.Open(
@@ -129,8 +129,8 @@ public sealed class CecilCallableMappingTests
                 nameof(CompositeAccessibilityFixture)),
             "PublicMethod");
 
-        var raw = rawTypeSystem.Mapper.MapCallable(rawMethod);
-        var composite = compositeTypeSystem.Mapper.MapCallable(compositeMethod);
+        var raw = rawTypeSystem.Mapper.MapMethod(rawMethod);
+        var composite = compositeTypeSystem.Mapper.MapMethod(compositeMethod);
 
         Assert.Equal(Accessibility.Public, raw.Accessibility);
         Assert.Equal(Accessibility.Internal, composite.Accessibility);
@@ -141,7 +141,7 @@ public sealed class CecilCallableMappingTests
     {
         using var typeSystem = EmittedFixture.Open();
         var type = FixtureType(typeSystem);
-        var callable = typeSystem.Mapper.MapCallable(FindMethod(type, "Marked"));
+        var callable = typeSystem.Mapper.MapMethod(FindMethod(type, "Marked"));
         var mappedType = typeSystem.Mapper.MapType(type);
 
         AssertMatched(
@@ -150,7 +150,7 @@ public sealed class CecilCallableMappingTests
             typeof(TypeMarkerAttribute));
         AssertMatched(
             typeSystem,
-            AttributeTarget.ForCallable(callable),
+            AttributeTarget.ForMethod(callable),
             typeof(CallableMarkerAttribute));
         AssertMatched(
             typeSystem,
@@ -182,7 +182,7 @@ public sealed class CecilCallableMappingTests
     }
 
     [Fact]
-    public void MapCallable_ConstructedDeclaringType_SubstitutesTypeArguments()
+    public void MapMethod_ConstructedDeclaringType_SubstitutesTypeArguments()
     {
         // 经 ImportReference 导入 List<string> 的成员后，声明类型泛型参数必须替换为实参，
         // 而不是残留开放泛型参数 T。
@@ -194,12 +194,12 @@ public sealed class CecilCallableMappingTests
         var getItem = module.ImportReference(
             typeof(List<string>).GetProperty("Item")!.GetMethod!);
 
-        var addSignature = typeSystem.Mapper.MapCallable(add);
+        var addSignature = typeSystem.Mapper.MapMethod(add);
         var parameter = Assert.IsType<NamedTypeSignature>(
             Assert.Single(addSignature.Parameters).Type.Type);
         Assert.Equal("System.String", parameter.Identity.FullMetadataName);
 
-        var getItemSignature = typeSystem.Mapper.MapCallable(getItem);
+        var getItemSignature = typeSystem.Mapper.MapMethod(getItem);
         var returnType = Assert.IsType<NamedTypeSignature>(
             getItemSignature.ReturnType.Type);
         Assert.Equal("System.String", returnType.Identity.FullMetadataName);

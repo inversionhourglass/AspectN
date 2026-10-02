@@ -17,9 +17,9 @@ public sealed class LegacySemanticTests
     [InlineData("T42")]
     public void Match_UndeclaredGenericLookingName_IsLiteral(string name)
     {
-        var integer = Callable("Run", CallableKind.OrdinaryMethod,
+        var integer = Callable("Run", MethodKind.OrdinaryMethod,
             returnType: Named("System", "Int32", TypeKind.Struct));
-        var literal = Callable("Run", CallableKind.OrdinaryMethod,
+        var literal = Callable("Run", MethodKind.OrdinaryMethod,
             returnType: Named("Example", name));
 
         Assert.Equal(MatchStatus.NotMatched, Match($"method({name} *(..))", integer).Status);
@@ -32,7 +32,7 @@ public sealed class LegacySemanticTests
     [InlineData("method(* *.StaticMethod(..))")]
     public void Match_WildcardDeclaringPath_MatchesMethod(string source)
     {
-        var candidate = Callable("StaticMethod", CallableKind.OrdinaryMethod, isStatic: true);
+        var candidate = Callable("StaticMethod", MethodKind.OrdinaryMethod, isStatic: true);
 
         Assert.Equal(MatchStatus.Matched, Match(source, candidate).Status);
         if (source.Contains("StaticMethod", StringComparison.Ordinal))
@@ -45,9 +45,9 @@ public sealed class LegacySemanticTests
     [Fact]
     public void Match_NegatedReturnType_ExcludesOnlySpecifiedType()
     {
-        var integer = Callable("Run", CallableKind.OrdinaryMethod,
+        var integer = Callable("Run", MethodKind.OrdinaryMethod,
             returnType: Named("System", "Int32", TypeKind.Struct));
-        var text = Callable("Run", CallableKind.OrdinaryMethod,
+        var text = Callable("Run", MethodKind.OrdinaryMethod,
             returnType: Named("System", "String"));
 
         Assert.Equal(MatchStatus.NotMatched, Match("method(!int *(..))", integer).Status);
@@ -59,7 +59,7 @@ public sealed class LegacySemanticTests
     {
         var integer = Named("System", "Int32", TypeKind.Struct);
         var array = new ArrayTypeSignature(new ArrayTypeSignature(integer, 1), 2);
-        var candidate = Callable("Run", CallableKind.OrdinaryMethod, returnType: array);
+        var candidate = Callable("Run", MethodKind.OrdinaryMethod, returnType: array);
 
         Assert.Equal(MatchStatus.Matched, Match("method(int *(..))", candidate).Status);
         Assert.Equal(MatchStatus.NotMatched, Match("method(!int *(..))", candidate).Status);
@@ -70,7 +70,7 @@ public sealed class LegacySemanticTests
     [Fact]
     public void Match_LegacyAsyncVoid_PreservesReturnShapeWithoutAsyncFlag()
     {
-        var candidate = Callable("Run", CallableKind.OrdinaryMethod, isAsync: false);
+        var candidate = Callable("Run", MethodKind.OrdinaryMethod, isAsync: false);
 
         Assert.Equal(MatchStatus.Matched, Match("method(async void *(..))", candidate).Status);
     }
@@ -85,7 +85,7 @@ public sealed class LegacySemanticTests
         var identity = new TypeIdentity(new AssemblyIdentity("Example.Assembly"),
             "Example", "Inner", 0, TypeKind.Class, outer.Identity);
         var nested = new NamedTypeSignature(identity);
-        var candidate = Callable("Run", CallableKind.OrdinaryMethod, declaringType: nested);
+        var candidate = Callable("Run", MethodKind.OrdinaryMethod, declaringType: nested);
 
         Assert.Equal(MatchStatus.Matched, Match(source, candidate).Status);
     }
@@ -97,10 +97,10 @@ public sealed class LegacySemanticTests
     {
         var first = GenericParameter("First", GenericParameterOwnerKind.Method, "Run", 0);
         var second = GenericParameter("Second", GenericParameterOwnerKind.Method, "Run", 1);
-        var matching = Callable("Run", CallableKind.OrdinaryMethod,
+        var matching = Callable("Run", MethodKind.OrdinaryMethod,
             returnType: position == 0 ? first : second,
             genericParameters: [first.Parameter, second.Parameter]);
-        var other = Callable("Run", CallableKind.OrdinaryMethod,
+        var other = Callable("Run", MethodKind.OrdinaryMethod,
             returnType: position == 0 ? second : first,
             genericParameters: [first.Parameter, second.Parameter]);
 
@@ -109,28 +109,28 @@ public sealed class LegacySemanticTests
     }
 
     [Theory]
-    [InlineData("execution(* Service.Run(..))", CallableKind.OrdinaryMethod, true)]
-    [InlineData("execution(* Service.*(..))", CallableKind.PropertyGetter, true)]
-    [InlineData("execution(* Service.*(..))", CallableKind.InstanceConstructor, true)]
-    [InlineData("execution(* Service.*(..))", CallableKind.StaticConstructor, true)]
-    [InlineData("execution(* Service.Run(..))", CallableKind.InstanceConstructor, false)]
-    [InlineData("method(* Service.Run(..))", CallableKind.PropertyGetter, false)]
-    [InlineData("property(string Service.Name)", CallableKind.PropertyGetter, true)]
-    [InlineData("property(string Service.Name)", CallableKind.PropertySetter, true)]
-    [InlineData("ctor(Service(..))", CallableKind.InstanceConstructor, true)]
-    [InlineData("cctor(Service)", CallableKind.StaticConstructor, true)]
+    [InlineData("execution(* Service.Run(..))", MethodKind.OrdinaryMethod, true)]
+    [InlineData("execution(* Service.*(..))", MethodKind.PropertyGetter, true)]
+    [InlineData("execution(* Service.*(..))", MethodKind.InstanceConstructor, true)]
+    [InlineData("execution(* Service.*(..))", MethodKind.StaticConstructor, true)]
+    [InlineData("execution(* Service.Run(..))", MethodKind.InstanceConstructor, false)]
+    [InlineData("method(* Service.Run(..))", MethodKind.PropertyGetter, false)]
+    [InlineData("property(string Service.Name)", MethodKind.PropertyGetter, true)]
+    [InlineData("property(string Service.Name)", MethodKind.PropertySetter, true)]
+    [InlineData("ctor(Service(..))", MethodKind.InstanceConstructor, true)]
+    [InlineData("cctor(Service)", MethodKind.StaticConstructor, true)]
     public void Match_LegacySelector_UsesHistoricalDomain(
         string source,
-        CallableKind kind,
+        MethodKind kind,
         bool expected)
     {
-        var candidate = kind is CallableKind.PropertyGetter or
-            CallableKind.PropertySetter
+        var candidate = kind is MethodKind.PropertyGetter or
+            MethodKind.PropertySetter
             ? PropertyAccessor(kind)
             : Callable(
-                kind is CallableKind.InstanceConstructor
+                kind is MethodKind.InstanceConstructor
                     ? ".ctor"
-                    : kind == CallableKind.StaticConstructor
+                    : kind == MethodKind.StaticConstructor
                         ? ".cctor"
                         : "Run",
                 kind);
@@ -147,7 +147,7 @@ public sealed class LegacySemanticTests
     {
         var candidate = Callable(
             "AsyncTask",
-            CallableKind.OrdinaryMethod,
+            MethodKind.OrdinaryMethod,
             isAsync: false,
             returnType: Named("System.Threading.Tasks", "Task"),
             declaringType: Named("ConfiguredMoUsage", "InstanceCls"));
@@ -162,7 +162,7 @@ public sealed class LegacySemanticTests
     {
         var candidate = Callable(
             "Run",
-            CallableKind.OrdinaryMethod,
+            MethodKind.OrdinaryMethod,
             parameters:
             [
                 Parameter(Named("System", "Int32", TypeKind.Struct), 0, RefKind.Out),
@@ -209,7 +209,7 @@ public sealed class LegacySemanticTests
             typeSecond);
         var candidate = Callable(
             "Run",
-            CallableKind.OrdinaryMethod,
+            MethodKind.OrdinaryMethod,
             declaringType: declaringType,
             parameters:
             [
@@ -250,7 +250,7 @@ public sealed class LegacySemanticTests
                 "method(string? Service.Run(..))",
                 Callable(
                     "Run",
-                    CallableKind.OrdinaryMethod,
+                    MethodKind.OrdinaryMethod,
                     returnType: Named("System", "String"))).Status);
         Assert.Equal(
             MatchStatus.Matched,
@@ -258,7 +258,7 @@ public sealed class LegacySemanticTests
                 "method(int? Service.Run(..))",
                 Callable(
                     "Run",
-                    CallableKind.OrdinaryMethod,
+                    MethodKind.OrdinaryMethod,
                     returnType: nullableInt)).Status);
     }
 
@@ -272,7 +272,7 @@ public sealed class LegacySemanticTests
             Named("System", "String"));
         var candidate = Callable(
             "Run",
-            CallableKind.OrdinaryMethod,
+            MethodKind.OrdinaryMethod,
             isAsync: false,
             returnType: taskOfString);
 
@@ -293,7 +293,7 @@ public sealed class LegacySemanticTests
         // Legacy 的 async null 对应 Standard 的裸 tasklike：仅匹配非泛型 Task/ValueTask。
         var candidate = Callable(
             "Flush",
-            CallableKind.OrdinaryMethod,
+            MethodKind.OrdinaryMethod,
             isAsync: true,
             returnType: Named("System.Threading.Tasks", metadataName, kind));
 
@@ -310,12 +310,12 @@ public sealed class LegacySemanticTests
         // async null ↔ 裸 tasklike、async T ↔ tasklike<T>：同一候选在两个版本给出一致结果。
         var nonGeneric = Callable(
             "Flush",
-            CallableKind.OrdinaryMethod,
+            MethodKind.OrdinaryMethod,
             isAsync: true,
             returnType: Named("System.Threading.Tasks", "Task", TypeKind.Class));
         var generic = Callable(
             "Flush",
-            CallableKind.OrdinaryMethod,
+            MethodKind.OrdinaryMethod,
             isAsync: true,
             returnType: Constructed(
                 "System.Threading.Tasks",
@@ -361,7 +361,7 @@ public sealed class LegacySemanticTests
             2);
         var candidate = Callable(
             "Run",
-            CallableKind.OrdinaryMethod,
+            MethodKind.OrdinaryMethod,
             returnType: returnType);
 
         var result = Match(
@@ -393,7 +393,7 @@ public sealed class LegacySemanticTests
             ]);
         var candidate = Callable(
             "get_Name",
-            CallableKind.PropertyGetter,
+            MethodKind.PropertyGetter,
             returnType: Named("System", "String"),
             declaringType: declaringType,
             associatedProperty: property);
@@ -414,12 +414,12 @@ public sealed class LegacySemanticTests
             "Label1Attribute");
         var candidate = Callable(
             "set_Prop",
-            CallableKind.PropertySetter,
+            MethodKind.PropertySetter,
             attributes:
             [
                 new AttributeSignature(
                     marker,
-                    AttributeTargetKind.Callable)
+                    AttributeTargetKind.Method)
             ]);
 
         var result = Match(
@@ -441,7 +441,7 @@ public sealed class LegacySemanticTests
             0);
         var candidate = Callable(
             "Run",
-            CallableKind.OrdinaryMethod,
+            MethodKind.OrdinaryMethod,
             accessibility: Accessibility.PrivateProtected,
             isStatic: true,
             isAsync: true,
@@ -483,7 +483,7 @@ public sealed class LegacySemanticTests
             TypeKind.Class);
         var candidate = Callable(
             "Run",
-            CallableKind.OrdinaryMethod,
+            MethodKind.OrdinaryMethod,
             declaringType: new NamedTypeSignature(identity));
 
         var formatted = LegacyCanonicalSignatureFormatter.Format(candidate);
@@ -511,7 +511,7 @@ public sealed class LegacySemanticTests
             outer);
         var candidate = Callable(
             "Run",
-            CallableKind.OrdinaryMethod,
+            MethodKind.OrdinaryMethod,
             declaringType: new NamedTypeSignature(inner));
 
         var formatted = LegacyCanonicalSignatureFormatter.Format(candidate);
@@ -531,7 +531,7 @@ public sealed class LegacySemanticTests
             TypeKind.Interface);
         var candidate = Callable(
             "Run",
-            CallableKind.OrdinaryMethod,
+            MethodKind.OrdinaryMethod,
             declaringType: declaringType);
         var typeSystem = new StubTypeSystem
         {
@@ -558,7 +558,7 @@ public sealed class LegacySemanticTests
 
     private static MatchResult Match(
         string source,
-        CallableSignature candidate,
+        MethodSignature candidate,
         ITypeSystem? typeSystem = null,
         AspectNLanguageVersion languageVersion = AspectNLanguageVersion.Legacy)
     {
@@ -572,7 +572,7 @@ public sealed class LegacySemanticTests
             typeSystem ?? new StubTypeSystem());
     }
 
-    private static CallableSignature PropertyAccessor(CallableKind kind)
+    private static MethodSignature PropertyAccessor(MethodKind kind)
     {
         var declaringType = Named("Example", "Service");
         var property = new PropertySignature(
@@ -587,18 +587,18 @@ public sealed class LegacySemanticTests
             Array.Empty<ParameterSignature>(),
             Array.Empty<AttributeSignature>());
         return Callable(
-            kind == CallableKind.PropertyGetter ? "get_Name" : "set_Name",
+            kind == MethodKind.PropertyGetter ? "get_Name" : "set_Name",
             kind,
-            returnType: kind == CallableKind.PropertyGetter
+            returnType: kind == MethodKind.PropertyGetter
                 ? Named("System", "String")
                 : _Void,
             declaringType: declaringType,
             associatedProperty: property);
     }
 
-    private static CallableSignature Callable(
+    private static MethodSignature Callable(
         string name,
-        CallableKind kind,
+        MethodKind kind,
         Accessibility accessibility = Accessibility.Public,
         bool isStatic = false,
         bool isAsync = false,
@@ -610,11 +610,11 @@ public sealed class LegacySemanticTests
         IEnumerable<AttributeSignature>? attributes = null,
         PropertySignature? associatedProperty = null)
     {
-        return new CallableSignature(
+        return new MethodSignature(
             name,
             kind,
             accessibility,
-            isStatic || kind == CallableKind.StaticConstructor,
+            isStatic || kind == MethodKind.StaticConstructor,
             isAsync,
             declaringType ?? Named("Example", "Service"),
             new TypeUseSignature(
@@ -713,10 +713,10 @@ public sealed class LegacySemanticTests
             cancellationToken.ThrowIfCancellationRequested();
             var attributes = target.Kind switch
             {
-                AttributeTargetKind.Callable => target.Callable!.Attributes,
+                AttributeTargetKind.Method => target.Method!.Attributes,
                 AttributeTargetKind.Property => target.Property!.Attributes,
                 AttributeTargetKind.Parameter => target.Parameter!.Attributes,
-                AttributeTargetKind.Return => target.Callable!.ReturnAttributes,
+                AttributeTargetKind.Return => target.Method!.ReturnAttributes,
                 _ => Array.Empty<AttributeSignature>()
             };
             return attributes.Any(attribute =>

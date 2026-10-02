@@ -248,14 +248,14 @@ public sealed class ReflectionTypeSystem : ITypeSystem
                         Mapper.MapType(attribute.AttributeType),
                         AttributeTargetKind.Type))
                     .ToArray();
-            case AttributeTargetKind.Callable:
-                return target.Callable!.Attributes;
+            case AttributeTargetKind.Method:
+                return target.Method!.Attributes;
             case AttributeTargetKind.Property:
                 return target.Property!.Attributes;
             case AttributeTargetKind.Parameter:
                 return target.Parameter!.Attributes;
             case AttributeTargetKind.Return:
-                return target.Callable!.ReturnAttributes;
+                return target.Method!.ReturnAttributes;
             default:
                 return null;
         }

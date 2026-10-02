@@ -8,13 +8,13 @@ public sealed class AttributeTarget
     private AttributeTarget(
         AttributeTargetKind kind,
         TypeSignature? type,
-        CallableSignature? callable,
+        MethodSignature? method,
         PropertySignature? property,
         ParameterSignature? parameter)
     {
         Kind = kind;
         Type = type;
-        Callable = callable;
+        Method = method;
         Property = property;
         Parameter = parameter;
     }
@@ -25,8 +25,8 @@ public sealed class AttributeTarget
     /// <summary>Gets the type.</summary>
     public TypeSignature? Type { get; }
 
-    /// <summary>Gets the callable.</summary>
-    public CallableSignature? Callable { get; }
+    /// <summary>Gets the method.</summary>
+    public MethodSignature? Method { get; }
 
     /// <summary>Gets the property.</summary>
     public PropertySignature? Property { get; }
@@ -47,15 +47,15 @@ public sealed class AttributeTarget
             null);
     }
 
-    /// <summary>Creates for callable.</summary>
-    /// <param name="callable">Specifies the callable.</param>
+    /// <summary>Creates for method.</summary>
+    /// <param name="method">Specifies the method.</param>
     /// <returns>Returns the result of the operation.</returns>
-    public static AttributeTarget ForCallable(CallableSignature callable)
+    public static AttributeTarget ForMethod(MethodSignature method)
     {
         return new AttributeTarget(
-            AttributeTargetKind.Callable,
+            AttributeTargetKind.Method,
             null,
-            callable ?? throw new ArgumentNullException(nameof(callable)),
+            method ?? throw new ArgumentNullException(nameof(method)),
             null,
             null);
     }
@@ -87,14 +87,14 @@ public sealed class AttributeTarget
     }
 
     /// <summary>Creates for return.</summary>
-    /// <param name="callable">Specifies the callable.</param>
+    /// <param name="method">Specifies the method.</param>
     /// <returns>Returns the result of the operation.</returns>
-    public static AttributeTarget ForReturn(CallableSignature callable)
+    public static AttributeTarget ForReturn(MethodSignature method)
     {
         return new AttributeTarget(
             AttributeTargetKind.Return,
             null,
-            callable ?? throw new ArgumentNullException(nameof(callable)),
+            method ?? throw new ArgumentNullException(nameof(method)),
             null,
             null);
     }

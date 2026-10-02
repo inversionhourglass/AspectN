@@ -126,7 +126,7 @@ public sealed class ExtensionCompileContext
 public sealed class ExtensionMatchContext
 {
     internal ExtensionMatchContext(
-        CallableSignature candidate,
+        MethodSignature candidate,
         ITypeSystem typeSystem,
         AspectNLanguageVersion languageVersion,
         CancellationToken cancellationToken)
@@ -138,7 +138,7 @@ public sealed class ExtensionMatchContext
     }
 
     /// <summary>Gets the candidate.</summary>
-    public CallableSignature Candidate { get; }
+    public MethodSignature Candidate { get; }
 
     /// <summary>Gets the type system.</summary>
     public ITypeSystem TypeSystem { get; }

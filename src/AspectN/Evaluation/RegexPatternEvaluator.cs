@@ -9,7 +9,7 @@ internal static class RegexPatternEvaluator
 {
     public static MatchStatus Evaluate(
         BoundRegexPattern pattern,
-        CallableSignature candidate,
+        MethodSignature candidate,
         EvaluationContext context)
     {
         context.CancellationToken.ThrowIfCancellationRequested();

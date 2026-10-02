@@ -140,7 +140,7 @@ public sealed class LegacyDifferentialTests
         }
 
         var newResult = matchers.New.Match(
-            candidate.TypeSystem.Mapper.MapCallable(candidate.Method),
+            candidate.TypeSystem.Mapper.MapMethod(candidate.Method),
             candidate.TypeSystem);
         if (newResult.Status == MatchStatus.Unknown)
         {

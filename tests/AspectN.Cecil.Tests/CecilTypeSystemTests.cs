@@ -385,10 +385,10 @@ public sealed class CecilTypeSystemTests
             diagnostic => diagnostic.Code == "AN3002");
         Assert.Equal(
             MatchStatus.Unknown,
-            TypePattern("!(*Other+)", mapped, typeSystem));
+            TypePattern("!*Other+", mapped, typeSystem));
         Assert.Equal(
             MatchStatus.NotMatched,
-            TypePattern("!(*Provider+)", mapped, typeSystem));
+            TypePattern("!*Provider+", mapped, typeSystem));
 
         // 闭包本身：已知基类已产出，同时携带解析失败标记。
         var closure = typeSystem.GetInheritanceClosure(mapped);
@@ -605,7 +605,7 @@ public sealed class CecilTypeSystemTests
     }
 
     [Fact]
-    public void MapCallable_NonVectorArrayReturnType_PreservesShape()
+    public void MapMethod_NonVectorArrayReturnType_PreservesShape()
     {
         var module = TestModuleFactory.Create();
         using var typeSystem = new CecilTypeSystem(module);
@@ -624,7 +624,7 @@ public sealed class CecilTypeSystemTests
         probe.Methods.Add(vectorMethod);
 
         // 成员映射复制数组类型时必须保留维度形状：非 SZ 返回值不能匹配 SZ 专属的泛型集合接口。
-        var mapped = typeSystem.Mapper.MapCallable(nonVectorMethod);
+        var mapped = typeSystem.Mapper.MapMethod(nonVectorMethod);
         var target = GenericTarget(
             typeSystem,
             module,
@@ -643,7 +643,7 @@ public sealed class CecilTypeSystemTests
             pattern!.Match(mapped, typeSystem).Status);
 
         // 同一目标的向量返回值作为对照，证明负例来自形状而非目标构造。
-        var vectorMapped = typeSystem.Mapper.MapCallable(vectorMethod);
+        var vectorMapped = typeSystem.Mapper.MapMethod(vectorMethod);
         Assert.Equal(
             MatchStatus.Matched,
             typeSystem.IsAssignableTo(vectorMapped.ReturnType.Type, target).Status);

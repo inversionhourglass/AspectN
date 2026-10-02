@@ -52,7 +52,7 @@ internal enum BoundModifierKind
 internal enum BoundAttributeTargetKind
 {
     Type,
-    Callable,
+    Method,
     Property,
     Parameter,
     Return,
@@ -75,9 +75,15 @@ internal sealed class BoundModifier(
     public IReadOnlyList<Accessibility>? Alternatives { get; } = alternatives;
 }
 
-internal sealed class BoundTypeUsePattern(RefKind refKind, BoundTypePattern typePattern)
+internal sealed class BoundTypeUsePattern(
+    RefKind refKind,
+    bool negatedRefKind,
+    BoundTypePattern typePattern)
 {
     public RefKind RefKind { get; } = refKind;
+
+    /// <summary>指示该类型用法带有 '!ref'（仅 Standard）：要求候选不是 by-ref。</summary>
+    public bool NegatedRefKind { get; } = negatedRefKind;
 
     public BoundTypePattern TypePattern { get; } = typePattern ??
             throw new ArgumentNullException(nameof(typePattern));
@@ -97,7 +103,7 @@ internal sealed class BoundMemberPattern(
             throw new ArgumentNullException(nameof(namePattern));
 }
 
-internal sealed class BoundCallableSignature(
+internal sealed class BoundMethodSignature(
     TextSpan span,
     IEnumerable<BoundModifier> modifiers,
     bool requiresAsync,

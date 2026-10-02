@@ -45,7 +45,7 @@ public static class RoslynSyntaxExtensions
     /// <param name="declaration">Specifies the declaration.</param>
     /// <param name="semanticModel">Specifies the semantic model.</param>
     /// <returns>Returns the result of the operation.</returns>
-    public static CallableSignature MapCallable(
+    public static MethodSignature MapMethod(
         this RoslynSignatureMapper mapper,
         MethodDeclarationSyntax declaration,
         SemanticModel semanticModel)
@@ -54,7 +54,7 @@ public static class RoslynSyntaxExtensions
         var symbol = semanticModel.GetDeclaredSymbol(declaration) as
             IMethodSymbol ?? throw new InvalidOperationException(
                 "The declaration does not have a Roslyn method symbol.");
-        return mapper.MapCallable(symbol);
+        return mapper.MapMethod(symbol);
     }
 
     /// <summary>Maps callable metadata to an AspectN signature.</summary>
@@ -62,13 +62,13 @@ public static class RoslynSyntaxExtensions
     /// <param name="declaration">Specifies the declaration.</param>
     /// <param name="compilation">Specifies the compilation.</param>
     /// <returns>Returns the result of the operation.</returns>
-    public static CallableSignature MapCallable(
+    public static MethodSignature MapMethod(
         this RoslynSignatureMapper mapper,
         MethodDeclarationSyntax declaration,
         Compilation compilation)
     {
         GuardCompilation(mapper, declaration, compilation);
-        return mapper.MapCallable(
+        return mapper.MapMethod(
             declaration,
             compilation.GetSemanticModel(declaration.SyntaxTree));
     }

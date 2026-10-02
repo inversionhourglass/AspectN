@@ -20,7 +20,7 @@ internal static class LegacyAttributeRules
 
     public static IReadOnlyList<AttributeTarget> GetTargets(
         BoundAttributePattern pattern,
-        CallableSignature candidate)
+        MethodSignature candidate)
     {
         switch (pattern.Target)
         {
@@ -29,8 +29,8 @@ internal static class LegacyAttributeRules
                 {
                     AttributeTarget.ForType(candidate.DeclaringType)
                 };
-            case BoundAttributeTargetKind.Callable:
-                return new[] { AttributeTarget.ForCallable(candidate) };
+            case BoundAttributeTargetKind.Method:
+                return new[] { AttributeTarget.ForMethod(candidate) };
             case BoundAttributeTargetKind.Execution:
                 return AttributeTargetRules.GetExecutionTargets(candidate);
             case BoundAttributeTargetKind.Parameter:
@@ -44,7 +44,7 @@ internal static class LegacyAttributeRules
 
     private static AttributeTarget[] GetParameterTargets(
         int? parameterIndex,
-        CallableSignature candidate)
+        MethodSignature candidate)
     {
         if (parameterIndex.HasValue)
         {
@@ -64,12 +64,12 @@ internal static class LegacyAttributeRules
     }
 
     private static List<AttributeTarget> GetAllTargets(
-        CallableSignature candidate)
+        MethodSignature candidate)
     {
         var targets = new List<AttributeTarget>
         {
             AttributeTarget.ForType(candidate.DeclaringType),
-            AttributeTarget.ForCallable(candidate)
+            AttributeTarget.ForMethod(candidate)
         };
         if (candidate.AssociatedProperty is not null)
         {

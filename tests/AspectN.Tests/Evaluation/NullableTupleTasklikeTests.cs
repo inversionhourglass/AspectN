@@ -223,23 +223,23 @@ public sealed class NullableTupleTasklikeTests
         Assert.Equal(MatchStatus.Matched, result);
     }
 
-    private static BoundCallableSignature BindLegacyCallable(string source)
+    private static BoundMethodSignature BindLegacyCallable(string source)
     {
         var tree = AspectNParser.ParseMemberExpression(
             source,
             new AspectNParseOptions(AspectNLanguageVersion.Legacy));
         var compilation = AspectNCompilation.Create(tree);
         var selector = Assert.IsType<BoundSelector>(compilation.BoundRoot);
-        return Assert.IsType<BoundCallableSignature>(selector.Payload);
+        return Assert.IsType<BoundMethodSignature>(selector.Payload);
     }
 
-    private static CallableSignature Callable(
+    private static MethodSignature Callable(
         TypeSignature returnType,
         bool isAsync)
     {
-        return new CallableSignature(
+        return new MethodSignature(
             "Get",
-            CallableKind.OrdinaryMethod,
+            MethodKind.OrdinaryMethod,
             Accessibility.Public,
             isStatic: false,
             isAsync,

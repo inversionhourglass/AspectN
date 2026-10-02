@@ -8,7 +8,15 @@ public sealed class RefKindTests
 {
     [Theory]
     [InlineData("int", RefKind.None, true)]
-    [InlineData("int", RefKind.Ref, false)]
+    // Standard（规范 §11）：未标注 = 不约束，任意 ref kind 都命中。
+    [InlineData("int", RefKind.Ref, true)]
+    [InlineData("int", RefKind.Out, true)]
+    [InlineData("int", RefKind.In, true)]
+    // !ref = 仅非 by-ref。
+    [InlineData("!ref int", RefKind.None, true)]
+    [InlineData("!ref int", RefKind.Ref, false)]
+    [InlineData("!ref int", RefKind.Out, false)]
+    [InlineData("ref int", RefKind.None, false)]
     [InlineData("ref int", RefKind.Ref, true)]
     [InlineData("out int", RefKind.Out, true)]
     [InlineData("in int", RefKind.In, true)]
@@ -91,12 +99,12 @@ public sealed class RefKindTests
                 .Parameters);
     }
 
-    private static BoundCallableSignature BindCallable(string source)
+    private static BoundMethodSignature BindCallable(string source)
     {
         var compilation = AspectNCompilation.Create(
             AspectNParser.ParseMemberExpression(source));
         var selector = Assert.IsType<BoundSelector>(compilation.BoundRoot);
-        return Assert.IsType<BoundCallableSignature>(selector.Payload);
+        return Assert.IsType<BoundMethodSignature>(selector.Payload);
     }
 
     private static NamedTypeSignature Named(

@@ -22,7 +22,7 @@ public sealed class RegexPatternTests
                 AspectNLanguageVersion.Standard);
 
             Assert.Equal(
-                "public static async ref readonly System.String " +
+                "public static ref readonly System.String " +
                 "Example.Outer<System.String>/Inner<System.Int32>." +
                 "Map<System.String>(ref System.Int32, out System.String[])",
                 signature);
@@ -37,7 +37,7 @@ public sealed class RegexPatternTests
     public void Match_Regex_AppliesToCanonicalSignature()
     {
         var source =
-            @"regex(^public static async ref readonly System\.String Example\.Outer<System\.String>/Inner<System\.Int32>\.Map<System\.String>\(ref System\.Int32, out System\.String\[\]\)$)";
+            @"regex(^public static ref readonly System\.String Example\.Outer<System\.String>/Inner<System\.Int32>\.Map<System\.String>\(ref System\.Int32, out System\.String\[\]\)$)";
 
         var result = Match(source, ComplexCandidate());
 
@@ -202,7 +202,7 @@ public sealed class RegexPatternTests
 
     private static MatchResult Match(
         string source,
-        CallableSignature candidate,
+        MethodSignature candidate,
         AspectNCompilationOptions? options = null)
     {
         var compilation = AspectNCompilation.Create(
@@ -325,7 +325,7 @@ public sealed class RegexPatternTests
         Assert.Equal(MatchStatus.Matched, result.Status);
     }
 
-    private static CallableSignature ComplexCandidate()
+    private static MethodSignature ComplexCandidate()
     {
         var assembly = new AssemblyIdentity("Example.Assembly");
         var outerIdentity = new TypeIdentity(
@@ -350,9 +350,9 @@ public sealed class RegexPatternTests
                 Named("System", "Int32", TypeKind.Struct)
             },
             definition);
-        return new CallableSignature(
+        return new MethodSignature(
             "Map",
-            CallableKind.OrdinaryMethod,
+            MethodKind.OrdinaryMethod,
             Accessibility.Public,
             isStatic: true,
             isAsync: true,
@@ -386,13 +386,13 @@ public sealed class RegexPatternTests
             Array.Empty<AttributeSignature>());
     }
 
-    private static CallableSignature Callable(
+    private static MethodSignature Callable(
         string name,
         Accessibility accessibility = Accessibility.Public)
     {
-        return new CallableSignature(
+        return new MethodSignature(
             name,
-            CallableKind.OrdinaryMethod,
+            MethodKind.OrdinaryMethod,
             accessibility,
             isStatic: false,
             isAsync: false,
@@ -408,7 +408,7 @@ public sealed class RegexPatternTests
             Array.Empty<AttributeSignature>());
     }
 
-    private static CallableSignature OpenGenericCandidate()
+    private static MethodSignature OpenGenericCandidate()
     {
         var assembly = new AssemblyIdentity("Example.Assembly");
         var clsIdentity = new TypeIdentity(
@@ -436,9 +436,9 @@ public sealed class RegexPatternTests
             methodOwner,
             assembly,
             1);
-        return new CallableSignature(
+        return new MethodSignature(
             "M",
-            CallableKind.OrdinaryMethod,
+            MethodKind.OrdinaryMethod,
             Accessibility.Public,
             isStatic: false,
             isAsync: false,
@@ -470,7 +470,7 @@ public sealed class RegexPatternTests
             Array.Empty<AttributeSignature>());
     }
 
-    private static CallableSignature NestedOpenGenericCandidate()
+    private static MethodSignature NestedOpenGenericCandidate()
     {
         var assembly = new AssemblyIdentity("Example.Assembly");
         var outerIdentity = new TypeIdentity(
@@ -512,9 +512,9 @@ public sealed class RegexPatternTests
             "X.Y.Z.Outer`1/Inner`2.M`1",
             assembly,
             0);
-        return new CallableSignature(
+        return new MethodSignature(
             "M",
-            CallableKind.OrdinaryMethod,
+            MethodKind.OrdinaryMethod,
             Accessibility.Public,
             isStatic: false,
             isAsync: false,
@@ -553,7 +553,7 @@ public sealed class RegexPatternTests
             Array.Empty<AttributeSignature>());
     }
 
-    private static CallableSignature SingleGenericCandidate()
+    private static MethodSignature SingleGenericCandidate()
     {
         var assembly = new AssemblyIdentity("Example.Assembly");
         var clsIdentity = new TypeIdentity(
@@ -568,9 +568,9 @@ public sealed class RegexPatternTests
             clsIdentity.FullMetadataName,
             assembly,
             0);
-        return new CallableSignature(
+        return new MethodSignature(
             "M",
-            CallableKind.OrdinaryMethod,
+            MethodKind.OrdinaryMethod,
             Accessibility.Public,
             isStatic: false,
             isAsync: false,
@@ -595,7 +595,7 @@ public sealed class RegexPatternTests
             Array.Empty<AttributeSignature>());
     }
 
-    private static CallableSignature MethodOnlyGenericCandidate()
+    private static MethodSignature MethodOnlyGenericCandidate()
     {
         var assembly = new AssemblyIdentity("Example.Assembly");
         var clsIdentity = new TypeIdentity(
@@ -610,9 +610,9 @@ public sealed class RegexPatternTests
             clsIdentity.FullMetadataName + ".M`1",
             assembly,
             0);
-        return new CallableSignature(
+        return new MethodSignature(
             "M",
-            CallableKind.OrdinaryMethod,
+            MethodKind.OrdinaryMethod,
             Accessibility.Public,
             isStatic: false,
             isAsync: false,
@@ -637,7 +637,7 @@ public sealed class RegexPatternTests
             Array.Empty<AttributeSignature>());
     }
 
-    private static CallableSignature ShadowedGenericCandidate()
+    private static MethodSignature ShadowedGenericCandidate()
     {
         var assembly = new AssemblyIdentity("Example.Assembly");
         var clsIdentity = new TypeIdentity(
@@ -652,9 +652,9 @@ public sealed class RegexPatternTests
             "X.Y.Z.Cls`1.M`1",
             assembly,
             0);
-        return new CallableSignature(
+        return new MethodSignature(
             "M",
-            CallableKind.OrdinaryMethod,
+            MethodKind.OrdinaryMethod,
             Accessibility.Public,
             isStatic: false,
             isAsync: false,
@@ -679,7 +679,7 @@ public sealed class RegexPatternTests
             Array.Empty<AttributeSignature>());
     }
 
-    private static CallableSignature ConstructedUseCandidate()
+    private static MethodSignature ConstructedUseCandidate()
     {
         var assembly = new AssemblyIdentity("Example.Assembly");
         var clsIdentity = new TypeIdentity(
@@ -700,9 +700,9 @@ public sealed class RegexPatternTests
             clsIdentity.FullMetadataName,
             assembly,
             0);
-        return new CallableSignature(
+        return new MethodSignature(
             "M",
-            CallableKind.OrdinaryMethod,
+            MethodKind.OrdinaryMethod,
             Accessibility.Public,
             isStatic: false,
             isAsync: false,

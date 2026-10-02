@@ -199,7 +199,23 @@
     "member": "get_RefValue",
     "parameterCount": 0,
     "expression": "getter(int AspectN.TestAssembly.Conformance.ConformanceFixture.RefValue)",
+    "expected": "Matched"
+  },
+  {
+    "id": "ref-property-getter-negated-ref",
+    "kind": "method",
+    "member": "get_RefValue",
+    "parameterCount": 0,
+    "expression": "getter(!ref int AspectN.TestAssembly.Conformance.ConformanceFixture.RefValue)",
     "expected": "NotMatched"
+  },
+  {
+    "id": "plain-property-getter-negated-ref",
+    "kind": "method",
+    "member": "get_Name",
+    "parameterCount": 0,
+    "expression": "getter(!ref string AspectN.TestAssembly.Conformance.ConformanceFixture.Name)",
+    "expected": "Matched"
   },
   {
     "id": "ref-readonly-property-getter",

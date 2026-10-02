@@ -91,7 +91,7 @@ public sealed class TypePatternEvaluatorTests
     {
         var candidate = Named("System", "Int32", TypeKind.Struct);
 
-        Assert.Equal(MatchStatus.Matched, Match("(int)", candidate).Status);
+        Assert.Equal(MatchStatus.Matched, Match("((string || int))", candidate).Status);
         Assert.Equal(
             MatchStatus.Matched,
             Match("string || int", candidate).Status);

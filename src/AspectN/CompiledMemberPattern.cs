@@ -25,7 +25,7 @@ public sealed class CompiledMemberPattern : CompiledPattern
     /// <param name="cancellationToken">Specifies the cancellation token.</param>
     /// <returns>Returns the result of the operation.</returns>
     public MatchResult Match(
-        CallableSignature candidate,
+        MethodSignature candidate,
         ITypeSystem typeSystem,
         CancellationToken cancellationToken = default)
     {

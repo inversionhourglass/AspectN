@@ -137,7 +137,6 @@ public sealed class BinderTests
     [InlineData("int[]+")]
     [InlineData("System.Int32[]+")]
     [InlineData("string[,]+")]
-    [InlineData("(int[])+")]
     public void Create_AssignableSuffixOnArrayTarget_ReportsDiagnostic(
         string source)
     {
@@ -147,10 +146,19 @@ public sealed class BinderTests
         Assert.Null(compilation.BoundRoot);
     }
 
+    [Fact]
+    public void Create_WildcardAssignableTarget_StandardRejectsAtBinding()
+    {
+        // Standard：*+ 的目标是全通配而非命名类型，绑定即报 AN2010（求值恒 Unknown 的疣子移除）。
+        var compilation = CompileType("*+");
+
+        AssertDiagnostic(compilation, DiagnosticCodes.InvalidTypeSuffix);
+        Assert.Null(compilation.BoundRoot);
+    }
+
     [Theory]
     [InlineData("int++")]
     [InlineData("System.IDisposable++")]
-    [InlineData("(int+)+")]
     public void Create_RepeatedAssignableSuffix_ReportsDiagnostic(string source)
     {
         var compilation = CompileType(source);
@@ -212,15 +220,12 @@ public sealed class BinderTests
     [InlineData("int[]+", AspectNLanguageVersion.Legacy)]
     [InlineData("int[][]+", AspectNLanguageVersion.Legacy)]
     [InlineData("string[,]+", AspectNLanguageVersion.Legacy)]
-    [InlineData("int []", AspectNLanguageVersion.Standard)]
-    [InlineData("int ?", AspectNLanguageVersion.Standard)]
     public void Create_VersionedSuffixRules_AcceptedInLegacyOrStandardOnly(
         string source,
         AspectNLanguageVersion languageVersion)
     {
         // Legacy 对齐 Shared：数组目标 + 下沉为元素可赋值（int[]+ 等价 int+[]）；
-        // [ / ? 的邻接限制仅 Legacy 生效（Shared 拒绝 int [] / int ?），
-        // Standard 规范 §3.2 未把 [/? 列入邻接约束，保持接受。
+        // int[]+ 等数组目标的 + 下沉仅 Legacy；int [] / int ? 两版本一律拒绝（邻接约束）。
         var compilation = CompileType(source, languageVersion);
 
         Assert.DoesNotContain(

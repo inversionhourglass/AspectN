@@ -49,7 +49,7 @@ public abstract class SelectorSyntax : ExpressionSyntax
 public sealed class CallableSelectorSyntax(
     SyntaxToken keywordToken,
     SyntaxToken openParenToken,
-    CallableSignatureSyntax signature,
+    MethodSignatureSyntax signature,
     SyntaxToken closeParenToken) : SelectorSyntax(
         SyntaxKind.CallableSelector,
         keywordToken,
@@ -67,7 +67,7 @@ public sealed class CallableSelectorSyntax(
 public sealed class MethodSelectorSyntax(
     SyntaxToken keywordToken,
     SyntaxToken openParenToken,
-    CallableSignatureSyntax signature,
+    MethodSignatureSyntax signature,
     SyntaxToken closeParenToken) : SelectorSyntax(
         SyntaxKind.MethodSelector,
         keywordToken,

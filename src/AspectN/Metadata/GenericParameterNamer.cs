@@ -49,7 +49,7 @@ internal static class GenericParameterNamer
     // 方法形参接续 T{m+1}..T{m+n}；总数（类型+方法合并计数）为 1 时渲染为
     // 裸 T。Standard 与 Legacy 的规范签名格式化器共用该规则（§15）。
     public static Dictionary<GenericParameterKey, string> CreatePositionalNames(
-        CallableSignature candidate)
+        MethodSignature candidate)
     {
         var declaring = candidate.DeclaringType as NamedTypeSignature;
         var typeParameters = (declaring is null

@@ -9,7 +9,7 @@ namespace AspectN.Cecil;
 /// <summary>Maps Mono.Cecil metadata to backend-neutral AspectN signatures.</summary>
 public sealed class CecilSignatureMapper
 {
-    private readonly Dictionary<CecilMemberCacheKey, CallableSignature>
+    private readonly Dictionary<CecilMemberCacheKey, MethodSignature>
         _callableCache = new();
     private readonly CecilTypeCache _cache = new();
     private readonly object _memberGate = new();
@@ -65,7 +65,7 @@ public sealed class CecilSignatureMapper
     /// <summary>Maps callable metadata to an AspectN signature.</summary>
     /// <param name="methodReference">Specifies the method reference.</param>
     /// <returns>Returns the result of the operation.</returns>
-    public CallableSignature MapCallable(MethodReference methodReference)
+    public MethodSignature MapMethod(MethodReference methodReference)
     {
 #if NET10_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(methodReference);
@@ -86,7 +86,7 @@ public sealed class CecilSignatureMapper
             }
         }
 
-        var created = MapCallableCore(methodReference);
+        var created = MapMethodCore(methodReference);
         lock (_memberGate)
         {
             if (_callableCache.TryGetValue(key, out var cached))
@@ -153,7 +153,7 @@ public sealed class CecilSignatureMapper
         return _cache.TryGetReference(signature, out typeReference);
     }
 
-    private CallableSignature MapCallableCore(
+    private MethodSignature MapMethodCore(
         MethodReference methodReference)
     {
         var definition = GetDefinition(methodReference);
@@ -174,15 +174,15 @@ public sealed class CecilSignatureMapper
             .ToArray() ?? Array.Empty<TypeSignature>();
         var originalDefinition = genericInstance is null
             ? null
-            : MapCallable(genericInstance.ElementMethod);
+            : MapMethod(genericInstance.ElementMethod);
         var returnType = SubstituteMemberGenericParameters(
             methodReference.ReturnType,
             genericInstance,
             declaringInstance);
 
-        return new CallableSignature(
+        return new MethodSignature(
             methodReference.Name,
-            GetCallableKind(methodReference, definition),
+            GetMethodKind(methodReference, definition),
             CecilAccessibility.ForMethod(
                 definition,
                 _typeSystem.Options.CompositeAccessibility),
@@ -198,7 +198,7 @@ public sealed class CecilSignatureMapper
             genericArguments,
             MapAttributes(
                 definition?.CustomAttributes,
-                AttributeTargetKind.Callable),
+                AttributeTargetKind.Method),
             MapAttributes(
                 definition?.MethodReturnType.CustomAttributes,
                 AttributeTargetKind.Return),
@@ -373,50 +373,50 @@ public sealed class CecilSignatureMapper
         }
     }
 
-    private static CallableKind GetCallableKind(
+    private static MethodKind GetMethodKind(
         MethodReference method,
         MethodDefinition? definition)
     {
-        if (method.Name == ".ctor") return CallableKind.InstanceConstructor;
-        if (method.Name == ".cctor") return CallableKind.StaticConstructor;
+        if (method.Name == ".ctor") return MethodKind.InstanceConstructor;
+        if (method.Name == ".cctor") return MethodKind.StaticConstructor;
         if (method.Name is "op_Implicit" or "op_Explicit")
         {
-            return CallableKind.Conversion;
+            return MethodKind.Conversion;
         }
 
         if (method.Name.StartsWith("op_", StringComparison.Ordinal))
         {
-            return CallableKind.Operator;
+            return MethodKind.Operator;
         }
 
         var semantics = definition?.SemanticsAttributes ??
             MethodSemanticsAttributes.None;
         if ((semantics & MethodSemanticsAttributes.Getter) != 0)
         {
-            return CallableKind.PropertyGetter;
+            return MethodKind.PropertyGetter;
         }
 
         if ((semantics & MethodSemanticsAttributes.Setter) != 0)
         {
-            return CallableKind.PropertySetter;
+            return MethodKind.PropertySetter;
         }
 
         if ((semantics & MethodSemanticsAttributes.AddOn) != 0)
         {
-            return CallableKind.EventAdder;
+            return MethodKind.EventAdder;
         }
 
         if ((semantics & MethodSemanticsAttributes.RemoveOn) != 0)
         {
-            return CallableKind.EventRemover;
+            return MethodKind.EventRemover;
         }
 
         if ((semantics & MethodSemanticsAttributes.Fire) != 0)
         {
-            return CallableKind.EventRaiser;
+            return MethodKind.EventRaiser;
         }
 
-        return CallableKind.OrdinaryMethod;
+        return MethodKind.OrdinaryMethod;
     }
 
     private static PropertyDefinition? FindAssociatedProperty(

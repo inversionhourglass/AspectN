@@ -8,12 +8,12 @@ namespace AspectN.Cecil.Tests;
 public sealed class CecilFunctionPointerTests
 {
     [Fact]
-    public void MapCallable_FunctionPointerParameter_MapsToUnsupportedSignature()
+    public void MapMethod_FunctionPointerParameter_MapsToUnsupportedSignature()
     {
         using var typeSystem = EmittedFixture.Open();
         var invoke = FindMethod(typeSystem, "Invoke");
 
-        var callable = typeSystem.Mapper.MapCallable(invoke);
+        var callable = typeSystem.Mapper.MapMethod(invoke);
 
         var parser = Assert.Single(
             callable.Parameters,
@@ -32,12 +32,12 @@ public sealed class CecilFunctionPointerTests
     }
 
     [Fact]
-    public void MapCallable_FunctionPointerReturn_MapsToUnsupportedSignature()
+    public void MapMethod_FunctionPointerReturn_MapsToUnsupportedSignature()
     {
         using var typeSystem = EmittedFixture.Open();
         var nullAction = FindMethod(typeSystem, "NullAction");
 
-        var callable = typeSystem.Mapper.MapCallable(nullAction);
+        var callable = typeSystem.Mapper.MapMethod(nullAction);
 
         var unsupported = Assert.IsType<UnsupportedTypeSignature>(
             callable.ReturnType.Type);

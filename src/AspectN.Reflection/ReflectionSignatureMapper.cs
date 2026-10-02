@@ -22,9 +22,9 @@ public sealed class ReflectionSignatureMapper
         BindingFlags.Instance |
         BindingFlags.Static;
 
-    private readonly ConditionalWeakTable<MethodBase, CallableSignature>
+    private readonly ConditionalWeakTable<MethodBase, MethodSignature>
         _callables = new();
-    private readonly ConditionalWeakTable<CallableSignature,
+    private readonly ConditionalWeakTable<MethodSignature,
         WeakReference<MemberInfo>> _callableReverse = new();
     private readonly ConditionalWeakTable<PropertyInfo, PropertySignature>
         _properties = new();
@@ -76,7 +76,7 @@ public sealed class ReflectionSignatureMapper
     /// <summary>Maps callable metadata to an AspectN signature.</summary>
     /// <param name="method">Specifies the method.</param>
     /// <returns>Returns the result of the operation.</returns>
-    public CallableSignature MapCallable(MethodBase method)
+    public MethodSignature MapMethod(MethodBase method)
     {
 #if NET10_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(method);
@@ -84,7 +84,7 @@ public sealed class ReflectionSignatureMapper
         if (method is null) throw new ArgumentNullException(nameof(method));
 #endif
 
-        var signature = _callables.GetValue(method, MapCallableCore);
+        var signature = _callables.GetValue(method, MapMethodCore);
         _callableReverse.GetValue(
             signature,
             _ => new WeakReference<MemberInfo>(method));
@@ -115,7 +115,7 @@ public sealed class ReflectionSignatureMapper
     }
 
     internal bool TryGetMember(
-        CallableSignature signature,
+        MethodSignature signature,
         out MemberInfo? member)
     {
         member = null;
@@ -178,7 +178,7 @@ public sealed class ReflectionSignatureMapper
         return new NamedTypeSignature(MapIdentity(type));
     }
 
-    private CallableSignature MapCallableCore(MethodBase method)
+    private MethodSignature MapMethodCore(MethodBase method)
     {
         var methodInfo = method as MethodInfo;
         var constructedGeneric = methodInfo is not null &&
@@ -196,15 +196,15 @@ public sealed class ReflectionSignatureMapper
                 .Select(MapGenericParameterSignature)
                 .ToArray();
         var originalDefinition = constructedGeneric
-            ? MapCallable(methodInfo!.GetGenericMethodDefinition())
+            ? MapMethod(methodInfo!.GetGenericMethodDefinition())
             : null;
         var associatedProperty = FindAssociatedProperty(method);
         var returnParameter = methodInfo?.ReturnParameter;
         var returnType = methodInfo?.ReturnType ?? typeof(void);
 
-        return new CallableSignature(
+        return new MethodSignature(
             method.Name,
-            GetCallableKind(method, associatedProperty),
+            GetMethodKind(method, associatedProperty),
             GetMethodAccessibility(method),
             method.IsStatic,
             HasAttribute(method, ASYNC_STATE_MACHINE_ATTRIBUTE),
@@ -218,7 +218,7 @@ public sealed class ReflectionSignatureMapper
             genericArguments,
             MapAttributes(
                 CustomAttributeData.GetCustomAttributes(method),
-                AttributeTargetKind.Callable),
+                AttributeTargetKind.Method),
             returnParameter is null
                 ? Array.Empty<AttributeSignature>()
                 : MapAttributes(
@@ -420,37 +420,37 @@ public sealed class ReflectionSignatureMapper
         return new string(characters);
     }
 
-    private static CallableKind GetCallableKind(
+    private static MethodKind GetMethodKind(
         MethodBase method,
         PropertyInfo? associatedProperty)
     {
         if (method is ConstructorInfo)
         {
             return method.IsStatic
-                ? CallableKind.StaticConstructor
-                : CallableKind.InstanceConstructor;
+                ? MethodKind.StaticConstructor
+                : MethodKind.InstanceConstructor;
         }
 
         if (method.Name is "op_Implicit" or "op_Explicit")
         {
-            return CallableKind.Conversion;
+            return MethodKind.Conversion;
         }
 
         if (method.Name.StartsWith("op_", StringComparison.Ordinal))
         {
-            return CallableKind.Operator;
+            return MethodKind.Operator;
         }
 
         if (associatedProperty is not null)
         {
             if (MethodsEqual(associatedProperty.GetMethod, method))
             {
-                return CallableKind.PropertyGetter;
+                return MethodKind.PropertyGetter;
             }
 
             if (MethodsEqual(associatedProperty.SetMethod, method))
             {
-                return CallableKind.PropertySetter;
+                return MethodKind.PropertySetter;
             }
         }
 
@@ -459,21 +459,21 @@ public sealed class ReflectionSignatureMapper
         {
             if (MethodsEqual(associatedEvent.AddMethod, method))
             {
-                return CallableKind.EventAdder;
+                return MethodKind.EventAdder;
             }
 
             if (MethodsEqual(associatedEvent.RemoveMethod, method))
             {
-                return CallableKind.EventRemover;
+                return MethodKind.EventRemover;
             }
 
             if (MethodsEqual(associatedEvent.RaiseMethod, method))
             {
-                return CallableKind.EventRaiser;
+                return MethodKind.EventRaiser;
             }
         }
 
-        return CallableKind.OrdinaryMethod;
+        return MethodKind.OrdinaryMethod;
     }
 
     private static PropertyInfo? FindAssociatedProperty(MethodBase method)

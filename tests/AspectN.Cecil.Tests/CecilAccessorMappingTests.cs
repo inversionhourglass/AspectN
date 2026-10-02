@@ -42,43 +42,43 @@ public sealed class CecilAccessorMappingTests
     }
 
     [Fact]
-    public void MapCallable_PropertyAccessors_LinkAssociatedProperty()
+    public void MapMethod_PropertyAccessors_LinkAssociatedProperty()
     {
         using var typeSystem = EmittedFixture.Open();
         var type = FixtureType(typeSystem);
         var readOnly = FindProperty(type, "ReadOnly");
         var writeOnly = FindProperty(type, "WriteOnly");
 
-        var getter = typeSystem.Mapper.MapCallable(readOnly.GetMethod);
-        var setter = typeSystem.Mapper.MapCallable(writeOnly.SetMethod);
+        var getter = typeSystem.Mapper.MapMethod(readOnly.GetMethod);
+        var setter = typeSystem.Mapper.MapMethod(writeOnly.SetMethod);
 
-        Assert.Equal(CallableKind.PropertyGetter, getter.Kind);
+        Assert.Equal(MethodKind.PropertyGetter, getter.Kind);
         Assert.Equal("ReadOnly", getter.AssociatedProperty?.Name);
-        Assert.Equal(CallableKind.PropertySetter, setter.Kind);
+        Assert.Equal(MethodKind.PropertySetter, setter.Kind);
         Assert.Equal("WriteOnly", setter.AssociatedProperty?.Name);
     }
 
     [Fact]
-    public void MapCallable_EventAccessors_MapEventKinds()
+    public void MapMethod_EventAccessors_MapEventKinds()
     {
         using var typeSystem = EmittedFixture.Open();
         var @event = Assert.Single(
             FixtureType(typeSystem).Events,
             candidate => candidate.Name == "Changed");
 
-        var adder = typeSystem.Mapper.MapCallable(@event.AddMethod);
-        var remover = typeSystem.Mapper.MapCallable(@event.RemoveMethod);
+        var adder = typeSystem.Mapper.MapMethod(@event.AddMethod);
+        var remover = typeSystem.Mapper.MapMethod(@event.RemoveMethod);
 
-        Assert.Equal(CallableKind.EventAdder, adder.Kind);
-        Assert.Equal(CallableKind.EventRemover, remover.Kind);
+        Assert.Equal(MethodKind.EventAdder, adder.Kind);
+        Assert.Equal(MethodKind.EventRemover, remover.Kind);
     }
 
     [Fact]
-    public void MapCallable_AccessorAndPropertyAttributes_RemainSeparate()
+    public void MapMethod_AccessorAndPropertyAttributes_RemainSeparate()
     {
         using var typeSystem = EmittedFixture.Open();
         var property = FindProperty(FixtureType(typeSystem), "MarkedProperty");
-        var getter = typeSystem.Mapper.MapCallable(property.GetMethod);
+        var getter = typeSystem.Mapper.MapMethod(property.GetMethod);
         var associated = Assert.IsType<PropertySignature>(
             getter.AssociatedProperty);
 
@@ -101,13 +101,13 @@ public sealed class CecilAccessorMappingTests
         Assert.Equal(
             MatchStatus.Matched,
             typeSystem.HasDirectAttribute(
-                AttributeTarget.ForCallable(getter),
+                AttributeTarget.ForMethod(getter),
                 AttributeType(typeSystem, typeof(CallableMarkerAttribute)))
                 .Status);
         Assert.Equal(
             MatchStatus.NotMatched,
             typeSystem.HasDirectAttribute(
-                AttributeTarget.ForCallable(getter),
+                AttributeTarget.ForMethod(getter),
                 AttributeType(typeSystem, typeof(PropertyMarkerAttribute)))
                 .Status);
         Assert.Equal(

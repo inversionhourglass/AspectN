@@ -191,7 +191,7 @@ public sealed class ModifierMatcherTests
         Assert.Equal(expected, result);
     }
 
-    private static BoundCallableSignature Bind(
+    private static BoundMethodSignature Bind(
         string source,
         AspectNLanguageVersion languageVersion)
     {
@@ -200,6 +200,6 @@ public sealed class ModifierMatcherTests
             new AspectNParseOptions(languageVersion));
         var compilation = AspectNCompilation.Create(tree);
         var selector = Assert.IsType<BoundSelector>(compilation.BoundRoot);
-        return Assert.IsType<BoundCallableSignature>(selector.Payload);
+        return Assert.IsType<BoundMethodSignature>(selector.Payload);
     }
 }

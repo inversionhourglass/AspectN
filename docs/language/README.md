@@ -57,6 +57,9 @@ expressions. New applications should use `Standard`.
 
 Legacy compatibility decisions, approved Shared corrections, and concrete
 examples are recorded in the [Legacy compatibility policy](legacy-compatibility.md).
+The complete Standard/Legacy difference inventory with design rationale and
+migration mappings is recorded in
+[Legacy–Standard differences](legacy-standard-differences.md).
 
 The complete grammar, precedence, modifier rules, generic-variable semantics,
 canonical regex form, and diagnostic contract are defined by the

@@ -9,7 +9,7 @@ public sealed class AttributePatternTests
 {
     [Theory]
     [InlineData("attr(type Example.RequiredAttribute)", AttributeTargetKind.Type)]
-    [InlineData("attr(call Example.RequiredAttribute)", AttributeTargetKind.Callable)]
+    [InlineData("attr(call Example.RequiredAttribute)", AttributeTargetKind.Method)]
     [InlineData("attr(prop Example.RequiredAttribute)", AttributeTargetKind.Property)]
     [InlineData("attr(para[1] Example.RequiredAttribute)", AttributeTargetKind.Parameter)]
     [InlineData("attr(para[*] Example.RequiredAttribute)", AttributeTargetKind.Parameter)]
@@ -42,8 +42,8 @@ public sealed class AttributePatternTests
         var second = Named("Example.Markers", "SecondAttribute");
         var attributes = new[]
         {
-            new AttributeSignature(first, AttributeTargetKind.Callable),
-            new AttributeSignature(second, AttributeTargetKind.Callable)
+            new AttributeSignature(first, AttributeTargetKind.Method),
+            new AttributeSignature(second, AttributeTargetKind.Method)
         };
         var typeSystem = new AttributeTypeSystem(_ => false);
 
@@ -73,7 +73,7 @@ public sealed class AttributePatternTests
                 returnType: second,
                 attributes:
                 [
-                    new AttributeSignature(first, AttributeTargetKind.Callable)
+                    new AttributeSignature(first, AttributeTargetKind.Method)
                 ],
                 propertyAttributes:
                 [
@@ -133,7 +133,7 @@ public sealed class AttributePatternTests
         Assert.Equal(
             new[]
             {
-                AttributeTargetKind.Callable,
+                AttributeTargetKind.Method,
                 AttributeTargetKind.Property
             },
             typeSystem.RequestedTargets.Select(target => target.Kind).ToArray());
@@ -157,7 +157,7 @@ public sealed class AttributePatternTests
         Assert.Equal(
             new[]
             {
-                AttributeTargetKind.Callable,
+                AttributeTargetKind.Method,
                 AttributeTargetKind.Property
             },
             typeSystem.RequestedTargets.Select(target => target.Kind).ToArray());
@@ -176,7 +176,7 @@ public sealed class AttributePatternTests
 
         Assert.Equal(MatchStatus.NotMatched, result.Status);
         Assert.Equal(
-            AttributeTargetKind.Callable,
+            AttributeTargetKind.Method,
             Assert.Single(typeSystem.RequestedTargets).Kind);
     }
 
@@ -242,7 +242,7 @@ public sealed class AttributePatternTests
                         "Example",
                         "ReviewTagAttribute",
                         Named("System", "Int32")),
-                    AttributeTargetKind.Callable)
+                    AttributeTargetKind.Method)
             ]);
 
         var result = Match(source, candidate, typeSystem);
@@ -267,7 +267,7 @@ public sealed class AttributePatternTests
                         "Example",
                         "ReviewTagAttribute",
                         Named("System", "Int32")),
-                    AttributeTargetKind.Callable)
+                    AttributeTargetKind.Method)
             ]);
 
         var result = Match(source, candidate, typeSystem);
@@ -291,7 +291,7 @@ public sealed class AttributePatternTests
                             "System.Collections.Generic",
                             "List",
                             Named("System", "Int32"))),
-                    AttributeTargetKind.Callable)
+                    AttributeTargetKind.Method)
             ]);
 
         var result = Match(
@@ -315,7 +315,7 @@ public sealed class AttributePatternTests
                         "Example",
                         "ReviewTagAttribute",
                         Named("System", "String")),
-                    AttributeTargetKind.Callable)
+                    AttributeTargetKind.Method)
             ]);
 
         var result = Match(
@@ -357,8 +357,8 @@ public sealed class AttributePatternTests
             returnType: alpha,
             attributes:
             [
-                new AttributeSignature(alpha, AttributeTargetKind.Callable),
-                new AttributeSignature(beta, AttributeTargetKind.Callable)
+                new AttributeSignature(alpha, AttributeTargetKind.Method),
+                new AttributeSignature(beta, AttributeTargetKind.Method)
             ],
             returnAttributes:
             [
@@ -368,8 +368,8 @@ public sealed class AttributePatternTests
             returnType: alpha,
             attributes:
             [
-                new AttributeSignature(alpha, AttributeTargetKind.Callable),
-                new AttributeSignature(beta, AttributeTargetKind.Callable)
+                new AttributeSignature(alpha, AttributeTargetKind.Method),
+                new AttributeSignature(beta, AttributeTargetKind.Method)
             ],
             returnAttributes:
             [
@@ -418,7 +418,7 @@ public sealed class AttributePatternTests
 
     private static MatchResult Match(
         string source,
-        CallableSignature candidate,
+        MethodSignature candidate,
         ITypeSystem typeSystem,
         AspectNLanguageVersion languageVersion = AspectNLanguageVersion.Standard)
     {
@@ -430,7 +430,7 @@ public sealed class AttributePatternTests
         return pattern!.Match(candidate, typeSystem);
     }
 
-    private static CallableSignature Candidate(
+    private static MethodSignature Candidate(
         TypeSignature? returnType = null,
         IEnumerable<AttributeSignature>? attributes = null,
         IEnumerable<AttributeSignature>? propertyAttributes = null,
@@ -448,9 +448,9 @@ public sealed class AttributePatternTests
                 TypeUseKind.Property),
             Array.Empty<ParameterSignature>(),
             propertyAttributes ?? Array.Empty<AttributeSignature>());
-        return new CallableSignature(
+        return new MethodSignature(
             "get_Name",
-            CallableKind.PropertyGetter,
+            MethodKind.PropertyGetter,
             Accessibility.Public,
             isStatic: false,
             isAsync: false,
@@ -469,6 +469,62 @@ public sealed class AttributePatternTests
             attributes ?? Array.Empty<AttributeSignature>(),
             returnAttributes ?? Array.Empty<AttributeSignature>(),
             associatedProperty: property);
+    }
+
+    [Fact]
+    public void Match_PropertyTarget_OnPlainMethod_IsNotMatched()
+    {
+        // 普通方法确定没有关联属性：attr(prop ...) 直接 NotMatched，不再占用 Unknown 通道。
+        var plain = new MethodSignature(
+            "Run",
+            MethodKind.OrdinaryMethod,
+            Accessibility.Public,
+            isStatic: false,
+            isAsync: false,
+            Named("Example", "Service"),
+            new TypeUseSignature(
+                Named("System", "String"),
+                RefKind.None,
+                TypeUseKind.Return),
+            Array.Empty<ParameterSignature>(),
+            Array.Empty<GenericParameterSignature>(),
+            Array.Empty<TypeSignature>(),
+            Array.Empty<AttributeSignature>(),
+            Array.Empty<AttributeSignature>());
+
+        var result = Match(
+            "attr(prop Example.RequiredAttribute)",
+            plain,
+            new AttributeTypeSystem(_ => true));
+
+        Assert.Equal(MatchStatus.NotMatched, result.Status);
+    }
+
+    [Fact]
+    public void Match_PropertyTarget_OnAccessorWithoutPropertyLink_IsUnknown()
+    {
+        // 访问器候选但后端未填 AssociatedProperty 链接：能力守卫，返回 Unknown。
+        var getterWithoutLink = Candidate();
+        var detached = new MethodSignature(
+            getterWithoutLink.Name,
+            getterWithoutLink.Kind,
+            getterWithoutLink.Accessibility,
+            getterWithoutLink.IsStatic,
+            getterWithoutLink.IsAsync,
+            getterWithoutLink.DeclaringType,
+            getterWithoutLink.ReturnType,
+            getterWithoutLink.Parameters,
+            getterWithoutLink.GenericParameters,
+            getterWithoutLink.GenericArguments,
+            getterWithoutLink.Attributes,
+            getterWithoutLink.ReturnAttributes);
+
+        var result = Match(
+            "attr(prop Example.RequiredAttribute)",
+            detached,
+            new AttributeTypeSystem(_ => true));
+
+        Assert.Equal(MatchStatus.Unknown, result.Status);
     }
 
     private static ParameterSignature Parameter(string name, int position)

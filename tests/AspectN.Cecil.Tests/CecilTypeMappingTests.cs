@@ -309,7 +309,7 @@ public sealed class CecilTypeMappingTests
                 parameter.Position == 1);
         var mappedU = Assert.IsType<GenericParameterTypeSignature>(
             Assert.Single(
-                typeSystem.Mapper.MapCallable(uOverload).Parameters)
+                typeSystem.Mapper.MapMethod(uOverload).Parameters)
             .Type.Type);
 
         // T=0、U=1，与 Reflection/Roslyn 的实际签名逐字段一致。
@@ -329,7 +329,7 @@ public sealed class CecilTypeMappingTests
     }
 
     [Fact]
-    public void MapCallable_OuterParameterUsedInNestedMember_NormalizesToOuterDeclaration()
+    public void MapMethod_OuterParameterUsedInNestedMember_NormalizesToOuterDeclaration()
     {
         using var typeSystem = EmittedFixture.Open();
         var outer = typeSystem.Module.GetType(
@@ -346,7 +346,7 @@ public sealed class CecilTypeMappingTests
                 parameter.Position == 0);
         var mappedT = Assert.IsType<GenericParameterTypeSignature>(
             Assert.Single(
-                typeSystem.Mapper.MapCallable(tOverload).Parameters)
+                typeSystem.Mapper.MapMethod(tOverload).Parameters)
             .Type.Type);
         var declaredT = Assert.IsType<GenericParameterTypeSignature>(
             typeSystem.Mapper.MapType(outer.GenericParameters[0]));

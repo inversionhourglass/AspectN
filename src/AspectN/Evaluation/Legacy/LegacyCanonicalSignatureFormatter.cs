@@ -7,7 +7,7 @@ namespace AspectN.Evaluation.Legacy;
 internal static class LegacyCanonicalSignatureFormatter
 {
     // Legacy 格式化器刻意保留旧版名称、泛型和可见性编码，兼容性基线依赖其稳定输出。
-    public static string Format(CallableSignature candidate)
+    public static string Format(MethodSignature candidate)
     {
         var genericNames = CreateGenericNames(candidate);
         var builder = new StringBuilder();
@@ -35,7 +35,7 @@ internal static class LegacyCanonicalSignatureFormatter
     }
 
     private static Dictionary<GenericParameterKey, string> CreateGenericNames(
-        CallableSignature candidate)
+        MethodSignature candidate)
     {
         var typeParameters = EnumerateTypeArguments(candidate.DeclaringType)
             .OfType<GenericParameterTypeSignature>()
@@ -66,7 +66,7 @@ internal static class LegacyCanonicalSignatureFormatter
 
     private static void AppendCallableGeneric(
         StringBuilder builder,
-        CallableSignature candidate,
+        MethodSignature candidate,
         IReadOnlyDictionary<GenericParameterKey, string> genericNames)
     {
         if (candidate.GenericArguments.Count > 0)

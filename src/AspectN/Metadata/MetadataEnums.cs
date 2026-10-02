@@ -49,7 +49,7 @@ public enum TypeUseKind
 }
 
 /// <summary>Specifies the callable kind values.</summary>
-public enum CallableKind
+public enum MethodKind
 {
     OrdinaryMethod,
     PropertyGetter,
@@ -79,7 +79,7 @@ public enum Accessibility
 public enum AttributeTargetKind
 {
     Type,
-    Callable,
+    Method,
     Property,
     Parameter,
     Return

@@ -8,13 +8,13 @@ namespace AspectN.Binding;
 internal static class AttributeTargetRules
 {
     public static AttributeTarget[] GetExecutionTargets(
-        CallableSignature candidate)
+        MethodSignature candidate)
     {
         return candidate.AssociatedProperty is null
-            ? new[] { AttributeTarget.ForCallable(candidate) }
+            ? new[] { AttributeTarget.ForMethod(candidate) }
             : new[]
             {
-                AttributeTarget.ForCallable(candidate),
+                AttributeTarget.ForMethod(candidate),
                 AttributeTarget.ForProperty(candidate.AssociatedProperty)
             };
     }

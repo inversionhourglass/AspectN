@@ -115,7 +115,7 @@ public sealed class CrossAdapterConformanceTests :
                 throwOnError: true)!;
             var method = Assert.IsAssignableFrom<MethodInfo>(
                 type.GetMethod("Missing"));
-            return fixture.Reflection.Mapper.MapCallable(method)
+            return fixture.Reflection.Mapper.MapMethod(method)
                 .Parameters[0]
                 .Type
                 .Type;
@@ -184,7 +184,7 @@ public sealed class CrossAdapterConformanceTests :
         Assert.Equal(roslynResult.Status, reflectionResult.Status);
     }
 
-    private CallableSignature MapRoslynCallable(ConformanceCase @case)
+    private MethodSignature MapRoslynCallable(ConformanceCase @case)
     {
         var type = RequiredRoslynType(FIXTURE_TYPE);
         var method = FindRoslynMethod(
@@ -200,10 +200,10 @@ public sealed class CrossAdapterConformanceTests :
                     .ToArray());
         }
 
-        return _fixture.Roslyn.Mapper.MapCallable(method);
+        return _fixture.Roslyn.Mapper.MapMethod(method);
     }
 
-    private CallableSignature MapCecilCallable(ConformanceCase @case)
+    private MethodSignature MapCecilCallable(ConformanceCase @case)
     {
         var type = _fixture.Cecil.Module.GetType(FIXTURE_TYPE) ??
             throw new InvalidOperationException(
@@ -224,10 +224,10 @@ public sealed class CrossAdapterConformanceTests :
             method = constructed;
         }
 
-        return _fixture.Cecil.Mapper.MapCallable(method);
+        return _fixture.Cecil.Mapper.MapMethod(method);
     }
 
-    private CallableSignature MapReflectionCallable(ConformanceCase @case)
+    private MethodSignature MapReflectionCallable(ConformanceCase @case)
     {
         var type = _fixture.ReflectionAssembly.GetType(
             FIXTURE_TYPE,
@@ -241,7 +241,7 @@ public sealed class CrossAdapterConformanceTests :
                     .ToArray());
         }
 
-        return _fixture.Reflection.Mapper.MapCallable(method);
+        return _fixture.Reflection.Mapper.MapMethod(method);
     }
 
     private TypeSignature MapRoslynNestedType()
@@ -399,7 +399,7 @@ public sealed class ConformanceCase
 
 internal static class SignatureSnapshot
 {
-    public static string Callable(CallableSignature signature)
+    public static string Callable(MethodSignature signature)
     {
         return string.Join(
             "|",
@@ -442,7 +442,7 @@ internal static class SignatureSnapshot
         };
     }
 
-    private static string CallableDefinition(CallableSignature signature)
+    private static string CallableDefinition(MethodSignature signature)
     {
         return string.Join(
             ":",

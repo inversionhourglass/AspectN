@@ -10,7 +10,7 @@ internal static class AttributePatternEvaluator
 {
     public static MatchStatus Evaluate(
         BoundAttributePattern pattern,
-        CallableSignature candidate,
+        MethodSignature candidate,
         EvaluationContext context)
     {
         context.CancellationToken.ThrowIfCancellationRequested();
@@ -29,13 +29,24 @@ internal static class AttributePatternEvaluator
             out var attributeType);
 
         if (context.LanguageVersion == AspectNLanguageVersion.Standard &&
-            pattern.Target == BoundAttributeTargetKind.Property &&
-            candidate.AssociatedProperty is null)
+            pattern.Target == BoundAttributeTargetKind.Property)
         {
-            return Unknown(
-                pattern,
-                context,
-                "The associated property is unavailable for attribute lookup.");
+            // 普通方法（非访问器）确定没有关联属性，直接 NotMatched；
+            // 只有访问器候选在后端未填充 AssociatedProperty 链接时才是 Unknown
+            // （能力守卫：三个一方后端都会填充，实际几乎不触发）。
+            if (candidate.Kind is not (MethodKind.PropertyGetter or
+                    MethodKind.PropertySetter))
+            {
+                return MatchStatus.NotMatched;
+            }
+
+            if (candidate.AssociatedProperty is null)
+            {
+                return Unknown(
+                    pattern,
+                    context,
+                    "The associated property is unavailable for attribute lookup.");
+            }
         }
 
         var targets = context.LanguageVersion == AspectNLanguageVersion.Legacy
@@ -125,13 +136,13 @@ internal static class AttributePatternEvaluator
 
     private static bool TryGetEmbeddedAttributes(
         AttributeTarget target,
-        CallableSignature candidate,
+        MethodSignature candidate,
         out IReadOnlyList<AttributeSignature> attributes)
     {
         switch (target.Kind)
         {
-            case AttributeTargetKind.Callable:
-                attributes = target.Callable!.Attributes;
+            case AttributeTargetKind.Method:
+                attributes = target.Method!.Attributes;
                 return true;
             case AttributeTargetKind.Property:
                 attributes = target.Property!.Attributes;
@@ -140,7 +151,7 @@ internal static class AttributePatternEvaluator
                 attributes = target.Parameter!.Attributes;
                 return true;
             case AttributeTargetKind.Return:
-                attributes = target.Callable!.ReturnAttributes;
+                attributes = target.Method!.ReturnAttributes;
                 return true;
             case AttributeTargetKind.Type:
                 // 声明类型特性由映射器随候选签名携带（对应旧 Shared 的 AttributeSignatures.Types）。
@@ -154,7 +165,7 @@ internal static class AttributePatternEvaluator
 
     private static IReadOnlyList<AttributeTarget> GetTargets(
         BoundAttributePattern pattern,
-        CallableSignature candidate)
+        MethodSignature candidate)
     {
         switch (pattern.Target)
         {
@@ -163,8 +174,8 @@ internal static class AttributePatternEvaluator
                 {
                     AttributeTarget.ForType(candidate.DeclaringType)
                 };
-            case BoundAttributeTargetKind.Callable:
-                return new[] { AttributeTarget.ForCallable(candidate) };
+            case BoundAttributeTargetKind.Method:
+                return new[] { AttributeTarget.ForMethod(candidate) };
             case BoundAttributeTargetKind.Execution:
                 return AttributeTargetRules.GetExecutionTargets(candidate);
             case BoundAttributeTargetKind.Property:
@@ -183,7 +194,7 @@ internal static class AttributePatternEvaluator
 
     private static AttributeTarget[] GetParameterTargets(
         int? parameterIndex,
-        CallableSignature candidate)
+        MethodSignature candidate)
     {
         if (parameterIndex.HasValue)
         {
@@ -203,12 +214,12 @@ internal static class AttributePatternEvaluator
     }
 
     private static List<AttributeTarget> GetAllTargets(
-        CallableSignature candidate)
+        MethodSignature candidate)
     {
         var targets = new List<AttributeTarget>
         {
             AttributeTarget.ForType(candidate.DeclaringType),
-            AttributeTarget.ForCallable(candidate)
+            AttributeTarget.ForMethod(candidate)
         };
         if (candidate.AssociatedProperty is not null)
         {

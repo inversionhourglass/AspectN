@@ -149,6 +149,8 @@ public sealed class TypePatternParserTests
     [InlineData("Name<>", GenericPatternForm.FixedArity, 1)]
     [InlineData("Name<,>", GenericPatternForm.FixedArity, 2)]
     [InlineData("Name<..>", GenericPatternForm.AnyPositiveArity, 0)]
+    [InlineData("Name<!>", GenericPatternForm.FixedArity, 0)]
+    [InlineData("Name<?>", GenericPatternForm.AnyArity, 0)]
     public void ParseTypePattern_GenericWildcardForm_StoresExplicitArity(
         string source,
         GenericPatternForm expectedForm,
@@ -165,20 +167,52 @@ public sealed class TypePatternParserTests
     }
 
     [Fact]
-    public void ParseTypePattern_SingleParenthesizedType_IsGrouping()
+    public void ParseTypePattern_SingleParenthesizedType_ReportsDiagnostic()
     {
-        var tree = AspectNParser.ParseTypePattern("(int)");
+        // 两版本一致：括号类型只保留 Boolean 分组含义，单元素括号按缺 tuple 元素诊断。
+        var tree = AspectNParser.ParseTypePattern(
+            "(int)",
+            new AspectNParseOptions(AspectNLanguageVersion.Standard));
 
-        Assert.IsType<ParenthesizedTypePatternSyntax>(tree.Root);
-        Assert.Empty(tree.Diagnostics);
+        Assert.NotEmpty(tree.Diagnostics);
     }
 
     [Theory]
-    [InlineData("Name<!>")]
+    [InlineData("Name<!>", AspectNLanguageVersion.Standard)]
+    [InlineData("Name<!>", AspectNLanguageVersion.Legacy)]
+    [InlineData("Name<?>", AspectNLanguageVersion.Standard)]
+    [InlineData("Name<T,>", AspectNLanguageVersion.Standard)]
+    [InlineData("Name<,T>", AspectNLanguageVersion.Standard)]
+    [InlineData("Name<T,,U>", AspectNLanguageVersion.Standard)]
+    [InlineData("Name<int,>", AspectNLanguageVersion.Standard)]
+    public void ParseTypePattern_GenericSlotForms_AcceptedInVersion(
+        string source,
+        AspectNLanguageVersion version)
+    {
+        var tree = AspectNParser.ParseTypePattern(
+            source,
+            new AspectNParseOptions(version));
+
+        Assert.IsType<NamedTypePatternSyntax>(tree.Root);
+        Assert.Empty(tree.Diagnostics);
+    }
+
+    [Fact]
+    public void ParseTypePattern_QuestionArityForm_LegacyRejects()
+    {
+        // Legacy 冻结：<?> 是 Standard 新增写法；Legacy 的省略子句已是任意 arity。
+        var tree = AspectNParser.ParseTypePattern(
+            "Name<?>",
+            new AspectNParseOptions(AspectNLanguageVersion.Legacy));
+
+        Assert.NotEmpty(tree.Diagnostics);
+    }
+
+    [Theory]
     [InlineData("out int")]
     [InlineData("tasklike<>")]
     [InlineData("()")]
-    [InlineData("Name<T,>")]
+    [InlineData("(int)")]
     public void ParseTypePattern_InvalidStandardForm_ReportsDiagnostic(string source)
     {
         var tree = AspectNParser.ParseTypePattern(source);

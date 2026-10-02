@@ -56,7 +56,7 @@ public sealed class CollectibleAssemblyTests
         var constructedMethod = method.MakeGenericMethod(
             typeof(double),
             typeof(bool));
-        var candidate = typeSystem.Mapper.MapCallable(constructedMethod);
+        var candidate = typeSystem.Mapper.MapMethod(constructedMethod);
         var compilation = AspectNCompilation.Create(
             AspectNParser.ParseMemberExpression(
                 "method(bool AspectN.TestAssembly.LegacyFixture" +

@@ -68,4 +68,7 @@ public static class DiagnosticCodes
 
     /// <summary>Gets the invalid type-pattern suffix.</summary>
     public static string InvalidTypeSuffix => "AN2010";
+
+    /// <summary>Gets the invalid generic clause.</summary>
+    public static string InvalidGenericClause => "AN2011";
 }

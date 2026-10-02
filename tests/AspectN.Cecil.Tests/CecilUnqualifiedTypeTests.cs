@@ -73,7 +73,7 @@ public sealed class CecilUnqualifiedTypeTests
         Assert.True(compilation.TryGetMemberPattern(out var pattern));
 
         var result = pattern!.Match(
-            typeSystem.Mapper.MapCallable(constructor),
+            typeSystem.Mapper.MapMethod(constructor),
             typeSystem);
 
         Assert.Equal(MatchStatus.Matched, result.Status);
@@ -89,7 +89,7 @@ public sealed class CecilUnqualifiedTypeTests
         var method = Assert.Single(
             fixture.Methods,
             candidate => candidate.Name == "Marked");
-        var callable = typeSystem.Mapper.MapCallable(method);
+        var callable = typeSystem.Mapper.MapMethod(method);
         var actualAttribute = Assert.Single(
             callable.Attributes,
             attribute => Name(attribute.AttributeType).EndsWith(
@@ -97,7 +97,7 @@ public sealed class CecilUnqualifiedTypeTests
                 StringComparison.Ordinal));
 
         var result = typeSystem.HasDirectAttribute(
-            AttributeTarget.ForCallable(callable),
+            AttributeTarget.ForMethod(callable),
             Unqualified(actualAttribute.AttributeType));
 
         Assert.Equal(MatchStatus.Matched, result.Status);
@@ -131,9 +131,9 @@ public sealed class CecilUnqualifiedTypeTests
                 Named("Int32", TypeKind.Struct)
             },
             definition);
-        var callable = new CallableSignature(
+        var callable = new MethodSignature(
             "Run",
-            CallableKind.OrdinaryMethod,
+            MethodKind.OrdinaryMethod,
             Accessibility.Public,
             isStatic: false,
             isAsync: false,
@@ -149,12 +149,12 @@ public sealed class CecilUnqualifiedTypeTests
             {
                 new AttributeSignature(
                     actual,
-                    AttributeTargetKind.Callable)
+                    AttributeTargetKind.Method)
             },
             Array.Empty<AttributeSignature>());
 
         var result = typeSystem.HasDirectAttribute(
-            AttributeTarget.ForCallable(callable),
+            AttributeTarget.ForMethod(callable),
             expected);
 
         Assert.Equal(MatchStatus.NotMatched, result.Status);

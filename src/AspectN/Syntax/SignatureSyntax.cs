@@ -15,7 +15,7 @@ public abstract class SignatureSyntax : SyntaxNode
 
 /// <summary>Represents a callable signature syntax node.</summary>
 /// <param name="parts">Specifies the parts.</param>
-public sealed class CallableSignatureSyntax(IEnumerable<SyntaxNode> parts) : SignatureSyntax(SyntaxKind.CallableSignature, parts)
+public sealed class MethodSignatureSyntax(IEnumerable<SyntaxNode> parts) : SignatureSyntax(SyntaxKind.MethodSignature, parts)
 {
 }
 
@@ -66,6 +66,7 @@ public enum GenericPatternForm
 {
     FixedArity,
     AnyPositiveArity,
+    AnyArity,
     Arguments
 }
 
@@ -170,31 +171,44 @@ public sealed class GenericPatternListSyntax : SyntaxNode
 /// <summary>Represents a type use syntax node.</summary>
 public sealed class TypeUseSyntax : SyntaxNode
 {
+    private readonly IReadOnlyList<SyntaxToken> _negatedRefTokens;
     private readonly IReadOnlyList<SyntaxToken> _refKindTokens;
 
     /// <summary>Initializes a new instance of the TypeUseSyntax class.</summary>
     /// <param name="refKindTokens">Specifies the ref kind tokens.</param>
     /// <param name="typePattern">Specifies the type pattern.</param>
+    /// <param name="negatedRefTokens">Specifies the '!ref' negation tokens.</param>
     public TypeUseSyntax(
         IEnumerable<SyntaxToken> refKindTokens,
-        TypePatternSyntax typePattern)
-        : this(refKindTokens.ToArray(), typePattern)
+        TypePatternSyntax typePattern,
+        IReadOnlyList<SyntaxToken>? negatedRefTokens = null)
+        : this(
+            refKindTokens.ToArray(),
+            typePattern,
+            negatedRefTokens ?? Array.Empty<SyntaxToken>())
     {
     }
 
     private TypeUseSyntax(
         IReadOnlyList<SyntaxToken> refKindTokens,
-        TypePatternSyntax typePattern)
+        TypePatternSyntax typePattern,
+        IReadOnlyList<SyntaxToken> negatedRefTokens)
         : base(
             SyntaxKind.TypeUse,
-            SyntaxChildren.Create(refKindTokens, typePattern))
+            SyntaxChildren.Create(
+                negatedRefTokens.Concat(refKindTokens),
+                typePattern))
     {
         _refKindTokens = refKindTokens;
+        _negatedRefTokens = negatedRefTokens;
         TypePattern = typePattern;
     }
 
     /// <summary>Gets the ref kind tokens.</summary>
     public IReadOnlyList<SyntaxToken> RefKindTokens => _refKindTokens;
+
+    /// <summary>Gets the '!ref' negation tokens (Standard only).</summary>
+    public IReadOnlyList<SyntaxToken> NegatedRefTokens => _negatedRefTokens;
 
     /// <summary>Gets the type pattern.</summary>
     public TypePatternSyntax TypePattern { get; }
