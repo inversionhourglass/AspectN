@@ -114,6 +114,66 @@ public sealed class AssignablePatternMatchingTests
                 new AspectNParseOptions(version)));
     }
 
+    [Theory]
+    [InlineData("int[]?+", MatchStatus.NotMatched)]
+    [InlineData("int??+", MatchStatus.NotMatched)]
+    [InlineData("tasklike<int>+", MatchStatus.NotMatched)]
+    [InlineData("(int,int)+", MatchStatus.Unknown)]
+    [InlineData("(* || int)+", MatchStatus.Unknown)]
+    [InlineData("$T+", MatchStatus.Unknown)]
+    [InlineData("*??+", MatchStatus.Unknown)]
+    [InlineData("int+?+", MatchStatus.Unknown)]
+    public void MemberPattern_LegacyUnsupportedAssignableTargets_RecordedSnapshots(
+        string returnType,
+        MatchStatus expected)
+    {
+        // 三轮审计快照：Legacy 冻结这些形态的编译与求值结果（Standard 已绑定期拒绝）。
+        Assert.Equal(
+            expected,
+            Match(
+                $"method({returnType} ReflectionAssignableFixture.Digits())",
+                nameof(ReflectionAssignableFixture.Digits),
+                _Legacy));
+    }
+
+    [Theory]
+    [InlineData("int+?")]
+    [InlineData("int?+")]
+    public void MemberPattern_NullableWrappedAssignable_StillMatchesNullable(
+        string returnType)
+    {
+        // 防过紧对照：int+? 是"nullable 包 assignable 的模式"（不是可赋值目标），合法；
+        // int?+ 是单层"命名的 nullable"目标，白名单放行。两者都应命中 int? 返回。
+        Assert.Equal(
+            MatchStatus.Matched,
+            Match(
+                $"method({returnType} ReflectionAssignableFixture.Maybe())",
+                nameof(ReflectionAssignableFixture.Maybe)));
+        Assert.Equal(
+            MatchStatus.Matched,
+            Match(
+                $"method({returnType} ReflectionAssignableFixture.Maybe())",
+                nameof(ReflectionAssignableFixture.Maybe),
+                _Legacy));
+    }
+
+    [Fact]
+    public void MemberPattern_ArrayInsideGenericArguments_IsStillLegalTarget()
+    {
+        // 防过紧对照：白名单只判定目标节点，命名目标的实参可含数组/nullable。
+        Assert.Equal(
+            MatchStatus.Matched,
+            Match(
+                "method(System.Collections.Generic.List<int[]>+ ReflectionAssignableFixture.Jagged())",
+                nameof(ReflectionAssignableFixture.Jagged)));
+        Assert.Equal(
+            MatchStatus.Matched,
+            Match(
+                "method(System.Collections.Generic.List<int[]>+ ReflectionAssignableFixture.Jagged())",
+                nameof(ReflectionAssignableFixture.Jagged),
+                _Legacy));
+    }
+
     private static MatchStatus Match(
         string expression,
         string methodName,
@@ -154,5 +214,23 @@ internal sealed class ReflectionAssignableFixture
     {
         _value++;
         return _value;
+    }
+
+    public int[] Digits()
+    {
+        _value++;
+        return new[] { _value };
+    }
+
+    public int? Maybe()
+    {
+        _value++;
+        return _value;
+    }
+
+    public List<int[]> Jagged()
+    {
+        _value++;
+        return new List<int[]>();
     }
 }

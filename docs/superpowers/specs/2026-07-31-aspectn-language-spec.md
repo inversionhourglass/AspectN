@@ -490,7 +490,9 @@ System.IDisposable+
 *Provider+
 ```
 
-`+` requires a named target; array targets such as `Base[]+`, wildcard targets such as `*+`, and wildcard-nullable targets such as `*?+` are rejected with a binding diagnostic in Standard (Legacy preserves `*+` and `*?+` as Shared's zero-generic wildcard-name forms). Variance conversions — array covariance and generic co/contravariance — are not part of `+`. Express them compositionally by placing `+` inside type arguments or array elements:
+The target of `+` is validated structurally in Standard: after unwrapping parentheses it must be a named type pattern (wildcard names and explicit generic clauses allowed) or a single-level nullable of a named type pattern (`X?+`). Any other target structure — arrays, nested or interleaved nullable wrappers, bare wildcards, tuples, Boolean combinations, pattern variables, `tasklike`, or a second `+` separated by another suffix — is rejected with a binding diagnostic. The rule constrains the target node itself only: array, wildcard, and tuple patterns inside the generic arguments of a named target (`List<int[]>+`) remain legal, and `int+?` (a nullable wrapping an assignable pattern, not an assignability target) is unaffected. Legacy does not apply the structural whitelist: historical forms keep compiling and evaluate along their own paths.
+
+Variance conversions — array covariance and generic co/contravariance — are not part of `+`. Express them compositionally by placing `+` inside type arguments or array elements:
 
 ```text
 Base+[]                     matches Derived[]

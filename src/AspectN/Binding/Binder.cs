@@ -1336,50 +1336,59 @@ internal sealed class Binder(
             syntax.FullSpan);
     }
 
-    // 规范 §12.1/§12.4：绑定器校验后缀适用性；+ 要求命名目标，数组/通配目标不支持，也不能重复叠加。
-    // nullable 目标（int?+）是合法组合，不在此报告。通配目标拒绝仅 Standard：
-    // Legacy 的 *+ 是 Shared 的合法形态（零泛型通配名 + 可赋值），保持原行为。
+    // 规范 §12.4：+ 要求命名目标。Standard 以结构白名单验证（三轮审计裁决）：
+    // 解括号后的目标必须是命名类型模式（含通配名与显式泛型子句），或单层"命名类型的
+    // nullable"（X?+）；其余结构（数组、多层/交错 nullable 包装、通配、tuple、Boolean、
+    // 变量、tasklike、被 nullable 分隔的重复 +）一律绑定期拒绝，与求值器支持范围对齐。
+    // 只判定目标节点本身——命名目标泛型实参内的数组/通配/tuple 不受影响（List<int[]>+ 合法）。
+    // Legacy 不做白名单：重复 + 仍两版本共拒；其余历史形态按各自路径求值
+    // （int[]?+ 等返回 NotMatched、(int,int)+ 等返回 Unknown），记录于差异文档 §8。
     private void ReportInvalidAssignableTarget(AssignableTypePatternSyntax syntax)
     {
         var target = UnwrapParenthesized(syntax.TargetType);
 
-        if (target is ArrayTypePatternSyntax)
-        {
-            _diagnostics.Add(
-                DiagnosticCodes.InvalidTypeSuffix,
-                DiagnosticSeverity.Error,
-                "The '+' suffix requires a named type target; array targets are not supported.",
-                syntax.PlusToken.Span);
-        }
-        else if (!_isLegacy && target is WildcardTypePatternSyntax)
-        {
-            _diagnostics.Add(
-                DiagnosticCodes.InvalidTypeSuffix,
-                DiagnosticSeverity.Error,
-                "The '+' suffix requires a named type target; wildcard targets are not supported.",
-                syntax.PlusToken.Span);
-        }
-        else if (!_isLegacy &&
-                 target is NullableTypePatternSyntax
-                 { UnderlyingType: var nullableUnderlying } &&
-                 UnwrapParenthesized(nullableUnderlying) is WildcardTypePatternSyntax)
-        {
-            // *?+：nullable 内层是全通配时（Standard）无法落到"具体命名类型或命名类型的
-            // nullable"，与 *+ 同族，绑定期拒绝。Legacy 保留（内层转零泛型命名通配后可求值）。
-            _diagnostics.Add(
-                DiagnosticCodes.InvalidTypeSuffix,
-                DiagnosticSeverity.Error,
-                "The '+' suffix requires a named type target; wildcard nullable targets are not supported.",
-                syntax.PlusToken.Span);
-        }
-        else if (target is AssignableTypePatternSyntax)
+        if (target is AssignableTypePatternSyntax)
         {
             _diagnostics.Add(
                 DiagnosticCodes.InvalidTypeSuffix,
                 DiagnosticSeverity.Error,
                 "The '+' suffix cannot be applied more than once.",
                 syntax.PlusToken.Span);
+            return;
         }
+
+        if (_isLegacy)
+        {
+            return;
+        }
+
+        var effective = target is NullableTypePatternSyntax nullable
+            ? UnwrapParenthesized(nullable.UnderlyingType)
+            : target;
+        if (effective is NamedTypePatternSyntax)
+        {
+            return;
+        }
+
+        _diagnostics.Add(
+            DiagnosticCodes.InvalidTypeSuffix,
+            DiagnosticSeverity.Error,
+            GetInvalidAssignableTargetMessage(effective),
+            syntax.PlusToken.Span);
+    }
+
+    private static string GetInvalidAssignableTargetMessage(TypePatternSyntax effective)
+    {
+        return effective switch
+        {
+            ArrayTypePatternSyntax =>
+                "The '+' suffix requires a named type target; array targets are not supported.",
+            WildcardTypePatternSyntax =>
+                "The '+' suffix requires a named type target; wildcard targets are not supported.",
+            NullableTypePatternSyntax =>
+                "The '+' suffix requires a named type target; nested nullable targets are not supported.",
+            _ => "The '+' suffix requires a named type target."
+        };
     }
 
     private sealed class VariableScope

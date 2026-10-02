@@ -156,6 +156,78 @@ public sealed class BinderTests
     }
 
     [Theory]
+    [InlineData("int[]?+")]
+    [InlineData("int??+")]
+    [InlineData("tasklike<int>+")]
+    [InlineData("(int,int)+")]
+    [InlineData("(* || int)+")]
+    [InlineData("$T+")]
+    [InlineData("*??+")]
+    [InlineData("int+?+")]
+    public void Create_UnsupportedAssignableTargetStructure_StandardRejects(
+        string source)
+    {
+        // 三轮审计裁决：Standard 以结构白名单验证 + 的目标——命名模式或单层"命名的 nullable"
+        // 之外一律绑定期 AN2010，与求值器支持范围对齐（原实现编译通过但求值必经 Unknown）。
+        var compilation = CompileType(source);
+
+        AssertDiagnostic(compilation, DiagnosticCodes.InvalidTypeSuffix);
+        Assert.Null(compilation.BoundRoot);
+    }
+
+    [Theory]
+    [InlineData("int[]?+")]
+    [InlineData("int??+")]
+    [InlineData("tasklike<int>+")]
+    [InlineData("(int,int)+")]
+    [InlineData("(* || int)+")]
+    [InlineData("$T+")]
+    [InlineData("*??+")]
+    [InlineData("int+?+")]
+    public void Create_UnsupportedAssignableTargetStructure_LegacyKeepsAccepting(
+        string source)
+    {
+        // Legacy 冻结：历史形态继续编译；求值结果（NotMatched/Unknown）由
+        // AssignablePatternMatchingTests 按真实元数据快照锁定。
+        var compilation = CompileType(source, AspectNLanguageVersion.Legacy);
+
+        Assert.DoesNotContain(
+            compilation.Diagnostics,
+            diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
+    }
+
+    [Fact]
+    public void Create_TaskLikeAsDeclaringTypeName_BindsAsNamedTarget()
+    {
+        // tasklike 语法糖只存在于类型模式位置；成员声明位把它解析为普通名段
+        // （与 Legacy 读法一致），目标恰是命名模式，白名单放行。
+        var compilation = CompileMember("method(* tasklike<int>+.Get(..))");
+
+        Assert.DoesNotContain(
+            compilation.Diagnostics,
+            diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
+        Assert.NotNull(compilation.BoundRoot);
+    }
+
+    [Theory]
+    [InlineData("System.ValueType+")]
+    [InlineData("System.*Type+")]
+    [InlineData("int?+")]
+    [InlineData("System.Collections.Generic.List<int[]>+")]
+    [InlineData("System.Collections.Generic.List<int?[]>+")]
+    public void Create_SupportedAssignableTargetStructures_StandardAccepts(
+        string source)
+    {
+        // 正向对照：具体命名、通配命名、单层命名 nullable、实参含数组/nullable 的命名目标。
+        var compilation = CompileType(source);
+
+        Assert.DoesNotContain(
+            compilation.Diagnostics,
+            diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
+        Assert.NotNull(compilation.BoundRoot);
+    }
+
+    [Theory]
     [InlineData("int[]+")]
     [InlineData("System.Int32[]+")]
     [InlineData("string[,]+")]
