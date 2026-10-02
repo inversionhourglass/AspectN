@@ -558,7 +558,7 @@ Standard uses:
 | `Name<T,>` / `Name<,T>` | Arity 2 with one exact and one any-argument slot |
 | `Name<T,,U>` | Arity 3 with a middle any-argument slot |
 
-`<!>` and `<?>` are available in every generic-clause position (type patterns, declaring types, member generic clauses) and on wildcard names: `*<!>` is any non-generic type, `*<..>` is any generic type, and `*<?>` is accepted as a synonym of `*`. Note that `*<!>` and `*<..>` match named types only — arrays and tuples have no generic arity.
+`<!>` and `<?>` are available in every generic-clause position (type patterns, declaring types, member generic clauses) and on wildcard names. A suffixed `*` clause binds as a named wildcard pattern — it is not the full type wildcard: arrays and generic-parameter candidates are never matched, and a single-segment pattern does not cross nested types (§7). `ValueTuple<...>` is an ordinary named generic type from the CLR's perspective and is matched by `*<?>`/`*<..>` like any constructed generic. `*` without a clause remains the only full wildcard and the only abbreviation that matches arrays and nesting.
 
 The special name wildcard `*` without a generic clause matches any arity — the single abbreviation exception. For every other name, omission means arity zero; write `Name<?>` to include generic candidates.
 

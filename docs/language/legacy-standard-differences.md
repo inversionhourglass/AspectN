@@ -35,7 +35,7 @@
 
 | # | 项 | Legacy | Standard | 决策 |
 |---|---|---|---|---|
-| 4.1 | `async T` / `async null` / `async void` | Task/ValueTask 返回糖 | 报错（无 `async` 修饰符） | Standard 用 tasklike 替代，删除 async，保持 |
+| 4.1 | `async T` / `async null` / `async void` | 三种历史糖：`async T` = 匹配 `Task<T>`/`ValueTask<T>` 的结果类型；`async null` = 非泛型 `Task`/`ValueTask`；`async void` = **独立的历史 void 分支**（匹配普通 void 方法，不查 C# async 标志；显式 `void<>`/`void<..>`/`void<!>` 子句不走该分支，故裸 `async void` ≠ 带 子句的变体） | 报错（无 `async` 修饰符）；迁移时 void 意图直接写 `void`，不要机械替换成 `tasklike` | 保持 Legacy 行为；§4.1 为 2026-10-02 审计后修正的三分描述 |
 | 4.2 | `tasklike` / `tasklike<T>` | `tasklike` 是普通类型名 | 匹配 `Task`/`ValueTask`；`tasklike<void>` 报 AN4004（裸 `tasklike` 同义） | 保持 |
 
 ## 5. 名称与名字模式（2026-10-02 名称模型定稿）
@@ -47,7 +47,7 @@
 | 5.1 | **[同形异义]** `*..M` / `System..*`（方法位） | `..` 分隔声明类型，末段缺省 = 通配类型名（Shared 行为） | **报错**："少一段"（声明类型缺类型名段）；成员必须用 `.` 连接声明类型 | Standard 采用标准名称解析 |
 | 5.2 | `System..Service.Foo`（`..` 在命名空间中间） | 合法 | 合法（成员仍用 `.` 连接） | 保持 |
 | 5.3 | 类型位 `System..*` | 合法：System + 任意中间层 + 任意类型（含 `System.Cls` 本身，`..` 含 0 层） | 同左 | 两版本一致 |
-| 5.4 | 类型位 `*..*` | 合法但命名空间至少一段，**不含全局命名空间**类型；要含全局就省略命名空间写 `*` | 同左 | 推论已确认 |
+| 5.4 | 类型位 `*..*` | **含**全局命名空间（裸 `*..` 前缀特例，见 5.6；genericIn 位置同样适用） | 不含：命名空间至少一段；要含全局就省略命名空间写 `*` | 2026-10-02 审计修正：原表误把 Standard 限制写给 Legacy |
 | 5.5 | `*.*` 与 `*`（方法位） | — | `*.*` 不跨嵌套类型（嵌套用 `/`，如 `*/*.*`）；`*`（省略声明类型）任意——两者不严格等价 | 推论已确认，文档写明 |
 | 5.6 | 裸 `*..` 匹配全局命名空间 | 特例放行（C6，对齐 Shared） | 无此特例（`*..` 要求 ≥1 段） | Standard 不需要特例 |
 | 5.7 | 声明位 `*` / `*..*` = 全通配（含嵌套） | 是（genericOut） | 否：`*..*` 只按命名空间路径，嵌套需 `/` | 随名称模型，Standard 不复刻位置双轨 |
@@ -73,17 +73,31 @@
 | 6.1 | 省略 = 零泛型（具名） | 直觉优先："`M()` 匹配泛型 M"反直觉；要含泛型写 `M<?>` |
 | 6.2 | `<!>` 通用化到 Standard | 与 Legacy `<!>` 语义统一（FixedArity 0），消掉一条差异 |
 | 6.3 | 新增 `<?>` = 任意 arity（含零） | 选型 `<?>` 优于 `^`/`#`：留在尖括号范式内、不污染后缀命名空间、家族一致 |
-| 6.4 | `*<?>` ≡ `*` | 接受同义写法，不做特判拒绝 |
-| 6.5 | `*<!>` = 任意非泛型类型、`*<..>` = 任意泛型类型 | 只匹配命名类型——数组/tuple 无泛型 arity，不在其中（文档写明） |
+| 6.4 | `*<?>` **不是** `*` 的同义写法 | 2026-10-02 用户裁决（保留实现）：`*<?>` 绑定单段命名通配 + 任意 arity，只匹配命名类型——不匹配数组、泛型形参候选，也不跨嵌套（§5.5）；裸 `*` 仍是唯一全通配。最终语义见下表 |
+| 6.5 | `*<!>` = 任意非泛型、`*<..>` = 任意泛型 | 按命名类型 + **CLR 泛型元数**匹配；`ValueTuple<...>` 是普通命名泛型、可被命中（2026-10-02 审计修正原"tuple 无 arity"表述）；数组与泛型形参候选不命中 |
 | 6.6 | void 上一切泛型子句 Standard 拒绝（AN2011） | void 永远非泛型；Legacy 因 `async void` 糖需区分裸 void 与显式子句，保留接受 |
 | 6.7 | 混合空槽 Standard 采纳（对齐 Legacy） | `<T,>`=2 槽（T+Any）、`<T,,U>`=3 槽 |
 | 6.8 | Legacy 差异保留 | 成员泛型子句/限定名省略 = 任意 arity；genericIn 裸单段名省略 = 零泛型 |
+
+**`*` 家族最终语义表**（2026-10-02 用户定稿，Reflection 元数据逐格验证）：
+
+| 候选类型 | `*` | `*<?>` | `*<!>` | `*<..>` |
+|---|---:|---:|---:|---:|
+| `int`、`string`、普通类 | ✓ | ✓ | ✓ | ✗ |
+| `List<int>` | ✓ | ✓ | ✗ | ✓ |
+| 开放泛型定义 `List<T>` | ✓ | ✓ | ✗ | ✓ |
+| `Nullable<int>`，即 `int?` | ✓ | ✓ | ✗ | ✓ |
+| `ValueTuple<int,string>`，即 `(int,string)` | ✓ | ✓ | ✗ | ✓ |
+| 非泛型 `System.ValueTuple` | ✓ | ✓ | ✓ | ✗ |
+| `int[]`、`List<int>[]` | ✓ | ✗ | ✗ | ✗ |
+| 泛型形参自身 `T` | ✓ | ✗ | ✗ | ✗ |
+| 嵌套类型 `Outer/Inner` | ✓ | ✗ | ✗ | ✗ |
 
 ## 7. 泛型变量
 
 | # | 项 | Legacy | Standard | 决策 |
 |---|---|---|---|---|
-| 7.1 | 隐式变量 | 泛型子句中裸单段名声明变量、按位置绑定（`method(T *<T>(T))`）；ctor 声明位同理（genericOut） | 仅显式 `$T`；裸名永远是类型名 | `$` 更清晰，保持 |
+| 7.1 | 泛型变量 | **隐式**变量为主：泛型子句中裸单段名声明变量、按位置绑定（`method(T *<T>(T))`）；ctor 声明位同理（genericOut）。注意：Legacy **同样接受**显式 `$T`（批准增强，见 [legacy-compatibility.md](legacy-compatibility.md)），差异是"Standard 只允许显式"而非"Legacy 不支持显式" | 仅显式 `$T`；裸名永远是类型名 | `$` 更清晰，保持 |
 
 ## 8. 类型后缀、tuple、nullable
 
@@ -96,7 +110,9 @@
 | 8.5 | `(int)` 单元素括号 | 报错（tuple 至少两元素） | 报错（2026-10-02 统一；括号类型只剩 Boolean 分组 `(int\|\|string)`） | 统一 |
 | 8.6 | tuple 定义 | `System.Tuple` 和 `ValueTuple` | 仅 `ValueTuple`（`Tuple` 显式写全名） | 保持 |
 | 8.7 | `X?` 语义 | 仅 `Nullable<T>` 构造 | 引用类型 `T?`≡`T`、值类型 → `Nullable<T>` | 保持 |
-| 8.8 | 裸模式匹配数组元素 | 裸命名/tuple/nullable/可赋值模式剥数组层比元素（`int` 命中 `int[]`；`!int` 与 Standard **结果相反**） | 裸模式不匹配数组，需显式 `[]` | Standard 保持现状（直觉行为） |
+| 8.8 | 裸模式匹配数组元素 | 裸命名/tuple/nullable/可赋值模式剥数组层比元素（`int` 命中 `int[]`；`!int` 与 Standard **结果相反**） | **普通裸命名模式**不做数组元素剥离，需显式 `[]`。例外（2026-10-02 审计限定）：全通配 `*` 命中数组；`*?` 按引用类型 nullable 规则命中数组（见 8.10）；`*[]` 的元素通配继续命中更深层数组（见 8.9） | Standard 保持现状（直觉行为） |
+| 8.9 | `*[]`（显式数组模式的元素约束） | 带 `[]` 后缀的 `*` 绑定为**零泛型名字通配**：`int[]` ✓；`List<int>[]` ✗（元素须非泛型命名类型）；`int[][]` ✗（层数须完整对应） | 元素 `*` 是全通配：三者全部 ✓（`int[][]` 作为"外层一维、元素任意"命中） | 2026-10-02 审计补录（Reflection 逐格验证） |
+| 8.10 | `*?`（nullable 内层的通配） | 内层 `*` 绑定为零泛型名字通配：`Nullable<GenericStruct<int>>` ✗、`string[]` ✗、`string`（非 Nullable 构造）✗ | 内层保留全通配并按引用类型 nullable 规则求值：三者全部 ✓ | 2026-10-02 审计补录（Reflection 逐格验证） |
 
 ## 9. 成员路径与参数
 
@@ -119,7 +135,7 @@
 | `!ref ref int` | AN2005 拒绝（矛盾） |
 | 返回位 `out` / `in` | 仍非法（InvalidRefKind） |
 
-决策要点：默认不关心是高频诉求；`!ref` = 仅非 by-ref（用户否定的是"按引用传递"概念，不是四种风味之一）；删除了旧"仅通配类型豁免"特判。**注意**：这使 Standard 默认比冻结 Legacy 宽（Legacy 具名模式只匹配 by-value，除非全通配）——属批准差异。regex 规范签名仍渲染 ref（精细工具可区分），与移除 `[async]` 不矛盾（async 是语言已删除的概念，ref 是保留概念）。
+决策要点：默认不关心是高频诉求；`!ref` = 仅非 by-ref（用户否定的是"按引用传递"概念，不是四种风味之一）；删除了旧"仅通配类型豁免"特判。**注意**：这使 Standard 默认比冻结 Legacy 宽（Legacy 未标注的具名模式只匹配 by-value，除非全通配）——属批准差异。另注：Legacy **同样接受**显式 `ref`/`out`/`in`/`ref readonly` 写法与 `ref`/`ref readonly` 返回（批准增强，见 [legacy-compatibility.md](legacy-compatibility.md)）；两版本的差异在**未标注时的默认**与 `!ref` 的有无，不在显式写法本身。regex 规范签名仍渲染 ref（精细工具可区分），与移除 `[async]` 不矛盾（async 是语言已删除的概念，ref 是保留概念）。
 
 ## 11. attr 位置
 
@@ -143,14 +159,21 @@
 
 ## 迁移速查（Legacy → Standard）
 
+备选写法**不保证等价**，注释标明匹配范围的变化（2026-10-02 审计修正）：
+
 | Legacy | Standard |
 |---|---|
-| `method(* Service.Get(..))`（任意泛型） | `method(* Service<?>.Get<?>(..))` 或 `method(* Service.*(..))` |
-| `method(* *..StaticMethod(..))` | `method(* *..*.StaticMethod(..))` 或 `method(* StaticMethod(..))` |
-| `method(* *..*(..))` | `method(* *(..))` 或 `method(* *.*(..))` |
+| `method(* Service.Get(..))`（任意泛型） | 首选 `method(* Service<?>.Get<?>(..))`（保名保元数）；备选 `method(* Service.*(..))`（**放宽**成员名 Get→任意，且声明类型仍零泛型——不同筛选范围） |
+| `method(* *..StaticMethod(..))` | `method(* *..*.StaticMethod(..))` 或 `method(* StaticMethod(..))`（两者等价） |
+| `method(* *..*(..))` | `method(* *(..))`（任意含嵌套）；`method(* *.*(..))`（**不覆盖**嵌套声明类型，见 §5.5） |
 | `method(async string *(..))` | `method(tasklike<string> *(..))` |
+| `method(async void *(..))`（void 历史分支） | `method(void *(..))`（void 意图直接写 `void`，**不要**换成 tasklike） |
 | `method(privateprotected * *(..))` | `method(private protected * *(..))` |
 | `method(public private * *(..))`（OR） | `method(public\|private * *(..))` |
 | `method(T *<T>(T))` | `method($T *<$T>($T))` |
 | `getter(* *..*.Name)` | `getter(* *..*.Name)`（`..` 中间用法不变） |
 | 限定名省略子句 = 任意泛型 | `System...List<?>` |
+
+## 审计记录
+
+- 2026-10-02（提交 `909b2cf` 后）多模型审计发现 11 项问题，全部核实属实：2 项代码修复（特性类型 `<?>` 回退模式求值、成员声明类型位裸 `*+` 对齐 AN2010 拒绝）+ 9 项文档修正（本文件 §4.1/§5.4/§6.4/§6.5/§8.8 重写，§8.9/§8.10 补录，§7.1/§10 共享增强说明，迁移表范围注释）+ 规范 §13.1 措辞同步。`*<?>` ≢ `*` 经用户裁决保留实现并按上表记录。修复均以 Reflection 探针与新增回归测试锁定（探针：`artifacts/audit-verify-probe/`）。

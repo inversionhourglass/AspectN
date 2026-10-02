@@ -277,6 +277,32 @@ public sealed class AttributePatternTests
     }
 
     [Fact]
+    public void Match_QuestionArityGenericAttribute_UsesEmbeddedEvaluation()
+    {
+        // <?> 是通配元数（含零）：直接特性查询要求完全具体化，必须回退到
+        // 嵌入特性求值，否则会被错构为零泛型类型而漏匹配（审计修正回归）。
+        var typeSystem = new AttributeTypeSystem(_ => false);
+        var candidate = Candidate(
+            attributes:
+            [
+                new AttributeSignature(
+                    Generic(
+                        "Example",
+                        "ReviewTagAttribute",
+                        Named("System", "Int32")),
+                    AttributeTargetKind.Method)
+            ]);
+
+        var result = Match(
+            "attr(call ReviewTagAttribute<?>)",
+            candidate,
+            typeSystem);
+
+        Assert.Equal(MatchStatus.Matched, result.Status);
+        Assert.Empty(typeSystem.RequestedAttributeTypes);
+    }
+
+    [Fact]
     public void Match_NestedOpenGenericArgument_UsesEmbeddedAttributes()
     {
         var typeSystem = new AttributeTypeSystem(_ => true);

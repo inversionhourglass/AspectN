@@ -157,6 +157,33 @@ public sealed class BinderTests
     }
 
     [Theory]
+    [InlineData("method(* *+.*(..))")]
+    [InlineData("property(* *+.*)")]
+    public void Create_WildcardAssignableDeclaringType_StandardRejectsAtBinding(
+        string source)
+    {
+        // 声明类型位的裸 *+ 与独立类型模式的拒绝规则对齐（审计修正回归）。
+        var compilation = CompileMember(source);
+
+        AssertDiagnostic(compilation, DiagnosticCodes.InvalidTypeSuffix);
+        Assert.Null(compilation.BoundRoot);
+    }
+
+    [Theory]
+    [InlineData("method(* *+.*(..))")]
+    [InlineData("property(* *+.*)")]
+    public void Create_WildcardAssignableDeclaringType_LegacyKeepsAccepting(
+        string source)
+    {
+        // Legacy 冻结：*+ 是 Shared 的零泛型通配名 + 可赋值形态。
+        var compilation = CompileMember(source, AspectNLanguageVersion.Legacy);
+
+        Assert.DoesNotContain(
+            compilation.Diagnostics,
+            diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
+    }
+
+    [Theory]
     [InlineData("int++")]
     [InlineData("System.IDisposable++")]
     public void Create_RepeatedAssignableSuffix_ReportsDiagnostic(string source)

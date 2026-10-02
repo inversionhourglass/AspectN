@@ -1140,6 +1140,20 @@ internal sealed class Binder(
             return new BoundMemberPattern(null, memberName);
         }
 
+        // Standard 与独立类型模式的 *+ 拒绝对齐：声明类型位的 + 目标若只是裸 * 通配名
+        // （无其他段、无泛型子句），同样在绑定期报 AN2010。Legacy 保留 Shared 的 *+ 形态。
+        if (isAssignable &&
+            !_isLegacy &&
+            declaringNodes.Length == 2 &&
+            declaringNodes[0] is SyntaxToken { Kind: SyntaxKind.StarToken })
+        {
+            _diagnostics.Add(
+                DiagnosticCodes.InvalidTypeSuffix,
+                DiagnosticSeverity.Error,
+                "The '+' suffix requires a named type target; wildcard targets are not supported.",
+                assignableSuffix!.Span);
+        }
+
         var declaringSyntax = CreateNamedTypeSyntax(
             isAssignable
                 ? declaringNodes.Take(declaringNodes.Length - 1)

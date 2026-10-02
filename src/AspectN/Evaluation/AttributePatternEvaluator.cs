@@ -239,7 +239,7 @@ internal static class AttributePatternEvaluator
         out TypeSignature? type)
     {
         if (pattern is not BoundNamedTypePattern named ||
-            !HasSpecifiedGenericArguments(named))
+            !HasSpecifiedGenericArguments(named, languageVersion))
         {
             type = null;
             return false;
@@ -251,25 +251,35 @@ internal static class AttributePatternEvaluator
             out type);
     }
 
-    // 直接特性查询要求泛型形参完全具体化；通配元数或未指定实参的模式交给类型模式求值器。
-    private static bool HasSpecifiedGenericArguments(BoundNamedTypePattern named)
+    // 直接特性查询要求泛型形参完全具体化；通配元数（<..>，及 Standard 的 <?>）或未指定实参的
+    // 模式交给类型模式求值器。Legacy 的省略子句（Any）保留历史具体化行为，不在此排除。
+    private static bool HasSpecifiedGenericArguments(
+        BoundNamedTypePattern named,
+        AspectNLanguageVersion languageVersion)
     {
         return !named.Segments.Any(segment =>
             segment.Generic.Kind == BoundGenericArityKind.AnyPositive ||
+            (languageVersion == AspectNLanguageVersion.Standard &&
+             segment.Generic.Kind == BoundGenericArityKind.Any) ||
             (segment.Generic.Arity > 0 &&
              segment.Generic.Arguments.Count != segment.Generic.Arity) ||
             segment.Generic.Arguments.Any(
-                argument => !IsFullyConcrete(argument)));
+                argument => !IsFullyConcrete(argument, languageVersion)));
     }
 
     // 嵌套实参也必须递归具体化；nullable 在具体化路径会错构为 Nullable<T>，
     // 与模式求值器的引用类型语义不一致，必须回退到类型模式求值器。
-    private static bool IsFullyConcrete(BoundTypePattern pattern)
+    private static bool IsFullyConcrete(
+        BoundTypePattern pattern,
+        AspectNLanguageVersion languageVersion)
     {
         return pattern switch
         {
-            BoundNamedTypePattern named => HasSpecifiedGenericArguments(named),
-            BoundArrayTypePattern array => IsFullyConcrete(array.ElementType),
+            BoundNamedTypePattern named =>
+                HasSpecifiedGenericArguments(named, languageVersion),
+            BoundArrayTypePattern array => IsFullyConcrete(
+                array.ElementType,
+                languageVersion),
             _ => false
         };
     }
