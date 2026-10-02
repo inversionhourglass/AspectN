@@ -1359,6 +1359,19 @@ internal sealed class Binder(
                 "The '+' suffix requires a named type target; wildcard targets are not supported.",
                 syntax.PlusToken.Span);
         }
+        else if (!_isLegacy &&
+                 target is NullableTypePatternSyntax
+                 { UnderlyingType: var nullableUnderlying } &&
+                 UnwrapParenthesized(nullableUnderlying) is WildcardTypePatternSyntax)
+        {
+            // *?+：nullable 内层是全通配时（Standard）无法落到"具体命名类型或命名类型的
+            // nullable"，与 *+ 同族，绑定期拒绝。Legacy 保留（内层转零泛型命名通配后可求值）。
+            _diagnostics.Add(
+                DiagnosticCodes.InvalidTypeSuffix,
+                DiagnosticSeverity.Error,
+                "The '+' suffix requires a named type target; wildcard nullable targets are not supported.",
+                syntax.PlusToken.Span);
+        }
         else if (target is AssignableTypePatternSyntax)
         {
             _diagnostics.Add(

@@ -958,17 +958,31 @@ internal static class TypePatternEvaluator
 
         if (IsPrimitiveAlias(named))
         {
-            var separator = named.CanonicalName.LastIndexOf('.');
-            type = new NamedTypeSignature(
-                new TypeIdentity(
-                    new AssemblyIdentity(string.Empty),
-                    separator < 0
-                        ? string.Empty
-                        : named.CanonicalName.Substring(0, separator),
-                    named.CanonicalName.Substring(separator + 1),
-                    0,
-                    TypeKind.Unknown));
-            return true;
+            // 别名只在子句为"零元数/任意元数且无实参"（省略、<!>、<?>）时可提前具体化为
+            // 零泛型类型——别名只存在于零元数，这两类子句的约束与之相容。
+            // 其余形态（<>、<..>、带实参）必须回退模式求值，否则约束被悄悄丢弃
+            // （int<>+ 曾因此错误命中 int，与 System.Int32<>+ 不一致）。
+            var aliasGeneric = named.Segments[0].Generic;
+            if (aliasGeneric.Arguments.Count == 0 &&
+                (aliasGeneric.Kind == BoundGenericArityKind.Any ||
+                 (aliasGeneric.Kind == BoundGenericArityKind.Exact &&
+                  aliasGeneric.Arity == 0)))
+            {
+                var separator = named.CanonicalName.LastIndexOf('.');
+                type = new NamedTypeSignature(
+                    new TypeIdentity(
+                        new AssemblyIdentity(string.Empty),
+                        separator < 0
+                            ? string.Empty
+                            : named.CanonicalName.Substring(0, separator),
+                        named.CanonicalName.Substring(separator + 1),
+                        0,
+                        TypeKind.Unknown));
+                return true;
+            }
+
+            type = null;
+            return false;
         }
 
         var slashIndex = FindFirstSlash(named.Separators);

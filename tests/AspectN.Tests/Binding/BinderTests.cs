@@ -133,6 +133,28 @@ public sealed class BinderTests
         Assert.Equal(0, named.Segments[0].Generic.Arity);
     }
 
+    [Fact]
+    public void Create_WildcardNullableAssignableTarget_StandardRejectsAtBinding()
+    {
+        // 审计 #2 回归：*?+ 的可赋值目标无法落到具体命名类型或命名 nullable，
+        // 与 *+ 同族，Standard 绑定期拒绝；求值恒 Unknown 的悬空路径移除。
+        var compilation = CompileType("*?+");
+
+        AssertDiagnostic(compilation, DiagnosticCodes.InvalidTypeSuffix);
+        Assert.Null(compilation.BoundRoot);
+    }
+
+    [Fact]
+    public void Create_WildcardNullableAssignableTarget_LegacyKeepsAccepting()
+    {
+        // Legacy 冻结：*?+ 的内层 * 转零泛型命名通配后可求值（int? 命中，int/string 不命中）。
+        var compilation = CompileType("*?+", AspectNLanguageVersion.Legacy);
+
+        Assert.DoesNotContain(
+            compilation.Diagnostics,
+            diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
+    }
+
     [Theory]
     [InlineData("int[]+")]
     [InlineData("System.Int32[]+")]

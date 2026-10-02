@@ -490,7 +490,7 @@ System.IDisposable+
 *Provider+
 ```
 
-`+` requires a named target; array targets such as `Base[]+` and wildcard targets such as `*+` are rejected with a binding diagnostic in Standard (Legacy preserves `*+` as Shared's zero-generic wildcard-name form). Variance conversions — array covariance and generic co/contravariance — are not part of `+`. Express them compositionally by placing `+` inside type arguments or array elements:
+`+` requires a named target; array targets such as `Base[]+`, wildcard targets such as `*+`, and wildcard-nullable targets such as `*?+` are rejected with a binding diagnostic in Standard (Legacy preserves `*+` and `*?+` as Shared's zero-generic wildcard-name forms). Variance conversions — array covariance and generic co/contravariance — are not part of `+`. Express them compositionally by placing `+` inside type arguments or array elements:
 
 ```text
 Base+[]                     matches Derived[]
