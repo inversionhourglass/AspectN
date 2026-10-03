@@ -565,3 +565,33 @@ AspectN.TypeSystem.InheritanceClosure.Ancestors.get -> System.Collections.Generi
 static AspectN.TypeSystem.InheritanceClosure.Empty.get -> AspectN.TypeSystem.InheritanceClosure!
 AspectN.TypeSystem.InheritanceClosure.Failure.get -> AspectN.TypeSystem.TypeRelationResult?
 AspectN.TypeSystem.InheritanceClosure.InheritanceClosure(System.Collections.Generic.IReadOnlyList<AspectN.Metadata.TypeSignature!>! ancestors, AspectN.TypeSystem.TypeRelationResult? failure) -> void
+AspectN.Syntax.BinaryMemberNamePatternSyntax
+AspectN.Syntax.BinaryMemberNamePatternSyntax.BinaryMemberNamePatternSyntax(AspectN.Syntax.MemberNamePatternSyntax! left, AspectN.Syntax.SyntaxToken! operatorToken, AspectN.Syntax.MemberNamePatternSyntax! right) -> void
+AspectN.Syntax.BinaryMemberNamePatternSyntax.Left.get -> AspectN.Syntax.MemberNamePatternSyntax!
+AspectN.Syntax.BinaryMemberNamePatternSyntax.OperatorToken.get -> AspectN.Syntax.SyntaxToken!
+AspectN.Syntax.BinaryMemberNamePatternSyntax.Right.get -> AspectN.Syntax.MemberNamePatternSyntax!
+AspectN.Syntax.MemberNamePatternSyntax
+AspectN.Syntax.MemberNamePatternSyntax.MemberNamePatternSyntax(AspectN.Syntax.SyntaxKind kind, System.Collections.Generic.IEnumerable<AspectN.Syntax.SyntaxNode!>! children) -> void
+AspectN.Syntax.MemberPathSyntax
+AspectN.Syntax.MemberPathSyntax.DeclaringType.get -> AspectN.Syntax.TypePatternSyntax?
+AspectN.Syntax.MemberPathSyntax.MemberPathSyntax(AspectN.Syntax.SyntaxToken? negationToken, AspectN.Syntax.TypePatternSyntax? declaringType, AspectN.Syntax.SyntaxToken? separatorToken, AspectN.Syntax.MemberNamePatternSyntax! name) -> void
+AspectN.Syntax.MemberPathSyntax.Name.get -> AspectN.Syntax.MemberNamePatternSyntax!
+AspectN.Syntax.MemberPathSyntax.NegationToken.get -> AspectN.Syntax.SyntaxToken?
+AspectN.Syntax.MemberPathSyntax.SeparatorToken.get -> AspectN.Syntax.SyntaxToken?
+AspectN.Syntax.NamedMemberPatternSyntax
+AspectN.Syntax.NamedMemberPatternSyntax.NamedMemberPatternSyntax(AspectN.Syntax.NamePatternSegmentSyntax! segment) -> void
+AspectN.Syntax.NamedMemberPatternSyntax.Segment.get -> AspectN.Syntax.NamePatternSegmentSyntax!
+AspectN.Syntax.ParenthesizedMemberNamePatternSyntax
+AspectN.Syntax.ParenthesizedMemberNamePatternSyntax.CloseParenToken.get -> AspectN.Syntax.SyntaxToken!
+AspectN.Syntax.ParenthesizedMemberNamePatternSyntax.OpenParenToken.get -> AspectN.Syntax.SyntaxToken!
+AspectN.Syntax.ParenthesizedMemberNamePatternSyntax.ParenthesizedMemberNamePatternSyntax(AspectN.Syntax.SyntaxToken! openParenToken, AspectN.Syntax.MemberNamePatternSyntax! pattern, AspectN.Syntax.SyntaxToken! closeParenToken) -> void
+AspectN.Syntax.ParenthesizedMemberNamePatternSyntax.Pattern.get -> AspectN.Syntax.MemberNamePatternSyntax!
+AspectN.Syntax.SyntaxKind.BinaryMemberNamePattern = 60 -> AspectN.Syntax.SyntaxKind
+AspectN.Syntax.SyntaxKind.MemberPath = 57 -> AspectN.Syntax.SyntaxKind
+AspectN.Syntax.SyntaxKind.NamedMemberPattern = 58 -> AspectN.Syntax.SyntaxKind
+AspectN.Syntax.SyntaxKind.ParenthesizedMemberNamePattern = 61 -> AspectN.Syntax.SyntaxKind
+AspectN.Syntax.SyntaxKind.UnaryMemberNamePattern = 59 -> AspectN.Syntax.SyntaxKind
+AspectN.Syntax.UnaryMemberNamePatternSyntax
+AspectN.Syntax.UnaryMemberNamePatternSyntax.Operand.get -> AspectN.Syntax.MemberNamePatternSyntax!
+AspectN.Syntax.UnaryMemberNamePatternSyntax.OperatorToken.get -> AspectN.Syntax.SyntaxToken!
+AspectN.Syntax.UnaryMemberNamePatternSyntax.UnaryMemberNamePatternSyntax(AspectN.Syntax.SyntaxToken! operatorToken, AspectN.Syntax.MemberNamePatternSyntax! operand) -> void

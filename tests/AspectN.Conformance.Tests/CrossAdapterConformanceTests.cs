@@ -104,6 +104,67 @@ public sealed class CrossAdapterConformanceTests :
         Assert.NotEmpty(reflectionResult.Diagnostics);
     }
 
+    [Theory]
+    [InlineData("op_Fake")]
+    [InlineData("op_Addition")]
+    [InlineData("op_Implicit")]
+    [InlineData("op_Unexpected")]
+    [InlineData("op_Subtraction")]
+    public void OrdinaryMethod_WithOperatorLikeName_RemainsInMethodDomain(string name)
+    {
+        AssertCallableCase(new ConformanceCase
+        {
+            Member = name,
+            ParameterCount = 0,
+            Expression = $"method(int {name}())",
+            Expected = nameof(MatchStatus.Matched)
+        });
+    }
+
+    [Theory]
+    [InlineData("op_AdditionAssignment", 1)]
+    [InlineData("op_IncrementAssignment", 0)]
+    public void OrdinaryInstanceMethod_WithAssignmentOperatorName_RemainsInMethodDomain(string name, int parameterCount)
+    {
+        AssertCallableCase(new ConformanceCase
+        {
+            Member = name,
+            ParameterCount = parameterCount,
+            Expression = $"method(void {name}(..))",
+            Expected = nameof(MatchStatus.Matched)
+        });
+    }
+
+    [Fact]
+    public void OrdinaryGenericMethod_WithSpecialOperatorName_RemainsInMethodDomain()
+    {
+        AssertCallableCase(new ConformanceCase
+        {
+            Member = "op_CheckedAddition",
+            ParameterCount = 2,
+            Expression = "method(int op_CheckedAddition<>(..))",
+            Expected = nameof(MatchStatus.Matched)
+        });
+    }
+
+    [Theory]
+    [InlineData("method(* (ConformanceFixture || Other).(Read || Flush)(..))", "Read", "Matched")]
+    [InlineData("method(* !ConformanceFixture.Read(..))", "Read", "NotMatched")]
+    [InlineData("getter(* !Name)", "get_Label", "Matched")]
+    [InlineData("getter(* !*)", "get_Label", "NotMatched")]
+    [InlineData("property(* (ConformanceFixture || Other).(Name || Label))", "get_Name", "Matched")]
+    [InlineData("property(* ConformanceFixture.(Name && !Label))", "get_Name", "Matched")]
+    public void MemberPath_ThreeBackends_ProduceEquivalentResults(string expression, string member, string expected)
+    {
+        AssertCallableCase(new ConformanceCase
+        {
+            Member = member,
+            ParameterCount = 0,
+            Expression = expression,
+            Expected = expected
+        });
+    }
+
     private static TypeSignature TryMapMissingReflectionParameter(
         UnresolvedFixture fixture,
         TypeSignature fallback)

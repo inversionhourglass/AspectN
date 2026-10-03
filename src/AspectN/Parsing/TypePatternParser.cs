@@ -69,6 +69,14 @@ internal sealed class TypePatternParser
         if (unaryPrecedence != 0 && unaryPrecedence >= parentPrecedence)
         {
             var operatorToken = NextToken();
+            if (Current.Kind == SyntaxKind.BangToken)
+            {
+                _diagnostics.Add(
+                    DiagnosticCodes.UnexpectedToken,
+                    DiagnosticSeverity.Error,
+                    "Consecutive '!' operators are not allowed; remove the extra negation.",
+                    Current.Span);
+            }
             left = new UnaryTypePatternSyntax(
                 operatorToken,
                 ParseTypeExpression(unaryPrecedence));
@@ -251,7 +259,7 @@ internal sealed class TypePatternParser
         var lessThan = NextToken();
 
         // <!>：显式零泛型。
-        if (Current.Kind == SyntaxKind.BangToken)
+        if (Current.Kind == SyntaxKind.BangToken && PeekNextToken().Kind == SyntaxKind.GreaterThanToken)
         {
             var bang = NextToken();
             return new GenericPatternListSyntax(
@@ -348,6 +356,10 @@ internal sealed class TypePatternParser
             return new TaskLikeTypePatternSyntax(keyword, null, null, null);
         }
 
+        if (Current.Span.Start != keyword.Span.End)
+        {
+            ReportUnexpected(Current, "'<' (must be adjacent to 'tasklike')");
+        }
         var lessThan = NextToken();
         TypePatternSyntax resultType;
         if (Current.Kind == SyntaxKind.GreaterThanToken)
@@ -476,6 +488,13 @@ internal sealed class TypePatternParser
     {
         return new WildcardTypePatternSyntax(
             SyntaxToken.Missing(SyntaxKind.StarToken, position));
+    }
+
+    private SyntaxToken PeekNextToken()
+    {
+        var lexer = new Lexer(_source);
+        lexer.Reset(Current.Span.End);
+        return lexer.Lex();
     }
 
     private static int GetUnaryPrecedence(SyntaxKind kind)

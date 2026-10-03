@@ -95,12 +95,41 @@ internal abstract class BoundSelectorPayload(TextSpan span) : BoundNode(span)
 
 internal sealed class BoundMemberPattern(
     BoundTypePattern? declaringType,
-    string namePattern)
+    BoundMemberNamePattern name,
+    bool isNegated)
 {
     public BoundTypePattern? DeclaringType { get; } = declaringType;
 
-    public string NamePattern { get; } = namePattern ??
-            throw new ArgumentNullException(nameof(namePattern));
+    public BoundMemberNamePattern Name { get; } = name;
+
+    public bool IsNegated { get; } = isNegated;
+}
+
+internal abstract class BoundMemberNamePattern(TextSpan span) : BoundNode(span);
+
+internal sealed class BoundNamedMemberPattern(TextSpan span, string namePattern, BoundGenericPattern? generic) : BoundMemberNamePattern(span)
+{
+    public string NamePattern { get; } = namePattern;
+
+    public BoundGenericPattern? Generic { get; } = generic;
+}
+
+internal sealed class BoundUnaryMemberNamePattern(TextSpan span, BoundMemberNamePattern operand) : BoundMemberNamePattern(span)
+{
+    public BoundMemberNamePattern Operand { get; } = operand;
+}
+
+internal sealed class BoundBinaryMemberNamePattern(
+    TextSpan span,
+    BoundMemberNamePattern left,
+    BoundLogicalOperator @operator,
+    BoundMemberNamePattern right) : BoundMemberNamePattern(span)
+{
+    public BoundMemberNamePattern Left { get; } = left;
+
+    public BoundLogicalOperator Operator { get; } = @operator;
+
+    public BoundMemberNamePattern Right { get; } = right;
 }
 
 internal sealed class BoundMethodSignature(
@@ -108,7 +137,6 @@ internal sealed class BoundMethodSignature(
     IEnumerable<BoundModifier> modifiers,
     BoundTypeUsePattern returnType,
     BoundMemberPattern member,
-    BoundGenericPattern? generic,
     IEnumerable<BoundTypeUsePattern> parameters,
     bool matchesAnyParameters) : BoundSelectorPayload(span)
 {
@@ -122,8 +150,6 @@ internal sealed class BoundMethodSignature(
             throw new ArgumentNullException(nameof(returnType));
 
     public BoundMemberPattern Member { get; } = member ?? throw new ArgumentNullException(nameof(member));
-
-    public BoundGenericPattern? Generic { get; } = generic;
 
     public IReadOnlyList<BoundTypeUsePattern> Parameters => _parameters;
 

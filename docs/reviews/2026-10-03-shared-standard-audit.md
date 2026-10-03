@@ -318,7 +318,11 @@ dotnet run --project artifacts/shared-standard-audit-20261003/Audit.csproj -c Re
 
 它只链接固定 Shared 的源码读取，读取本仓库 Release 产物和历史构建，并在 artifacts 内写候选及结果。不会注册到 CI 或使正式 build/test/format 依赖 Shared/oracle。完整生产验证对应 `1fc3b44`：Release build 0 warnings/errors、837 tests 全通过、format --verify-no-changes 通过、五包验证与本地消费者检查通过；1,121→837 的减少来自 Legacy/oracle 用例退役。
 
-## 9. 需要用户确认的结果
+## 9. 审计时需要用户确认的结果（已完成裁决）
+
+以下为固定版本审计时的待确认清单。用户已逐项裁决，后续实现和当前行为见
+[Shared 与 Standard 差异裁决](2026-10-03-shared-standard-decisions.md)。
+原文与证据保留历史观察，不代表修复后的当前行为。
 
 - N01 有真实能力被丢失：是否明确退役内部名称/声明路径否定，改用外层 Boolean 组合。
 - N02：是否明确限制签名声明路径结构，并收敛当前过宽的 EBNF。

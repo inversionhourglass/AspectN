@@ -56,6 +56,11 @@ grammar and matching semantics. Language selection and the Legacy compatibility
 layer have been removed. Migrating from Shared.Cecil.AspectN is a breaking
 change that requires reviewing expressions and their intended match ranges.
 
+Member paths support negation and Boolean combinations, such as
+`method(* (A || B).(Run || Stop)(..))`. Generic clauses on property names or
+namespace segments, consecutive `!` tokens and whitespace before the
+`tasklike<int>` result clause are diagnosed.
+
 See the [language guide](docs/language/README.md), the
 [normative language specification](docs/superpowers/specs/2026-07-31-aspectn-language-spec.md),
 and the [Shared.Cecil.AspectN migration guide](docs/migration/shared-cecil-to-aspectn.md).

@@ -49,8 +49,7 @@ internal sealed partial class Parser
     // 从当前 token 起点做只读前瞻：用独立 Lexer 重扫，不消耗主词法流。
     internal IReadOnlyList<SyntaxToken> PeekSelectorTokens(int count)
     {
-        var lexer = new Lexer(_source);
-        lexer.Reset(Current.Span.Start);
+        var lexer = CreateLookaheadLexer();
         var tokens = new List<SyntaxToken>(count);
         for (var index = 0; index < count; index++)
         {
@@ -58,5 +57,12 @@ internal sealed partial class Parser
         }
 
         return tokens;
+    }
+
+    internal Lexer CreateLookaheadLexer()
+    {
+        var lexer = new Lexer(_source);
+        lexer.Reset(Current.Span.Start);
+        return lexer;
     }
 }

@@ -3,7 +3,7 @@ using AspectN.Syntax;
 
 namespace AspectN.Parsing;
 
-internal sealed class SelectorParser(Parser parser)
+internal sealed partial class SelectorParser(Parser parser)
 {
     private readonly Parser _parser = parser;
 
@@ -287,7 +287,7 @@ internal sealed class SelectorParser(Parser parser)
         }
 
         parts.Add(ParseTypeUse());
-        parts.AddRange(ParseMemberPath());
+        parts.Add(ParseMemberPath());
         parts.AddRange(ParseParameterPatternList());
         return new MethodSignatureSyntax(parts);
     }
@@ -297,7 +297,7 @@ internal sealed class SelectorParser(Parser parser)
         var parts = new List<SyntaxNode>();
         parts.AddRange(ParseModifiers());
         parts.Add(ParseTypeUse());
-        parts.AddRange(ParseMemberPath());
+        parts.Add(ParseMemberPath());
         return new PropertySignatureSyntax(parts);
     }
 
@@ -576,20 +576,21 @@ internal sealed class SelectorParser(Parser parser)
     }
 
     // 使用优先级爬升解析类型表达式，以保持一元、二元和后缀构造的结合顺序。
-    private TypePatternSyntax ParseTypePattern(int parentPrecedence = 0)
+    private TypePatternSyntax ParseTypePattern(int parentPrecedence = 0, bool taskLikeIsName = false)
     {
         TypePatternSyntax left;
         var unaryPrecedence = GetUnaryPrecedence(Current.Kind);
         if (unaryPrecedence != 0 && unaryPrecedence >= parentPrecedence)
         {
             var operatorToken = NextToken();
+            _parser.ReportConsecutiveNegation();
             left = new UnaryTypePatternSyntax(
                 operatorToken,
-                ParseTypePattern(unaryPrecedence));
+                ParseTypePattern(unaryPrecedence, taskLikeIsName));
         }
         else
         {
-            left = ParseTypePrimaryWithSuffixes();
+            left = ParseTypePrimaryWithSuffixes(taskLikeIsName);
         }
 
         while (true)
@@ -598,16 +599,16 @@ internal sealed class SelectorParser(Parser parser)
             if (precedence == 0 || precedence <= parentPrecedence) break;
 
             var operatorToken = NextToken();
-            var right = ParseTypePattern(precedence);
+            var right = ParseTypePattern(precedence, taskLikeIsName);
             left = new BinaryTypePatternSyntax(left, operatorToken, right);
         }
 
         return left;
     }
 
-    private TypePatternSyntax ParseTypePrimaryWithSuffixes()
+    private TypePatternSyntax ParseTypePrimaryWithSuffixes(bool taskLikeIsName)
     {
-        var pattern = ParseTypeAtom();
+        var pattern = ParseTypeAtom(taskLikeIsName);
         while (true)
         {
             switch (Current.Kind)
@@ -644,13 +645,14 @@ internal sealed class SelectorParser(Parser parser)
         }
     }
 
-    private TypePatternSyntax ParseTypeAtom()
+    private TypePatternSyntax ParseTypeAtom(bool taskLikeIsName)
     {
         if (Current.Kind == SyntaxKind.StarToken)
         {
             var star = NextToken();
             // 名字延续（标识符、泛型子句、分隔符）必须与 * 相邻；跨空格即槽位边界（§3.4）。
             if (Current.Span.Start == star.Span.End &&
+                Current.Span.Start != _memberSeparatorStart &&
                 (TypePatternSyntaxFacts.IsNamePart(Current) ||
                  Current.Kind is
                      SyntaxKind.LessThanToken or
@@ -674,7 +676,7 @@ internal sealed class SelectorParser(Parser parser)
 
         if (Current.Kind == SyntaxKind.OpenParenToken)
         {
-            return ParseParenthesizedOrTupleType();
+            return ParseParenthesizedOrTupleType(taskLikeIsName);
         }
 
         if (!TypePatternSyntaxFacts.IsNamePart(Current))
@@ -686,13 +688,17 @@ internal sealed class SelectorParser(Parser parser)
         }
 
         var first = NextToken();
-        if (first.Text == "tasklike")
+        if (first.Text == "tasklike" && !taskLikeIsName)
         {
             if (Current.Kind != SyntaxKind.LessThanToken)
             {
                 return new TaskLikeTypePatternSyntax(first, null, null, null);
             }
 
+            if (Current.Span.Start != first.Span.End)
+            {
+                ReportUnexpected(Current, "'<' (must be adjacent to 'tasklike')");
+            }
             var lessThan = NextToken();
             var result = ParseTypePattern();
             return new TaskLikeTypePatternSyntax(
@@ -724,6 +730,8 @@ internal sealed class SelectorParser(Parser parser)
                 break;
             }
 
+            if (Current.Span.Start == _memberSeparatorStart) break;
+
             var separator = NextToken();
             separators.Add(separator);
             if (TypePatternSyntaxFacts.IsNamePart(Current) &&
@@ -732,7 +740,9 @@ internal sealed class SelectorParser(Parser parser)
                 // 分隔符后的名字也必须相邻；诊断后继续恢复解析，保持段/分隔符计数成对。
                 ReportUnexpected(
                     Current,
-                    "name pattern (must follow the separator without whitespace)");
+                    _memberSeparatorStart is null
+                        ? "name pattern (must follow the separator without whitespace)"
+                        : "member path separator (names must follow without whitespace)");
             }
 
             segments.Add(ParseNameSegment());
@@ -778,7 +788,8 @@ internal sealed class SelectorParser(Parser parser)
         var lessThan = NextToken();
 
         // <!>：显式零泛型。
-        if (Current.Kind == SyntaxKind.BangToken)
+        if (Current.Kind == SyntaxKind.BangToken &&
+            _parser.PeekSelectorTokens(2)[1].Kind == SyntaxKind.GreaterThanToken)
         {
             var bang = NextToken();
             return new GenericPatternListSyntax(
@@ -868,10 +879,10 @@ internal sealed class SelectorParser(Parser parser)
             MatchToken(SyntaxKind.GreaterThanToken));
     }
 
-    private TypePatternSyntax ParseParenthesizedOrTupleType()
+    private TypePatternSyntax ParseParenthesizedOrTupleType(bool taskLikeIsName)
     {
         var openParen = NextToken();
-        var first = ParseTypePattern();
+        var first = ParseTypePattern(taskLikeIsName: taskLikeIsName);
         if (Current.Kind != SyntaxKind.CommaToken)
         {
             // 括号类型只保留 Boolean 分组含义；单元素括号按缺元素诊断。
@@ -891,7 +902,7 @@ internal sealed class SelectorParser(Parser parser)
         while (Current.Kind == SyntaxKind.CommaToken)
         {
             separators.Add(NextToken());
-            elements.Add(ParseTypePattern());
+            elements.Add(ParseTypePattern(taskLikeIsName: taskLikeIsName));
         }
 
         return new TupleTypePatternSyntax(
@@ -915,126 +926,6 @@ internal sealed class SelectorParser(Parser parser)
             openBracket,
             commas,
             MatchToken(SyntaxKind.CloseBracketToken));
-    }
-
-    private List<SyntaxNode> ParseMemberPath()
-    {
-        var parts = new List<SyntaxNode>();
-        var hasName = false;
-        var hasGeneric = false;
-        while (TypePatternSyntaxFacts.IsNamePart(Current) || Current.Kind is
-               SyntaxKind.DotToken or
-               SyntaxKind.DotDotToken or
-               SyntaxKind.SlashToken or
-               SyntaxKind.LessThanToken or
-               SyntaxKind.PlusToken)
-        {
-            if (Current.Kind == SyntaxKind.LessThanToken)
-            {
-                if (!hasName || hasGeneric)
-                {
-                    ReportUnexpected(Current, "member name before generic pattern");
-                }
-                else if (Current.Span.Start != parts[parts.Count - 1].FullSpan.End)
-                {
-                    ReportUnexpected(Current, "generic pattern (must be adjacent to the member name)");
-                }
-
-                parts.Add(ParseGenericPatternList());
-                hasGeneric = true;
-                continue;
-            }
-
-            if (Current.Kind is
-                SyntaxKind.DotToken or
-                SyntaxKind.DotDotToken or
-                SyntaxKind.SlashToken)
-            {
-                if (parts.Count == 0)
-                {
-                    // 省略声明类型就是不写（§7）；成员路径必须以名字开头，
-                    // 前导分隔符没有对应语义。
-                    ReportUnexpected(
-                        Current,
-                        "member name (a member path cannot start with a separator)");
-                }
-                else if (Current.Span.Start != parts[parts.Count - 1].FullSpan.End)
-                {
-                    // 分隔符必须与前一部件相邻（§3.4）：跨空格的 '.' 属于槽位边界。
-                    ReportUnexpected(
-                        Current,
-                        "member path separator (must be adjacent)");
-                }
-
-                parts.Add(NextToken());
-                hasName = false;
-                hasGeneric = false;
-                continue;
-            }
-
-            if (Current.Kind == SyntaxKind.PlusToken && !hasName)
-            {
-                ReportUnexpected(Current, "declaring type name before '+'");
-            }
-
-            if (hasGeneric && Current.Kind != SyntaxKind.PlusToken)
-            {
-                // 泛型子句后仅允许 + 后缀（声明类型的可赋值目标）与分隔符（§7、§12.4）。
-                ReportUnexpected(Current, "member path separator");
-            }
-            else if (parts.Count > 0 &&
-                     Current.Span.Start != parts[parts.Count - 1].FullSpan.End)
-            {
-                // 名字（含 + 后缀）必须与前一部件相邻：跨空格的延续属于另一个槽位（§3.4、§7）。
-                ReportUnexpected(Current, "member path separator");
-            }
-
-            parts.Add(NextToken());
-            hasName = true;
-        }
-
-        if (parts.Count == 0)
-        {
-            ReportUnexpected(Current, "member path");
-        }
-        else if (parts[parts.Count - 1] is SyntaxToken
-        {
-            Kind: SyntaxKind.DotToken or
-                    SyntaxKind.DotDotToken or
-                    SyntaxKind.SlashToken
-        })
-        {
-            // 分隔符后缺少名称会绑定出永不匹配的空成员名。
-            ReportUnexpected(Current, "member name");
-        }
-        else
-        {
-            // Standard 的名称模型要求 .. 只出现在命名空间中间：紧邻成员名的分隔符
-            // 若是 ..，声明类型就缺了类型名段（少一段，如 *..M、System..*）。
-            for (var index = parts.Count - 1; index >= 0; index--)
-            {
-                if (parts[index] is not SyntaxToken
-                    {
-                        Kind: SyntaxKind.DotToken or
-                              SyntaxKind.DotDotToken or
-                              SyntaxKind.SlashToken
-                    } separator)
-                {
-                    continue;
-                }
-
-                if (separator.Kind == SyntaxKind.DotDotToken)
-                {
-                    ReportUnexpected(
-                        separator,
-                        "'.' (a member name must be joined to its declaring type with '.')");
-                }
-
-                break;
-            }
-        }
-
-        return parts;
     }
 
     private List<SyntaxNode> ParseParameterPatternList()

@@ -110,6 +110,13 @@ results to Shared.Cecil.AspectN.
 | Default by-value-only parameter intention | Add `!ref`; unannotated types match every ref kind |
 | Attribute long target names | `call`, `prop`, `para`, `ret` (AN4005); both `para[0]` / `para 0` and `para[*]` / `para *` remain accepted |
 | `tasklike<void>` | Bare `tasklike` (AN4004) |
+| Path prefix `!Run` | Supported; it negates name plus its generic clause, so use `!Run<?>` to exclude every arity |
+| Boolean declaring/member paths | Use `(A || B).(Run || Stop)`; each position has ordinary Boolean semantics |
+| Array/nullable declaring patterns | `int[,].Get` and `int?.GetValueOrDefault` use structural type matching |
+| Consecutive `!!` or `! !` | Remove the redundant negation; AN1001 points to the second `!` |
+| Property name `Value<>` | Remove the clause; property names cannot be generic (AN2011) |
+| Namespace `Ns<int>.Owner` | Remove the namespace clause, or use `Ns.Outer<int>/Inner` for a nested type (AN2011) |
+| `tasklike <int>` | Join the clause to the keyword: `tasklike<int>` |
 
 `execution` includes constructors, `callable` excludes them, and `method`
 selects ordinary methods. `attr(exec ...)` checks the current method plus its
@@ -120,6 +127,18 @@ generic parameters and nested types unless a nesting path is written.
 Review regex expressions against the current canonical signature: ref prefixes,
 spaced compound permissions, comma-space separators, `/` nesting and positional
 generic names. The compiler async flag is omitted.
+
+With structured declaring-type patterns, `*.Run` includes array and nested
+declaring types. Write `*<?>.Run` to retain a non-nested named-type constraint.
+Generic clauses within member-name Boolean branches retain their constraints;
+variables first introduced in `||` branches cannot escape, and negation cannot
+introduce a new variable. Shared's historical Boolean path splitting and
+negated-wildcard exceptions are not reproduced.
+
+The [Shared/Standard audit](../reviews/2026-10-03-shared-standard-audit.md)
+retains its fixed-version evidence. The
+[confirmed follow-up decisions](../reviews/2026-10-03-shared-standard-decisions.md)
+record which differences were retained and which were fixed after review.
 
 ## Important differences
 

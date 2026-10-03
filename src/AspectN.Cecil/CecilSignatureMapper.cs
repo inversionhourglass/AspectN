@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using AspectN.AdapterInternals;
 using AspectN.Cecil.Internal;
 using AspectN.Metadata;
 using Mono.Cecil;
@@ -371,15 +372,10 @@ public sealed class CecilSignatureMapper
     {
         if (method.Name == ".ctor") return MethodKind.InstanceConstructor;
         if (method.Name == ".cctor") return MethodKind.StaticConstructor;
-        if (method.Name is "op_Implicit" or "op_Explicit")
-        {
-            return MethodKind.Conversion;
-        }
-
-        if (method.Name.StartsWith("op_", StringComparison.Ordinal))
-        {
-            return MethodKind.Operator;
-        }
+        var operatorKind = OperatorMetadata.Classify(method.Name, HasOperatorMetadata(definition),
+            definition?.IsStatic == true,
+            method.Parameters.Count, method.ReturnType.FullName == "System.Void");
+        if (operatorKind != MethodKind.OrdinaryMethod) return operatorKind;
 
         var semantics = definition?.SemanticsAttributes ??
             MethodSemanticsAttributes.None;
@@ -409,6 +405,16 @@ public sealed class CecilSignatureMapper
         }
 
         return MethodKind.OrdinaryMethod;
+    }
+
+    private static bool HasOperatorMetadata(MethodDefinition? method)
+    {
+        return method is { IsSpecialName: true, IsRuntimeSpecialName: false, IsPublic: true, HasGenericParameters: false } &&
+            (method.CallingConvention & MethodCallingConvention.VarArg) != MethodCallingConvention.VarArg &&
+            method.Parameters.All(parameter =>
+                CecilRefKindDetector.ForParameter(parameter) is RefKind.None or RefKind.In &&
+                !parameter.CustomAttributes.Any(attribute => attribute.AttributeType.FullName is
+                    "System.ParamArrayAttribute" or "System.Runtime.CompilerServices.ParamCollectionAttribute"));
     }
 
     private static PropertyDefinition? FindAssociatedProperty(

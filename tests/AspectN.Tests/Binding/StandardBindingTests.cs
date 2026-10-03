@@ -94,8 +94,9 @@ public sealed class StandardBindingTests
     public void Create_MethodGenericClause_BindsExpectedArity(string source, string kind)
     {
         var signature = Assert.IsType<BoundMethodSignature>(Assert.IsType<BoundSelector>(CompileMember(source).BoundRoot).Payload);
-        Assert.Equal(kind, signature.Generic!.Kind.ToString());
-        Assert.Equal(0, signature.Generic.Arity);
+        var generic = Assert.IsType<BoundNamedMemberPattern>(signature.Member.Name).Generic!;
+        Assert.Equal(kind, generic.Kind.ToString());
+        Assert.Equal(0, generic.Arity);
     }
 
     [Fact]

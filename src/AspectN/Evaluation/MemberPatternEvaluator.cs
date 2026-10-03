@@ -135,18 +135,9 @@ internal static class MemberPatternEvaluator
             pattern.Member,
             candidate.DeclaringType,
             candidate.Name,
+            candidate,
             context);
         if (memberStatus == MatchStatus.NotMatched)
-        {
-            return MatchStatus.NotMatched;
-        }
-
-        var genericStatus = EvaluateGeneric(
-            pattern.Generic,
-            candidate,
-            pattern,
-            context);
-        if (genericStatus == MatchStatus.NotMatched)
         {
             return MatchStatus.NotMatched;
         }
@@ -168,7 +159,7 @@ internal static class MemberPatternEvaluator
             candidate.Parameters,
             context);
         return MatchLogic.And(
-            MatchLogic.And(memberStatus, genericStatus),
+            memberStatus,
             MatchLogic.And(returnStatus, parameterStatus));
     }
 
@@ -204,6 +195,7 @@ internal static class MemberPatternEvaluator
             pattern.Member,
             property.DeclaringType,
             property.Name,
+            null,
             context);
         var typeStatus = TypePatternEvaluator.Evaluate(
             pattern.PropertyType.TypePattern,
@@ -327,22 +319,66 @@ internal static class MemberPatternEvaluator
         BoundMemberPattern pattern,
         TypeSignature declaringType,
         string memberName,
+        MethodSignature? candidate,
         EvaluationContext context)
     {
-        if (!NamePatternMatcher.IsMatch(pattern.NamePattern, memberName))
-        {
-            return MatchStatus.NotMatched;
-        }
+        if (!pattern.IsNegated) return EvaluateMemberCore(pattern, declaringType, memberName, candidate, context);
+        var branch = context.Fork();
+        var status = EvaluateMemberCore(pattern, declaringType, memberName, candidate, branch);
+        context.MergeDiagnosticsFrom(branch);
+        return MatchLogic.Not(status);
+    }
 
-        if (pattern.DeclaringType is null)
-        {
-            return MatchStatus.Matched;
-        }
+    private static MatchStatus EvaluateMemberCore(
+        BoundMemberPattern pattern,
+        TypeSignature declaringType,
+        string memberName,
+        MethodSignature? candidate,
+        EvaluationContext context)
+    {
+        var declaringStatus = pattern.DeclaringType is null
+            ? MatchStatus.Matched
+            : TypePatternEvaluator.Evaluate(pattern.DeclaringType, declaringType, context);
+        if (declaringStatus == MatchStatus.NotMatched) return declaringStatus;
+        return MatchLogic.And(declaringStatus, EvaluateMemberName(pattern.Name, memberName, candidate, context));
+    }
 
-        return TypePatternEvaluator.Evaluate(
-            pattern.DeclaringType,
-            declaringType,
-            context);
+    private static MatchStatus EvaluateMemberName(
+        BoundMemberNamePattern pattern,
+        string memberName,
+        MethodSignature? candidate,
+        EvaluationContext context)
+    {
+        context.CancellationToken.ThrowIfCancellationRequested();
+        switch (pattern)
+        {
+            case BoundNamedMemberPattern named:
+                if (!NamePatternMatcher.IsMatch(named.NamePattern, memberName)) return MatchStatus.NotMatched;
+                return candidate is null ? MatchStatus.Matched : EvaluateGeneric(named.Generic, candidate, named, context);
+            case BoundUnaryMemberNamePattern unary:
+                var branch = context.Fork();
+                var status = EvaluateMemberName(unary.Operand, memberName, candidate, branch);
+                context.MergeDiagnosticsFrom(branch);
+                return MatchLogic.Not(status);
+            case BoundBinaryMemberNamePattern binary when binary.Operator == BoundLogicalOperator.And:
+                return MatchLogic.And(
+                    EvaluateMemberName(binary.Left, memberName, candidate, context),
+                    EvaluateMemberName(binary.Right, memberName, candidate, context));
+            case BoundBinaryMemberNamePattern binary:
+                var leftContext = context.Fork();
+                var rightContext = context.Fork();
+                var left = EvaluateMemberName(binary.Left, memberName, candidate, leftContext);
+                var right = EvaluateMemberName(binary.Right, memberName, candidate, rightContext);
+                context.MergeDiagnosticsFrom(leftContext);
+                context.MergeDiagnosticsFrom(rightContext);
+                var matchedBranches = new List<EvaluationContext>();
+                if (left == MatchStatus.Matched) matchedBranches.Add(leftContext);
+                if (right == MatchStatus.Matched) matchedBranches.Add(rightContext);
+                if (matchedBranches.Count > 0) context.ReplaceBindingsWithAlternativesFrom(matchedBranches);
+                return MatchLogic.Or(left, right);
+            default:
+                return Unknown(pattern, context, "This member-name node cannot be evaluated.");
+        }
     }
 
     private static MatchStatus EvaluateExtension(

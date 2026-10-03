@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using AspectN.AdapterInternals;
 using AspectN.Metadata;
 using AspectN.Reflection.Internal;
 
@@ -431,15 +432,9 @@ public sealed class ReflectionSignatureMapper
                 : MethodKind.InstanceConstructor;
         }
 
-        if (method.Name is "op_Implicit" or "op_Explicit")
-        {
-            return MethodKind.Conversion;
-        }
-
-        if (method.Name.StartsWith("op_", StringComparison.Ordinal))
-        {
-            return MethodKind.Operator;
-        }
+        var operatorKind = OperatorMetadata.Classify(method.Name, HasOperatorMetadata(method), method.IsStatic,
+            method.GetParameters().Length, method is MethodInfo { ReturnType: var returnType } && returnType == typeof(void));
+        if (operatorKind != MethodKind.OrdinaryMethod) return operatorKind;
 
         if (associatedProperty is not null)
         {
@@ -474,6 +469,17 @@ public sealed class ReflectionSignatureMapper
         }
 
         return MethodKind.OrdinaryMethod;
+    }
+
+    private static bool HasOperatorMetadata(MethodBase method)
+    {
+        return method.IsSpecialName && method.IsPublic && !method.IsGenericMethod &&
+            (method.Attributes & MethodAttributes.RTSpecialName) == 0 &&
+            (method.CallingConvention & CallingConventions.VarArgs) == 0 &&
+            method.GetParameters().All(parameter =>
+                GetParameterRefKind(parameter) is RefKind.None or RefKind.In &&
+                !HasAttribute(parameter, "System.ParamArrayAttribute") &&
+                !HasAttribute(parameter, "System.Runtime.CompilerServices.ParamCollectionAttribute"));
     }
 
     private static PropertyInfo? FindAssociatedProperty(MethodBase method)

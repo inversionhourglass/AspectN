@@ -1,4 +1,5 @@
 using System.Reflection.Metadata;
+using AspectN.AdapterInternals;
 using AspectN.Metadata;
 using Microsoft.CodeAnalysis;
 using CoreAccessibility = AspectN.Metadata.Accessibility;
@@ -185,7 +186,7 @@ public sealed class RoslynSignatureMapper
 
         return new MethodSignature(
             methodSymbol.Name,
-            MapMethodKind(methodSymbol.MethodKind),
+            MapMethodKind(methodSymbol),
             MapAccessibility(methodSymbol.DeclaredAccessibility),
             methodSymbol.IsStatic,
             methodSymbol.IsAsync,
@@ -391,9 +392,25 @@ public sealed class RoslynSignatureMapper
         };
     }
 
-    private static CoreMethodKind MapMethodKind(RoslynMethodKind methodKind)
+    private static CoreMethodKind MapMethodKind(IMethodSymbol method)
     {
-        return methodKind switch
+        // 旧版 Roslyn 将实例运算符导入为普通方法；仅按编译器标记和明确的元数据形状补齐。
+        if (method.MethodKind == RoslynMethodKind.Ordinary &&
+            !method.IsStatic && method.ReturnsVoid && !method.IsGenericMethod && !method.IsVararg &&
+            method.DeclaredAccessibility == Microsoft.CodeAnalysis.Accessibility.Public &&
+            method.Parameters.All(parameter => !parameter.IsParams &&
+                parameter.RefKind is Microsoft.CodeAnalysis.RefKind.None or Microsoft.CodeAnalysis.RefKind.In) &&
+            method.Locations.Any(location => location.IsInMetadata) &&
+            OperatorMetadata.Classify(method.MetadataName, true, false, method.Parameters.Length, true) == CoreMethodKind.Operator &&
+            method.GetAttributes().Any(attribute =>
+                attribute.AttributeClass?.ToDisplayString() == "System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute" &&
+                attribute.ConstructorArguments.Length == 1 &&
+                attribute.ConstructorArguments[0].Value is "UserDefinedCompoundAssignmentOperators"))
+        {
+            return CoreMethodKind.Operator;
+        }
+
+        return method.MethodKind switch
         {
             RoslynMethodKind.Constructor => CoreMethodKind.InstanceConstructor,
             RoslynMethodKind.StaticConstructor => CoreMethodKind.StaticConstructor,

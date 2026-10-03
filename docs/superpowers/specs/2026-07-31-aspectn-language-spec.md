@@ -44,6 +44,8 @@ Whitespace may separate tokens unless it participates in a Standard composite ph
 
 Within a name, the separators `.`/`..`/`/`, the generic opening `<`, and the assignability suffix `+` continue the name only when adjacent to it; whitespace ends the name and separates the surrounding slots. The array suffix `[` and the nullable suffix `?` must also be adjacent to the type pattern; whitespace inside a `<...>` generic pattern list and inside array rank brackets (`int[ , ]`) is free.
 
+The result-clause opening `<` must also touch `tasklike`: `tasklike<int>` is valid, while `tasklike <int>` is an error. A member separator `.` must touch both its declaring type pattern and its member-name pattern, including their grouping parentheses.
+
 Comments are not part of AspectN 1.0 expression syntax.
 
 ### 3.3 Core punctuation
@@ -88,7 +90,7 @@ The common expression grammar is:
 expression          = or-expression ;
 or-expression       = and-expression, { "||", and-expression } ;
 and-expression      = unary-expression, { "&&", unary-expression } ;
-unary-expression    = "!", unary-expression | primary-expression ;
+unary-expression    = [ "!" ], primary-expression ;
 primary-expression  = selector | "(", expression, ")" ;
 ```
 
@@ -99,6 +101,8 @@ Precedence from highest to lowest:
 3. `||`
 
 Operators of the same precedence associate left to right. Parentheses override precedence.
+
+Consecutive unary negations, including whitespace-separated `! !`, are errors (AN1001 at the second `!`). This applies to member expressions, type patterns and member-name patterns. Explicitly grouped negation such as `!(!int)` remains valid. Negating a full wildcard always yields the empty match set; there is no wildcard exception to Boolean complement.
 
 ## 5. Three-state Boolean Logic
 
@@ -198,12 +202,20 @@ callable-signature =
     { modifier },
     type-use-pattern,
     member-path-pattern,
-    [ generic-pattern-list ],
     parameter-pattern-list ;
 
 member-path-pattern =
-    [ type-pattern, "." ],
-    name-pattern ;
+    [ "!" ],
+    [ declaring-type-pattern, "." ],
+    member-name-pattern ;
+
+declaring-type-pattern = type-pattern ;
+member-name-pattern = member-name-and, { "||", member-name-and } ;
+member-name-and = member-name-unary, { "&&", member-name-unary } ;
+member-name-unary = [ "!" ], member-name-primary ;
+member-name-primary =
+      name-pattern, [ generic-pattern-list ]
+    | "(", member-name-pattern, ")" ;
 
 type-use-pattern =
     [ return-ref-kind ],
@@ -214,11 +226,17 @@ return-ref-kind =
     | "ref", "readonly" ;
 ```
 
-A member path starts with a name pattern. The declaring type is omitted by writing nothing — `method(* Get(..))` matches members named `Get` on any declaring type; there is no leading-separator spelling. Separators (`.`, `..`, `/`) continue a member path only when adjacent to the names on both sides (§3.2).
+A member path has an optional prefix negation, an optional declaring type pattern and a Boolean member-name pattern. The declaring type is omitted by writing nothing — `method(* Get(..))` matches members named `Get` on any declaring type; there is no leading-separator spelling. Separators (`.`, `..`, `/`) must remain adjacent (§3.2).
+
+Group Boolean declaring types before the member separator: `(A || B).Run`. Names can be grouped independently: `A.(Run || Stop)`, or combined as `(A || B).(Run && !Stop)`. Arrays and nullable types use the same structural matching rules as other type positions: `int[,].Get`, `int?.GetValueOrDefault`. Name atoms are literal metadata names with wildcard characters and optional method generic clauses, not type aliases or structural type patterns.
+
+A prefix `!` negates the entire conjunction of declaring type, member name and that name's generic clause. It does not negate modifiers, return/property type, parameters or the selector domain. Thus `!Run` complements zero-arity `Run`; `!Run<?>` complements `Run` at every arity. To negate only the name, write `A.!Run`; to negate only the declaring type, write `(!A).Run`. `!*(..)` matches no members. Negation isolates tentative variable bindings, and Boolean branches use the scope rules in §13.
+
+`tasklike` remains a literal name in declaring-type name positions, including `tasklike<int>+.Get`. In return/parameter type patterns and generic argument patterns it denotes the Task/ValueTask shape. A qualified literal type name such as `Example.tasklike<int>` is unambiguous in any position.
 
 `..` is a namespace ellipsis: it may only appear between namespace segments, never immediately before the member name. The member name is always joined to its declaring type with `.` — `method(* *..StaticMethod(..))` and `method(* System..*(..))` are errors because the declaring type's type-name segment is missing; write `method(* *..*.StaticMethod(..))`, or omit the declaring type entirely with `method(* StaticMethod(..))`. These replacements have different ranges: a written namespace/type path excludes global or nested types unless explicitly expressed, while an omitted declaring type includes them.
 
-`*` as the whole member path is the single universal abbreviation: it matches any namespace, declaring type, member name, and generic arity. A written-out path is subject to the complete-name rules above, so `*.*` (any declaring type, any member) does not by itself cross nested types — nested declaring types are matched with `/` (for example `*/*.*`) or by omitting the declaring type.
+`*` as the whole member path matches any namespace, declaring type, member name and generic arity. With the structured declaring-type grammar, `*.*` also uses the full type wildcard and includes arrays, generic parameters and nested declaring types. Adding a declaring-type generic clause changes it to a named pattern: `*<?>.*` excludes arrays and generic parameters, and nested types require `/`. Other written names continue to follow the namespace and nesting rules.
 
 Standard has no `async` modifier: writing `async` in a signature is an error. Asynchrony is matched through the return type instead.
 
@@ -239,11 +257,12 @@ The historical `async` return sugar is unsupported. General `MethodSignature.IsA
 property-signature =
     { modifier },
     type-use-pattern,
-    [ type-pattern, "." ],
-    name-pattern ;
+    member-path-pattern ;
 ```
 
 The type position is the property type, not the setter method's CLR return type.
+
+Property names use the same Boolean and path negation syntax as methods. Generic clauses on any property-name atom are errors (AN2011), even `<!>` or a clause inside a Boolean branch; generic clauses on its declaring type remain valid.
 
 `property(...)` evaluates the associated property metadata and then selects both getter and setter methods. The unified model represents the property and its accessors separately.
 
@@ -363,7 +382,7 @@ type-and-pattern =
     type-unary-pattern, { "&&", type-unary-pattern } ;
 
 type-unary-pattern =
-    "!", type-unary-pattern | type-primary-pattern ;
+    [ "!" ], type-primary-pattern ;
 
 type-primary-pattern =
       type-atom-pattern, { type-suffix }
@@ -377,9 +396,12 @@ type-atom-pattern =
     | "*" ;
 
 named-type-pattern =
+    [ namespace-pattern, namespace-separator ],
     type-name-segment,
-    { namespace-separator, type-name-segment },
     { "/", type-name-segment } ;
+
+namespace-pattern =
+    name-pattern, { namespace-separator, name-pattern } ;
 
 type-name-segment =
     name-pattern, [ generic-pattern-list ] ;
@@ -416,6 +438,8 @@ The binder validates suffix ordering and applicability. Each comma in an array r
 - Omitted namespace matches any namespace.
 - `/` separates nested types.
 - Matching is ordinal and case-sensitive in Standard.
+
+Namespace segments never have generic clauses (AN2011 at the clause). `Ns<int>.Owner` is invalid; `Ns.Outer<int>/Inner<string>` is valid. Use `/` for nested types rather than placing a generic type in a namespace segment.
 
 Examples:
 
@@ -529,6 +553,8 @@ generic-slot =
 ```
 
 An empty wildcard list `<>` represents arity one; an all-comma list has arity equal to its comma count plus one; a list with at least one typed argument has arity equal to its slot count, and each empty slot is an any-type argument occupying one position.
+
+The zero-arity form is recognized only when `!` is followed immediately by the closing token (ignoring whitespace inside the clause). `Box<!>` is zero arity; `Box<!int>` is one generic argument with the Boolean pattern `!int`. First and later argument slots have the same type-pattern grammar.
 
 ### 13.2 Pattern variables
 

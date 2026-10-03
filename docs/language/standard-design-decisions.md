@@ -18,8 +18,21 @@ Omitting a namespace allows any namespace, including the global namespace.
 `..` joins namespace segments and permits zero or more intervening segments;
 `*..*` still requires at least one namespace segment. Nested types require `/`.
 The member joins its declaring type with `.`, so `*..M` is incomplete. Omitting
-the declaring type matches global and nested types too; writing `*.*` or
-`*..*.M` narrows that range. This keeps names independent of their position.
+the declaring type matches global and nested types too. Structured declaring
+types now use the full type-pattern grammar: `*.*` includes all type shapes,
+while `*<?>.*` and `*..*.M` remain named paths with explicit nesting rules.
+
+Member paths support prefix negation and independent Boolean combinations:
+`!(A || B).(Run || Stop)` negates the conjunction of declaring type and
+member-name pattern. Each method-name atom retains its own generic clause.
+`!Run` complements zero-arity Run; use `!Run<?>` for every arity. Return types,
+parameters, modifiers and selector domains remain outside path negation.
+Array and nullable declaring patterns such as `int[,].Get` and
+`int?.GetValueOrDefault` follow ordinary type-pattern semantics.
+
+Consecutive `!` tokens, even separated by whitespace, are rejected as likely
+typing mistakes. Explicit parentheses may still group negation. Negation of
+the full wildcard always selects an empty set, including in member paths.
 
 ## Generic arity and variables
 
@@ -39,6 +52,11 @@ Every clause on `void` is invalid (AN2011). `$T` can bind a formal generic
 parameter or a constructed type; repeated occurrences enforce equality.
 Variables introduced under negation are invalid, and variables introduced in
 isolated OR branches cannot escape. Bare `T` never becomes a variable.
+
+Namespace segments and property-name atoms cannot have generic clauses
+(AN2011); declaring types and method names retain them. `<!>` denotes zero
+arity only when `!` is the entire clause. `Box<!int>` uses a negated first
+argument pattern, just like later slots.
 
 ## Wildcard family
 
@@ -99,6 +117,16 @@ Unannotated type uses accept every ref kind. `ref`, `out`, `in` and
 `tasklike` matches non-generic Task/ValueTask; `tasklike<T>` matches the generic
 result shape regardless of the compiler async flag. Historical async return
 sugar is removed. `MethodSignature.IsAsync` remains general backend metadata.
+
+The result clause must be adjacent: `tasklike<int>` is valid and
+`tasklike <int>` is rejected. `tasklike` remains a literal declaring-type
+name; its shape keyword is used in return/parameter and generic-argument
+patterns. Operator/conversion classification validates public special-name
+metadata without runtime-special, method-generic, vararg or params flags;
+parameter ref kinds must be by value or `in`. It then checks recognized
+names, static/instance, return shape and parameter count,
+including C# 14 instance assignment/increment operators. Ordinary `op_`
+methods remain in the `method` domain.
 
 Attribute targets are `type`, `call`, `prop`, `para[n]` / `para n`,
 `para[*]` / `para *`, `ret`, `exec`, `any` and `*`. `exec` checks the current

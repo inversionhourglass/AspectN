@@ -43,6 +43,7 @@ internal sealed partial class Parser
         if (unaryPrecedence != 0 && unaryPrecedence >= parentPrecedence)
         {
             var operatorToken = NextToken();
+            ReportConsecutiveNegation();
             var operand = ParseExpression(unaryPrecedence);
             left = new UnaryExpressionSyntax(operatorToken, operand);
         }
@@ -111,6 +112,16 @@ internal sealed partial class Parser
             DiagnosticSeverity.Error,
             $"Expected {expected}, found {token.Kind}.",
             token.Span);
+    }
+
+    internal void ReportConsecutiveNegation()
+    {
+        if (Current.Kind != SyntaxKind.BangToken) return;
+        _diagnostics.Add(
+            DiagnosticCodes.UnexpectedToken,
+            DiagnosticSeverity.Error,
+            "Consecutive '!' operators are not allowed; remove the extra negation.",
+            Current.Span);
     }
 
     private AspectNDiagnostic[] GetDiagnostics()

@@ -137,6 +137,11 @@ Syntax nodes describe only source structure. Every concrete node name ends in `S
 - Are immutable and thread-safe.
 - Can represent malformed input sufficiently for multiple diagnostics.
 
+Member paths have a dedicated `MemberPathSyntax` node containing optional joint negation,
+a declaring `TypePatternSyntax`, and a `MemberNamePatternSyntax` tree. Each name leaf owns
+its generic clause; Boolean combinations preserve this structure instead of flattening
+tokens or extracting a name from a type branch.
+
 ### 7.3 Parser
 
 The parser is handwritten:
@@ -161,6 +166,11 @@ The binder:
 - Produces immutable bound nodes.
 
 Syntax nodes and bound nodes are separate types. Bound nodes are not exposed as a mutable plugin surface.
+
+The binder validates property-name and namespace generic clauses and scopes variables
+through declaring-type and member-name Boolean branches. Evaluation negates the joint
+declaring type, name, and generic constraints in an isolated binding environment;
+selector domain, modifiers, return type, and parameters remain outside that negation.
 
 ### 7.5 Compiled patterns
 

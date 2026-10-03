@@ -39,13 +39,13 @@ public sealed class BooleanParserTests
     }
 
     [Fact]
-    public void ParseMemberExpression_DoubleNegation_NestsUnaryNodes()
+    public void ParseMemberExpression_DoubleNegation_PreservesRecoveryNodesAndReportsError()
     {
         var tree = AspectNParser.ParseMemberExpression("!!a()");
 
         var outer = Assert.IsType<UnaryExpressionSyntax>(tree.Root);
         var inner = Assert.IsType<UnaryExpressionSyntax>(outer.Operand);
         Assert.IsType<ExtensionSelectorSyntax>(inner.Operand);
-        Assert.Empty(tree.Diagnostics);
+        Assert.Contains(tree.Diagnostics, diagnostic => diagnostic.Code == "AN1001");
     }
 }

@@ -9,7 +9,7 @@ using AspectN.Text;
 
 namespace AspectN.Binding;
 
-internal sealed class Binder(
+internal sealed partial class Binder(
     AspectNSyntaxTree syntaxTree,
     AspectNExtensionRegistry extensions)
 {
@@ -325,16 +325,7 @@ internal sealed class Binder(
     {
         var modifiers = BindModifiers(syntax.Parts.OfType<ModifierSyntax>());
         var returnSyntax = syntax.Parts.OfType<TypeUseSyntax>().First();
-        var member = BindMemberPattern(
-            syntax.Parts,
-            returnSyntax,
-            scope,
-            out var genericSyntax);
-        var generic = BindGenericPattern(
-            genericSyntax,
-            member.NamePattern == "*",
-            scope,
-            IsUnderNegation);
+        var member = BindMemberPattern(syntax.Parts.OfType<MemberPathSyntax>().Single(), scope, false);
         var returnType = BindTypeUse(returnSyntax, scope, true);
         var parameters = syntax.Parts
             .OfType<ParameterSyntax>()
@@ -346,7 +337,6 @@ internal sealed class Binder(
             modifiers,
             returnType,
             member,
-            generic,
             parameters,
             MatchesAnyParameters(syntax.Parts));
     }
@@ -356,11 +346,7 @@ internal sealed class Binder(
         VariableScope scope)
     {
         var typeSyntax = syntax.Parts.OfType<TypeUseSyntax>().First();
-        var member = BindMemberPattern(
-            syntax.Parts,
-            typeSyntax,
-            scope,
-            out _);
+        var member = BindMemberPattern(syntax.Parts.OfType<MemberPathSyntax>().Single(), scope, true);
         return new BoundPropertySignature(
             syntax.FullSpan,
             BindModifiers(syntax.Parts.OfType<ModifierSyntax>()),
@@ -697,14 +683,26 @@ internal sealed class Binder(
         VariableScope scope,
         bool underNegation)
     {
-        var segments = syntax.Segments.Select(segment =>
+        var outerTypeIndex = syntax.Separators.ToList().FindIndex(token => token.Kind == SyntaxKind.SlashToken);
+        if (outerTypeIndex < 0) outerTypeIndex = syntax.Segments.Count - 1;
+        var segments = syntax.Segments.Select((segment, index) =>
         {
+            var genericSyntax = segment.GenericArguments;
+            if (index < outerTypeIndex && genericSyntax is not null)
+            {
+                _diagnostics.Add(
+                    DiagnosticCodes.InvalidGenericClause,
+                    DiagnosticSeverity.Error,
+                    "A namespace segment cannot have a generic clause; remove it or use '/' for a nested type.",
+                    genericSyntax.FullSpan);
+                genericSyntax = null;
+            }
             var pattern = string.Concat(
                 segment.NameParts.Select(token => token.Text));
             return new BoundNameSegment(
                 pattern,
                 BindGenericPattern(
-                    segment.GenericArguments,
+                    genericSyntax,
                     pattern == "*",
                     scope,
                     underNegation));
@@ -832,146 +830,6 @@ internal sealed class Binder(
             BoundSelectorKind.Regex,
             SelectorTargetDomain.All,
             new BoundRegexPattern(syntax.FullSpan, string.Empty));
-    }
-
-    private BoundMemberPattern BindMemberPattern(
-        IReadOnlyList<SyntaxNode> parts,
-        TypeUseSyntax typeUse,
-        VariableScope scope,
-        out GenericPatternListSyntax? callableGeneric)
-    {
-        var path = new List<SyntaxNode>();
-        var afterType = false;
-        foreach (var part in parts)
-        {
-            if (ReferenceEquals(part, typeUse))
-            {
-                afterType = true;
-                continue;
-            }
-
-            if (!afterType) continue;
-            if (part is SyntaxToken token &&
-                token.Kind == SyntaxKind.OpenParenToken)
-            {
-                break;
-            }
-
-            path.Add(part);
-        }
-
-        var memberSeparator = -1;
-        for (var index = path.Count - 1; index >= 0; index--)
-        {
-            if (path[index] is SyntaxToken { Kind: SyntaxKind.DotToken })
-            {
-                memberSeparator = index;
-                break;
-            }
-        }
-
-        var memberNodes = path.Skip(memberSeparator + 1).ToArray();
-        callableGeneric = memberNodes
-            .OfType<GenericPatternListSyntax>()
-            .LastOrDefault();
-        var memberName = string.Concat(
-            memberNodes.OfType<SyntaxToken>().Select(token => token.Text));
-        var declaringNodes = path.Take(memberSeparator).ToArray();
-        var assignableSuffix = declaringNodes.LastOrDefault() as SyntaxToken;
-        var isAssignable = assignableSuffix?.Kind == SyntaxKind.PlusToken;
-        foreach (var plusToken in path
-                     .OfType<SyntaxToken>()
-                     .Where(token => token.Kind == SyntaxKind.PlusToken))
-        {
-            if (isAssignable && ReferenceEquals(plusToken, assignableSuffix))
-            {
-                continue;
-            }
-
-            _diagnostics.Add(
-                DiagnosticCodes.UnexpectedToken,
-                DiagnosticSeverity.Error,
-                "Assignable suffix '+' is only valid on a declaring type.",
-                plusToken.Span);
-        }
-        if (memberSeparator < 0)
-        {
-            return new BoundMemberPattern(null, memberName);
-        }
-
-        // Standard 与独立类型模式的 *+ 拒绝对齐：声明类型位的 + 目标若只是裸 * 通配名
-        // （无其他段、无泛型子句），同样在绑定期报 AN2010。
-        if (isAssignable &&
-            declaringNodes.Length == 2 &&
-            declaringNodes[0] is SyntaxToken { Kind: SyntaxKind.StarToken })
-        {
-            _diagnostics.Add(
-                DiagnosticCodes.InvalidTypeSuffix,
-                DiagnosticSeverity.Error,
-                "The '+' suffix requires a named type target; wildcard targets are not supported.",
-                assignableSuffix!.Span);
-        }
-
-        var declaringSyntax = CreateNamedTypeSyntax(
-            isAssignable
-                ? declaringNodes.Take(declaringNodes.Length - 1)
-                : declaringNodes);
-        BoundTypePattern declaringType = BindNamedTypePattern(
-            declaringSyntax,
-            scope,
-            IsUnderNegation);
-        if (isAssignable)
-        {
-            var assignableSyntax = new AssignableTypePatternSyntax(
-                declaringSyntax,
-                assignableSuffix!);
-            declaringType = new BoundAssignableTypePattern(
-                assignableSyntax.FullSpan,
-                declaringType);
-        }
-
-        return new BoundMemberPattern(declaringType, memberName);
-    }
-
-    private static NamedTypePatternSyntax CreateNamedTypeSyntax(
-        IEnumerable<SyntaxNode> nodes)
-    {
-        var segments = new List<NamePatternSegmentSyntax>();
-        var separators = new List<SyntaxToken>();
-        var nameParts = new List<SyntaxToken>();
-        GenericPatternListSyntax? generic = null;
-
-        foreach (var node in nodes)
-        {
-            if (node is GenericPatternListSyntax genericList)
-            {
-                generic = genericList;
-                continue;
-            }
-
-            var token = (SyntaxToken)node;
-            if (token.Kind is SyntaxKind.DotToken or
-                SyntaxKind.DotDotToken or
-                SyntaxKind.SlashToken)
-            {
-                segments.Add(new NamePatternSegmentSyntax(nameParts, generic));
-                nameParts.Clear();
-                generic = null;
-                separators.Add(token);
-                continue;
-            }
-
-            nameParts.Add(token);
-        }
-
-        if (nameParts.Count == 0 && separators.Count > 0)
-        {
-            var position = separators[separators.Count - 1].Span.End;
-            nameParts.Add(new SyntaxToken(SyntaxKind.StarToken, new TextSpan(position, 0), "*"));
-        }
-
-        segments.Add(new NamePatternSegmentSyntax(nameParts, generic));
-        return new NamedTypePatternSyntax(segments, separators);
     }
 
     private static bool MatchesAnyParameters(IReadOnlyList<SyntaxNode> parts)

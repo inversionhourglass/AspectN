@@ -208,6 +208,25 @@ public class ConformanceFixture : IConformanceContract<string>
         return value.Name;
     }
 
+    public int op_Fake() => _value;
+
+    public void op_AdditionAssignment(int value) => _value += value;
+
+    public void op_IncrementAssignment() => _value++;
+
+    public static int op_Addition() => 0;
+
+    public static int op_Implicit() => 0;
+
+    [System.Runtime.CompilerServices.SpecialName]
+    public static int op_Unexpected() => 0;
+
+    [System.Runtime.CompilerServices.SpecialName]
+    public static int op_Subtraction() => 0;
+
+    [System.Runtime.CompilerServices.SpecialName]
+    public static int op_CheckedAddition<T>(int left, int right) => left + right;
+
 #if CONFORMANCE_UNRESOLVED
     public External.Dependency Missing(External.Dependency value)
     {

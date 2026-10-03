@@ -59,5 +59,10 @@ public enum SyntaxKind
     ParenthesizedTypePattern,
     UnaryTypePattern,
     BinaryTypePattern,
-    PipeToken
+    PipeToken,
+    MemberPath,
+    NamedMemberPattern,
+    UnaryMemberNamePattern,
+    BinaryMemberNamePattern,
+    ParenthesizedMemberNamePattern
 }

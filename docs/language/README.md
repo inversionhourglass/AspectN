@@ -18,6 +18,10 @@ specific metadata backend in the language or compiled pattern API.
   brackets (`para[0]`, `para[*]`) and spaces (`para 0`, `para *`).
 
 Selectors can be combined with `&&`, `||`, `!`, and parentheses.
+Declaring types and member names can also be combined inside a path:
+`method(* (A || B).(Run || Stop)(..))`. A path prefix `!` negates declaring
+type, name and method generic constraints together. Consecutive `!` tokens
+are rejected. Property names and namespace segments cannot have generic clauses.
 
 ```text
 method(tasklike<string> Service.Load(..))

@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="MatchingFixture.cs" />
+    <Compile Include="InstanceOperatorFixture.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="ConformanceFixture.cs"
