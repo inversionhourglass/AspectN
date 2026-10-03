@@ -5,7 +5,7 @@
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="LegacyFixture.cs" />
+    <Compile Include="MatchingFixture.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="ConformanceFixture.cs"

@@ -1,5 +1,4 @@
 using AspectN.Binding;
-using AspectN.Binding.Legacy;
 using AspectN.Diagnostics;
 using AspectN.Extensibility;
 using AspectN.Metadata;
@@ -127,8 +126,7 @@ internal static class MemberPatternEvaluator
         if (!ModifierMatcher.IsMatch(
                 pattern.Modifiers,
                 candidate.Accessibility,
-                candidate.IsStatic,
-                context.LanguageVersion))
+                candidate.IsStatic))
         {
             return MatchStatus.NotMatched;
         }
@@ -155,21 +153,12 @@ internal static class MemberPatternEvaluator
 
         if (!ModifierMatcher.IsRefKindMatch(
                 pattern.ReturnType,
-                candidate.ReturnType,
-                isParameter: false,
-                context.LanguageVersion))
+                candidate.ReturnType))
         {
             return MatchStatus.NotMatched;
         }
 
-        // RequiresAsync 只在 Legacy 树上为 true（Binder 以 _isLegacy 门控）。Standard 没有
-        // async 修饰符，编译器 async 标志只进入规范签名的正则渲染，不参与结构化匹配。
-        var returnStatus = pattern.RequiresAsync
-            ? TypePatternEvaluator.EvaluateLegacyAsyncReturn(
-                pattern.ReturnType.TypePattern,
-                candidate.ReturnType.Type,
-                context)
-            : TypePatternEvaluator.Evaluate(
+        var returnStatus = TypePatternEvaluator.Evaluate(
                 pattern.ReturnType.TypePattern,
                 candidate.ReturnType.Type,
                 context);
@@ -197,19 +186,16 @@ internal static class MemberPatternEvaluator
                 "The associated property signature is unavailable for this accessor.");
         }
 
-        // Shared 对 property/getter/setter 一律用当前 accessor 自身的权限求值
+        // property/getter/setter 一律用当前 accessor 自身的权限求值
         // （旧 PropertyPattern.IsMatch 用 accessor 的 signature.Modifiers），
         // 不能取关联属性的整体权限：public get / private set 时两者不同。
         if (!ModifierMatcher.IsMatch(
                 pattern.Modifiers,
                 candidate.Accessibility,
-                candidate.IsStatic,
-                context.LanguageVersion) ||
+                candidate.IsStatic) ||
             !ModifierMatcher.IsRefKindMatch(
                 pattern.PropertyType,
-                property.PropertyType,
-                isParameter: false,
-                context.LanguageVersion))
+                property.PropertyType))
         {
             return MatchStatus.NotMatched;
         }
@@ -271,9 +257,7 @@ internal static class MemberPatternEvaluator
         {
             if (!ModifierMatcher.IsRefKindMatch(
                     patterns[index],
-                    candidates[index].Type,
-                    isParameter: true,
-                    context.LanguageVersion))
+                    candidates[index].Type))
             {
                 return MatchStatus.NotMatched;
             }
@@ -313,9 +297,9 @@ internal static class MemberPatternEvaluator
         };
         if (!arityMatches) return MatchStatus.NotMatched;
         if (pattern.Arguments.Count == 0) return MatchStatus.Matched;
-        // 定义签名（织入期实际面对的形式）不带实参，两个版本都回退到形式参数，
+        // 定义签名（织入期实际面对的形式）不带实参，回退到形式参数，
         // 与规范 13.2「变量可绑定形式泛型参数或构造具体类型」一致。
-        var candidateArguments = LegacyGenericRules.GetEffectiveMethodArguments(
+        var candidateArguments = GenericParameterNamer.GetEffectiveMethodArguments(
             candidate);
         if (candidateArguments.Length != pattern.Arguments.Count)
         {
@@ -381,7 +365,6 @@ internal static class MemberPatternEvaluator
             new ExtensionMatchContext(
                 candidate,
                 context.TypeSystem,
-                context.LanguageVersion,
                 context.CancellationToken));
         context.AddDiagnostics(result.Diagnostics);
         return result.Status;

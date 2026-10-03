@@ -18,8 +18,7 @@ public sealed class RegexPatternTests
             CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("tr-TR");
 
             var signature = CanonicalSignatureFormatter.Format(
-                candidate,
-                AspectNLanguageVersion.Standard);
+                candidate);
 
             Assert.Equal(
                 "public static ref readonly System.String " +
@@ -45,21 +44,16 @@ public sealed class RegexPatternTests
     }
 
     [Fact]
-    public void Format_Accessibility_IsVersioned()
+    public void Format_Accessibility_UsesSpacedCompoundName()
     {
         var candidate = Callable(
             "Run",
             accessibility: Accessibility.PrivateProtected);
 
         var standard = CanonicalSignatureFormatter.Format(
-            candidate,
-            AspectNLanguageVersion.Standard);
-        var legacy = CanonicalSignatureFormatter.Format(
-            candidate,
-            AspectNLanguageVersion.Legacy);
+            candidate);
 
         Assert.StartsWith("private protected ", standard);
-        Assert.StartsWith("privateprotected ", legacy);
     }
     [Fact]
     public void Match_CatastrophicRegexTimesOut_ReturnsUnknownDiagnostic()
@@ -84,22 +78,9 @@ public sealed class RegexPatternTests
         var candidate = OpenGenericCandidate();
 
         var standard = CanonicalSignatureFormatter.Format(
-            candidate,
-            AspectNLanguageVersion.Standard);
+            candidate);
 
         Assert.Equal("public T2 X.Y.Z.Cls<T1>.M<T2, T3>(T1, T3)", standard);
-    }
-
-    [Fact]
-    public void Format_OpenGenericDefinition_LegacyKeepsCompactSeparators()
-    {
-        var candidate = OpenGenericCandidate();
-
-        var legacy = CanonicalSignatureFormatter.Format(
-            candidate,
-            AspectNLanguageVersion.Legacy);
-
-        Assert.Equal("public T2 X.Y.Z.Cls<T1>.M<T2,T3>(T1,T3)", legacy);
     }
 
     [Fact]
@@ -109,8 +90,7 @@ public sealed class RegexPatternTests
         var candidate = NestedOpenGenericCandidate();
 
         var standard = CanonicalSignatureFormatter.Format(
-            candidate,
-            AspectNLanguageVersion.Standard);
+            candidate);
 
         Assert.Equal(
             "public T4 X.Y.Z.Outer<T1>/Inner<T2, T3>.M<T4>(T2, T3, T1)",
@@ -118,37 +98,27 @@ public sealed class RegexPatternTests
     }
 
     [Fact]
-    public void Format_SingleGenericParameter_BothVersionsUseBareT()
+    public void Format_SingleGenericParameter_UsesBareT()
     {
-        // class Cls<A> { public void M(A a); } —— 总数为 1 时两版本都渲染裸 T。
+        // class Cls<A> { public void M(A a); } —— 总数为 1 时渲染裸 T。
         var candidate = SingleGenericCandidate();
 
         var standard = CanonicalSignatureFormatter.Format(
-            candidate,
-            AspectNLanguageVersion.Standard);
-        var legacy = CanonicalSignatureFormatter.Format(
-            candidate,
-            AspectNLanguageVersion.Legacy);
+            candidate);
 
         Assert.Equal("public System.Void X.Y.Z.Cls<T>.M(T)", standard);
-        Assert.Equal("public System.Void X.Y.Z.Cls<T>.M(T)", legacy);
     }
 
     [Fact]
-    public void Format_MethodOnlySingleGenericParameter_BothVersionsUseBareT()
+    public void Format_MethodOnlySingleGenericParameter_UsesBareT()
     {
         // class Cls { public void M<A>(A a); } —— 仅方法泛型、总数为 1，同样渲染裸 T。
         var candidate = MethodOnlyGenericCandidate();
 
         var standard = CanonicalSignatureFormatter.Format(
-            candidate,
-            AspectNLanguageVersion.Standard);
-        var legacy = CanonicalSignatureFormatter.Format(
-            candidate,
-            AspectNLanguageVersion.Legacy);
+            candidate);
 
         Assert.Equal("public System.Void X.Y.Z.Cls.M<T>(T)", standard);
-        Assert.Equal("public System.Void X.Y.Z.Cls.M<T>(T)", legacy);
     }
 
     [Fact]
@@ -158,8 +128,7 @@ public sealed class RegexPatternTests
         var candidate = ShadowedGenericCandidate();
 
         var standard = CanonicalSignatureFormatter.Format(
-            candidate,
-            AspectNLanguageVersion.Standard);
+            candidate);
 
         Assert.Equal("public System.Void X.Y.Z.Cls<T1>.M<T2>(T2)", standard);
     }
@@ -171,8 +140,7 @@ public sealed class RegexPatternTests
         var candidate = ConstructedUseCandidate();
 
         var standard = CanonicalSignatureFormatter.Format(
-            candidate,
-            AspectNLanguageVersion.Standard);
+            candidate);
 
         Assert.Equal(
             "public System.Void X.Y.Z.Cls<T>.M(" +

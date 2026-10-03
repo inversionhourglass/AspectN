@@ -1,7 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Text;
 using AspectN.Diagnostics;
-using AspectN.Binding.Legacy;
 using AspectN.Extensibility;
 using AspectN.Metadata;
 using AspectN.Parsing;
@@ -40,7 +39,6 @@ internal sealed class Binder(
             throw new ArgumentNullException(nameof(extensions));
     private readonly AspectNSyntaxTree _syntaxTree = syntaxTree ??
             throw new ArgumentNullException(nameof(syntaxTree));
-    private readonly bool _isLegacy = syntaxTree.LanguageVersion == AspectNLanguageVersion.Legacy;
     private int _negationDepth;
 
     public IReadOnlyList<AspectNDiagnostic> Diagnostics =>
@@ -159,17 +157,11 @@ internal sealed class Binder(
         SelectorSyntax syntax,
         VariableScope scope)
     {
-        if (IsUnavailableSelector(syntax))
-        {
-            return InvalidSelector(syntax);
-        }
-
         return syntax switch
         {
             CallableSelectorSyntax callable => new BoundSelector(
                 callable.FullSpan,
                 BoundSelectorKind.Callable,
-                _isLegacy ||
                 EqualsKeyword(callable.KeywordToken!.Text, "execution")
                     ? SelectorTargetDomain.All
                     : SelectorTargetDomain.Callable,
@@ -269,7 +261,6 @@ internal sealed class Binder(
 
         var compileContext = new ExtensionCompileContext(
             qualifiedName,
-            _syntaxTree.LanguageVersion,
             syntax.Arguments.Select(ExtensionArgument.FromSyntax),
             syntax.FullSpan);
         var matcher = extension.Compile(compileContext) ??
@@ -294,9 +285,7 @@ internal sealed class Binder(
         var tokens = signature.Parts.OfType<SyntaxToken>().ToArray();
         var typeSyntax = signature.Parts.OfType<TypePatternSyntax>().Last();
         var targetText = tokens.Length == 0 ? string.Empty : tokens[0].Text;
-        var target = _isLegacy
-            ? LegacyBinder.GetAttributeTarget(targetText)
-            : GetStandardAttributeTarget(targetText);
+        var target = GetAttributeTarget(targetText);
         var parameterValue = tokens.FirstOrDefault(
             token => token.Kind == SyntaxKind.IntegerToken)?.Value;
         int? parameterIndex = null;
@@ -345,22 +334,16 @@ internal sealed class Binder(
             genericSyntax,
             member.NamePattern == "*",
             scope,
-            IsUnderNegation,
-            declaresLegacyVariables: true);
+            IsUnderNegation);
         var returnType = BindTypeUse(returnSyntax, scope, true);
         var parameters = syntax.Parts
             .OfType<ParameterSyntax>()
             .Select(parameter =>
                 BindTypeUse(parameter.TypeUse, scope, false))
             .ToArray();
-        var requiresAsync = _isLegacy && syntax.Parts
-            .TakeWhile(part => !ReferenceEquals(part, returnSyntax))
-            .OfType<SyntaxToken>()
-            .Any(token => token.Text == "async");
         return new BoundMethodSignature(
             syntax.FullSpan,
             modifiers,
-            requiresAsync,
             returnType,
             member,
             generic,
@@ -390,20 +373,8 @@ internal sealed class Binder(
         VariableScope scope)
     {
         // 声明类型在源码顺序上先于参数，其引入的变量必须先进入作用域，参数内的引用才是合法引用。
-        // 与 method 的声明类型一致走 genericOut 规则：声明泛型变量，* / *..* 视为通配（含嵌套类型）。
-        // cctor 不套用此规则——Shared 的 cctor 声明类型按 genericIn 处理。
         var declaringType = syntax.Parts.OfType<TypePatternSyntax>().First();
-        var declaringTypePattern = declaringType is NamedTypePatternSyntax named
-            ? BindNamedTypePattern(
-                named,
-                scope,
-                IsUnderNegation,
-                declaresLegacyVariables: _isLegacy,
-                allowUniversalWildcard: true)
-            : BindTypePattern(
-                declaringType,
-                scope,
-                IsUnderNegation);
+        var declaringTypePattern = BindTypePattern(declaringType, scope, IsUnderNegation);
         var parameters = syntax.Parts
             .OfType<ParameterSyntax>()
             .Select(parameter =>
@@ -424,7 +395,7 @@ internal sealed class Binder(
         var refText = string.Join(
             " ",
             syntax.RefKindTokens.Select(token => token.Text));
-        var refKind = refText.ToLowerInvariant() switch
+        var refKind = refText switch
         {
             "ref" => RefKind.Ref,
             "out" => RefKind.Out,
@@ -442,15 +413,6 @@ internal sealed class Binder(
         }
 
         var negatedRef = syntax.NegatedRefTokens.Count > 0;
-        if (negatedRef && _isLegacy)
-        {
-            _diagnostics.Add(
-                DiagnosticCodes.InvalidRefKind,
-                DiagnosticSeverity.Error,
-                "'!ref' is not supported in Legacy.",
-                syntax.NegatedRefTokens[0].Span);
-        }
-
         return new BoundTypeUsePattern(
             refKind,
             negatedRef,
@@ -478,14 +440,8 @@ internal sealed class Binder(
                             or SyntaxKind.OpenParenToken
                             or SyntaxKind.CloseParenToken))
                     .Select(token => token.Text));
-            if (_isLegacy)
-            {
-                content = LegacyBinder.NormalizeModifier(content);
-            }
-
             BoundModifier modifier;
             if (!isNegated &&
-                _syntaxTree.LanguageVersion == AspectNLanguageVersion.Standard &&
                 syntax.Tokens.Any(token => token.Kind == SyntaxKind.PipeToken))
             {
                 modifier = BindAccessibilityAlternation(syntax);
@@ -509,8 +465,7 @@ internal sealed class Binder(
             var key = modifier.Alternatives is not null
                 ? $"{modifier.Kind}:|{string.Join("|", modifier.Alternatives)}|"
                 : $"{modifier.Kind}:{modifier.Accessibility}:{isNegated}";
-            if (!keys.Add(key) &&
-                _syntaxTree.LanguageVersion == AspectNLanguageVersion.Standard)
+            if (!keys.Add(key))
             {
                 ReportInvalidModifiers(
                     syntax,
@@ -520,21 +475,18 @@ internal sealed class Binder(
             modifiers.Add(modifier);
         }
 
-        if (_syntaxTree.LanguageVersion == AspectNLanguageVersion.Standard)
+        if (positiveAccessibilityCount > 1)
         {
-            if (positiveAccessibilityCount > 1)
-            {
-                ReportInvalidModifiers(
-                    modifierSyntaxes.First(),
-                    "A Standard signature can contain at most one positive accessibility.");
-            }
+            ReportInvalidModifiers(
+                modifierSyntaxes.First(),
+                "A Standard signature can contain at most one positive accessibility.");
+        }
 
-            if (hasPositiveStatic && hasNegativeStatic)
-            {
-                ReportInvalidModifiers(
-                    modifierSyntaxes.First(),
-                    "A signature cannot require both static and !static.");
-            }
+        if (hasPositiveStatic && hasNegativeStatic)
+        {
+            ReportInvalidModifiers(
+                modifierSyntaxes.First(),
+                "A signature cannot require both static and !static.");
         }
 
         return modifiers;
@@ -603,24 +555,7 @@ internal sealed class Binder(
         switch (syntax)
         {
             case NamedTypePatternSyntax named:
-                if (TryGetLegacyImplicitVariableName(
-                        named,
-                        scope,
-                        declaration: false,
-                        out var variableName))
-                {
-                    return BindVariable(
-                        named.FullSpan,
-                        variableName!,
-                        scope,
-                        underNegation);
-                }
-
-                return BindNamedTypePattern(
-                    named,
-                    scope,
-                    underNegation,
-                    declaresLegacyVariables: false);
+                return BindNamedTypePattern(named, scope, underNegation);
             case WildcardTypePatternSyntax wildcard:
                 return new BoundWildcardTypePattern(wildcard.FullSpan);
             case VariableTypePatternSyntax variable:
@@ -634,26 +569,8 @@ internal sealed class Binder(
             case NullableTypePatternSyntax nullable:
                 return new BoundNullableTypePattern(
                     nullable.FullSpan,
-                    // 与数组元素一致：带后缀的 * 在 Legacy 下是零泛型名单段名（*? 只匹配非泛型的 Nullable<T>）。
-                    _isLegacy && nullable.UnderlyingType is WildcardTypePatternSyntax nullableWildcard
-                        ? CreateLegacySuffixedWildcardName(nullableWildcard.FullSpan)
-                        : BindTypePattern(
-                            nullable.UnderlyingType,
-                            scope,
-                            underNegation));
+                    BindTypePattern(nullable.UnderlyingType, scope, underNegation));
             case AssignableTypePatternSyntax assignable:
-                // Legacy 对齐 Shared：+ 跟在数组后缀之后（int[]+）时，可赋值性下沉到数组元素
-                // （等价 int+[]），保留层数与 rank；Standard 维持 §12.4 的数组目标限制。
-                if (_isLegacy &&
-                    UnwrapParenthesized(assignable.TargetType) is ArrayTypePatternSyntax arrayTarget)
-                {
-                    return BindLegacyArrayElementAssignable(
-                        assignable,
-                        arrayTarget,
-                        scope,
-                        underNegation);
-                }
-
                 ReportInvalidAssignableTarget(assignable);
                 return new BoundAssignableTypePattern(
                     assignable.FullSpan,
@@ -676,8 +593,6 @@ internal sealed class Binder(
                     taskLike.ResultType,
                     scope,
                     underNegation);
-                // tasklike 仅 Standard 语法（Legacy 中 tasklike 是普通类型名），
-                // 解析器不会再为 Legacy 产出该节点；此检查同时兜住手工构造的语法树。
                 if (IsVoidNamedPattern(taskLikeResult))
                 {
                     _diagnostics.Add(
@@ -723,7 +638,7 @@ internal sealed class Binder(
             elementType = array.ElementType;
         }
 
-        BoundTypePattern bound = BindArrayElementType(elementType, scope, underNegation);
+        BoundTypePattern bound = BindTypePattern(elementType, scope, underNegation);
         foreach (var suffix in suffixes)
         {
             bound = new BoundArrayTypePattern(
@@ -735,23 +650,6 @@ internal sealed class Binder(
         return (BoundArrayTypePattern)bound;
     }
 
-    // 仅交换最外层（int[]+ -> int+[]）；嵌套数组（int[][]+）经元素绑定再次进入
-    // Assignable 分支，+ 逐层下沉到最内层元素，与 Shared 的 assignableMatch 元素语义一致。
-    private BoundArrayTypePattern BindLegacyArrayElementAssignable(
-        AssignableTypePatternSyntax assignable,
-        ArrayTypePatternSyntax array,
-        VariableScope scope,
-        bool underNegation)
-    {
-        var element = new AssignableTypePatternSyntax(
-            array.ElementType,
-            assignable.PlusToken);
-        return new BoundArrayTypePattern(
-            array.FullSpan,
-            BindTypePattern(element, scope, underNegation),
-            array.Rank);
-    }
-
     private static TypePatternSyntax UnwrapParenthesized(TypePatternSyntax syntax)
     {
         while (syntax is ParenthesizedTypePatternSyntax parenthesized)
@@ -760,52 +658,6 @@ internal sealed class Binder(
         }
 
         return syntax;
-    }
-
-    private BoundTypePattern BindArrayElementType(
-        TypePatternSyntax syntax, VariableScope scope, bool underNegation)
-    {
-        // Shared reads '?' before an array suffix as part of the literal name.
-        if (_isLegacy && syntax is NullableTypePatternSyntax nullable)
-        {
-            BoundNamedTypePattern? named = nullable.UnderlyingType switch
-            {
-                NamedTypePatternSyntax namedSyntax => (BoundNamedTypePattern)BindNamedTypePattern(
-                    namedSyntax, scope, underNegation, declaresLegacyVariables: false),
-                WildcardTypePatternSyntax wildcard => CreateLegacySuffixedWildcardName(
-                    wildcard.FullSpan),
-                _ => null
-            };
-            if (named is not null)
-            {
-                var segments = named.Segments.ToArray();
-                var last = segments.Length - 1;
-                segments[last] = new BoundNameSegment(segments[last].Pattern + "?", segments[last].Generic);
-                var separators = named.Separators.ToArray();
-                return new BoundNamedTypePattern(nullable.FullSpan, segments, separators,
-                    BuildCanonicalName(segments, separators));
-            }
-        }
-
-        // Shared 中带后缀的 * 不再是全通配（DefaultTypePattern 多于一个 token），
-        // 而是零泛型名单段名：*[] 只匹配元素非泛型的数组；仅独立的 * 保持全通配。
-        if (_isLegacy && syntax is WildcardTypePatternSyntax bareWildcard)
-        {
-            return CreateLegacySuffixedWildcardName(bareWildcard.FullSpan);
-        }
-
-        return BindTypePattern(syntax, scope, underNegation);
-    }
-
-    // 对应 Shared 的 NewPrimitiveOrAnyNs("*")：零泛型名单段通配名。
-    private static BoundNamedTypePattern CreateLegacySuffixedWildcardName(
-        AspectN.Text.TextSpan span)
-    {
-        return new BoundNamedTypePattern(
-            span,
-            [new BoundNameSegment("*", new BoundGenericPattern(BoundGenericArityKind.Exact, 0))],
-            Array.Empty<string>(),
-            "*");
     }
 
     private BoundBinaryTypePattern BindBinaryTypePattern(
@@ -840,35 +692,11 @@ internal sealed class Binder(
             right);
     }
 
-    private BoundTypePattern BindNamedTypePattern(
+    private BoundNamedTypePattern BindNamedTypePattern(
         NamedTypePatternSyntax syntax,
         VariableScope scope,
-        bool underNegation,
-        bool declaresLegacyVariables,
-        bool allowUniversalWildcard = true)
+        bool underNegation)
     {
-        // Shared treats * and *..* as universal types, including nested types.
-        if (_isLegacy && declaresLegacyVariables &&
-            syntax.Segments.All(segment => segment.GenericArguments is null &&
-                string.Concat(segment.NameParts.Select(token => token.Text)) == "*") &&
-            (syntax.Segments.Count == 1 ||
-             (syntax.Segments.Count == 2 && syntax.Separators[0].Kind == SyntaxKind.DotDotToken)))
-        {
-            return allowUniversalWildcard
-                ? new BoundWildcardTypePattern(syntax.FullSpan)
-                : new BoundNamedTypePattern(syntax.FullSpan,
-                    [new BoundNameSegment("*", LegacyBinder.CreateOmittedGenericPattern())],
-                    Array.Empty<string>(), "*");
-        }
-
-        // Shared 的 genericIn 规则：裸单段名（List）省略泛型子句表示零泛型参数
-        // （SingleNonGenericNamePattern）；限定名（System...List）省略仍是任意泛型。
-        // genericOut（声明位置）不受此规则约束。裸 void 除外：Void 恒为零泛型，
-        // 保留 Any 以区分 async void 糖与 void<..> 等显式泛型子句。
-        var requireZeroArityWhenOmitted = _isLegacy &&
-            !declaresLegacyVariables &&
-            syntax.Segments.Count == 1 &&
-            string.Concat(syntax.Segments[0].NameParts.Select(token => token.Text)) != "void";
         var segments = syntax.Segments.Select(segment =>
         {
             var pattern = string.Concat(
@@ -879,9 +707,7 @@ internal sealed class Binder(
                     segment.GenericArguments,
                     pattern == "*",
                     scope,
-                    underNegation,
-                    declaresLegacyVariables,
-                    requireZeroArityWhenOmitted));
+                    underNegation));
         }).ToArray();
         var separators = syntax.Separators.Select(token => token.Text).ToArray();
         var sourceName = BuildCanonicalName(segments, separators);
@@ -890,12 +716,10 @@ internal sealed class Binder(
             out var alias)
             ? alias
             : sourceName;
-        if (!_isLegacy &&
-            canonicalName == "System.Void" &&
+        if (canonicalName == "System.Void" &&
             syntax.Segments.Any(segment => segment.GenericArguments is not null))
         {
-            // void 永远非泛型；Standard 拒绝 void 上的一切泛型子句。
-            // Legacy 保留接受：async void 糖需要区分裸 void 与显式子句。
+            // void 永远非泛型，拒绝它的一切泛型子句。
             _diagnostics.Add(
                 DiagnosticCodes.InvalidGenericClause,
                 DiagnosticSeverity.Error,
@@ -914,19 +738,10 @@ internal sealed class Binder(
         GenericPatternListSyntax? syntax,
         bool nameIsWildcard,
         VariableScope scope,
-        bool underNegation = false,
-        bool declaresLegacyVariables = false,
-        bool requireZeroArityWhenOmitted = false)
+        bool underNegation)
     {
         if (syntax is null)
         {
-            if (_isLegacy)
-            {
-                return requireZeroArityWhenOmitted
-                    ? new BoundGenericPattern(BoundGenericArityKind.Exact, 0)
-                    : LegacyBinder.CreateOmittedGenericPattern();
-            }
-
             return new BoundGenericPattern(
                 nameIsWildcard
                     ? BoundGenericArityKind.Any
@@ -935,11 +750,7 @@ internal sealed class Binder(
         }
 
         var arguments = syntax.Arguments.Select(argument =>
-            BindGenericArgument(
-                argument,
-                scope,
-                underNegation,
-                declaresLegacyVariables));
+            BindTypePattern(argument, scope, underNegation));
         return syntax.Form switch
         {
             GenericPatternForm.AnyPositiveArity => new BoundGenericPattern(
@@ -956,30 +767,6 @@ internal sealed class Binder(
                 BoundGenericArityKind.Exact,
                 syntax.Arity)
         };
-    }
-
-    private BoundTypePattern BindGenericArgument(
-        TypePatternSyntax syntax,
-        VariableScope scope,
-        bool underNegation,
-        bool declaresLegacyVariables)
-    {
-        if (declaresLegacyVariables &&
-            syntax is NamedTypePatternSyntax named &&
-            TryGetLegacyImplicitVariableName(
-                named,
-                scope,
-                declaration: true,
-                out var variableName))
-        {
-            return BindVariable(
-                named.FullSpan,
-                variableName!,
-                scope,
-                underNegation);
-        }
-
-        return BindTypePattern(syntax, scope, underNegation);
     }
 
     private BoundVariableTypePattern BindVariable(
@@ -1038,27 +825,6 @@ internal sealed class Binder(
         }
     }
 
-    private bool IsUnavailableSelector(SelectorSyntax syntax)
-    {
-        var keyword = syntax.KeywordToken?.Text;
-        if (keyword is null) return false;
-
-        if (!_isLegacy) return false;
-
-        var unavailable = syntax is CallableSelectorSyntax &&
-            LegacyBinder.EqualsKeyword(keyword, "callable");
-        if (unavailable)
-        {
-            _diagnostics.Add(
-                DiagnosticCodes.SelectorUnavailable,
-                DiagnosticSeverity.Error,
-                $"Selector '{keyword}' is unavailable in Legacy.",
-                syntax.KeywordToken!.Span);
-        }
-
-        return unavailable;
-    }
-
     private static BoundSelector InvalidSelector(SelectorSyntax syntax)
     {
         return new BoundSelector(
@@ -1097,8 +863,7 @@ internal sealed class Binder(
         var memberSeparator = -1;
         for (var index = path.Count - 1; index >= 0; index--)
         {
-            if (path[index] is SyntaxToken { Kind: SyntaxKind.DotToken } ||
-                (_isLegacy && path[index] is SyntaxToken { Kind: SyntaxKind.DotDotToken }))
+            if (path[index] is SyntaxToken { Kind: SyntaxKind.DotToken })
             {
                 memberSeparator = index;
                 break;
@@ -1111,13 +876,7 @@ internal sealed class Binder(
             .LastOrDefault();
         var memberName = string.Concat(
             memberNodes.OfType<SyntaxToken>().Select(token => token.Text));
-        var namespaceWildcard = memberSeparator >= 0 &&
-            path[memberSeparator] is SyntaxToken { Kind: SyntaxKind.DotDotToken };
-        var declaringNodes = namespaceWildcard
-            ? path.Take(memberSeparator + 1).Append<SyntaxNode>(
-                new SyntaxToken(SyntaxKind.StarToken,
-                    new TextSpan(path[memberSeparator].FullSpan.End, 0), "*")).ToArray()
-            : path.Take(memberSeparator).ToArray();
+        var declaringNodes = path.Take(memberSeparator).ToArray();
         var assignableSuffix = declaringNodes.LastOrDefault() as SyntaxToken;
         var isAssignable = assignableSuffix?.Kind == SyntaxKind.PlusToken;
         foreach (var plusToken in path
@@ -1141,9 +900,8 @@ internal sealed class Binder(
         }
 
         // Standard 与独立类型模式的 *+ 拒绝对齐：声明类型位的 + 目标若只是裸 * 通配名
-        // （无其他段、无泛型子句），同样在绑定期报 AN2010。Legacy 保留 Shared 的 *+ 形态。
+        // （无其他段、无泛型子句），同样在绑定期报 AN2010。
         if (isAssignable &&
-            !_isLegacy &&
             declaringNodes.Length == 2 &&
             declaringNodes[0] is SyntaxToken { Kind: SyntaxKind.StarToken })
         {
@@ -1161,9 +919,7 @@ internal sealed class Binder(
         BoundTypePattern declaringType = BindNamedTypePattern(
             declaringSyntax,
             scope,
-            IsUnderNegation,
-            declaresLegacyVariables: _isLegacy,
-            allowUniversalWildcard: !isAssignable);
+            IsUnderNegation);
         if (isAssignable)
         {
             var assignableSyntax = new AssignableTypePatternSyntax(
@@ -1253,32 +1009,11 @@ internal sealed class Binder(
         return builder.ToString();
     }
 
-    private bool TryGetLegacyImplicitVariableName(
-        NamedTypePatternSyntax syntax,
-        VariableScope scope,
-        bool declaration,
-        out string? name)
-    {
-        if (!_isLegacy)
-        {
-            name = null;
-            return false;
-        }
-
-        return LegacyBinder.TryGetImplicitVariableName(
-            syntax,
-            declaration,
-            variableName => scope.TryGet(variableName, out _),
-            out name);
-    }
-
     private bool IsUnderNegation => _negationDepth > 0;
 
-    private bool EqualsKeyword(string actual, string expected)
+    private static bool EqualsKeyword(string actual, string expected)
     {
-        return _isLegacy
-            ? LegacyBinder.EqualsKeyword(actual, expected)
-            : string.Equals(actual, expected, StringComparison.Ordinal);
+        return string.Equals(actual, expected, StringComparison.Ordinal);
     }
 
     private static Accessibility GetAccessibility(string content)
@@ -1289,9 +1024,9 @@ internal sealed class Binder(
             "protected" => Accessibility.Protected,
             "internal" => Accessibility.Internal,
             "private" => Accessibility.Private,
-            "protected internal" or "protectedinternal" =>
+            "protected internal" =>
                 Accessibility.ProtectedInternal,
-            "private protected" or "privateprotected" =>
+            "private protected" =>
                 Accessibility.PrivateProtected,
             _ => Accessibility.Unknown
         };
@@ -1305,11 +1040,11 @@ internal sealed class Binder(
                    "System.Void");
     }
 
-    private static BoundAttributeTargetKind GetStandardAttributeTarget(
+    private static BoundAttributeTargetKind GetAttributeTarget(
         string text)
     {
-        // exec 与长形式（callable/property/parameter/return）是有诊断兜底的兼容入口；
-        // 长形式的迁移诊断由解析器报告，这里保证错误恢复后语义仍正确。
+        // 长形式（callable/property/parameter/return）的迁移诊断由解析器报告；
+        // 这里保留其目标映射，保证语法节点的语义一致。
         return text switch
         {
             "type" => BoundAttributeTargetKind.Type,
@@ -1341,8 +1076,6 @@ internal sealed class Binder(
     // nullable"（X?+）；其余结构（数组、多层/交错 nullable 包装、通配、tuple、Boolean、
     // 变量、tasklike、被 nullable 分隔的重复 +）一律绑定期拒绝，与求值器支持范围对齐。
     // 只判定目标节点本身——命名目标泛型实参内的数组/通配/tuple 不受影响（List<int[]>+ 合法）。
-    // Legacy 不做白名单：重复 + 仍两版本共拒；其余历史形态按各自路径求值
-    // （int[]?+ 等返回 NotMatched、(int,int)+ 等返回 Unknown），记录于差异文档 §8。
     private void ReportInvalidAssignableTarget(AssignableTypePatternSyntax syntax)
     {
         var target = UnwrapParenthesized(syntax.TargetType);
@@ -1354,11 +1087,6 @@ internal sealed class Binder(
                 DiagnosticSeverity.Error,
                 "The '+' suffix cannot be applied more than once.",
                 syntax.PlusToken.Span);
-            return;
-        }
-
-        if (_isLegacy)
-        {
             return;
         }
 

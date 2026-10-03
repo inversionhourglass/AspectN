@@ -4,56 +4,56 @@ using System.Globalization;
 namespace AspectN.TestAssembly;
 
 [AttributeUsage(AttributeTargets.All, AllowMultiple = true)]
-public sealed class LegacyMarkerAttribute : Attribute
+public sealed class MatchingMarkerAttribute : Attribute
 {
 }
 
 [AttributeUsage(AttributeTargets.All, AllowMultiple = true)]
-public sealed class LegacySecondaryAttribute : Attribute
+public sealed class MatchingSecondaryAttribute : Attribute
 {
 }
 
-public interface ILegacyContract
+public interface IMatchingContract
 {
     string Name { get; set; }
 
     void ContractMethod();
 }
 
-[LegacyMarker]
-public class LegacyFixture : ILegacyContract
+[MatchingMarker]
+public class MatchingFixture : IMatchingContract
 {
-    static LegacyFixture()
+    static MatchingFixture()
     {
     }
 
-    public LegacyFixture()
+    public MatchingFixture()
     {
     }
 
-    private LegacyFixture(int value)
+    private MatchingFixture(int value)
     {
         Number = value;
     }
 
     public int Number { get; }
 
-    [LegacyMarker]
+    [MatchingMarker]
     public string Name
     {
-        [LegacyMarker]
+        [MatchingMarker]
         get;
-        [LegacySecondary]
+        [MatchingSecondary]
         set;
     } = string.Empty;
 
     public IDictionary<string, string> Dictionary { get; } =
         new Dictionary<string, string>();
 
-    [LegacyMarker]
-    [return: LegacyMarker]
+    [MatchingMarker]
+    [return: MatchingMarker]
     public static int StaticMethod(
-        [LegacyMarker] string first,
+        [MatchingMarker] string first,
         double second)
     {
         return first.Length + (int)second;
@@ -104,13 +104,13 @@ public class LegacyFixture : ILegacyContract
     }
 }
 
-public class LegacyFixture<TLeft, TRight>
+public class MatchingFixture<TLeft, TRight>
 {
-    static LegacyFixture()
+    static MatchingFixture()
     {
     }
 
-    public LegacyFixture()
+    public MatchingFixture()
     {
     }
 
@@ -124,6 +124,6 @@ public class LegacyFixture<TLeft, TRight>
     }
 }
 
-internal sealed class LegacyDictionary : Hashtable
+internal sealed class MatchingDictionary : Hashtable
 {
 }

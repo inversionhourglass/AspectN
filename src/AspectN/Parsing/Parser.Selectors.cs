@@ -5,22 +5,10 @@ namespace AspectN.Parsing;
 
 internal sealed partial class Parser
 {
-    internal AspectNParseOptions SelectorOptions => _options;
-
     internal SyntaxToken SelectorCurrent => Current;
 
     internal SyntaxToken NextSelectorToken()
     {
-        return NextToken();
-    }
-
-    internal SyntaxToken NextSelectorNameToken()
-    {
-        if (Current.Kind == SyntaxKind.IntegerToken)
-        {
-            _numericNameStarts.Add(Current.Span.Start);
-        }
-
         return NextToken();
     }
 

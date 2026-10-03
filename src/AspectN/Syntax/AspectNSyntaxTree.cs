@@ -14,13 +14,11 @@ public sealed class AspectNSyntaxTree
         SourceText text,
         AspectNParseKind parseKind,
         SyntaxNode root,
-        IEnumerable<AspectNDiagnostic> diagnostics,
-        AspectNLanguageVersion languageVersion = AspectNLanguageVersion.Standard)
+        IEnumerable<AspectNDiagnostic> diagnostics)
     {
         Text = text;
         ParseKind = parseKind;
         Root = root;
-        LanguageVersion = languageVersion;
         _diagnostics = new ReadOnlyCollection<AspectNDiagnostic>(
             diagnostics.ToArray());
     }
@@ -33,9 +31,6 @@ public sealed class AspectNSyntaxTree
 
     /// <summary>Gets the root.</summary>
     public SyntaxNode Root { get; }
-
-    /// <summary>Gets the language version.</summary>
-    public AspectNLanguageVersion LanguageVersion { get; }
 
     /// <summary>Gets the diagnostics.</summary>
     public IReadOnlyList<AspectNDiagnostic> Diagnostics => _diagnostics;

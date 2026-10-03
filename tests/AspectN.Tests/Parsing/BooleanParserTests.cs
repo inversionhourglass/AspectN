@@ -9,7 +9,6 @@ public sealed class BooleanParserTests
     {
         var tree = AspectNParser.ParseMemberExpression("a()");
 
-        Assert.Equal(AspectNLanguageVersion.Standard, tree.LanguageVersion);
         Assert.Empty(tree.Diagnostics);
     }
 

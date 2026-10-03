@@ -8,15 +8,12 @@ internal sealed class TypePatternParser
 {
     private readonly DiagnosticBag _diagnostics = new();
     private readonly Lexer _lexer;
-    private readonly AspectNParseOptions _options;
     private readonly SourceText _source;
-    private readonly HashSet<int> _numericNameStarts = new();
     private SyntaxToken _current;
 
-    public TypePatternParser(SourceText source, AspectNParseOptions options)
+    public TypePatternParser(SourceText source)
     {
         _source = source;
-        _options = options;
         _lexer = new Lexer(source);
         _current = _lexer.Lex();
     }
@@ -36,8 +33,7 @@ internal sealed class TypePatternParser
             _source,
             AspectNParseKind.TypePattern,
             root,
-            GetDiagnostics(),
-            _options.LanguageVersion);
+            GetDiagnostics());
     }
 
     private SyntaxNode ParseTypeUseOrPattern()
@@ -103,7 +99,7 @@ internal sealed class TypePatternParser
             switch (Current.Kind)
             {
                 case SyntaxKind.OpenBracketToken:
-                    // 类型累积遇到非相邻 token 即截断（两版本一致，对齐 Shared）。
+                    // 类型累积遇到非相邻 token 即截断。
                     if (Current.Span.Start != pattern.FullSpan.End)
                     {
                         ReportUnexpected(Current, "'[' (must be adjacent to the type pattern)");
@@ -139,13 +135,10 @@ internal sealed class TypePatternParser
         if (Current.Kind == SyntaxKind.OpenParenToken) return ParseParenthesizedOrTuple();
         if (Current.Kind == SyntaxKind.StarToken) return ParseStarOrNamed();
 
-        if (LegacyParsingRules.IsNamePart(Current, _options.LanguageVersion))
+        if (TypePatternSyntaxFacts.IsNamePart(Current))
         {
-            var first = NextNameToken();
-            // tasklike 仅 Standard 语法；Legacy 没有 tasklike 写法（async T / async null），
-            // tasklike 在 Legacy 只能是普通类型名。
-            if (first.Text == "tasklike" &&
-                _options.LanguageVersion == AspectNLanguageVersion.Standard)
+            var first = NextToken();
+            if (first.Text == "tasklike")
             {
                 return ParseTaskLike(first);
             }
@@ -171,13 +164,12 @@ internal sealed class TypePatternParser
         var star = NextToken();
         // 名字延续（标识符、泛型子句、分隔符）必须与 * 相邻；跨空格即槽位边界（§3.4）。
         if (Current.Span.Start == star.Span.End &&
-            (LegacyParsingRules.IsNamePart(Current, _options.LanguageVersion) ||
+            (TypePatternSyntaxFacts.IsNamePart(Current) ||
              Current.Kind is
                  SyntaxKind.LessThanToken or
                  SyntaxKind.DotToken or
                  SyntaxKind.DotDotToken or
-                 SyntaxKind.SlashToken ||
-             (_options.LanguageVersion == AspectNLanguageVersion.Legacy && Current.Kind == SyntaxKind.PlusToken)))
+                 SyntaxKind.SlashToken))
         {
             return ParseNamed(star);
         }
@@ -206,17 +198,7 @@ internal sealed class TypePatternParser
 
             var separator = NextToken();
             separators.Add(separator);
-            if (_options.LanguageVersion == AspectNLanguageVersion.Legacy &&
-                separator.Kind == SyntaxKind.DotDotToken &&
-                (!LegacyParsingRules.IsNamePart(Current, _options.LanguageVersion) ||
-                 Current.Span.Start != separator.Span.End))
-            {
-                segments.Add(new NamePatternSegmentSyntax(
-                    [SyntaxToken.Missing(SyntaxKind.IdentifierToken, separator.Span.End)]));
-                break;
-            }
-
-            if (LegacyParsingRules.IsNamePart(Current, _options.LanguageVersion) &&
+            if (TypePatternSyntaxFacts.IsNamePart(Current) &&
                 Current.Span.Start != separator.Span.End)
             {
                 // 分隔符后的名字也必须相邻；诊断后继续恢复解析，保持段/分隔符计数成对。
@@ -237,7 +219,7 @@ internal sealed class TypePatternParser
         var nameParts = new List<SyntaxToken>();
         if (firstNamePart is not null) nameParts.Add(firstNamePart);
 
-        while (LegacyParsingRules.IsNamePart(Current, _options.LanguageVersion))
+        while (TypePatternSyntaxFacts.IsNamePart(Current))
         {
             if (nameParts.Count > 0 &&
                 Current.Span.Start != nameParts[nameParts.Count - 1].Span.End)
@@ -245,7 +227,7 @@ internal sealed class TypePatternParser
                 break;
             }
 
-            nameParts.Add(NextNameToken());
+            nameParts.Add(NextToken());
         }
 
         if (nameParts.Count == 0)
@@ -268,7 +250,7 @@ internal sealed class TypePatternParser
     {
         var lessThan = NextToken();
 
-        // <!>：显式零泛型（两版本通用；Legacy 原有语义）。
+        // <!>：显式零泛型。
         if (Current.Kind == SyntaxKind.BangToken)
         {
             var bang = NextToken();
@@ -309,9 +291,8 @@ internal sealed class TypePatternParser
                 MatchToken(SyntaxKind.GreaterThanToken));
         }
 
-        // <?> = 任意 arity（含零），仅 Standard；Legacy 的省略子句已是任意，无需该写法。
-        if (_options.LanguageVersion == AspectNLanguageVersion.Standard &&
-            Current.Kind == SyntaxKind.QuestionToken)
+        // <?> = 任意 arity（含零）。
+        if (Current.Kind == SyntaxKind.QuestionToken)
         {
             var question = NextToken();
             return new GenericPatternListSyntax(
@@ -324,7 +305,7 @@ internal sealed class TypePatternParser
                 MatchToken(SyntaxKind.GreaterThanToken));
         }
 
-        // 混合空槽（两版本统一）：空槽 = Any 占位，arity = 槽数。
+        // 混合空槽：空槽 = Any 占位，arity = 槽数。
         return ParseGenericArguments(lessThan);
     }
 
@@ -401,8 +382,8 @@ internal sealed class TypePatternParser
         var first = ParseTypeExpression();
         if (Current.Kind != SyntaxKind.CommaToken)
         {
-            // 括号类型只保留 Boolean 分组含义（两版本一致）；单元素括号按缺元素诊断。
-            if (!LegacyParsingRules.IsBooleanGroup(first))
+            // 括号类型只保留 Boolean 分组含义；单元素括号按缺元素诊断。
+            if (!TypePatternSyntaxFacts.IsBooleanGroup(first))
             {
                 ReportUnexpected(Current, "',' and another tuple element (a tuple needs at least two elements)");
             }
@@ -466,16 +447,6 @@ internal sealed class TypePatternParser
         return current;
     }
 
-    private SyntaxToken NextNameToken()
-    {
-        if (Current.Kind == SyntaxKind.IntegerToken)
-        {
-            _numericNameStarts.Add(Current.Span.Start);
-        }
-
-        return NextToken();
-    }
-
     private bool IsIdentifier(string text)
     {
         return Current.Kind == SyntaxKind.IdentifierToken &&
@@ -495,9 +466,7 @@ internal sealed class TypePatternParser
     {
         return _diagnostics
             .ToArray()
-            .Concat(_lexer.Diagnostics.Where(diagnostic =>
-                diagnostic.Code != DiagnosticCodes.InvalidInteger ||
-                diagnostic.Span is not { } span || !_numericNameStarts.Contains(span.Start)))
+            .Concat(_lexer.Diagnostics)
             .OrderBy(diagnostic => diagnostic.Span?.Start ?? int.MaxValue)
             .ThenBy(diagnostic => diagnostic.Code, StringComparer.Ordinal)
             .ToArray();

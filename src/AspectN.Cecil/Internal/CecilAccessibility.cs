@@ -23,29 +23,14 @@ internal static class CecilAccessibility
     private const int PUBLIC_MASK =
         PROTECTED_INTERNAL_MASK | NON_DERIVED_OTHER_ASSEMBLY;
 
-    public static Accessibility ForMethod(
-        MethodDefinition? method,
-        bool composite)
+    public static Accessibility ForMethod(MethodDefinition? method)
     {
         if (method is null) return Accessibility.Unknown;
 
-        var mask = MethodMask(method);
-        if (composite)
-        {
-            for (var type = method.DeclaringType;
-                 type is not null;
-                 type = type.DeclaringType)
-            {
-                mask &= TypeMask(type);
-            }
-        }
-
-        return FromMask(mask);
+        return FromMask(MethodMask(method));
     }
 
-    public static Accessibility ForProperty(
-        PropertyDefinition? property,
-        bool composite)
+    public static Accessibility ForProperty(PropertyDefinition? property)
     {
         if (property is null) return Accessibility.Unknown;
 
@@ -65,16 +50,6 @@ internal static class CecilAccessibility
             mask |= MethodMask(method);
         }
 
-        if (composite)
-        {
-            for (var type = property.DeclaringType;
-                 type is not null;
-                 type = type.DeclaringType)
-            {
-                mask &= TypeMask(type);
-            }
-        }
-
         return FromMask(mask);
     }
 
@@ -86,22 +61,6 @@ internal static class CecilAccessibility
         if (method.IsAssembly) return INTERNAL_MASK;
         if (method.IsFamilyAndAssembly) return PRIVATE_PROTECTED_MASK;
         if (method.IsPrivate) return PRIVATE_MASK;
-        return 0;
-    }
-
-    private static int TypeMask(TypeDefinition type)
-    {
-        if (!type.IsNested)
-        {
-            return type.IsPublic ? PUBLIC_MASK : INTERNAL_MASK;
-        }
-
-        if (type.IsNestedPublic) return PUBLIC_MASK;
-        if (type.IsNestedFamilyOrAssembly) return PROTECTED_INTERNAL_MASK;
-        if (type.IsNestedFamily) return PROTECTED_MASK;
-        if (type.IsNestedAssembly) return INTERNAL_MASK;
-        if (type.IsNestedFamilyAndAssembly) return PRIVATE_PROTECTED_MASK;
-        if (type.IsNestedPrivate) return PRIVATE_MASK;
         return 0;
     }
 

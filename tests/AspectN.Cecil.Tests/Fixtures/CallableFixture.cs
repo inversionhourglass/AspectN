@@ -133,7 +133,7 @@ internal sealed class CallableFixture<T>
     }
 }
 
-internal sealed class CompositeAccessibilityFixture
+internal sealed class DeclaredAccessibilityFixture
 {
     public void PublicMethod()
     {

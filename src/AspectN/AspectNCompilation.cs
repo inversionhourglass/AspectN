@@ -27,13 +27,11 @@ public sealed class AspectNCompilation
         _memberPattern = boundRoot is BoundExpression expression
             ? new CompiledMemberPattern(
                 expression,
-                syntaxTree.LanguageVersion,
                 options)
             : null;
         _typePattern = boundRoot is BoundTypePattern typePattern
             ? new CompiledTypePattern(
                 typePattern,
-                syntaxTree.LanguageVersion,
                 options)
             : null;
         _diagnostics = new ReadOnlyCollection<AspectNDiagnostic>(
@@ -48,9 +46,6 @@ public sealed class AspectNCompilation
 
     /// <summary>Gets the extensions.</summary>
     public AspectNExtensionRegistry Extensions { get; }
-
-    /// <summary>Gets the language version.</summary>
-    public AspectNLanguageVersion LanguageVersion => SyntaxTree.LanguageVersion;
 
     /// <summary>Gets the diagnostics.</summary>
     public IReadOnlyList<AspectNDiagnostic> Diagnostics => _diagnostics;

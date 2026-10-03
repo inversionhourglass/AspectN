@@ -2,7 +2,6 @@
 AspectN.AspectNCompilation
 AspectN.AspectNCompilation.Diagnostics.get -> System.Collections.Generic.IReadOnlyList<AspectN.Diagnostics.AspectNDiagnostic!>!
 AspectN.AspectNCompilation.Extensions.get -> AspectN.Extensibility.AspectNExtensionRegistry!
-AspectN.AspectNCompilation.LanguageVersion.get -> AspectN.AspectNLanguageVersion
 AspectN.AspectNCompilation.Options.get -> AspectN.AspectNCompilationOptions!
 AspectN.AspectNCompilation.SyntaxTree.get -> AspectN.Syntax.AspectNSyntaxTree!
 AspectN.AspectNCompilation.TryGetMemberPattern(out AspectN.CompiledMemberPattern? pattern) -> bool
@@ -12,24 +11,17 @@ AspectN.AspectNCompilationOptions.AspectNCompilationOptions(System.TimeSpan? reg
 AspectN.AspectNCompilationOptions.RegexTimeout.get -> System.TimeSpan
 AspectN.AspectNEngine
 AspectN.AspectNEngine.AspectNEngine(AspectN.AspectNEngineOptions? options = null, AspectN.Extensibility.AspectNExtensionRegistry? extensions = null) -> void
-AspectN.AspectNEngine.CompileMemberExpression(string! source, AspectN.AspectNParseOptions? parseOptions = null, AspectN.AspectNCompilationOptions? compilationOptions = null, AspectN.Extensibility.AspectNExtensionRegistry? extensions = null) -> AspectN.AspectNCompilation!
-AspectN.AspectNEngine.CompileTypePattern(string! source, AspectN.AspectNParseOptions? parseOptions = null, AspectN.AspectNCompilationOptions? compilationOptions = null, AspectN.Extensibility.AspectNExtensionRegistry? extensions = null) -> AspectN.AspectNCompilation!
+AspectN.AspectNEngine.CompileMemberExpression(string! source, AspectN.AspectNCompilationOptions? compilationOptions = null, AspectN.Extensibility.AspectNExtensionRegistry? extensions = null) -> AspectN.AspectNCompilation!
+AspectN.AspectNEngine.CompileTypePattern(string! source, AspectN.AspectNCompilationOptions? compilationOptions = null, AspectN.Extensibility.AspectNExtensionRegistry? extensions = null) -> AspectN.AspectNCompilation!
 AspectN.AspectNEngine.Extensions.get -> AspectN.Extensibility.AspectNExtensionRegistry!
 AspectN.AspectNEngine.Options.get -> AspectN.AspectNEngineOptions!
 AspectN.AspectNEngineOptions
 AspectN.AspectNEngineOptions.AspectNEngineOptions(int cacheCapacity = 256) -> void
 AspectN.AspectNEngineOptions.CacheCapacity.get -> int
-AspectN.AspectNLanguageVersion
-AspectN.AspectNLanguageVersion.Legacy = 0 -> AspectN.AspectNLanguageVersion
-AspectN.AspectNLanguageVersion.Standard = 1 -> AspectN.AspectNLanguageVersion
-AspectN.AspectNParseOptions
-AspectN.AspectNParseOptions.AspectNParseOptions(AspectN.AspectNLanguageVersion languageVersion = AspectN.AspectNLanguageVersion.Standard) -> void
-AspectN.AspectNParseOptions.LanguageVersion.get -> AspectN.AspectNLanguageVersion
 AspectN.AspectNParser
 AspectN.CompiledMemberPattern
 AspectN.CompiledMemberPattern.Match(AspectN.Metadata.MethodSignature! candidate, AspectN.TypeSystem.ITypeSystem! typeSystem, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.Evaluation.MatchResult!
 AspectN.CompiledPattern
-AspectN.CompiledPattern.LanguageVersion.get -> AspectN.AspectNLanguageVersion
 AspectN.CompiledPattern.Options.get -> AspectN.AspectNCompilationOptions!
 AspectN.CompiledTypePattern
 AspectN.CompiledTypePattern.Match(AspectN.Metadata.TypeSignature! candidate, AspectN.TypeSystem.ITypeSystem! typeSystem, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.Evaluation.MatchResult!
@@ -79,13 +71,11 @@ AspectN.Extensibility.ExtensionArgumentKind.Text = 0 -> AspectN.Extensibility.Ex
 AspectN.Extensibility.ExtensionArgumentKind.TypePattern = 3 -> AspectN.Extensibility.ExtensionArgumentKind
 AspectN.Extensibility.ExtensionCompileContext
 AspectN.Extensibility.ExtensionCompileContext.Arguments.get -> System.Collections.Generic.IReadOnlyList<AspectN.Extensibility.ExtensionArgument!>!
-AspectN.Extensibility.ExtensionCompileContext.LanguageVersion.get -> AspectN.AspectNLanguageVersion
 AspectN.Extensibility.ExtensionCompileContext.QualifiedName.get -> string!
 AspectN.Extensibility.ExtensionCompileContext.SourceSpan.get -> AspectN.Text.TextSpan
 AspectN.Extensibility.ExtensionMatchContext
 AspectN.Extensibility.ExtensionMatchContext.CancellationToken.get -> System.Threading.CancellationToken
 AspectN.Extensibility.ExtensionMatchContext.Candidate.get -> AspectN.Metadata.MethodSignature!
-AspectN.Extensibility.ExtensionMatchContext.LanguageVersion.get -> AspectN.AspectNLanguageVersion
 AspectN.Extensibility.ExtensionMatchContext.TypeSystem.get -> AspectN.TypeSystem.ITypeSystem!
 AspectN.Extensibility.ExtensionTargetDomain
 AspectN.Extensibility.ExtensionTargetDomain.All = AspectN.Extensibility.ExtensionTargetDomain.Callable | AspectN.Extensibility.ExtensionTargetDomain.Constructor -> AspectN.Extensibility.ExtensionTargetDomain
@@ -260,7 +250,6 @@ AspectN.Syntax.ArrayTypePatternSyntax.OpenBracketToken.get -> AspectN.Syntax.Syn
 AspectN.Syntax.ArrayTypePatternSyntax.Rank.get -> int
 AspectN.Syntax.AspectNSyntaxTree
 AspectN.Syntax.AspectNSyntaxTree.Diagnostics.get -> System.Collections.Generic.IReadOnlyList<AspectN.Diagnostics.AspectNDiagnostic!>!
-AspectN.Syntax.AspectNSyntaxTree.LanguageVersion.get -> AspectN.AspectNLanguageVersion
 AspectN.Syntax.AspectNSyntaxTree.ParseKind.get -> AspectN.Parsing.AspectNParseKind
 AspectN.Syntax.AspectNSyntaxTree.Root.get -> AspectN.Syntax.SyntaxNode!
 AspectN.Syntax.AspectNSyntaxTree.Text.get -> AspectN.Text.SourceText!
@@ -514,8 +503,8 @@ override AspectN.Text.SourceText.ToString() -> string!
 override AspectN.Text.TextSpan.Equals(object? obj) -> bool
 override AspectN.Text.TextSpan.GetHashCode() -> int
 static AspectN.AspectNCompilation.Create(AspectN.Syntax.AspectNSyntaxTree! syntaxTree, AspectN.AspectNCompilationOptions? options = null, AspectN.Extensibility.AspectNExtensionRegistry? extensions = null) -> AspectN.AspectNCompilation!
-static AspectN.AspectNParser.ParseMemberExpression(string! source, AspectN.AspectNParseOptions? options = null) -> AspectN.Syntax.AspectNSyntaxTree!
-static AspectN.AspectNParser.ParseTypePattern(string! source, AspectN.AspectNParseOptions? options = null) -> AspectN.Syntax.AspectNSyntaxTree!
+static AspectN.AspectNParser.ParseMemberExpression(string! source) -> AspectN.Syntax.AspectNSyntaxTree!
+static AspectN.AspectNParser.ParseTypePattern(string! source) -> AspectN.Syntax.AspectNSyntaxTree!
 static AspectN.Diagnostics.DiagnosticCodes.AttributePositionMigration.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.BadCharacter.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.CompositeAccessibilityMigration.get -> string!
@@ -533,7 +522,6 @@ static AspectN.Diagnostics.DiagnosticCodes.InvalidVariableScope.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.MissingBackendCapability.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.MissingExtension.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.RegexTimeout.get -> string!
-static AspectN.Diagnostics.DiagnosticCodes.SelectorUnavailable.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.TaskLikeVoidMigration.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.UnexpectedToken.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.UnknownSelector.get -> string!

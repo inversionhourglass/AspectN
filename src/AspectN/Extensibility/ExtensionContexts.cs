@@ -98,12 +98,10 @@ public sealed class ExtensionCompileContext
 
     internal ExtensionCompileContext(
         string qualifiedName,
-        AspectNLanguageVersion languageVersion,
         IEnumerable<ExtensionArgument> arguments,
         TextSpan sourceSpan)
     {
         QualifiedName = qualifiedName;
-        LanguageVersion = languageVersion;
         _arguments = new ReadOnlyCollection<ExtensionArgument>(
             arguments.ToArray());
         SourceSpan = sourceSpan;
@@ -111,9 +109,6 @@ public sealed class ExtensionCompileContext
 
     /// <summary>Gets the qualified name.</summary>
     public string QualifiedName { get; }
-
-    /// <summary>Gets the language version.</summary>
-    public AspectNLanguageVersion LanguageVersion { get; }
 
     /// <summary>Gets the arguments.</summary>
     public IReadOnlyList<ExtensionArgument> Arguments => _arguments;
@@ -128,12 +123,10 @@ public sealed class ExtensionMatchContext
     internal ExtensionMatchContext(
         MethodSignature candidate,
         ITypeSystem typeSystem,
-        AspectNLanguageVersion languageVersion,
         CancellationToken cancellationToken)
     {
         Candidate = candidate;
         TypeSystem = typeSystem;
-        LanguageVersion = languageVersion;
         CancellationToken = cancellationToken;
     }
 
@@ -142,9 +135,6 @@ public sealed class ExtensionMatchContext
 
     /// <summary>Gets the type system.</summary>
     public ITypeSystem TypeSystem { get; }
-
-    /// <summary>Gets the language version.</summary>
-    public AspectNLanguageVersion LanguageVersion { get; }
 
     /// <summary>Gets the cancellation token.</summary>
     public CancellationToken CancellationToken { get; }

@@ -38,11 +38,6 @@ public sealed class CompiledPatternCacheTests
             baseline,
             engine.CompileTypePattern(
                 "Name",
-                new AspectNParseOptions(AspectNLanguageVersion.Legacy)));
-        Assert.NotSame(
-            baseline,
-            engine.CompileTypePattern(
-                "Name",
                 compilationOptions: new AspectNCompilationOptions(
                     TimeSpan.FromMilliseconds(10))));
         var extensions = AspectNExtensionRegistry

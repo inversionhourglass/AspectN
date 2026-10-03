@@ -40,7 +40,7 @@ if (!compilation.TryGetMemberPattern(out var pattern))
 
 var method = typeof(Example.Service).GetMethod("GetName")!;
 var typeSystem = new ReflectionTypeSystem();
-var candidate = typeSystem.Mapper.MapCallable(method);
+var candidate = typeSystem.Mapper.MapMethod(method);
 var result = pattern.Match(candidate, typeSystem);
 
 if (result.Status == MatchStatus.Unknown)
@@ -49,17 +49,12 @@ if (result.Status == MatchStatus.Unknown)
 }
 ```
 
-## Language modes
+## Language
 
-`Standard` is the default language. `Legacy` preserves the approved behavior
-of Shared.Cecil.AspectN for migration workloads:
-
-```csharp
-var options = new AspectNParseOptions(AspectNLanguageVersion.Legacy);
-var compilation = new AspectNEngine().CompileMemberExpression(
-    "method(* Example.Service.Run(..))",
-    options);
-```
+AspectN implements one case-sensitive language, using the existing Standard
+grammar and matching semantics. Language selection and the Legacy compatibility
+layer have been removed. Migrating from Shared.Cecil.AspectN is a breaking
+change that requires reviewing expressions and their intended match ranges.
 
 See the [language guide](docs/language/README.md), the
 [normative language specification](docs/superpowers/specs/2026-07-31-aspectn-language-spec.md),
@@ -70,7 +65,8 @@ and the [Shared.Cecil.AspectN migration guide](docs/migration/shared-cecil-to-as
 ```powershell
 dotnet restore AspectN.sln
 dotnet build AspectN.sln -c Release --no-restore
-dotnet test AspectN.sln -c Release --no-build
+dotnet test AspectN.sln -c Release --no-build --no-restore
+dotnet format AspectN.sln --verify-no-changes --no-restore
 powershell -NoProfile -File eng/verify-packages.ps1
 ```
 

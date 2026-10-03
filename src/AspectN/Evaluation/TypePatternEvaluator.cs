@@ -1,5 +1,4 @@
 using AspectN.Binding;
-using AspectN.Binding.Legacy;
 using AspectN.Diagnostics;
 using AspectN.Metadata;
 
@@ -96,70 +95,11 @@ internal static class TypePatternEvaluator
         }
     }
 
-    public static MatchStatus EvaluateLegacyAsyncReturn(
-        BoundTypePattern resultPattern,
-        TypeSignature candidate,
-        EvaluationContext context)
-    {
-        context.CancellationToken.ThrowIfCancellationRequested();
-        if (candidate is UnsupportedTypeSignature unsupported)
-        {
-            return Unknown(
-                resultPattern,
-                context,
-                $"Legacy async return shape is unavailable for type '{unsupported.DisplayName}'.");
-        }
-
-        if (resultPattern is BoundNamedTypePattern { CanonicalName: "System.Void" } voidPattern &&
-            voidPattern.Segments.All(segment => segment.Generic.Kind == BoundGenericArityKind.Any))
-        {
-            while (candidate is ArrayTypeSignature array) candidate = array.ElementType;
-            return candidate is NamedTypeSignature voidType &&
-                voidType.Identity.Namespace == "System" &&
-                voidType.Identity.MetadataName == "Void" && voidType.Identity.GenericArity == 0
-                ? MatchStatus.Matched : MatchStatus.NotMatched;
-        }
-
-        if (candidate is not NamedTypeSignature named ||
-            !IsTaskLikeDefinition(named.Identity))
-        {
-            return MatchStatus.NotMatched;
-        }
-
-        if (IsLegacyNullPattern(resultPattern))
-        {
-            return named.Identity.GenericArity == 0
-                ? MatchStatus.Matched
-                : MatchStatus.NotMatched;
-        }
-
-        if (named.Identity.GenericArity != 1)
-        {
-            return MatchStatus.NotMatched;
-        }
-
-        if (named.TypeArguments.Count != 1)
-        {
-            return Unknown(
-                resultPattern,
-                context,
-                "The Legacy async result type is unavailable.");
-        }
-
-        return Evaluate(resultPattern, named.TypeArguments[0], context);
-    }
-
     private static MatchStatus EvaluateNamed(
         BoundNamedTypePattern pattern,
         TypeSignature candidate,
         EvaluationContext context)
     {
-        if (context.LanguageVersion == AspectNLanguageVersion.Legacy)
-        {
-            // Shared's bare named patterns compare array element identities.
-            while (candidate is ArrayTypeSignature array) candidate = array.ElementType;
-        }
-
         if (candidate is UnsupportedTypeSignature unsupported)
         {
             return Unknown(
@@ -189,26 +129,6 @@ internal static class TypePatternEvaluator
                 $"Array shape is unavailable for type '{unsupported.DisplayName}'.");
         }
 
-        if (context.LanguageVersion == AspectNLanguageVersion.Legacy)
-        {
-            BoundTypePattern elementPattern = pattern;
-            while (elementPattern is BoundArrayTypePattern arrayPattern)
-            {
-                if (candidate is not ArrayTypeSignature candidateArray ||
-                    candidateArray.Rank != arrayPattern.Rank)
-                {
-                    return MatchStatus.NotMatched;
-                }
-
-                elementPattern = arrayPattern.ElementType;
-                candidate = candidateArray.ElementType;
-            }
-
-            return candidate is ArrayTypeSignature
-                ? MatchStatus.NotMatched
-                : Evaluate(elementPattern, candidate, context);
-        }
-
         return candidate is ArrayTypeSignature array && array.Rank == pattern.Rank
             ? Evaluate(pattern.ElementType, array.ElementType, context)
             : MatchStatus.NotMatched;
@@ -219,37 +139,12 @@ internal static class TypePatternEvaluator
         TypeSignature candidate,
         EvaluationContext context)
     {
-        candidate = GetLegacyElementType(candidate, context);
-
         if (candidate is UnsupportedTypeSignature unsupported)
         {
             return Unknown(
                 pattern,
                 context,
                 $"Nullability is unavailable for type '{unsupported.DisplayName}'.");
-        }
-
-        if (context.LanguageVersion == AspectNLanguageVersion.Legacy)
-        {
-            if (candidate is not NamedTypeSignature legacyNamed ||
-                !LegacyGenericRules.IsNullableDefinition(
-                    legacyNamed.Identity))
-            {
-                return MatchStatus.NotMatched;
-            }
-
-            if (legacyNamed.TypeArguments.Count != 1)
-            {
-                return Unknown(
-                    pattern,
-                    context,
-                    "System.Nullable<T> is missing its constructed argument.");
-            }
-
-            return Evaluate(
-                pattern.UnderlyingType,
-                legacyNamed.TypeArguments[0],
-                context);
         }
 
         if (candidate is ArrayTypeSignature)
@@ -298,8 +193,6 @@ internal static class TypePatternEvaluator
         TypeSignature candidate,
         EvaluationContext context)
     {
-        candidate = GetLegacyElementType(candidate, context);
-
         if (candidate is UnsupportedTypeSignature unsupported)
         {
             return Unknown(
@@ -309,13 +202,13 @@ internal static class TypePatternEvaluator
         }
 
         if (candidate is not NamedTypeSignature named ||
-            !IsTupleDefinition(named.Identity, context.LanguageVersion))
+            !IsTupleDefinition(named.Identity))
         {
             return MatchStatus.NotMatched;
         }
 
         var elements = new List<TypeSignature>();
-        if (!TryFlattenTuple(named, context.LanguageVersion, elements))
+        if (!TryFlattenTuple(named, elements))
         {
             return Unknown(
                 pattern,
@@ -385,7 +278,6 @@ internal static class TypePatternEvaluator
 
     private static bool TryFlattenTuple(
         NamedTypeSignature tuple,
-        AspectNLanguageVersion languageVersion,
         List<TypeSignature> elements)
     {
         var current = tuple;
@@ -405,7 +297,7 @@ internal static class TypePatternEvaluator
 
             if (arity != 8) return true;
             if (current.TypeArguments[7] is not NamedTypeSignature rest ||
-                !IsTupleDefinition(rest.Identity, languageVersion))
+                !IsTupleDefinition(rest.Identity))
             {
                 return false;
             }
@@ -414,16 +306,10 @@ internal static class TypePatternEvaluator
         }
     }
 
-    private static bool IsTupleDefinition(
-        TypeIdentity identity,
-        AspectNLanguageVersion languageVersion)
+    private static bool IsTupleDefinition(TypeIdentity identity)
     {
-        return languageVersion == AspectNLanguageVersion.Legacy
-            ? LegacyGenericRules.IsTupleDefinition(identity)
-            : StringComparer.Ordinal.Equals(identity.Namespace, "System") &&
-              StringComparer.Ordinal.Equals(
-                  identity.MetadataName,
-                  "ValueTuple");
+        return StringComparer.Ordinal.Equals(identity.Namespace, "System") &&
+            StringComparer.Ordinal.Equals(identity.MetadataName, "ValueTuple");
     }
 
     private static bool IsTaskLikeDefinition(TypeIdentity identity)
@@ -435,15 +321,6 @@ internal static class TypePatternEvaluator
                 StringComparer.Ordinal.Equals(
                     identity.MetadataName,
                     "ValueTask"));
-    }
-
-    private static bool IsLegacyNullPattern(BoundTypePattern pattern)
-    {
-        return pattern is BoundNamedTypePattern named &&
-               named.Segments.Count == 1 &&
-               StringComparer.Ordinal.Equals(
-                   named.CanonicalName,
-                   "null");
     }
 
     private static bool IsVoidPattern(BoundTypePattern pattern)
@@ -471,11 +348,8 @@ internal static class TypePatternEvaluator
         TypeSignature candidate,
         EvaluationContext context)
     {
-        candidate = GetLegacyElementType(candidate, context);
-
         if (TryCreateRelationshipTarget(
             pattern.TargetType,
-            context.LanguageVersion,
             out var target))
         {
             context.CancellationToken.ThrowIfCancellationRequested();
@@ -488,7 +362,7 @@ internal static class TypePatternEvaluator
         }
 
         // 具体化失败的命名模式（名称通配、命名空间 .. 等）沿闭包用模式本身求值，
-        // 与 Legacy 的 CompiledTypePattern 语义一致；非命名目标仍不支持。
+        // 非命名目标无法执行关系查询，使用模式求值遍历类型闭包。
         // nullable 目标（X?+）具体化失败时同样回退闭包求值：候选侧由 EvaluateNullable
         // 分派，非 Nullable<T> 的候选直接 NotMatched，而不是因目标不可具体化返回 Unknown。
         if (pattern.TargetType is BoundNamedTypePattern ||
@@ -624,8 +498,7 @@ internal static class TypePatternEvaluator
         if (!MatchesNamespaceAndOuterType(
                 pattern,
                 outerTypeIndex,
-                candidateTypes[0],
-                context.LanguageVersion))
+                candidateTypes[0]))
         {
             return MatchStatus.NotMatched;
         }
@@ -659,7 +532,7 @@ internal static class TypePatternEvaluator
 
         if (!requiresArguments) return MatchStatus.Matched;
         // 与成员泛型子句同理：定义签名没有实参时回退到按声明链合成的形式参数。
-        var candidateArguments = LegacyGenericRules.GetEffectiveTypeArguments(
+        var candidateArguments = GenericParameterNamer.GetEffectiveTypeArguments(
             candidate);
         if (candidateArguments.Length != totalArity)
         {
@@ -699,20 +572,9 @@ internal static class TypePatternEvaluator
     private static bool MatchesNamespaceAndOuterType(
         BoundNamedTypePattern pattern,
         int outerTypeIndex,
-        TypeIdentity outerType,
-        AspectNLanguageVersion languageVersion)
+        TypeIdentity outerType)
     {
         if (outerTypeIndex == 0) return true;
-
-        // Shared 的 NamespacePattern 对裸 *.. 前缀直接匹配任意命名空间（含全局命名空间）：
-        // *..* / *..Foo 可命中无命名空间的非嵌套类型；限定前缀（A..*）不享受该特例。
-        if (languageVersion == AspectNLanguageVersion.Legacy &&
-            outerTypeIndex == 1 &&
-            pattern.Separators[0] == ".." &&
-            pattern.Segments[0].Pattern == "*")
-        {
-            return true;
-        }
 
         var namespaceSegments = string.IsNullOrEmpty(outerType.Namespace)
             ? Array.Empty<string>()
@@ -805,13 +667,10 @@ internal static class TypePatternEvaluator
 
     private static bool TryCreateRelationshipTarget(
         BoundTypePattern pattern,
-        AspectNLanguageVersion languageVersion,
         out TypeSignature? target)
     {
         if (!TryCreateConcreteType(
                 pattern,
-                languageVersion,
-                requireSpecifiedGenericArity: true,
                 out target) ||
             target is not NamedTypeSignature)
         {
@@ -824,36 +683,18 @@ internal static class TypePatternEvaluator
 
     internal static bool TryCreateConcreteType(
         BoundTypePattern pattern,
-        AspectNLanguageVersion languageVersion,
-        out TypeSignature? type)
-    {
-        return TryCreateConcreteType(
-            pattern,
-            languageVersion,
-            requireSpecifiedGenericArity: false,
-            out type);
-    }
-
-    private static bool TryCreateConcreteType(
-        BoundTypePattern pattern,
-        AspectNLanguageVersion languageVersion,
-        bool requireSpecifiedGenericArity,
         out TypeSignature? type)
     {
         if (pattern is BoundNamedTypePattern named)
         {
             return TryCreateConcreteNamedType(
                 named,
-                languageVersion,
-                requireSpecifiedGenericArity,
                 out type);
         }
 
         if (pattern is BoundArrayTypePattern array &&
             TryCreateConcreteType(
                 array.ElementType,
-                languageVersion,
-                requireSpecifiedGenericArity,
                 out var elementType))
         {
             type = new ArrayTypeSignature(elementType!, array.Rank);
@@ -863,42 +704,33 @@ internal static class TypePatternEvaluator
         if (pattern is BoundNullableTypePattern nullable &&
             TryCreateConcreteType(
                 nullable.UnderlyingType,
-                languageVersion,
-                requireSpecifiedGenericArity,
                 out var underlying))
         {
-            if (languageVersion == AspectNLanguageVersion.Standard)
+            // 引用类型 T? 等价于 T，非空值类型 T? 才是 Nullable<T>。
+            // 具体化只能静态判断基元和数组，其余类型交给模式求值。
+            if (underlying is ArrayTypeSignature)
             {
-                // Standard 12.6：引用类型 T? 等价于 T，非空值类型 T? 才是 Nullable<T>。
-                // 具体化没有解析上下文，只有已知基元能静态判定值/引用类别；
-                // 数组是引用类型，直接去掉标注；其余命名类型回退到模式求值。
-                if (underlying is ArrayTypeSignature)
+                type = underlying;
+                return true;
+            }
+
+            if (underlying is NamedTypeSignature underlyingNamed)
+            {
+                if (IsKnownReferenceType(underlyingNamed.Identity))
                 {
                     type = underlying;
                     return true;
                 }
 
-                if (underlying is NamedTypeSignature underlyingNamed)
+                if (IsKnownValueType(underlyingNamed.Identity))
                 {
-                    if (IsKnownReferenceType(underlyingNamed.Identity))
-                    {
-                        type = underlying;
-                        return true;
-                    }
-
-                    if (IsKnownValueType(underlyingNamed.Identity))
-                    {
-                        type = CreateNullableWrapper(underlying);
-                        return true;
-                    }
+                    type = CreateNullableWrapper(underlying);
+                    return true;
                 }
-
-                type = null;
-                return false;
             }
 
-            type = CreateNullableWrapper(underlying!);
-            return true;
+            type = null;
+            return false;
         }
 
         type = null;
@@ -945,8 +777,6 @@ internal static class TypePatternEvaluator
 
     private static bool TryCreateConcreteNamedType(
         BoundNamedTypePattern named,
-        AspectNLanguageVersion languageVersion,
-        bool requireSpecifiedGenericArity,
         out TypeSignature? type)
     {
         if (named.Segments.Any(segment => segment.Pattern.Contains('*')) ||
@@ -997,11 +827,9 @@ internal static class TypePatternEvaluator
             var segment = named.Segments[index];
             // 具体目标要求泛型完全具体化：固定元数必须显式给出全部实参（规范：Name<> 表示一个任意实参），
             // 否则回退到闭包模式求值；嵌套实参的递归具体化同样由 TryCreateConcreteType 强制。
-            // 关系目标（+）还要求元数确定：Legacy 省略子句的 Any 同样回退到闭包模式求值；
-            // 其余调用方（如特性直接查询）保留 Legacy 省略子句的具体化行为。
+            // 通配元数无法形成具体类型，同样回退到闭包模式求值。
             if (segment.Generic.Kind == BoundGenericArityKind.AnyPositive ||
-                (requireSpecifiedGenericArity &&
-                 segment.Generic.Kind == BoundGenericArityKind.Any) ||
+                segment.Generic.Kind == BoundGenericArityKind.Any ||
                 (segment.Generic.Arity > 0 &&
                  segment.Generic.Arguments.Count != segment.Generic.Arity))
             {
@@ -1013,8 +841,6 @@ internal static class TypePatternEvaluator
             {
                 if (!TryCreateConcreteType(
                         argument,
-                        languageVersion,
-                        requireSpecifiedGenericArity,
                         out var typeArgument))
                 {
                     type = null;
@@ -1053,16 +879,6 @@ internal static class TypePatternEvaluator
             pattern.Segments
                 .Take(outerTypeIndex)
                 .Select(segment => segment.Pattern));
-    }
-
-    private static TypeSignature GetLegacyElementType(TypeSignature candidate, EvaluationContext context)
-    {
-        if (context.LanguageVersion == AspectNLanguageVersion.Legacy)
-        {
-            while (candidate is ArrayTypeSignature array) candidate = array.ElementType;
-        }
-
-        return candidate;
     }
 
     private static MatchStatus Unknown(

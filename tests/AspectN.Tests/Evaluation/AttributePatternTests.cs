@@ -120,7 +120,7 @@ public sealed class AttributePatternTests
     [Fact]
     public void Match_ExecPosition_IncludesAssociatedPropertyAttributes()
     {
-        // exec 与 Legacy 语义一致：访问器候选同时查询 callable 与所属 property。
+        // exec：访问器候选同时查询 callable 与所属 property。
         var typeSystem = new AttributeTypeSystem(target =>
             target.Kind == AttributeTargetKind.Property);
 
@@ -128,30 +128,6 @@ public sealed class AttributePatternTests
             "attr(exec Example.RequiredAttribute)",
             Candidate(),
             typeSystem);
-
-        Assert.Equal(MatchStatus.Matched, result.Status);
-        Assert.Equal(
-            new[]
-            {
-                AttributeTargetKind.Method,
-                AttributeTargetKind.Property
-            },
-            typeSystem.RequestedTargets.Select(target => target.Kind).ToArray());
-    }
-
-    [Fact]
-    public void Match_LegacyExecPosition_IncludesAssociatedPropertyAttributes()
-    {
-        // Legacy 的 exec 同样并入所属 property 的直接特性（Rougamo 规则），
-        // 钉住 exec 目标展开在两个语言版本语义一致。
-        var typeSystem = new AttributeTypeSystem(target =>
-            target.Kind == AttributeTargetKind.Property);
-
-        var result = Match(
-            "attr(exec Example.RequiredAttribute)",
-            Candidate(),
-            typeSystem,
-            AspectNLanguageVersion.Legacy);
 
         Assert.Equal(MatchStatus.Matched, result.Status);
         Assert.Equal(
@@ -445,13 +421,10 @@ public sealed class AttributePatternTests
     private static MatchResult Match(
         string source,
         MethodSignature candidate,
-        ITypeSystem typeSystem,
-        AspectNLanguageVersion languageVersion = AspectNLanguageVersion.Standard)
+        ITypeSystem typeSystem)
     {
         var compilation = AspectNCompilation.Create(
-            AspectNParser.ParseMemberExpression(
-                source,
-                new AspectNParseOptions(languageVersion)));
+            AspectNParser.ParseMemberExpression(source));
         Assert.True(compilation.TryGetMemberPattern(out var pattern));
         return pattern!.Match(candidate, typeSystem);
     }

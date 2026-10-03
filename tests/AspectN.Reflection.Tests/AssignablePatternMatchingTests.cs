@@ -6,9 +6,6 @@ namespace AspectN.Reflection.Tests;
 
 public sealed class AssignablePatternMatchingTests
 {
-    private static readonly AspectNParseOptions _Legacy =
-        new(AspectNLanguageVersion.Legacy);
-
     [Fact]
     public void MemberPattern_StandardNullableReferenceArgumentInAssignableTarget_MatchesUnderlyingType()
     {
@@ -40,28 +37,13 @@ public sealed class AssignablePatternMatchingTests
     }
 
     [Fact]
-    public void MemberPattern_LegacyOmittedGenericClauseInAssignableTarget_RequiresNonGenericType()
-    {
-        // 用户批准 2026-10-01：Legacy genericIn 裸单段名省略子句表示零泛型
-        // （对齐 Shared 的 SingleNonGenericNamePattern），Dictionary+ 不再匹配
-        // 构造类型 Dictionary<,>；Standard 语义与此一致。
-        Assert.Equal(
-            MatchStatus.NotMatched,
-            Match(
-                "method(Dictionary+ ReflectionAssignableFixture.GetMap())",
-                nameof(ReflectionAssignableFixture.GetMap),
-                _Legacy));
-    }
-
-    [Fact]
-    public void MemberPattern_LegacyOmittedGenericClause_RejectsUnrelatedType()
+    public void MemberPattern_OmittedGenericClause_RejectsUnrelatedType()
     {
         Assert.Equal(
             MatchStatus.NotMatched,
             Match(
                 "method(Dictionary+ ReflectionAssignableFixture.Items())",
-                nameof(ReflectionAssignableFixture.Items),
-                _Legacy));
+                nameof(ReflectionAssignableFixture.Items)));
     }
 
     [Fact]
@@ -75,15 +57,12 @@ public sealed class AssignablePatternMatchingTests
     }
 
     [Theory]
-    [InlineData("int<>+", AspectNLanguageVersion.Standard)]
-    [InlineData("int<>+", AspectNLanguageVersion.Legacy)]
-    [InlineData("int<..>+", AspectNLanguageVersion.Standard)]
-    [InlineData("int<..>+", AspectNLanguageVersion.Legacy)]
-    [InlineData("System.Int32<>+", AspectNLanguageVersion.Standard)]
-    [InlineData("System.Int32<..>+", AspectNLanguageVersion.Legacy)]
+    [InlineData("int<>+")]
+    [InlineData("int<..>+")]
+    [InlineData("System.Int32<>+")]
+    [InlineData("System.Int32<..>+")]
     public void MemberPattern_ExplicitArityClauseOnAliasAssignableTarget_IsEnforced(
-        string returnType,
-        AspectNLanguageVersion version)
+        string returnType)
     {
         // 审计 #4 回归：别名具体化不得丢弃显式泛型约束——
         // int<>+ / int<..>+ 曾错误命中 int，修复后与 System.Int32<>+ 一致拒绝。
@@ -91,49 +70,22 @@ public sealed class AssignablePatternMatchingTests
             MatchStatus.NotMatched,
             Match(
                 $"method({returnType} ReflectionAssignableFixture.Count())",
-                nameof(ReflectionAssignableFixture.Count),
-                new AspectNParseOptions(version)));
+                nameof(ReflectionAssignableFixture.Count)));
     }
 
     [Theory]
-    [InlineData("int+", AspectNLanguageVersion.Standard)]
-    [InlineData("int+", AspectNLanguageVersion.Legacy)]
-    [InlineData("int<!>+", AspectNLanguageVersion.Standard)]
-    [InlineData("int<!>+", AspectNLanguageVersion.Legacy)]
-    [InlineData("int<?>+", AspectNLanguageVersion.Standard)]
+    [InlineData("int+")]
+    [InlineData("int<!>+")]
+    [InlineData("int<?>+")]
     public void MemberPattern_ZeroArityClauseOnAliasAssignableTarget_StillMatches(
-        string returnType,
-        AspectNLanguageVersion version)
+        string returnType)
     {
         // 省略 / <!> / <?>（任意元数含零）与"别名只存在于零元数"相容，保持命中。
         Assert.Equal(
             MatchStatus.Matched,
             Match(
                 $"method({returnType} ReflectionAssignableFixture.Count())",
-                nameof(ReflectionAssignableFixture.Count),
-                new AspectNParseOptions(version)));
-    }
-
-    [Theory]
-    [InlineData("int[]?+", MatchStatus.NotMatched)]
-    [InlineData("int??+", MatchStatus.NotMatched)]
-    [InlineData("tasklike<int>+", MatchStatus.NotMatched)]
-    [InlineData("(int,int)+", MatchStatus.Unknown)]
-    [InlineData("(* || int)+", MatchStatus.Unknown)]
-    [InlineData("$T+", MatchStatus.Unknown)]
-    [InlineData("*??+", MatchStatus.Unknown)]
-    [InlineData("int+?+", MatchStatus.Unknown)]
-    public void MemberPattern_LegacyUnsupportedAssignableTargets_RecordedSnapshots(
-        string returnType,
-        MatchStatus expected)
-    {
-        // 三轮审计快照：Legacy 冻结这些形态的编译与求值结果（Standard 已绑定期拒绝）。
-        Assert.Equal(
-            expected,
-            Match(
-                $"method({returnType} ReflectionAssignableFixture.Digits())",
-                nameof(ReflectionAssignableFixture.Digits),
-                _Legacy));
+                nameof(ReflectionAssignableFixture.Count)));
     }
 
     [Theory]
@@ -149,12 +101,6 @@ public sealed class AssignablePatternMatchingTests
             Match(
                 $"method({returnType} ReflectionAssignableFixture.Maybe())",
                 nameof(ReflectionAssignableFixture.Maybe)));
-        Assert.Equal(
-            MatchStatus.Matched,
-            Match(
-                $"method({returnType} ReflectionAssignableFixture.Maybe())",
-                nameof(ReflectionAssignableFixture.Maybe),
-                _Legacy));
     }
 
     [Fact]
@@ -166,18 +112,11 @@ public sealed class AssignablePatternMatchingTests
             Match(
                 "method(System.Collections.Generic.List<int[]>+ ReflectionAssignableFixture.Jagged())",
                 nameof(ReflectionAssignableFixture.Jagged)));
-        Assert.Equal(
-            MatchStatus.Matched,
-            Match(
-                "method(System.Collections.Generic.List<int[]>+ ReflectionAssignableFixture.Jagged())",
-                nameof(ReflectionAssignableFixture.Jagged),
-                _Legacy));
     }
 
     private static MatchStatus Match(
         string expression,
-        string methodName,
-        AspectNParseOptions? options = null)
+        string methodName)
     {
         var typeSystem = new ReflectionTypeSystem();
         var method = typeof(ReflectionAssignableFixture).GetMethod(
@@ -187,7 +126,7 @@ public sealed class AssignablePatternMatchingTests
                 $"Missing fixture method {methodName}.");
         var candidate = typeSystem.Mapper.MapMethod(method);
         var compilation = AspectNCompilation.Create(
-            AspectNParser.ParseMemberExpression(expression, options));
+            AspectNParser.ParseMemberExpression(expression));
         Assert.True(compilation.TryGetMemberPattern(out var pattern));
 
         return pattern!.Match(candidate, typeSystem).Status;

@@ -123,7 +123,6 @@ internal sealed class CompiledPatternCache
 internal readonly struct CompiledPatternCacheKey(
     string source,
     AspectNParseKind parseKind,
-    AspectNLanguageVersion languageVersion,
     AspectNCompilationOptions compilationOptions,
     AspectNExtensionRegistry extensions) :
     IEquatable<CompiledPatternCacheKey>
@@ -131,8 +130,6 @@ internal readonly struct CompiledPatternCacheKey(
     public string Source { get; } = source ?? throw new ArgumentNullException(nameof(source));
 
     public AspectNParseKind ParseKind { get; } = parseKind;
-
-    public AspectNLanguageVersion LanguageVersion { get; } = languageVersion;
 
     public long RegexTimeoutTicks { get; } = compilationOptions?.RegexTimeout.Ticks ??
             throw new ArgumentNullException(nameof(compilationOptions));
@@ -144,7 +141,6 @@ internal readonly struct CompiledPatternCacheKey(
     {
         return StringComparer.Ordinal.Equals(Source, other.Source) &&
                ParseKind == other.ParseKind &&
-               LanguageVersion == other.LanguageVersion &&
                RegexTimeoutTicks == other.RegexTimeoutTicks &&
                ExtensionIdentity == other.ExtensionIdentity;
     }
@@ -160,7 +156,6 @@ internal readonly struct CompiledPatternCacheKey(
         {
             var hash = StringComparer.Ordinal.GetHashCode(Source);
             hash = (hash * 397) ^ (int)ParseKind;
-            hash = (hash * 397) ^ (int)LanguageVersion;
             hash = (hash * 397) ^ RegexTimeoutTicks.GetHashCode();
             hash = (hash * 397) ^ ExtensionIdentity.GetHashCode();
             return hash;

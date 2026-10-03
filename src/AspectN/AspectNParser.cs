@@ -9,11 +9,9 @@ public static class AspectNParser
 {
     /// <summary>Parses member expression input.</summary>
     /// <param name="source">Specifies the source.</param>
-    /// <param name="options">Specifies the options.</param>
     /// <returns>Returns the result of the operation.</returns>
     public static AspectNSyntaxTree ParseMemberExpression(
-        string source,
-        AspectNParseOptions? options = null)
+        string source)
     {
 #if NET10_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(source);
@@ -21,18 +19,14 @@ public static class AspectNParser
         if (source is null) throw new ArgumentNullException(nameof(source));
 #endif
 
-        return new Parser(
-            SourceText.From(source),
-            options ?? new AspectNParseOptions()).ParseMemberExpression();
+        return new Parser(SourceText.From(source)).ParseMemberExpression();
     }
 
     /// <summary>Parses type pattern input.</summary>
     /// <param name="source">Specifies the source.</param>
-    /// <param name="options">Specifies the options.</param>
     /// <returns>Returns the result of the operation.</returns>
     public static AspectNSyntaxTree ParseTypePattern(
-        string source,
-        AspectNParseOptions? options = null)
+        string source)
     {
 #if NET10_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(source);
@@ -40,8 +34,6 @@ public static class AspectNParser
         if (source is null) throw new ArgumentNullException(nameof(source));
 #endif
 
-        return new TypePatternParser(
-            SourceText.From(source),
-            options ?? new AspectNParseOptions()).Parse();
+        return new TypePatternParser(SourceText.From(source)).Parse();
     }
 }

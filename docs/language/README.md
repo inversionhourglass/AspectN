@@ -14,7 +14,8 @@ specific metadata backend in the language or compiled pattern API.
 - `ctor(...)` and `cctor(...)` select instance and static constructors.
 - `attr(target Type)` checks a direct attribute on a type, callable (`call`),
   property (`prop`), return value (`ret`), parameter (`para[n]`), the execution
-  family (`exec`), or any location (`any`, `*`).
+  family (`exec`), or any location (`any`, `*`). Parameter positions accept both
+  brackets (`para[0]`, `para[*]`) and spaces (`para 0`, `para *`).
 
 Selectors can be combined with `&&`, `||`, `!`, and parentheses.
 
@@ -49,17 +50,18 @@ Matching is three-valued:
 Do not silently treat `Unknown` as `NotMatched` unless that is an explicit
 application policy. Diagnostics on the result explain the missing fact.
 
-## Standard and Legacy
+## One language contract
 
-`Standard` is case-sensitive and uses the current fixed grammar. `Legacy` is
-an explicit compatibility language for migrating Shared.Cecil.AspectN
-expressions. New applications should use `Standard`.
+The existing Standard grammar is the sole AspectN language. Keywords are
+lowercase and case-sensitive; pattern variables require `$`, and a named type
+or method without a generic clause requires arity zero. Use `<?>` for any
+arity. The independent [design decisions](standard-design-decisions.md)
+explain these choices and the wildcard family.
 
-Legacy compatibility decisions, approved Shared corrections, and concrete
-examples are recorded in the [Legacy compatibility policy](legacy-compatibility.md).
-The complete Standard/Legacy difference inventory with design rationale and
-migration mappings is recorded in
-[Legacy–Standard differences](legacy-standard-differences.md).
+Legacy and the language selection API have been removed. The
+[migration guide](../migration/shared-cecil-to-aspectn.md) describes the
+breaking transition from Shared.Cecil.AspectN. Rougamo integration and its
+breaking major release are separate work.
 
 The complete grammar, precedence, modifier rules, generic-variable semantics,
 canonical regex form, and diagnostic contract are defined by the

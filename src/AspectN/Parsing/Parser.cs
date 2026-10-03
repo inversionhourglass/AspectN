@@ -7,16 +7,13 @@ namespace AspectN.Parsing;
 internal sealed partial class Parser
 {
     private readonly DiagnosticBag _diagnostics = new();
-    private readonly HashSet<int> _numericNameStarts = new();
     private readonly Lexer _lexer;
-    private readonly AspectNParseOptions _options;
     private readonly SourceText _source;
     private SyntaxToken _current;
 
-    public Parser(SourceText source, AspectNParseOptions options)
+    public Parser(SourceText source)
     {
         _source = source;
-        _options = options;
         _lexer = new Lexer(source);
         _current = _lexer.Lex();
     }
@@ -36,8 +33,7 @@ internal sealed partial class Parser
             _source,
             AspectNParseKind.MemberExpression,
             root,
-            GetDiagnostics(),
-            _options.LanguageVersion);
+            GetDiagnostics());
     }
 
     private ExpressionSyntax ParseExpression(int parentPrecedence = 0)
@@ -121,9 +117,7 @@ internal sealed partial class Parser
     {
         return _diagnostics
             .ToArray()
-            .Concat(_lexer.Diagnostics.Where(diagnostic =>
-                diagnostic.Code != DiagnosticCodes.InvalidInteger ||
-                diagnostic.Span is not { } span || !_numericNameStarts.Contains(span.Start)))
+            .Concat(_lexer.Diagnostics)
             .OrderBy(diagnostic => diagnostic.Span?.Start ?? int.MaxValue)
             .ThenBy(diagnostic => diagnostic.Code, StringComparer.Ordinal)
             .ToArray();

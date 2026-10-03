@@ -21,8 +21,7 @@ public sealed class AssignableRelationshipTargetTests
         };
         var compilation = AspectNCompilation.Create(
             AspectNParser.ParseTypePattern(
-                "System.Collections.Generic.IDictionary<string,string>+",
-                new AspectNParseOptions(AspectNLanguageVersion.Legacy)));
+                "System.Collections.Generic.IDictionary<string,string>+"));
         Assert.True(compilation.TryGetTypePattern(out var pattern));
 
         var result = pattern!.Match(Candidate(), typeSystem);
@@ -194,12 +193,11 @@ public sealed class AssignableRelationshipTargetTests
     }
 
     [Fact]
-    public void Match_LegacyNullableValueTarget_PreservesNullableWrapper()
+    public void Match_NullableValueTarget_PreservesNullableWrapper()
     {
         var (result, target) = MatchWithObservedTarget(
             "int?+",
             Named("Example", "Resource", 0),
-            version: AspectNLanguageVersion.Legacy,
             relation: TypeRelationResult.Matched);
 
         Assert.Equal(MatchStatus.Matched, result.Status);
@@ -208,29 +206,13 @@ public sealed class AssignableRelationshipTargetTests
     }
 
     [Fact]
-    public void Match_LegacyNullableReferenceAliasArgument_PreservesNullableWrapper()
-    {
-        var (result, target) = MatchWithObservedTarget(
-            "System.Collections.Generic.IEnumerable<string?>+",
-            Named("Example", "Resource", 0),
-            version: AspectNLanguageVersion.Legacy,
-            relation: TypeRelationResult.Matched);
-
-        Assert.Equal(MatchStatus.Matched, result.Status);
-        var namedTarget = Assert.IsType<NamedTypeSignature>(target);
-        var argument = Assert.Single(namedTarget.TypeArguments);
-        Assert.Equal("System.Nullable`1", Name(argument));
-    }
-
-    [Fact]
-    public void Match_LegacyNullableNamedTarget_NonNullableCandidateNotMatched()
+    public void Match_NullableNamedTarget_UnrelatedCandidateNotMatched()
     {
         // 用户批准 2026-10-01：nullable 目标具体化失败时回退闭包求值，
-        // 非 Nullable<T> 的候选直接 NotMatched，不再因目标不可具体化返回 Unknown。
+        // 无匹配祖先的候选直接 NotMatched，不再因目标不可具体化返回 Unknown。
         var (result, target) = MatchWithObservedTarget(
             "Fixtures.Base?+",
             Named("Example", "Resource", 0),
-            version: AspectNLanguageVersion.Legacy,
             relation: TypeRelationResult.Matched);
 
         Assert.Equal(MatchStatus.NotMatched, result.Status);
@@ -238,28 +220,7 @@ public sealed class AssignableRelationshipTargetTests
     }
 
     [Fact]
-    public void Match_LegacyOmittedGenericClause_RequiresNonGenericSelf()
-    {
-        // 用户批准 2026-10-01：genericIn 裸单段名省略子句表示零泛型（Shared 的
-        // SingleNonGenericNamePattern），Dictionary+ 不再匹配构造类型 Dictionary<,>。
-        var candidate = Named(
-            "Example",
-            "Dictionary",
-            2,
-            TypeKind.Class,
-            Named("System", "String", 0),
-            Named("System", "Int32", 0, TypeKind.Struct));
-
-        var (result, target) = MatchWithObservedTarget(
-            "Dictionary+",
-            candidate,
-            version: AspectNLanguageVersion.Legacy);
-
-        Assert.Equal(MatchStatus.NotMatched, result.Status);
-    }
-
-    [Fact]
-    public void Match_LegacyOmittedNestedGenericArgument_RequiresNonGenericArgument()
+    public void Match_OmittedNestedGenericArgument_RequiresNonGenericArgument()
     {
         // 嵌套泛型实参里的裸单段名同样要求零泛型：List 不匹配 List<int>。
         var candidate = Named(
@@ -277,19 +238,17 @@ public sealed class AssignableRelationshipTargetTests
 
         var (result, target) = MatchWithObservedTarget(
             "System.Collections.Generic.Dictionary<string, List>+",
-            candidate,
-            version: AspectNLanguageVersion.Legacy);
+            candidate);
 
         Assert.Equal(MatchStatus.NotMatched, result.Status);
     }
 
     [Fact]
-    public void Match_LegacyOmittedGenericClause_StillMatchesNonGenericSelf()
+    public void Match_OmittedGenericClause_StillMatchesNonGenericSelf()
     {
         var (result, target) = MatchWithObservedTarget(
             "System.Action+",
             Named("System", "Action", 0, TypeKind.Delegate),
-            version: AspectNLanguageVersion.Legacy,
             relation: TypeRelationResult.Matched);
 
         Assert.Equal(MatchStatus.Matched, result.Status);
@@ -318,7 +277,6 @@ public sealed class AssignableRelationshipTargetTests
     private static (MatchResult Result, TypeSignature? Target) MatchWithObservedTarget(
         string source,
         TypeSignature candidate,
-        AspectNLanguageVersion version = AspectNLanguageVersion.Standard,
         InheritanceClosure? closure = null,
         TypeRelationResult? relation = null)
     {
@@ -335,9 +293,7 @@ public sealed class AssignableRelationshipTargetTests
                 : (_, _) => closure
         };
         var compilation = AspectNCompilation.Create(
-            AspectNParser.ParseTypePattern(
-                source,
-                new AspectNParseOptions(version)));
+            AspectNParser.ParseTypePattern(source));
         Assert.True(compilation.TryGetTypePattern(out var pattern));
 
         var result = pattern!.Match(candidate, typeSystem);

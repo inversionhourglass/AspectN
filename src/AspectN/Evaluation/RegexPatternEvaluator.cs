@@ -13,9 +13,7 @@ internal static class RegexPatternEvaluator
         EvaluationContext context)
     {
         context.CancellationToken.ThrowIfCancellationRequested();
-        var signature = CanonicalSignatureFormatter.Format(
-            candidate,
-            context.LanguageVersion);
+        var signature = CanonicalSignatureFormatter.Format(candidate);
         try
         {
             return Regex.IsMatch(

@@ -91,7 +91,7 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
     }
 
     // 获取声明的继承/实现闭包（不含候选自身）；数组按运行时固定事实产出合成关系。
-    // 祖先引用先产出再解析展开（与 oracle 及具体目标路径的顺序一致）——匹配只需要签名，不需要定义；
+    // 祖先引用先产出再解析展开（与具体目标路径的顺序一致）——匹配只需要签名，不需要定义；
     // 解析失败时该祖先已产出，但其上层关系不可知，闭包标记为部分并携带失败诊断。
     public InheritanceClosure GetInheritanceClosure(
         TypeSignature candidate,

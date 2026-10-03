@@ -159,7 +159,7 @@ public sealed class FixtureCompiler : IDisposable
 
     private static string ReadFixtureSource()
     {
-        var assembly = typeof(LegacyFixture).Assembly;
+        var assembly = typeof(MatchingFixture).Assembly;
         using var stream = assembly.GetManifestResourceStream(RESOURCE_NAME) ??
             throw new InvalidOperationException(
                 $"Embedded fixture '{RESOURCE_NAME}' was not found.");

@@ -5,9 +5,6 @@ namespace AspectN.Reflection.Tests;
 
 public sealed class GenericDefinitionMatchingTests
 {
-    private static readonly AspectNParseOptions _Legacy =
-        new(AspectNLanguageVersion.Legacy);
-
     [Fact]
     public void MemberPattern_NestedDefinitionGenericClauseVariable_BindsFormalParameter()
     {
@@ -16,17 +13,6 @@ public sealed class GenericDefinitionMatchingTests
             Match(
                 "method(* GenericDefinitionOuter<>/GenericDefinitionInner<$T>.Get($T))",
                 nameof(GenericDefinitionOuter<>.GenericDefinitionInner<>.Get)));
-    }
-
-    [Fact]
-    public void MemberPattern_NestedDefinitionGenericClauseVariable_BindsFormalParameterLegacy()
-    {
-        Assert.Equal(
-            MatchStatus.Matched,
-            Match(
-                "method(* GenericDefinitionOuter<>/GenericDefinitionInner<$T>.Get($T))",
-                nameof(GenericDefinitionOuter<>.GenericDefinitionInner<>.Get),
-                _Legacy));
     }
 
     [Fact]
@@ -40,17 +26,16 @@ public sealed class GenericDefinitionMatchingTests
     }
 
     [Fact]
-    public void MemberPattern_LegacyRegexSeesSingleConsistentGenericName()
+    public void MemberPattern_RegexSeesSingleConsistentGenericName()
     {
-        // 同一形参（扁平槽位 1）在 Legacy 规范签名的声明类型与参数处必须渲染
+        // 同一形参（扁平槽位 1）在规范签名的声明类型与参数处必须渲染
         // 同一个名字 T2；合成/真实两种形态 Position 不一致时会出现
         // Inner<T2>.Get(TInner) 的双名渲染。
         Assert.Equal(
             MatchStatus.Matched,
             Match(
                 "regex(Inner<T2>\\.Get\\(T2\\))",
-                nameof(GenericDefinitionOuter<>.GenericDefinitionInner<>.Get),
-                _Legacy));
+                nameof(GenericDefinitionOuter<>.GenericDefinitionInner<>.Get)));
     }
 
     [Fact]
@@ -75,8 +60,7 @@ public sealed class GenericDefinitionMatchingTests
 
     private static MatchStatus Match(
         string expression,
-        string methodName,
-        AspectNParseOptions? options = null)
+        string methodName)
     {
         var typeSystem = new ReflectionTypeSystem();
         var method = typeof(GenericDefinitionOuter<>.GenericDefinitionInner<>)
@@ -85,7 +69,7 @@ public sealed class GenericDefinitionMatchingTests
                 $"Missing fixture method {methodName}.");
         var candidate = typeSystem.Mapper.MapMethod(method);
         var compilation = AspectNCompilation.Create(
-            AspectNParser.ParseMemberExpression(expression, options));
+            AspectNParser.ParseMemberExpression(expression));
         Assert.True(compilation.TryGetMemberPattern(out var pattern));
 
         return pattern!.Match(candidate, typeSystem).Status;

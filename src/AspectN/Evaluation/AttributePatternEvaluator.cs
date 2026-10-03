@@ -1,5 +1,4 @@
 using AspectN.Binding;
-using AspectN.Binding.Legacy;
 using AspectN.Diagnostics;
 using AspectN.Metadata;
 using AspectN.TypeSystem;
@@ -25,11 +24,9 @@ internal static class AttributePatternEvaluator
 
         var hasConcreteAttributeType = TryCreateAttributeType(
             pattern.AttributeType,
-            context.LanguageVersion,
             out var attributeType);
 
-        if (context.LanguageVersion == AspectNLanguageVersion.Standard &&
-            pattern.Target == BoundAttributeTargetKind.Property)
+        if (pattern.Target == BoundAttributeTargetKind.Property)
         {
             // 普通方法（非访问器）确定没有关联属性，直接 NotMatched；
             // 只有访问器候选在后端未填充 AssociatedProperty 链接时才是 Unknown
@@ -49,9 +46,7 @@ internal static class AttributePatternEvaluator
             }
         }
 
-        var targets = context.LanguageVersion == AspectNLanguageVersion.Legacy
-            ? LegacyAttributeRules.GetTargets(pattern, candidate)
-            : GetTargets(pattern, candidate);
+        var targets = GetTargets(pattern, candidate);
         var status = MatchStatus.NotMatched;
         var matchedTargetBranches = hasConcreteAttributeType
             ? null
@@ -154,7 +149,7 @@ internal static class AttributePatternEvaluator
                 attributes = target.Method!.ReturnAttributes;
                 return true;
             case AttributeTargetKind.Type:
-                // 声明类型特性由映射器随候选签名携带（对应旧 Shared 的 AttributeSignatures.Types）。
+                // 声明类型特性由映射器随候选签名携带。
                 attributes = candidate.TypeAttributes;
                 return true;
             default:
@@ -235,11 +230,10 @@ internal static class AttributePatternEvaluator
 
     private static bool TryCreateAttributeType(
         BoundTypePattern pattern,
-        AspectNLanguageVersion languageVersion,
         out TypeSignature? type)
     {
         if (pattern is not BoundNamedTypePattern named ||
-            !HasSpecifiedGenericArguments(named, languageVersion))
+            !HasSpecifiedGenericArguments(named))
         {
             type = null;
             return false;
@@ -247,39 +241,30 @@ internal static class AttributePatternEvaluator
 
         return TypePatternEvaluator.TryCreateConcreteType(
             pattern,
-            languageVersion,
             out type);
     }
 
-    // 直接特性查询要求泛型形参完全具体化；通配元数（<..>，及 Standard 的 <?>）或未指定实参的
-    // 模式交给类型模式求值器。Legacy 的省略子句（Any）保留历史具体化行为，不在此排除。
-    private static bool HasSpecifiedGenericArguments(
-        BoundNamedTypePattern named,
-        AspectNLanguageVersion languageVersion)
+    // 直接特性查询要求泛型形参完全具体化；通配元数或未指定实参的模式交给类型模式求值器。
+    private static bool HasSpecifiedGenericArguments(BoundNamedTypePattern named)
     {
         return !named.Segments.Any(segment =>
             segment.Generic.Kind == BoundGenericArityKind.AnyPositive ||
-            (languageVersion == AspectNLanguageVersion.Standard &&
-             segment.Generic.Kind == BoundGenericArityKind.Any) ||
+            segment.Generic.Kind == BoundGenericArityKind.Any ||
             (segment.Generic.Arity > 0 &&
              segment.Generic.Arguments.Count != segment.Generic.Arity) ||
             segment.Generic.Arguments.Any(
-                argument => !IsFullyConcrete(argument, languageVersion)));
+                argument => !IsFullyConcrete(argument)));
     }
 
     // 嵌套实参也必须递归具体化；nullable 在具体化路径会错构为 Nullable<T>，
     // 与模式求值器的引用类型语义不一致，必须回退到类型模式求值器。
-    private static bool IsFullyConcrete(
-        BoundTypePattern pattern,
-        AspectNLanguageVersion languageVersion)
+    private static bool IsFullyConcrete(BoundTypePattern pattern)
     {
         return pattern switch
         {
             BoundNamedTypePattern named =>
-                HasSpecifiedGenericArguments(named, languageVersion),
-            BoundArrayTypePattern array => IsFullyConcrete(
-                array.ElementType,
-                languageVersion),
+                HasSpecifiedGenericArguments(named),
+            BoundArrayTypePattern array => IsFullyConcrete(array.ElementType),
             _ => false
         };
     }

@@ -1,5 +1,7 @@
 # Legacy / Shared compatibility review fixes
 
+> **Historical plan, superseded 2026-10-03:** The [single-language plan](2026-10-03-single-language-aspectn.md) removes Legacy and its oracle infrastructure. This document records earlier completed compatibility repairs; it does not authorize reintroducing compatibility rules or baselines.
+
 The user authorized these repairs on 2026-10-01. Standard / Legacy language differences are deferred. The frozen Shared oracle stays unchanged.
 
 1. Add regression tests before production changes: malformed signature compilation returns diagnostics; unbound T is a literal name; declared generic names still bind; !int return patterns; wildcard declaring paths; mixed omitted generic arguments; tuple arity and generic adjacency.

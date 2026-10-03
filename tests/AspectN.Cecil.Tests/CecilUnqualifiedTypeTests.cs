@@ -68,8 +68,7 @@ public sealed class CecilUnqualifiedTypeTests
         module.Types.Add(implementation);
 
         var compilation = new AspectNEngine().CompileMemberExpression(
-            "execution(* InterfaceA+.*(..))",
-            new AspectNParseOptions(AspectNLanguageVersion.Legacy));
+            "execution(* InterfaceA+.*(..))");
         Assert.True(compilation.TryGetMemberPattern(out var pattern));
 
         var result = pattern!.Match(

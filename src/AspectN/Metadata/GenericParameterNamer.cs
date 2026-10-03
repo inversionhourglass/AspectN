@@ -4,9 +4,18 @@ namespace AspectN.Metadata;
 // 再内层类型，最后方法泛型；名字随槽位编号，跨层级不重复。槽位模型必须与三个
 // 适配器映射真实泛型参数的 (OwnerId, Position) 逐字节一致，否则使用位置的
 // 重命名查表会落空（历史缺陷：内层形参按层级独立编号导致同一形参双名渲染、
-// 变量重绑定静默 NotMatched）。Legacy 与 Standard 的规范签名共用此合成逻辑。
+// 变量重绑定静默 NotMatched）。匹配和规范签名共用此合成逻辑。
 internal static class GenericParameterNamer
 {
+    public static TypeSignature[] GetEffectiveMethodArguments(MethodSignature candidate)
+    {
+        if (candidate.GenericArguments.Count > 0) return candidate.GenericArguments.ToArray();
+
+        return candidate.GenericParameters
+            .Select(parameter => (TypeSignature)new GenericParameterTypeSignature(parameter))
+            .ToArray();
+    }
+
     public static TypeSignature[] GetEffectiveTypeArguments(
         NamedTypeSignature candidate)
     {
@@ -47,7 +56,7 @@ internal static class GenericParameterNamer
 
     // 泛型形参的位置名：类型形参先占 T1..Tm（外层从左到右、再内层），
     // 方法形参接续 T{m+1}..T{m+n}；总数（类型+方法合并计数）为 1 时渲染为
-    // 裸 T。Standard 与 Legacy 的规范签名格式化器共用该规则（§15）。
+    // 裸 T。规范签名格式化器使用此规则（§15）。
     public static Dictionary<GenericParameterKey, string> CreatePositionalNames(
         MethodSignature candidate)
     {

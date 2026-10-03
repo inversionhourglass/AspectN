@@ -12,9 +12,8 @@ public sealed class CompiledTypePattern : CompiledPattern
 
     internal CompiledTypePattern(
         BoundTypePattern root,
-        AspectNLanguageVersion languageVersion,
         AspectNCompilationOptions options)
-        : base(languageVersion, options)
+        : base(options)
     {
         _root = root ?? throw new ArgumentNullException(nameof(root));
     }
@@ -42,7 +41,6 @@ public sealed class CompiledTypePattern : CompiledPattern
         cancellationToken.ThrowIfCancellationRequested();
         var context = new EvaluationContext(
             typeSystem,
-            LanguageVersion,
             Options,
             cancellationToken);
         var status = TypePatternEvaluator.Evaluate(_root, candidate, context);

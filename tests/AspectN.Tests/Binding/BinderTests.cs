@@ -144,17 +144,6 @@ public sealed class BinderTests
         Assert.Null(compilation.BoundRoot);
     }
 
-    [Fact]
-    public void Create_WildcardNullableAssignableTarget_LegacyKeepsAccepting()
-    {
-        // Legacy 冻结：*?+ 的内层 * 转零泛型命名通配后可求值（int? 命中，int/string 不命中）。
-        var compilation = CompileType("*?+", AspectNLanguageVersion.Legacy);
-
-        Assert.DoesNotContain(
-            compilation.Diagnostics,
-            diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
-    }
-
     [Theory]
     [InlineData("int[]?+")]
     [InlineData("int??+")]
@@ -175,32 +164,11 @@ public sealed class BinderTests
         Assert.Null(compilation.BoundRoot);
     }
 
-    [Theory]
-    [InlineData("int[]?+")]
-    [InlineData("int??+")]
-    [InlineData("tasklike<int>+")]
-    [InlineData("(int,int)+")]
-    [InlineData("(* || int)+")]
-    [InlineData("$T+")]
-    [InlineData("*??+")]
-    [InlineData("int+?+")]
-    public void Create_UnsupportedAssignableTargetStructure_LegacyKeepsAccepting(
-        string source)
-    {
-        // Legacy 冻结：历史形态继续编译；求值结果（NotMatched/Unknown）由
-        // AssignablePatternMatchingTests 按真实元数据快照锁定。
-        var compilation = CompileType(source, AspectNLanguageVersion.Legacy);
-
-        Assert.DoesNotContain(
-            compilation.Diagnostics,
-            diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
-    }
-
     [Fact]
     public void Create_TaskLikeAsDeclaringTypeName_BindsAsNamedTarget()
     {
         // tasklike 语法糖只存在于类型模式位置；成员声明位把它解析为普通名段
-        // （与 Legacy 读法一致），目标恰是命名模式，白名单放行。
+        // 目标恰是命名模式，白名单放行。
         var compilation = CompileMember("method(* tasklike<int>+.Get(..))");
 
         Assert.DoesNotContain(
@@ -264,20 +232,6 @@ public sealed class BinderTests
     }
 
     [Theory]
-    [InlineData("method(* *+.*(..))")]
-    [InlineData("property(* *+.*)")]
-    public void Create_WildcardAssignableDeclaringType_LegacyKeepsAccepting(
-        string source)
-    {
-        // Legacy 冻结：*+ 是 Shared 的零泛型通配名 + 可赋值形态。
-        var compilation = CompileMember(source, AspectNLanguageVersion.Legacy);
-
-        Assert.DoesNotContain(
-            compilation.Diagnostics,
-            diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
-    }
-
-    [Theory]
     [InlineData("int++")]
     [InlineData("System.IDisposable++")]
     public void Create_RepeatedAssignableSuffix_ReportsDiagnostic(string source)
@@ -337,54 +291,17 @@ public sealed class BinderTests
         Assert.NotNull(compilation.BoundRoot);
     }
 
-    [Theory]
-    [InlineData("int[]+", AspectNLanguageVersion.Legacy)]
-    [InlineData("int[][]+", AspectNLanguageVersion.Legacy)]
-    [InlineData("string[,]+", AspectNLanguageVersion.Legacy)]
-    public void Create_VersionedSuffixRules_AcceptedInLegacyOrStandardOnly(
-        string source,
-        AspectNLanguageVersion languageVersion)
-    {
-        // Legacy 对齐 Shared：数组目标 + 下沉为元素可赋值（int[]+ 等价 int+[]）；
-        // int[]+ 等数组目标的 + 下沉仅 Legacy；int [] / int ? 两版本一律拒绝（邻接约束）。
-        var compilation = CompileType(source, languageVersion);
-
-        Assert.DoesNotContain(
-            compilation.Diagnostics,
-            diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
-        Assert.NotNull(compilation.BoundRoot);
-    }
-
-    [Fact]
-    public void Create_LegacyArrayAssignableSuffix_BindsElementAssignable()
-    {
-        var compilation = CompileType("int[]+", AspectNLanguageVersion.Legacy);
-        Assert.NotNull(compilation.BoundRoot);
-
-        // int[]+ 逐层下沉：绑定结果应是数组包裹“可赋值的 int”，而不是数组目标上的 +。
-        var array = Assert.IsType<BoundArrayTypePattern>(compilation.BoundRoot);
-        var element = Assert.IsType<BoundAssignableTypePattern>(array.ElementType);
-        var elementTarget = Assert.IsType<BoundNamedTypePattern>(element.TargetType);
-        Assert.Equal("System.Int32", elementTarget.CanonicalName);
-    }
-
     private static AspectNCompilation CompileMember(
-        string source,
-        AspectNLanguageVersion languageVersion = AspectNLanguageVersion.Standard)
+        string source)
     {
-        var tree = AspectNParser.ParseMemberExpression(
-            source,
-            new AspectNParseOptions(languageVersion));
+        var tree = AspectNParser.ParseMemberExpression(source);
         return AspectNCompilation.Create(tree);
     }
 
     private static AspectNCompilation CompileType(
-        string source,
-        AspectNLanguageVersion languageVersion = AspectNLanguageVersion.Standard)
+        string source)
     {
-        var tree = AspectNParser.ParseTypePattern(
-            source,
-            new AspectNParseOptions(languageVersion));
+        var tree = AspectNParser.ParseTypePattern(source);
         return AspectNCompilation.Create(tree);
     }
 

@@ -75,9 +75,7 @@ public sealed class CecilSignatureMapper
 #endif
 
         _typeSystem.ThrowIfDisposed();
-        var key = new CecilMemberCacheKey(
-            methodReference,
-            _typeSystem.Options.CompositeAccessibility);
+        var key = new CecilMemberCacheKey(methodReference);
         lock (_memberGate)
         {
             if (_callableCache.TryGetValue(key, out var cached))
@@ -112,9 +110,7 @@ public sealed class CecilSignatureMapper
 #endif
 
         _typeSystem.ThrowIfDisposed();
-        var key = new CecilMemberCacheKey(
-            propertyReference,
-            _typeSystem.Options.CompositeAccessibility);
+        var key = new CecilMemberCacheKey(propertyReference);
         lock (_memberGate)
         {
             if (_propertyCache.TryGetValue(key, out var cached))
@@ -183,9 +179,7 @@ public sealed class CecilSignatureMapper
         return new MethodSignature(
             methodReference.Name,
             GetMethodKind(methodReference, definition),
-            CecilAccessibility.ForMethod(
-                definition,
-                _typeSystem.Options.CompositeAccessibility),
+            CecilAccessibility.ForMethod(definition),
             definition?.IsStatic ?? !methodReference.HasThis,
             CecilAsyncDetector.IsAsync(definition),
             MapType(methodReference.DeclaringType),
@@ -202,7 +196,7 @@ public sealed class CecilSignatureMapper
             MapAttributes(
                 definition?.MethodReturnType.CustomAttributes,
                 AttributeTargetKind.Return),
-            // 声明类型特性：attr(type ...) 通配/复合查询需要（对应旧 Shared 的 AttributeSignatures.Types）。
+            // 声明类型特性：attr(type ...) 通配/复合查询需要。
             MapAttributes(
                 definition?.DeclaringType?.CustomAttributes,
                 AttributeTargetKind.Type),
@@ -229,9 +223,7 @@ public sealed class CecilSignatureMapper
             definition?.OtherMethods.FirstOrDefault();
         return new PropertySignature(
             propertyReference.Name,
-            CecilAccessibility.ForProperty(
-                definition,
-                _typeSystem.Options.CompositeAccessibility),
+            CecilAccessibility.ForProperty(definition),
             accessor?.IsStatic ?? false,
             // 关联属性携带封闭声明类型上下文时，声明类型也必须是封闭构造，不能残留开放定义。
             MapType(declaringInstance ?? propertyReference.DeclaringType),
@@ -536,18 +528,14 @@ public sealed class CecilSignatureMapper
         return CecilTypeMapper.GetGenericParameterOwner(parameter);
     }
 
-    private readonly struct CecilMemberCacheKey(
-        object reference,
-        bool compositeAccessibility) :
+    private readonly struct CecilMemberCacheKey(object reference) :
         IEquatable<CecilMemberCacheKey>
     {
         private readonly object _reference = reference;
-        private readonly bool _compositeAccessibility = compositeAccessibility;
 
         public bool Equals(CecilMemberCacheKey other)
         {
-            return ReferenceEquals(_reference, other._reference) &&
-                   _compositeAccessibility == other._compositeAccessibility;
+            return ReferenceEquals(_reference, other._reference);
         }
 
         public override bool Equals(object? obj)
@@ -557,11 +545,7 @@ public sealed class CecilSignatureMapper
 
         public override int GetHashCode()
         {
-            unchecked
-            {
-                return (RuntimeHelpers.GetHashCode(_reference) * 397) ^
-                       _compositeAccessibility.GetHashCode();
-            }
+            return RuntimeHelpers.GetHashCode(_reference);
         }
     }
 }

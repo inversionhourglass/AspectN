@@ -130,7 +130,7 @@
     "expected": "Matched"
   },
   {
-    "id": "property-attribute-exec-legacy-semantics",
+    "id": "property-attribute-execution-targets",
     "kind": "method",
     "member": "get_Label",
     "parameterCount": 0,
@@ -146,7 +146,7 @@
     "expected": "NotMatched"
   },
   {
-    "id": "parameter-attribute-legacy-space-form",
+    "id": "parameter-attribute-space-form",
     "kind": "method",
     "member": "Attributed",
     "parameterCount": 1,

@@ -74,24 +74,6 @@ public sealed class SelectorParserTests
         Assert.Empty(tree.Diagnostics);
     }
 
-    [Theory]
-    [InlineData("EXECUTION(* Service.Get(..))", typeof(CallableSelectorSyntax))]
-    [InlineData("PROPERTY(* Model.Name)", typeof(PropertySelectorSyntax))]
-    [InlineData("ATTR(para 0 RequiredAttribute)", typeof(AttributeSelectorSyntax))]
-    [InlineData("METHOD(* Service.Get<!>(..))", typeof(MethodSelectorSyntax))]
-    [InlineData("METHOD(privateprotected * Service.Get(..))", typeof(MethodSelectorSyntax))]
-    public void ParseMemberExpression_LegacyForm_IsAcceptedCaseInsensitively(
-        string source,
-        Type expectedType)
-    {
-        var options = new AspectNParseOptions(AspectNLanguageVersion.Legacy);
-
-        var tree = AspectNParser.ParseMemberExpression(source, options);
-
-        Assert.IsType(expectedType, tree.Root);
-        Assert.Empty(tree.Diagnostics);
-    }
-
     [Fact]
     public void ParseMemberExpression_StandardKeywordWithWrongCase_IsExtension()
     {
@@ -291,11 +273,10 @@ public sealed class SelectorParserTests
     }
 
     [Fact]
-    public void ParseMemberExpression_GenericClauseThenAssignableSuffixLegacy_HasNoDiagnostics()
+    public void ParseMemberExpression_ExecutionGenericClauseThenAssignableSuffix_HasNoDiagnostics()
     {
         var tree = AspectNParser.ParseMemberExpression(
-            "execution(* Dictionary<string,int>+.TryGetValue(..))",
-            new AspectNParseOptions(AspectNLanguageVersion.Legacy));
+            "execution(* Dictionary<string,int>+.TryGetValue(..))");
 
         Assert.Empty(tree.Diagnostics);
     }
@@ -342,7 +323,7 @@ public sealed class SelectorParserTests
     [InlineData("attr(para * System.ObsoleteAttribute)")]
     [InlineData("attr(* System.ObsoleteAttribute)")]
     [InlineData("attr(exec System.ObsoleteAttribute)")]
-    public void ParseMemberExpression_LegacyCompatAttributePosition_HasNoDiagnostics(
+    public void ParseMemberExpression_AttributePositionSpaceForm_HasNoDiagnostics(
         string source)
     {
         var tree = AspectNParser.ParseMemberExpression(source);

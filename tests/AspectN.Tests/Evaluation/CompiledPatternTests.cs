@@ -16,7 +16,6 @@ public sealed class CompiledPatternTests
 
         Assert.True(success);
         Assert.NotNull(pattern);
-        Assert.Equal(AspectNLanguageVersion.Standard, pattern!.LanguageVersion);
         Assert.Same(compilation.Options, pattern.Options);
     }
 

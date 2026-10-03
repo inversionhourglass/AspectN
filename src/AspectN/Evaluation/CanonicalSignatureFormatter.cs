@@ -1,5 +1,4 @@
 using System.Text;
-using AspectN.Evaluation.Legacy;
 using AspectN.Metadata;
 
 namespace AspectN.Evaluation;
@@ -7,22 +6,14 @@ namespace AspectN.Evaluation;
 internal static class CanonicalSignatureFormatter
 {
     // Standard 定义签名的泛型形参按扁平槽位渲染为 T1..Tn（外层类型从左到右、
-    // 再内层、最后方法泛型），总数为 1 时渲染为裸 T，与 Legacy 一致；封闭构造
-    // 仍展开实际实参。与 Legacy 的差异仅在分隔符：Standard 保留 ", "。
-    public static string Format(
-        MethodSignature candidate,
-        AspectNLanguageVersion languageVersion)
+    // 再内层、最后方法泛型），总数为 1 时渲染为裸 T；封闭构造仍展开实际实参。
+    public static string Format(MethodSignature candidate)
     {
-        if (languageVersion == AspectNLanguageVersion.Legacy)
-        {
-            return LegacyCanonicalSignatureFormatter.Format(candidate);
-        }
-
         var genericNames = GenericParameterNamer.CreatePositionalNames(
             candidate);
         var builder = new StringBuilder();
         builder.Append(
-            FormatAccessibility(candidate.Accessibility, languageVersion));
+            FormatAccessibility(candidate.Accessibility));
         if (candidate.IsStatic) builder.Append(" static");
         builder.Append(' ');
         AppendTypeUse(builder, candidate.ReturnType, genericNames);
@@ -208,9 +199,7 @@ internal static class CanonicalSignatureFormatter
                 : parameter.Name);
     }
 
-    private static string FormatAccessibility(
-        Accessibility accessibility,
-        AspectNLanguageVersion languageVersion)
+    private static string FormatAccessibility(Accessibility accessibility)
     {
         return accessibility switch
         {
@@ -218,12 +207,6 @@ internal static class CanonicalSignatureFormatter
             Accessibility.Protected => "protected",
             Accessibility.Internal => "internal",
             Accessibility.Private => "private",
-            Accessibility.ProtectedInternal
-                when languageVersion == AspectNLanguageVersion.Legacy =>
-                "protectedinternal",
-            Accessibility.PrivateProtected
-                when languageVersion == AspectNLanguageVersion.Legacy =>
-                "privateprotected",
             Accessibility.ProtectedInternal => "protected internal",
             Accessibility.PrivateProtected => "private protected",
             _ => "unknown"

@@ -31,13 +31,6 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v4
 
-      - name: Check out pinned Legacy sources for solution formatting
-        uses: actions/checkout@v4
-        with:
-          repository: inversionhourglass/Shared.Cecil.AspectN
-          ref: 03a9d1030f92a64449b6220eb45d7198d31653db
-          path: artifacts/legacy-oracle/Shared.Cecil.AspectN
-
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:

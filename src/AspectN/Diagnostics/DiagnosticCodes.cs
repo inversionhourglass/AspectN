@@ -42,9 +42,6 @@ public static class DiagnosticCodes
     /// <summary>Gets the unknown selector.</summary>
     public static string UnknownSelector => "AN2001";
 
-    /// <summary>Gets the selector unavailable.</summary>
-    public static string SelectorUnavailable => "AN2002";
-
     /// <summary>Gets the invalid target domain.</summary>
     public static string InvalidTargetDomain => "AN2003";
 

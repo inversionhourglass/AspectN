@@ -1,4 +1,3 @@
-using AspectN.Binding.Legacy;
 using AspectN.Evaluation;
 using AspectN.Metadata;
 using AspectN.Tests.TestDoubles;
@@ -126,7 +125,7 @@ public sealed class GenericPatternTests
         var inner = new NamedTypeSignature(
             Identity(string.Empty, "Inner", 1, containingType: outer));
 
-        var effective = LegacyGenericRules.GetEffectiveTypeArguments(inner);
+        var effective = GenericParameterNamer.GetEffectiveTypeArguments(inner);
 
         var first = Assert.IsType<GenericParameterTypeSignature>(effective[0]);
         var second = Assert.IsType<GenericParameterTypeSignature>(effective[1]);

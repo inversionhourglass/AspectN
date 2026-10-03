@@ -1,5 +1,7 @@
 # Contributor Guidelines Implementation Plan
 
+> **Historical guidance:** Legacy oracle and approved-differences requirements in this plan are superseded by the [single-language plan](2026-10-03-single-language-aspectn.md). Current contributor instructions are in the root AGENTS.md.
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Add a concise repository guide, enforceable C# formatting defaults, and detailed agent-facing C# rules.

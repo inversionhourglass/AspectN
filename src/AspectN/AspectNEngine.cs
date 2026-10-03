@@ -31,40 +31,34 @@ public sealed class AspectNEngine
 
     /// <summary>Compiles member expression into a matching pattern.</summary>
     /// <param name="source">Specifies the source.</param>
-    /// <param name="parseOptions">Specifies the parse options.</param>
     /// <param name="compilationOptions">Specifies the compilation options.</param>
     /// <param name="extensions">Specifies the extensions.</param>
     /// <returns>Returns the result of the operation.</returns>
     public AspectNCompilation CompileMemberExpression(
         string source,
-        AspectNParseOptions? parseOptions = null,
         AspectNCompilationOptions? compilationOptions = null,
         AspectNExtensionRegistry? extensions = null)
     {
         return Compile(
             source,
             AspectNParseKind.MemberExpression,
-            parseOptions,
             compilationOptions,
             extensions);
     }
 
     /// <summary>Compiles type pattern into a matching pattern.</summary>
     /// <param name="source">Specifies the source.</param>
-    /// <param name="parseOptions">Specifies the parse options.</param>
     /// <param name="compilationOptions">Specifies the compilation options.</param>
     /// <param name="extensions">Specifies the extensions.</param>
     /// <returns>Returns the result of the operation.</returns>
     public AspectNCompilation CompileTypePattern(
         string source,
-        AspectNParseOptions? parseOptions = null,
         AspectNCompilationOptions? compilationOptions = null,
         AspectNExtensionRegistry? extensions = null)
     {
         return Compile(
             source,
             AspectNParseKind.TypePattern,
-            parseOptions,
             compilationOptions,
             extensions);
     }
@@ -72,7 +66,6 @@ public sealed class AspectNEngine
     private AspectNCompilation Compile(
         string source,
         AspectNParseKind parseKind,
-        AspectNParseOptions? parseOptions,
         AspectNCompilationOptions? compilationOptions,
         AspectNExtensionRegistry? extensions)
     {
@@ -82,14 +75,12 @@ public sealed class AspectNEngine
         if (source is null) throw new ArgumentNullException(nameof(source));
 #endif
 
-        var effectiveParseOptions = parseOptions ?? new AspectNParseOptions();
         var effectiveCompilationOptions = compilationOptions ??
             new AspectNCompilationOptions();
         var effectiveExtensions = extensions ?? Extensions;
         var key = new CompiledPatternCacheKey(
             source,
             parseKind,
-            effectiveParseOptions.LanguageVersion,
             effectiveCompilationOptions,
             effectiveExtensions);
         return _cache.GetOrAdd(
@@ -97,7 +88,6 @@ public sealed class AspectNEngine
             () => CompileUncached(
                 source,
                 parseKind,
-                effectiveParseOptions,
                 effectiveCompilationOptions,
                 effectiveExtensions));
     }
@@ -105,13 +95,12 @@ public sealed class AspectNEngine
     private static AspectNCompilation CompileUncached(
         string source,
         AspectNParseKind parseKind,
-        AspectNParseOptions parseOptions,
         AspectNCompilationOptions compilationOptions,
         AspectNExtensionRegistry extensions)
     {
         var syntaxTree = parseKind == AspectNParseKind.MemberExpression
-            ? AspectNParser.ParseMemberExpression(source, parseOptions)
-            : AspectNParser.ParseTypePattern(source, parseOptions);
+            ? AspectNParser.ParseMemberExpression(source)
+            : AspectNParser.ParseTypePattern(source);
         return AspectNCompilation.Create(
             syntaxTree,
             compilationOptions,

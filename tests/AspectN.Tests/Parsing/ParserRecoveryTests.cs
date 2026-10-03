@@ -53,13 +53,15 @@ public sealed class ParserRecoveryTests
             diagnostic => diagnostic.Code == DiagnosticCodes.BadCharacter);
     }
 
-    [Fact]
-    public void ParseMemberExpression_LegacyOption_IsRetainedOnTree()
+    [Theory]
+    [InlineData("method(int <T> X.Y())")]
+    [InlineData("method(Service <int> Service.Run())")]
+    [InlineData("property(Service <int> Service.X)")]
+    public void ParseMemberExpression_MalformedSignature_ReturnsDiagnostics(string source)
     {
-        var options = new AspectNParseOptions(AspectNLanguageVersion.Legacy);
-
-        var tree = AspectNParser.ParseMemberExpression("a()", options);
-
-        Assert.Equal(AspectNLanguageVersion.Legacy, tree.LanguageVersion);
+        var compilation = AspectNCompilation.Create(AspectNParser.ParseMemberExpression(source));
+        Assert.Contains(compilation.Diagnostics, diagnostic =>
+            diagnostic.Severity == DiagnosticSeverity.Error && diagnostic.Span is not null);
+        Assert.False(compilation.TryGetMemberPattern(out _));
     }
 }

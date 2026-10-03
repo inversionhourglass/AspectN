@@ -834,7 +834,6 @@ public sealed class CecilTypeSystemTests
         var typeSystem = new CecilTypeSystem(
             module,
             new CecilMappingOptions(
-                compositeAccessibility: false,
                 leaveOpen: true));
 
         typeSystem.Dispose();

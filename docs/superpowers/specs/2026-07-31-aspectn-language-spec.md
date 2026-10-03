@@ -1,9 +1,9 @@
 # AspectN Language Design
 
-**Status:** Draft for written review
-**Date:** 2026-07-31
+**Status:** Approved single-language contract
+**Date:** 2026-07-31; updated 2026-10-03
 **Applies to:** AspectN 1.0 language design
-**Language versions:** `Legacy`, `Standard`
+**Language:** Standard (the sole AspectN language)
 
 ## 1. Purpose
 
@@ -16,27 +16,9 @@ The language has two entry points:
 
 AspectN is a matcher, not a query projection language. Evaluation returns a three-state match result and does not return variable captures.
 
-## 2. Language Versions
+## 2. Single Language Contract
 
-### 2.1 Legacy
-
-Legacy preserves approved Shared.Cecil.AspectN syntax and matching behavior for Rougamo. It includes historical names and ambiguities such as:
-
-- `execution(...)`
-- `property(...)`
-- `ctor(...)` and `cctor(...)`
-- `attr(...)`
-- `privateprotected` and `protectedinternal`
-- Space-separated accessibilities as alternatives.
-- Implicit generic variables.
-- `(T1,T2)` matching both `Tuple` and `ValueTuple`.
-- `async T` / `async null` as Task/ValueTask return sugar.
-
-Legacy is selected explicitly by the Rougamo compatibility facade.
-
-### 2.2 Standard
-
-Standard is the default for new AspectN APIs. It uses:
+AspectN directly implements the existing Standard grammar. It uses:
 
 - `callable(...)` for non-constructor method-like members, or `execution(...)` to cover constructors as well.
 - `property(...)` for property getters and setters together.
@@ -47,7 +29,7 @@ Standard is the default for new AspectN APIs. It uses:
 - Task-like return matching via `tasklike` or `tasklike<T>`; no `async` modifier.
 - Explicit `ref`, `out`, `in`, and `ref readonly`.
 
-An expression is always compiled with a language version. The compiled cache key includes that version.
+There is no language selection API or compatibility mode. `AspectNParser` exposes `ParseMemberExpression(string source)` and `ParseTypePattern(string source)`. `AspectNEngine` compilation methods accept source, optional compilation options and optional extensions. Cache keys contain source text, parse entry point, regex timeout and extension-registry identity. Migrating from Shared.Cecil.AspectN is a breaking change; Rougamo integration and its major release are separate tasks.
 
 ## 3. Lexical Rules
 
@@ -55,13 +37,12 @@ An expression is always compiled with a language version. The compiled cache key
 
 - Standard keywords are lowercase and case-sensitive.
 - Type, namespace, member, and variable identifiers are case-sensitive.
-- Legacy preserves the old case-insensitive keyword behavior where the oracle does so.
 
 ### 3.2 Trivia
 
 Whitespace may separate tokens unless it participates in a Standard composite phrase such as `private protected`, `protected internal`, or `ref readonly`.
 
-Within a name, the separators `.`/`..`/`/`, the generic opening `<`, and the assignability suffix `+` continue the name only when adjacent to it; whitespace ends the name and separates the surrounding slots. The array suffix `[` and the nullable suffix `?` must also be adjacent to the type pattern in both versions; whitespace inside a `<...>` generic pattern list and inside array rank brackets (`int[ , ]`) is free.
+Within a name, the separators `.`/`..`/`/`, the generic opening `<`, and the assignability suffix `+` continue the name only when adjacent to it; whitespace ends the name and separates the surrounding slots. The array suffix `[` and the nullable suffix `?` must also be adjacent to the type pattern; whitespace inside a `<...>` generic pattern list and inside array rank brackets (`int[ , ]`) is free.
 
 Comments are not part of AspectN 1.0 expression syntax.
 
@@ -85,7 +66,7 @@ Comments are not part of AspectN 1.0 expression syntax.
 | `?` | Nullable suffix; alone in a generic clause (`<?>`) it means any arity including zero |
 | `$` | Pattern-variable prefix |
 
-`/` is the canonical nested-type separator in both versions. Adapters normalize Cecil `/`, Reflection `+`, and Roslyn containing-type symbols to this form.
+`/` is the canonical nested-type separator. Adapters normalize Cecil `/`, Reflection `+`, and Roslyn containing-type symbols to this form.
 
 ### 3.4 Identifiers, name patterns, and literals
 
@@ -210,20 +191,6 @@ extension-argument =
 
 Whether a member has a body or can be woven is not implied by any selector. Rougamo applies that scenario-specific filter after AspectN matching or through a registered predicate such as `hasBody`.
 
-### 6.2 Legacy selector mapping
-
-| Legacy | Standard migration |
-|---|---|
-| `execution(...)` | `execution(...)` (same all-members domain); use `callable(...)` plus explicit `ctor(...)`/`cctor(...)` for finer-grained intent |
-| `property(...)` | `property(...)` |
-| `method(...)` | `method(...)` |
-| `getter(...)` | `getter(...)` |
-| `setter(...)` | `setter(...)` |
-| `ctor(...)` | `ctor(...)` |
-| `cctor(...)` | `cctor(...)` |
-
-Standard accepts `execution(...)` and `property(...)` directly, so Legacy member expressions using them migrate without renaming.
-
 ## 7. Callable Signatures
 
 ```ebnf
@@ -249,7 +216,7 @@ return-ref-kind =
 
 A member path starts with a name pattern. The declaring type is omitted by writing nothing — `method(* Get(..))` matches members named `Get` on any declaring type; there is no leading-separator spelling. Separators (`.`, `..`, `/`) continue a member path only when adjacent to the names on both sides (§3.2).
 
-`..` is a namespace ellipsis: it may only appear between namespace segments, never immediately before the member name. The member name is always joined to its declaring type with `.` — `method(* *..StaticMethod(..))` and `method(* System..*(..))` are errors because the declaring type's type-name segment is missing; write `method(* *..*.StaticMethod(..))`, or omit the declaring type entirely with `method(* StaticMethod(..))`. Legacy instead appends a wildcard type name after a trailing `..` (Shared behavior).
+`..` is a namespace ellipsis: it may only appear between namespace segments, never immediately before the member name. The member name is always joined to its declaring type with `.` — `method(* *..StaticMethod(..))` and `method(* System..*(..))` are errors because the declaring type's type-name segment is missing; write `method(* *..*.StaticMethod(..))`, or omit the declaring type entirely with `method(* StaticMethod(..))`. These replacements have different ranges: a written namespace/type path excludes global or nested types unless explicitly expressed, while an omitted declaring type includes them.
 
 `*` as the whole member path is the single universal abbreviation: it matches any namespace, declaring type, member name, and generic arity. A written-out path is subject to the complete-name rules above, so `*.*` (any declaring type, any member) does not by itself cross nested types — nested declaring types are matched with `/` (for example `*/*.*`) or by omitting the declaring type.
 
@@ -264,7 +231,7 @@ method(tasklike Service.Flush(..))
 
 `tasklike<T>` matches `Task<T>` or `ValueTask<T>` regardless of whether the method was compiled with `async`. Bare `tasklike` matches non-generic `Task` or `ValueTask`; `tasklike<void>` is rejected with a migration diagnostic. Custom awaitables are outside 1.0 task-like syntax.
 
-Legacy `async T` and `async null` retain their historical Task/ValueTask return-shape behavior. Legacy has no `tasklike` syntax: an identifier `tasklike` in Legacy is an ordinary type name.
+The historical `async` return sugar is unsupported. General `MethodSignature.IsAsync` metadata remains available to consumers.
 
 ## 8. Property Signatures
 
@@ -347,15 +314,7 @@ Negation applies to a single accessibility phrase only; `!` cannot be combined w
 method(!protected internal * *(..))
 ```
 
-The alternation syntax removes the Legacy ambiguity where:
-
-```text
-private protected
-```
-
-means “private or protected,” while `privateprotected` means the C# composite accessibility.
-
-Legacy preserves `privateprotected`, `protectedinternal`, and its existing modifier-set behavior.
+`private protected` and `protected internal` each denote one composite accessibility. Use `|` to express alternatives. Concatenated historical spellings report AN4003 with the corresponding spaced phrase.
 
 ## 11. Parameter Patterns and Ref Kinds
 
@@ -383,10 +342,9 @@ Rules:
 - `(..)` matches any parameter count and any parameter types.
 - `()` matches zero parameters.
 - An explicit list matches exact count and order.
-- An empty slot between or after commas is an implicit `*` parameter: `(int,)` matches two parameters (`int` plus any), and `(,int)` matches (any, `int`) — Standard and Legacy agree.
+- An empty slot between or after commas is an implicit `*` parameter: `(int,)` matches two parameters (`int` plus any), and `(,int)` matches (any, `int`).
 - Omitting the ref annotation does not constrain ref kind: the parameter or return matches by-value and by-ref candidates alike. `ref`, `out`, `in`, and `ref readonly` match that exact kind, and `!ref` matches only non-by-ref (by-value) candidates. `!ref` cannot be combined with an explicit ref kind, and no `!out`/`!in` negation exists — negation applies to the by-ref concept as a whole.
 - Return type uses support `ref`, `ref readonly`, and `!ref`; `out` and `in` are invalid for returns.
-- Legacy keeps its historical wildcard-only exemption: an unannotated Legacy pattern matches by-value candidates only unless the pattern itself is a full wildcard.
 
 `params`, `scoped`, pointers, and function pointers are not expressible in Standard 1.0, although adapters may preserve those facts for future predicates.
 
@@ -434,8 +392,6 @@ tuple-type-pattern =
 
 tasklike-type-pattern =
     "tasklike", [ "<", type-pattern, ">" ] ;
-
-The bare (bracket-omitted) form is Standard-only; Legacy treats a bare `tasklike` identifier as an ordinary type name (§7).
 
 pattern-variable =
     "$", identifier ;
@@ -490,7 +446,7 @@ System.IDisposable+
 *Provider+
 ```
 
-The target of `+` is validated structurally in Standard: after unwrapping parentheses it must be a named type pattern (wildcard names and explicit generic clauses allowed) or a single-level nullable of a named type pattern (`X?+`). Any other target structure — arrays, nested or interleaved nullable wrappers, bare wildcards, tuples, Boolean combinations, pattern variables, `tasklike`, or a second `+` separated by another suffix — is rejected with a binding diagnostic. The rule constrains the target node itself only: array, wildcard, and tuple patterns inside the generic arguments of a named target (`List<int[]>+`) remain legal, and `int+?` (a nullable wrapping an assignable pattern, not an assignability target) is unaffected. Legacy does not apply the structural whitelist: historical forms keep compiling and evaluate along their own paths.
+The target of `+` is validated structurally: after unwrapping parentheses it must be a named type pattern (wildcard names and explicit generic clauses allowed) or a single-level nullable of a named type pattern (`X?+`). Any other target structure — arrays, nested or interleaved nullable wrappers, bare wildcards, tuples, Boolean combinations, pattern variables, `tasklike`, or a second `+` separated by another suffix — is rejected with a binding diagnostic. The rule constrains the target node itself only: array, wildcard, and tuple patterns inside the generic arguments of a named target (`List<int[]>+`) remain legal, and `int+?` (a nullable wrapping an assignable pattern, not an assignability target) is unaffected.
 
 Variance conversions — array covariance and generic co/contravariance — are not part of `+`. Express them compositionally by placing `+` inside type arguments or array elements:
 
@@ -520,8 +476,6 @@ Standard rules:
 - Nullable reference annotations are not matched.
 - `System.Nullable<T>` can always be written explicitly.
 
-Legacy preserves its historical `Nullable<T>` interpretation.
-
 ### 12.7 Tuples
 
 Standard:
@@ -539,7 +493,7 @@ To match `System.Tuple`, write it explicitly:
 System.Tuple<int, string>
 ```
 
-Legacy tuple syntax continues to match both `System.Tuple` and `System.ValueTuple`.
+Match `System.Tuple` explicitly with a named generic type pattern.
 
 ## 13. Generics
 
@@ -564,9 +518,7 @@ Standard uses:
 
 The special name wildcard `*` without a generic clause matches any arity — the single abbreviation exception. For every other name, omission means arity zero; write `Name<?>` to include generic candidates.
 
-`void` never has generic parameters: any generic clause on `void` (`void<>`, `void<..>`, `void<!>`, `void<?>`) is rejected with a binding diagnostic. Legacy keeps accepting these because its `async void` sugar must distinguish the bare name from explicit clauses.
-
-Legacy preserves omission-as-any-arity for member generic clauses and qualified names, its bare-single-name zero-arity rule (genericIn), and `<!>` with the same meaning as Standard.
+`void` never has generic parameters: any generic clause on `void` (`void<>`, `void<..>`, `void<!>`, `void<?>`) is rejected with a binding diagnostic.
 
 ```ebnf
 generic-pattern-list =
@@ -607,22 +559,9 @@ Rules:
 
 Variables may bind formal generic parameters or constructed concrete types.
 
-Legacy preserves implicit generic-variable naming and virtual-position behavior.
-
 ## 14. Attributes
 
-Legacy preserves:
-
-```text
-attr(type AttributeType)
-attr(exec AttributeType)
-attr(para 0 AttributeType)
-attr(para * AttributeType)
-attr(ret AttributeType)
-attr(* AttributeType)
-```
-
-Standard uses short position names:
+Attribute selectors use short position names:
 
 ```ebnf
 attribute-selector =
@@ -656,11 +595,11 @@ Semantics:
 - `type`: direct attributes on the declaring type.
 - `call`: direct attributes on the current method — for an accessor candidate this is the accessor method itself.
 - `prop`: direct attributes on the associated property when the candidate is a property accessor. A candidate that is not an accessor definitively has no property location and returns `NotMatched`; an accessor whose property link is missing from backend metadata returns `Unknown`.
-- `para[n]`: direct attributes on parameter `n`. The space-separated Legacy form `para n` is accepted silently.
-- `para[*]`: direct attributes on any parameter. The Legacy form `para *` is accepted silently.
+- `para[n]` or `para n`: direct attributes on parameter `n`.
+- `para[*]` or `para *`: direct attributes on any parameter.
 - `ret`: direct attributes on the return location.
-- `exec`: Legacy-consistent execution location — direct attributes on the current callable, plus direct attributes on the associated property when the candidate is a property accessor.
-- `any`: any supported direct location. The Legacy form `*` is accepted silently.
+- `exec`: direct attributes on the current callable, plus direct attributes on the associated property when the candidate is a property accessor.
+- `any` or `*`: any supported direct location.
 
 There is no `get`/`set` attribute position: accessor-scoped attributes are expressed compositionally, because `call` on an accessor candidate already denotes that accessor's own attributes:
 
@@ -680,15 +619,15 @@ regex-selector = "regex", "(", regex-body, ")" ;
 
 `regex-body` preserves its original characters. The closing delimiter is the unmatched outer `)` after honoring escapes, character classes, nested regex groups, and `(?#...)` comments. Comment content is opaque — escapes, character classes, and groups are not recognized inside it — and the comment ends at the first `)`. `(?#` opens a comment only outside an escape and outside a character class, so `\(` and `[(` never start one.
 
-Regex applies to a versioned, culture-invariant canonical member signature:
+Regex applies to one culture-invariant canonical member signature:
 
 ```text
 <accessibility> [static] <return-type> <declaring-type>.<member-name><generic-part>(<parameters>)
 ```
 
-The compiler `async` flag is not part of the canonical signature in either version — asynchrony is matched through return types (`tasklike` in Standard, the Legacy `async` sugar), never through the flag. Ref kinds are rendered before affected parameter or return types. Nested types use `/`. Type names are fully qualified except generic formal parameters in definition signatures, which are renamed positionally to `T1..TN`: declaring-type parameters first (outermost type, left to right, then nested levels), followed by method parameters. Every occurrence of one parameter renders the same name, in the declaring-type clause, the method generic clause, and use positions alike. Constructed signatures render the actual type arguments.
+The compiler `async` flag is not part of the canonical signature; return shapes are matched with `tasklike`. Ref kinds are rendered before affected parameter or return types. Nested types use `/`. Type names are fully qualified except generic formal parameters in definition signatures, which are renamed positionally to `T1..TN`: declaring-type parameters first (outermost type, left to right, then nested levels), followed by method parameters. Every occurrence of one parameter renders the same name, in the declaring-type clause, the method generic clause, and use positions alike. Constructed signatures render the actual type arguments.
 
-Positional numbering is deliberate: patterns stay valid when source renames a generic parameter, and authors only need the arity of each type and the method. When the total parameter count (type plus method) is exactly one, both versions render the sole parameter as bare `T`; otherwise parameters are numbered `T1..TN`. Bare `T` and `T` followed by digits are reserved for this encoding — a concrete type whose fully qualified name is exactly such a token (only possible in the global namespace) is not distinguishable from a positional parameter by regex; use a structured selector for such members.
+Positional numbering is deliberate: patterns stay valid when source renames a generic parameter, and authors only need the arity of each type and the method. When the total parameter count (type plus method) is exactly one, the sole parameter renders as bare `T`; otherwise parameters are numbered `T1..TN`. Bare `T` and `T` followed by digits are reserved for this encoding — a concrete type whose fully qualified name is exactly such a token (only possible in the global namespace) is not distinguishable from a positional parameter by regex; use a structured selector for such members.
 
 Regex evaluation has a mandatory finite timeout. Timeout produces `Unknown` with a diagnostic.
 
@@ -709,7 +648,6 @@ Standard diagnostics include stable categories for:
 - Lexical errors.
 - Missing or unexpected tokens.
 - Unknown selector or predicate.
-- Selector unavailable in the selected language version.
 - Invalid target domain.
 - Invalid modifier combinations.
 - Invalid ref kind.
@@ -732,11 +670,9 @@ attr(parameter ...) -> attr(para ...)
 attr(return ...) -> attr(ret ...)
 ```
 
-## 18. Legacy Conformance
+## 18. Conformance
 
-Legacy conformance is behavioral, not architectural. The new implementation may produce a completely different syntax tree and execution plan, but it must preserve every approved Legacy match outcome.
-
-The frozen Shared.Cecil.AspectN engine remains the differential oracle until AspectN 1.0. A behavior difference is acceptable only when recorded as an approved correction.
+The existing Standard regression suites and cross-adapter cases define conformance. The solution has no oracle dependency. AN4003, AN4004 and AN4005 remain migration diagnostics; the removed selector-mode diagnostic AN2002 is not reassigned.
 
 ## 19. Standard Examples
 
@@ -770,28 +706,6 @@ attr(para[*] System.ComponentModel.DataAnnotations.RequiredAttribute)
 method(* Service.*(..)) && !attr(call ObsoleteAttribute)
 ```
 
-## 20. Standard/Legacy Difference Summary
+## 20. Design Rationale and Migration
 
-The complete inventory with per-item rationale and migration mappings is recorded in [Legacy–Standard differences](../../language/legacy-standard-differences.md). Summary:
-
-| Concern | Legacy | Standard |
-|---|---|---|
-| Umbrella callable selector | `execution` (`callable` unavailable) | `execution`; `callable` excludes constructors |
-| All property accessors | `property` | `property` |
-| Constructors | `ctor`, `cctor` | `ctor`, `cctor` |
-| Composite accessibility | `privateprotected`, `protectedinternal` | `private protected`, `protected internal` |
-| Space-separated accessibilities | Alternatives | `|` alternation; compounds parenthesized |
-| Generic variables | Implicit identifiers | Explicit `$name` |
-| Tuple syntax | Tuple or ValueTuple | ValueTuple only |
-| `async T` / `async null` | Task/ValueTask return sugar | No `async` modifier; `tasklike<T>` / bare `tasklike` return patterns |
-| Reference `T?` | Historical Nullable behavior | Same CLR reference type as `T` |
-| Ref kinds | Wildcard-only exemption; exact otherwise | Unannotated = unconstrained; `ref`/`out`/`in`/`ref readonly` exact; `!ref` = non-by-ref |
-| Generic clause forms | `<!>`; mixed empty slots; omission-as-any (member clauses, qualified names) | `<!>` (same meaning), `<?>` (any arity incl. zero), mixed empty slots; omission = arity zero except `*`; no generic clause on `void` |
-| Generic name without clause | Any arity (member clauses, qualified names) | Arity zero, except `*` |
-| Member path `..` | Splits declaring type; trailing `..` appends a wildcard type name | `..` only between namespace segments; member joined with `.`; `*..M` is an error |
-| Bare patterns vs arrays | Match array element identities | Require explicit array suffixes |
-| `int[]+`, `*+` | Element-assignable sink / wildcard-name form | Rejected at binding (AN2010) |
-| `int []`, `int ?`, `(int)` | Rejected | Rejected (rules unified) |
-| Attribute positions | `exec`, `para`, `ret`, `*` | `call`, `prop`, `para[]`, `ret`, `exec`, `any`; Legacy spellings accepted |
-| Numeric names (`123`) | Accepted | Rejected |
-| Keywords | Case-insensitive (`async` strictly lowercase) | Case-sensitive, lowercase |
+The [design decisions](../../language/standard-design-decisions.md) explain the name model, generic arity, wildcard family, ref kinds and structural suffix rules. The [migration guide](../../migration/shared-cecil-to-aspectn.md) describes the breaking transition from Shared.Cecil.AspectN and the removed public APIs.

@@ -46,7 +46,7 @@ public sealed class CollectibleAssemblyTests
         var assembly = loadContext.LoadFromAssemblyPath(assemblyPath);
         var type = Assert.IsAssignableFrom<Type>(
             assembly.GetType(
-                "AspectN.TestAssembly.LegacyFixture`2",
+                "AspectN.TestAssembly.MatchingFixture`2",
                 throwOnError: true));
         var constructedType = type.MakeGenericType(
             typeof(string),
@@ -59,7 +59,7 @@ public sealed class CollectibleAssemblyTests
         var candidate = typeSystem.Mapper.MapMethod(constructedMethod);
         var compilation = AspectNCompilation.Create(
             AspectNParser.ParseMemberExpression(
-                "method(bool AspectN.TestAssembly.LegacyFixture" +
+                "method(bool AspectN.TestAssembly.MatchingFixture" +
                 "<string,int>.GenericMethod<double,bool>" +
                 "(string,int,double,bool))"));
         Assert.True(compilation.TryGetMemberPattern(out var pattern));

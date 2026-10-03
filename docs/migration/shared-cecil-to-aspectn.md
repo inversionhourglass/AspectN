@@ -1,8 +1,10 @@
 # Migrating from Shared.Cecil.AspectN
 
 AspectN replaces the Cecil-bound parser with a backend-neutral compile and
-match pipeline. Existing expressions can move first; applications can adopt
-the Standard language separately.
+match pipeline implementing the existing Standard language. Legacy and the
+language selection API are removed. This is a breaking migration: review
+expressions and intended match ranges before switching callers. Rougamo's
+actual integration and breaking major release belong to a later task.
 
 ## Package and namespace changes
 
@@ -17,19 +19,18 @@ The two Cecil packages expose the same `AspectN.Cecil` namespace but target
 different strong-named Cecil identities. Reference exactly one of them in a
 consumer project. Rougamo uses `AspectN.Cecil.Fody`.
 
-The frozen Legacy oracle remains a test-only compatibility reference. Do not
-copy or modify its production source during migration.
+The solution, formatting and tests no longer depend on the Shared oracle.
+Historical checkouts remain frozen and are not changed by this retirement.
 
-## Compile Legacy expressions explicitly
+## Compile expressions
 
 ```csharp
 using AspectN;
 
-var parseOptions = new AspectNParseOptions(
-    AspectNLanguageVersion.Legacy);
 var compilation = new AspectNEngine().CompileMemberExpression(
     expression,
-    parseOptions);
+    compilationOptions: new AspectNCompilationOptions(
+        TimeSpan.FromMilliseconds(100)));
 
 if (!compilation.TryGetMemberPattern(out var pattern))
 {
@@ -37,8 +38,12 @@ if (!compilation.TryGetMemberPattern(out var pattern))
 }
 ```
 
-Language selection is immutable on the compiled pattern. Do not infer Legacy
-mode from the shape or casing of an expression.
+`ParseMemberExpression(string source)` and `ParseTypePattern(string source)`
+have no options parameter. Engine compilation methods accept `source`,
+`compilationOptions` and `extensions`. Remove references to
+`AspectNLanguageVersion`, `AspectNParseOptions` and `LanguageVersion` on trees,
+compilations, compiled patterns and extension contexts. Keywords are lowercase
+and case-sensitive; no mode is inferred from input.
 
 ## Map Cecil metadata before matching
 
@@ -50,12 +55,12 @@ using Mono.Cecil;
 using var module = ModuleDefinition.ReadModule(assemblyPath);
 using var typeSystem = new CecilTypeSystem(
     module,
-    new CecilMappingOptions(compositeAccessibility: false));
+    new CecilMappingOptions(leaveOpen: true));
 
 var method = module.Types
     .SelectMany(type => type.Methods)
     .Single(candidate => candidate.FullName == methodFullName);
-var signature = typeSystem.Mapper.MapCallable(method);
+var signature = typeSystem.Mapper.MapMethod(method);
 var result = pattern!.Match(signature, typeSystem);
 
 if (result.Status == MatchStatus.Unknown)
@@ -65,31 +70,67 @@ if (result.Status == MatchStatus.Unknown)
 ```
 
 Keep one `CecilTypeSystem` for the lifetime of its `ModuleDefinition`, then
-dispose it. The mapping cache is owned by that context.
+dispose it. The mapping cache is owned by that context. With `leaveOpen: true`,
+the caller owns module disposal, as in this example; the default closes the
+module when the type system is disposed. The deleted `CompositeAccessibility`
+option has no replacement: accessibility reflects the member declaration,
+without intersecting outer types. Property metadata still merges accessor
+accessibilities, while property selectors check the current accessor.
 
 ## Behavioral migration checklist
 
-1. Run existing expressions with `AspectNLanguageVersion.Legacy`.
-2. Compare outcomes against the pinned Legacy oracle.
-3. Record intentional corrections in `approved-differences.json`; never update
-   the baseline silently.
-4. Decide how each caller handles `Unknown` and retain its diagnostics.
-5. Move expressions to Standard syntax deliberately. Legacy selector keywords
-   work unchanged in Standard; migration diagnostics remain for renamed
-   modifiers such as `privateprotected`.
-6. Re-run the cross-adapter conformance suite if the same rules are consumed
-   through Cecil, Roslyn, or Reflection.
+1. Inventory expressions and the candidate members each is intended to select.
+2. Rewrite historical forms using the table below, checking match range changes.
+3. Compile every expression and address diagnostics; retain AN4003/4004/4005
+   migration messages instead of suppressing them.
+4. Map metadata into signatures and handle `Matched`, `NotMatched` and `Unknown`
+   explicitly, preserving diagnostics for missing assemblies or facts.
+5. Validate application scenarios and rerun cross-adapter conformance where
+   the same rules are consumed through multiple metadata backends.
+
+## Expression migration
+
+The replacements express intended behavior; they do not guarantee identical
+results to Shared.Cecil.AspectN.
+
+| Historical form or intent | AspectN form and effect |
+| --- | --- |
+| Any arity for named type or method | Write `Service<?>.Get<?>`; omitted clauses now require zero arity |
+| Implicit variable `T` | Write `$T` consistently, for example `method($T Converter.Convert<$T>($T))`; bare `T` is a literal name |
+| `privateprotected`, `protectedinternal` | `private protected`, `protected internal` (AN4003) |
+| Space-separated alternative permissions | Join alternatives with `|`; compounds such as `(private protected)|public` are one alternative |
+| `async T`, `async null` | `tasklike<T>`, bare `tasklike`, based on return shape, independent of compiler async metadata |
+| Historical `async void` intention | Write `void`, rather than converting it to a Task shape |
+| `*..M` member path | Write `*..*.M` for a nonempty namespace and non-nested type; omit declaring type with `M` to include global and nested types |
+| `*..*` used as a universal declaring type | Omit declaring type or use the whole member path `*`; written paths follow namespace and nesting rules |
+| `int` intended to select arrays | Write the required `[]` ranks; ordinary named patterns do not strip array layers |
+| `int[]+` | Use `int+[]` when element assignability is intended; array targets of `+` are invalid |
+| Tuple shorthand for reference Tuple | Write `System.Tuple<...>`; `(int,string)` matches ValueTuple only |
+| `T?` | Reference type annotations keep the same CLR identity; value types require Nullable<T> |
+| Default by-value-only parameter intention | Add `!ref`; unannotated types match every ref kind |
+| Attribute long target names | `call`, `prop`, `para`, `ret` (AN4005); both `para[0]` / `para 0` and `para[*]` / `para *` remain accepted |
+| `tasklike<void>` | Bare `tasklike` (AN4004) |
+
+`execution` includes constructors, `callable` excludes them, and `method`
+selects ordinary methods. `attr(exec ...)` checks the current method plus its
+associated property; `attr(call ...)` checks only the method. A wildcard name
+with a generic clause is a named-type pattern: `*<?>` excludes arrays, formal
+generic parameters and nested types unless a nesting path is written.
+
+Review regex expressions against the current canonical signature: ref prefixes,
+spaced compound permissions, comma-space separators, `/` nesting and positional
+generic names. The compiler async flag is omitted.
 
 ## Important differences
 
 - The new matcher returns a tri-state result rather than a bare Boolean.
 - Backend objects are mapped into backend-neutral signatures before matching.
-- `Standard` is case-sensitive and does not accept Legacy aliases silently.
+- AspectN implements one case-sensitive grammar without a compatibility layer.
 - Missing assemblies and unsupported metadata shapes produce `Unknown` with a
   diagnostic instead of an implicit negative match.
-- Composite accessibility is a Cecil mapping option retained only for Legacy
-  compatibility scenarios.
+- Declaration accessibility is independent of containing-type accessibility.
 
 See the [language guide](../language/README.md) and the
 [normative language specification](../superpowers/specs/2026-07-31-aspectn-language-spec.md)
-for Standard replacements and full semantics.
+and the [design decisions](../language/standard-design-decisions.md) for full
+semantics and rationale.

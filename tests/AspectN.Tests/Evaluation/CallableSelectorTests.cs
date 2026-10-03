@@ -144,6 +144,27 @@ public sealed class CallableSelectorTests
         Assert.Same(original, constructed.OriginalDefinition);
     }
 
+    [Theory]
+    [InlineData("method($T *<,$T>(..))", 1)]
+    [InlineData("method($T *<$T,>(..))", 0)]
+    public void Match_EmptyGenericSlot_PreservesVariablePosition(string source, int position)
+    {
+        var assembly = new AssemblyIdentity("Example.Assembly");
+        var first = new GenericParameterSignature("First", GenericParameterOwnerKind.Method, "Run", assembly, 0);
+        var second = new GenericParameterSignature("Second", GenericParameterOwnerKind.Method, "Run", assembly, 1);
+        var firstType = new GenericParameterTypeSignature(first);
+        var secondType = new GenericParameterTypeSignature(second);
+        var matching = Callable("Run", MethodKind.OrdinaryMethod,
+            returnType: position == 0 ? firstType : secondType,
+            genericParameters: [first, second]);
+        var other = Callable("Run", MethodKind.OrdinaryMethod,
+            returnType: position == 0 ? secondType : firstType,
+            genericParameters: [first, second]);
+
+        Assert.Equal(MatchStatus.Matched, Match(source, matching).Status);
+        Assert.Equal(MatchStatus.NotMatched, Match(source, other).Status);
+    }
+
     [Fact]
     public void Match_DefinitionGenericClauseVariable_BindsFormalParameter()
     {

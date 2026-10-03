@@ -106,7 +106,6 @@ internal sealed class BoundMemberPattern(
 internal sealed class BoundMethodSignature(
     TextSpan span,
     IEnumerable<BoundModifier> modifiers,
-    bool requiresAsync,
     BoundTypeUsePattern returnType,
     BoundMemberPattern member,
     BoundGenericPattern? generic,
@@ -118,8 +117,6 @@ internal sealed class BoundMethodSignature(
             parameters.ToArray());
 
     public IReadOnlyList<BoundModifier> Modifiers => _modifiers;
-
-    public bool RequiresAsync { get; } = requiresAsync;
 
     public BoundTypeUsePattern ReturnType { get; } = returnType ??
             throw new ArgumentNullException(nameof(returnType));

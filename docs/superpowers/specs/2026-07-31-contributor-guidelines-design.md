@@ -17,7 +17,7 @@ The guide describes the approved target structure from the industrial redesign p
 
 - `src/AspectN` contains the backend-neutral parser, semantic model, signatures, and matcher.
 - `src/AspectN.Cecil`, `src/AspectN.Roslyn`, and `src/AspectN.Reflection` contain adapter-specific mapping and type-system logic.
-- Matching test projects mirror production projects under `tests/`; conformance, Legacy oracle, .NET Framework, and fixture assemblies remain separate.
+- Matching test projects mirror production projects under `tests/`; conformance, .NET Framework, and fixture assemblies remain separate. The Legacy oracle was retired by the [single-language plan](../../plans/2026-10-03-single-language-aspectn.md).
 - `benchmarks/`, `eng/`, and `docs/` contain performance suites, engineering scripts, and specifications.
 
 ## Verification and Commit

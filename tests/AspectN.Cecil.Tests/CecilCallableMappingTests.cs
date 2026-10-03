@@ -113,27 +113,18 @@ public sealed class CecilCallableMappingTests
     }
 
     [Fact]
-    public void MapMethod_CompositeAccessibility_IntersectsDeclaringType()
+    public void MapMethod_PublicMemberInInternalType_PreservesDeclaredAccessibility()
     {
-        using var rawTypeSystem = EmittedFixture.Open();
-        using var compositeTypeSystem = EmittedFixture.Open(
-            new CecilMappingOptions(compositeAccessibility: true));
-        var rawMethod = FindMethod(
+        using var typeSystem = EmittedFixture.Open();
+        var method = FindMethod(
             EmittedFixture.FindType(
-                rawTypeSystem,
-                nameof(CompositeAccessibilityFixture)),
-            "PublicMethod");
-        var compositeMethod = FindMethod(
-            EmittedFixture.FindType(
-                compositeTypeSystem,
-                nameof(CompositeAccessibilityFixture)),
+                typeSystem,
+                nameof(DeclaredAccessibilityFixture)),
             "PublicMethod");
 
-        var raw = rawTypeSystem.Mapper.MapMethod(rawMethod);
-        var composite = compositeTypeSystem.Mapper.MapMethod(compositeMethod);
+        var signature = typeSystem.Mapper.MapMethod(method);
 
-        Assert.Equal(Accessibility.Public, raw.Accessibility);
-        Assert.Equal(Accessibility.Internal, composite.Accessibility);
+        Assert.Equal(Accessibility.Public, signature.Accessibility);
     }
 
     [Fact]

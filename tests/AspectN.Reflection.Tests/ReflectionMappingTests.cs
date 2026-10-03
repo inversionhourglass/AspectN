@@ -499,7 +499,7 @@ public sealed class ReflectionMappingTests
     {
         var typeSystem = new ReflectionTypeSystem();
 
-        // 名称通配与命名空间 .. 的 + 目标沿闭包用模式本身求值（与 Legacy 一致）。
+        // 名称通配与命名空间 .. 的 + 目标沿闭包用模式本身求值。
         Assert.Equal(
             MatchStatus.Matched,
             TypePattern("System.Exception+", typeof(InvalidOperationException), typeSystem).Status);

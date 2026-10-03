@@ -6,7 +6,7 @@ namespace AspectN.Tests.Evaluation;
 
 /// <summary>
 /// 锁定 2026-10-02 用户定稿的 `*` 家族语义表与 `*[]`/`*?` 版本差异
-/// （docs/language/legacy-standard-differences.md §6/§8.9/§8.10），
+/// （docs/language/standard-design-decisions.md），
 /// 防止后续改动 BindNamedTypePattern / EvaluateNamed 时回归。
 /// </summary>
 public sealed class WildcardFamilySemanticsTests
@@ -127,27 +127,20 @@ public sealed class WildcardFamilySemanticsTests
     }
 
     [Theory]
-    [InlineData("System.Int32[]", AspectNLanguageVersion.Legacy, MatchStatus.Matched)]
-    [InlineData("System.Int32[]", AspectNLanguageVersion.Standard, MatchStatus.Matched)]
-    [InlineData("System.Collections.Generic.List<System.Int32>[]", AspectNLanguageVersion.Legacy, MatchStatus.NotMatched)]
-    [InlineData("System.Collections.Generic.List<System.Int32>[]", AspectNLanguageVersion.Standard, MatchStatus.Matched)]
-    [InlineData("System.Int32[][]", AspectNLanguageVersion.Legacy, MatchStatus.NotMatched)]
-    [InlineData("System.Int32[][]", AspectNLanguageVersion.Standard, MatchStatus.Matched)]
-    public void Match_SuffixedWildcardArray_VersionDifferences(
+    [InlineData("System.Int32[]", MatchStatus.Matched)]
+    [InlineData("System.Collections.Generic.List<System.Int32>[]", MatchStatus.Matched)]
+    [InlineData("System.Int32[][]", MatchStatus.Matched)]
+    public void Match_SuffixedWildcardArray_MatchesAnyElement(
         string candidateTypeName,
-        AspectNLanguageVersion version,
         MatchStatus expected)
     {
-        // §8.9：Legacy 的 *[] 元素是零泛型名字通配且层数须完整；Standard 元素是全通配。
         var candidate = BuildCandidate(candidateTypeName);
-        AssertMatch("*[]", candidate, expected, version);
+        AssertMatch("*[]", candidate, expected);
     }
 
     [Fact]
-    public void Match_SuffixedWildcardNullable_VersionDifferences()
+    public void Match_SuffixedWildcardNullable_MatchesGenericValueArgument()
     {
-        // §8.10：Legacy 的 *? 内层是零泛型名字通配（不匹配泛型实参/数组/引用类型）；
-        // Standard 内层保留全通配并按引用类型 nullable 规则求值。
         var nullableOfGeneric = Generic(
             "System",
             "Nullable",
@@ -157,25 +150,16 @@ public sealed class WildcardFamilySemanticsTests
         AssertMatch(
             "*?",
             nullableOfGeneric,
-            MatchStatus.NotMatched,
-            AspectNLanguageVersion.Legacy);
-        AssertMatch(
-            "*?",
-            nullableOfGeneric,
-            MatchStatus.Matched,
-            AspectNLanguageVersion.Standard);
+            MatchStatus.Matched);
     }
 
     private static void AssertMatch(
         string source,
         TypeSignature candidate,
-        MatchStatus expected,
-        AspectNLanguageVersion version = AspectNLanguageVersion.Standard)
+        MatchStatus expected)
     {
         var compilation = AspectNCompilation.Create(
-            AspectNParser.ParseTypePattern(
-                source,
-                new AspectNParseOptions(version)));
+            AspectNParser.ParseTypePattern(source));
         Assert.True(compilation.TryGetTypePattern(out var pattern));
 
         Assert.Equal(expected, pattern!.Match(candidate, new StubTypeSystem()).Status);

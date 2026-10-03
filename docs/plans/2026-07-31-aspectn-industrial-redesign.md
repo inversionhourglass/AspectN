@@ -1,5 +1,7 @@
 # AspectN Industrial Redesign Implementation Plan
 
+> **Superseded requirements (2026-10-03):** The [single-language plan](2026-10-03-single-language-aspectn.md) replaces this plan's Legacy mode, oracle parity, compatibility facade and approved-differences requirements. Historical tasks below remain as context; current API and verification follow the single-language contract. Rougamo migration and publication remain separate future work.
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Build a production-grade, backend-neutral AspectN matcher with versioned `Legacy` and `Standard` languages, adapters for Mono.Cecil, Roslyn, and Reflection, and a zero-unapproved-difference migration path for Rougamo.

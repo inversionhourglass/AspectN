@@ -15,35 +15,12 @@ public sealed class ModifierMatcherTests
         bool expected)
     {
         var signature = Bind(
-            "method(private protected * Service.Get(..))",
-            AspectNLanguageVersion.Standard);
+            "method(private protected * Service.Get(..))");
 
         var result = ModifierMatcher.IsMatch(
             signature.Modifiers,
             candidate,
-            isStatic: false,
-            AspectNLanguageVersion.Standard);
-
-        Assert.Equal(expected, result);
-    }
-
-    [Theory]
-    [InlineData(Accessibility.Private, true)]
-    [InlineData(Accessibility.Protected, true)]
-    [InlineData(Accessibility.PrivateProtected, false)]
-    public void Match_LegacySpaceSeparatedAccessibilities_AreAlternatives(
-        Accessibility candidate,
-        bool expected)
-    {
-        var signature = Bind(
-            "method(private protected * Service.Get(..))",
-            AspectNLanguageVersion.Legacy);
-
-        var result = ModifierMatcher.IsMatch(
-            signature.Modifiers,
-            candidate,
-            isStatic: false,
-            AspectNLanguageVersion.Legacy);
+            isStatic: false);
 
         Assert.Equal(expected, result);
     }
@@ -61,8 +38,7 @@ public sealed class ModifierMatcherTests
         bool expected)
     {
         var signature = Bind(
-            $"method({modifier} * Service.Get(..))",
-            AspectNLanguageVersion.Standard);
+            $"method({modifier} * Service.Get(..))");
         var accessibility = modifier.Contains("public", StringComparison.Ordinal)
             ? candidateValue
                 ? Accessibility.Public
@@ -72,8 +48,7 @@ public sealed class ModifierMatcherTests
         var result = ModifierMatcher.IsMatch(
             signature.Modifiers,
             accessibility,
-            candidateValue,
-            AspectNLanguageVersion.Standard);
+            candidateValue);
 
         Assert.Equal(expected, result);
     }
@@ -89,14 +64,12 @@ public sealed class ModifierMatcherTests
         bool expected)
     {
         var signature = Bind(
-            "method(!protected internal * Service.Get(..))",
-            AspectNLanguageVersion.Standard);
+            "method(!protected internal * Service.Get(..))");
 
         var result = ModifierMatcher.IsMatch(
             signature.Modifiers,
             candidate,
-            isStatic: false,
-            AspectNLanguageVersion.Standard);
+            isStatic: false);
 
         Assert.Equal(expected, result);
     }
@@ -111,14 +84,12 @@ public sealed class ModifierMatcherTests
         bool expected)
     {
         var signature = Bind(
-            "method(!private protected * Service.Get(..))",
-            AspectNLanguageVersion.Standard);
+            "method(!private protected * Service.Get(..))");
 
         var result = ModifierMatcher.IsMatch(
             signature.Modifiers,
             candidate,
-            isStatic: false,
-            AspectNLanguageVersion.Standard);
+            isStatic: false);
 
         Assert.Equal(expected, result);
     }
@@ -133,14 +104,12 @@ public sealed class ModifierMatcherTests
         bool expected)
     {
         var signature = Bind(
-            "method(private|internal * Service.Get(..))",
-            AspectNLanguageVersion.Standard);
+            "method(private|internal * Service.Get(..))");
 
         var result = ModifierMatcher.IsMatch(
             signature.Modifiers,
             candidate,
-            isStatic: false,
-            AspectNLanguageVersion.Standard);
+            isStatic: false);
 
         Assert.Equal(expected, result);
     }
@@ -156,14 +125,12 @@ public sealed class ModifierMatcherTests
         bool expected)
     {
         var signature = Bind(
-            "method((private protected)|(protected internal)|public * Service.Get(..))",
-            AspectNLanguageVersion.Standard);
+            "method((private protected)|(protected internal)|public * Service.Get(..))");
 
         var result = ModifierMatcher.IsMatch(
             signature.Modifiers,
             candidate,
-            isStatic: false,
-            AspectNLanguageVersion.Standard);
+            isStatic: false);
 
         Assert.Equal(expected, result);
     }
@@ -179,25 +146,20 @@ public sealed class ModifierMatcherTests
     {
         // 仅为可读性包裹复合权限（无 |）与裸复合形式语义一致。
         var signature = Bind(
-            "method((private protected) * Service.Get(..))",
-            AspectNLanguageVersion.Standard);
+            "method((private protected) * Service.Get(..))");
 
         var result = ModifierMatcher.IsMatch(
             signature.Modifiers,
             candidate,
-            isStatic: false,
-            AspectNLanguageVersion.Standard);
+            isStatic: false);
 
         Assert.Equal(expected, result);
     }
 
     private static BoundMethodSignature Bind(
-        string source,
-        AspectNLanguageVersion languageVersion)
+        string source)
     {
-        var tree = AspectNParser.ParseMemberExpression(
-            source,
-            new AspectNParseOptions(languageVersion));
+        var tree = AspectNParser.ParseMemberExpression(source);
         var compilation = AspectNCompilation.Create(tree);
         var selector = Assert.IsType<BoundSelector>(compilation.BoundRoot);
         return Assert.IsType<BoundMethodSignature>(selector.Payload);

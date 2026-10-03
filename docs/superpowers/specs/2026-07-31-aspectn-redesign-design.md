@@ -1,28 +1,28 @@
 # AspectN Industrial Redesign
 
-**Status:** Draft for written review
-**Date:** 2026-07-31
+**Status:** Approved architecture, updated for the single-language decision
+**Date:** 2026-07-31; updated 2026-10-03
 **Decision owners:** AspectN maintainers
-**Scope:** AspectN core, Mono.Cecil adapter, Roslyn adapter, Reflection adapter, and Rougamo migration
+**Scope:** AspectN core and metadata adapters; Rougamo migration is follow-up work
 
 ## 1. Summary
 
-AspectN will be rebuilt as a backend-neutral .NET pattern-matching engine. The existing `Shared.Cecil.AspectN` implementation remains frozen as the compatibility oracle while the new implementation is developed directly in the `AspectN` repository.
+AspectN is a backend-neutral .NET pattern-matching engine developed directly in the `AspectN` repository. It implements one language contract: the existing Standard grammar and matching semantics. Shared.Cecil.AspectN remains historical source outside the build and test graph.
 
 The redesign separates:
 
 1. Source text, tokens, and immutable syntax trees.
-2. Language-version-aware semantic binding.
+2. Semantic binding for the single language contract.
 3. Backend-neutral metadata and type-system contracts.
 4. Immutable compiled match plans.
 5. Mono.Cecil, Roslyn, and Reflection adapters.
 
-The existing expression language remains available as `Legacy`. A new `Standard` language version removes known ambiguities and adopts consistent .NET terminology. Rougamo migrates through a repository-local compatibility facade and does not make the old CLR API part of AspectN's public surface.
+The Legacy compatibility layer and language selection APIs are removed. Its partial repairs already departed from Shared syntax; retaining them would preserve design problems and burden the common implementation. Rougamo will migrate deliberately and publish a breaking major version in a separate task.
 
 ## 2. Goals
 
-- Preserve every approved Legacy expression and Mono.Cecil match result used by Rougamo.
-- Define Standard with explicit grammar, names, precedence, diagnostics, and semantic rules.
+- Preserve the existing Standard input, diagnostic and matching contract.
+- Define the language with explicit grammar, names, precedence, diagnostics, and semantic rules.
 - Match equivalent type and member information consistently across Mono.Cecil, Roslyn, and Reflection.
 - Keep `AspectN` independent from all native backend object models.
 - Support both definitions and constructed references.
@@ -42,30 +42,17 @@ The existing expression language remains available as `Legacy`. A new `Standard`
 - Arbitrary third-party lexer, token, or grammar extensions.
 - A general AOP weaving model. AspectN matches metadata; Rougamo decides whether and how a match can be woven.
 
-## 4. Compatibility Contract
+## 4. Language and Migration Contract
 
-### 4.1 Preserved
+The language is governed by its EBNF, semantic specification and Standard
+regression and conformance tests. Existing Standard inputs, empty slots,
+parameter attribute forms and migration diagnostics remain supported.
 
-- Documented Legacy expression forms.
-- Existing Rougamo public examples.
-- Approved behaviors covered by the Rougamo signature and pattern test suites.
-- Mono.Cecil match outcomes for valid Legacy expressions.
-
-### 4.2 Not preserved
-
-- Old public CLR type names and namespaces.
-- Exception types, exception text, or stack shape.
-- Static cache behavior.
-- Parser accidents that accept invalid or undocumented input.
-- Implementation bugs unless explicitly approved as compatibility requirements.
-
-### 4.3 Authority and conflict resolution
-
-Standard is governed by its EBNF, semantic specification, and conformance tests.
-
-Legacy is governed by the existing Rougamo documentation, public examples, and tests. When documentation, tests, and the old implementation disagree, the conflict must be recorded and resolved explicitly. No implementation author may silently select one behavior.
-
-Rougamo cannot switch to the new engine while any unapproved Legacy behavior difference remains.
+There is no compatibility mode. Language selection API removal and deletion
+of Cecil's outer-type accessibility intersection are intentional API breaks.
+Old Shared CLR APIs and parser accidents are not part of the contract.
+Migration must review expressions and match ranges, preserve `Unknown` policy
+and validate real Rougamo scenarios before a future breaking major release.
 
 ## 5. Package and Dependency Layout
 
@@ -95,7 +82,7 @@ exclusive consumer dependencies because their Cecil assembly public key tokens
 differ. Fody upgrades are compatibility events and must re-run the shared Cecil
 contract and Rougamo integration lanes.
 
-`AspectN.Abstractions` is not a separate package in 1.0. The core `AspectN` package is the abstraction boundary. Legacy is a language version, not a separate NuGet package.
+`AspectN.Abstractions` is not a separate package in 1.0. The core `AspectN` package is the abstraction boundary.
 
 All packages target:
 
@@ -165,7 +152,7 @@ The parser returns a syntax tree and diagnostics. Invalid user text is an expect
 
 The binder:
 
-- Applies `Legacy` or `Standard` rules.
+- Applies the language specification directly, without a mode parameter.
 - Resolves aliases and syntax sugar.
 - Creates and scopes `$T` variables.
 - Validates selector target domains.
@@ -221,7 +208,7 @@ The core member model distinguishes:
 - Static constructors.
 - Original definitions and constructed references.
 
-Property metadata is represented independently and linked to its accessors. In Standard, `property(...)` selects property accessors with the same getter-or-setter meaning as Legacy `property(...)`.
+Property metadata is represented independently and linked to its accessors. `property(...)` selects property getters and setters. Modifiers match the current accessor's declaration accessibility; property metadata retains the merged accessor accessibility. Cecil does not intersect member accessibility with containing types. `CecilMappingOptions` only controls `LeaveOpen`.
 
 ### 8.4 Definitions and constructed references
 
@@ -311,7 +298,7 @@ Semantic extensions are open through an immutable registry owned by one `AspectN
 - Binds syntax arguments to an immutable semantic node.
 - Returns `Unknown` when a backend cannot provide a required capability.
 
-The registry identity or version participates in compiled-plan cache keys.
+The registry identity participates in compiled-plan cache keys.
 
 ## 12. Caching and Lifetime
 
@@ -320,7 +307,7 @@ There are no unbounded global static caches.
 - Syntax trees and compiled plans are immutable.
 - Parser and binder do not hide global caches.
 - An optional engine-scoped cache is explicit and bounded.
-- Cache keys include source text, language version, compilation options, and extension-registry version.
+- Cache keys include source text, parse entry point, regex timeout and extension-registry identity.
 - Adapter caches follow `ModuleDefinition`, `Compilation`, or collectible assembly lifetime.
 - Rougamo may reuse one engine for a weave operation and dispose it when the operation completes.
 
@@ -338,7 +325,7 @@ Parsing and binding attempt to report multiple useful diagnostics in one pass.
 
 Regex matching:
 
-- Uses a versioned canonical member signature, never an arbitrary `ToString()`.
+- Uses one canonical member signature, never an arbitrary `ToString()`.
 - Is culture-invariant.
 - Has a mandatory finite timeout.
 - Returns `Unknown` with a diagnostic on timeout.
@@ -357,12 +344,12 @@ Public long-running operations accept `CancellationToken`. Hot, already-compiled
 - Diagnostic code and span tests.
 - Property-based and fuzz tests proving arbitrary input does not hang or crash unexpectedly.
 
-### 14.2 Legacy differential testing
+### 14.2 Regression and adapter compatibility
 
-- Run the frozen Shared.Cecil.AspectN engine and new Cecil adapter against the same generated signature corpus.
-- Import current Rougamo signature and pattern tests.
-- Include documented public examples as golden cases.
-- Require every difference to be fixed or explicitly approved with rationale.
+- Preserve Standard behavior for generic arity, formal parameter binding, Boolean scopes, suffix structure, attributes and migration diagnostics.
+- Use neutral shared fixtures for open and nested generics and assembly unloading.
+- Keep the Cecil/Roslyn version matrices, Fody Cecil identity and Rougamo compilation checks, .NET Framework and package validation.
+- Build, tests and formatting have no oracle dependency.
 
 ### 14.3 Cross-adapter conformance
 
@@ -384,32 +371,24 @@ Benchmark:
 - Assignability-heavy matching.
 - Adapter conversion and cache reuse.
 
-Rougamo migration requires a reviewed benchmark report and no unexplained statistically significant hot-path regression relative to the frozen engine.
+Performance evidence for Rougamo integration belongs to the future migration task. The Legacy retirement only removes compatibility-driven overhead and redundancy.
 
 ## 15. Migration and Release Plan
 
-1. Freeze production code in `Shared.Cecil.AspectN`.
-2. Add or port compatibility tests without changing the oracle behavior.
-3. Build `AspectN` core directly in the new repository.
-4. Build `AspectN.Cecil`.
-5. Reach zero unapproved Legacy differentials.
-6. Integrate prerelease AspectN packages into Rougamo through a Rougamo-local facade.
-7. Remove the Shared.Cecil.AspectN submodule from Rougamo.
-8. Build `AspectN.Reflection`.
-9. Build `AspectN.Roslyn`.
-10. Reach cross-adapter conformance, diagnostics, fuzz, benchmark, and documentation gates.
-11. Publish AspectN 1.0.
-12. Archive Shared.Cecil.AspectN and update its README to point to AspectN.
+1. Retire Legacy and make parsing, binding, evaluation and caches implement Standard directly.
+2. Preserve shared capabilities and valuable regression tests; update APIs and documentation.
+3. Validate cross-adapter behavior, package boundaries, formatting and the complete retained matrix.
+4. In a future task, migrate Rougamo expressions and integration and prepare its breaking major release.
 
-The old repository is archived, not deleted, so history and the compatibility oracle remain inspectable.
+This work does not modify adjacent repositories, frozen cache checkouts or Rougamo submodules, and does not publish packages or push branches.
 
 ## 16. Public API Direction
 
-The exact overload set is implementation work, but public roles and naming are fixed:
+Public roles and naming are fixed:
 
 - `AspectNParser`: parse source into syntax trees and diagnostics.
 - `AspectNSyntaxTree`: immutable parsed representation.
-- `AspectNCompilation`: language version, options, extensions, and binding.
+- `AspectNCompilation`: syntax tree, compilation options, extensions, and binding.
 - `CompiledPattern`: immutable executable plan.
 - `MatchResult` and `MatchStatus`: three-state evaluation.
 - `ITypeSystem`: backend-neutral relationship contract.
@@ -421,7 +400,7 @@ A simple facade may combine parse, bind, and compile, but it must expose diagnos
 
 ### Refactor Shared.Cecil.AspectN first
 
-Rejected because it would mutate the compatibility oracle and require a second migration into AspectN.
+Rejected because it would alter the historical implementation and require a second migration into AspectN.
 
 ### One self-contained metadata snapshot
 
@@ -429,7 +408,7 @@ Rejected for 1.0 because assignability and resolution depend on backend context,
 
 ### Parser generator
 
-Rejected because the grammar is compact, requires precise versioned diagnostics, and does not justify generated artifacts or another runtime dependency.
+Rejected because the grammar is compact, requires precise diagnostics, and does not justify generated artifacts or another runtime dependency.
 
 ### Backend-specific ASTs
 
@@ -445,10 +424,10 @@ Rejected for 1.0 because OR, negation, multiple solutions, and backend-object li
 
 ## 18. Review Checklist
 
-- The compatibility oracle remains frozen.
-- Standard and Legacy are distinct language versions.
+- Parsing and binding implement a single language without retired mode parameters.
+- Standard regression coverage and stable diagnostics are preserved.
 - Native backend objects cannot leak into the core model.
 - `Unknown` is preserved through core evaluation.
 - No global mutable cache or grammar extension exists.
-- Rougamo compatibility types remain in Rougamo.
+- Rougamo integration and publication remain separate work.
 - 1.0 non-goals are not pulled into implementation tasks.

@@ -53,28 +53,6 @@ public sealed class NullableTupleTasklikeTests
             Match("(int, string)", referenceTuple).Status);
     }
 
-    [Theory]
-    [InlineData("ValueTuple", TypeKind.Struct)]
-    [InlineData("Tuple", TypeKind.Class)]
-    public void Match_LegacyTuple_AcceptsTupleAndValueTuple(
-        string metadataName,
-        TypeKind kind)
-    {
-        var candidate = Constructed(
-            "System",
-            metadataName,
-            kind,
-            Named("System", "Int32", TypeKind.Struct),
-            Named("System", "String"));
-
-        var result = Match(
-            "(int, string)",
-            candidate,
-            AspectNLanguageVersion.Legacy);
-
-        Assert.Equal(MatchStatus.Matched, result.Status);
-    }
-
     [Fact]
     public void Match_LongValueTuple_FlattensRuntimeRestShape()
     {
@@ -178,61 +156,6 @@ public sealed class NullableTupleTasklikeTests
             pattern.Match(asynchronous.ReturnType.Type, typeSystem).Status);
     }
 
-    [Fact]
-    public void Match_LegacyAsyncType_MatchesGenericTaskShape()
-    {
-        var signature = BindLegacyCallable(
-            "method(async string Service.Get(..))");
-        var candidate = Constructed(
-            "System.Threading.Tasks",
-            "Task",
-            TypeKind.Class,
-            Named("System", "String"));
-        var context = new EvaluationContext(
-            new StubTypeSystem(),
-            AspectNLanguageVersion.Legacy,
-            CancellationToken.None);
-
-        var result = TypePatternEvaluator.EvaluateLegacyAsyncReturn(
-            signature.ReturnType.TypePattern,
-            candidate,
-            context);
-
-        Assert.Equal(MatchStatus.Matched, result);
-    }
-
-    [Fact]
-    public void Match_LegacyAsyncNull_MatchesNonGenericTaskShape()
-    {
-        var signature = BindLegacyCallable(
-            "method(async null Service.Get(..))");
-        var candidate = Named(
-            "System.Threading.Tasks",
-            "ValueTask",
-            TypeKind.Struct);
-        var context = new EvaluationContext(
-            new StubTypeSystem(),
-            AspectNLanguageVersion.Legacy,
-            CancellationToken.None);
-
-        var result = TypePatternEvaluator.EvaluateLegacyAsyncReturn(
-            signature.ReturnType.TypePattern,
-            candidate,
-            context);
-
-        Assert.Equal(MatchStatus.Matched, result);
-    }
-
-    private static BoundMethodSignature BindLegacyCallable(string source)
-    {
-        var tree = AspectNParser.ParseMemberExpression(
-            source,
-            new AspectNParseOptions(AspectNLanguageVersion.Legacy));
-        var compilation = AspectNCompilation.Create(tree);
-        var selector = Assert.IsType<BoundSelector>(compilation.BoundRoot);
-        return Assert.IsType<BoundMethodSignature>(selector.Payload);
-    }
-
     private static MethodSignature Callable(
         TypeSignature returnType,
         bool isAsync)
@@ -257,21 +180,17 @@ public sealed class NullableTupleTasklikeTests
 
     private static MatchResult Match(
         string source,
-        TypeSignature candidate,
-        AspectNLanguageVersion languageVersion = AspectNLanguageVersion.Standard)
+        TypeSignature candidate)
     {
-        return Compile(source, languageVersion).Match(
+        return Compile(source).Match(
             candidate,
             new StubTypeSystem());
     }
 
     private static CompiledTypePattern Compile(
-        string source,
-        AspectNLanguageVersion languageVersion = AspectNLanguageVersion.Standard)
+        string source)
     {
-        var tree = AspectNParser.ParseTypePattern(
-            source,
-            new AspectNParseOptions(languageVersion));
+        var tree = AspectNParser.ParseTypePattern(source);
         var compilation = AspectNCompilation.Create(tree);
         Assert.True(compilation.TryGetTypePattern(out var pattern));
         return pattern!;
