@@ -3,6 +3,9 @@
 AspectN expressions select .NET types and callables without exposing a
 specific metadata backend in the language or compiled pattern API.
 
+For the confirmed differences from Shared, examples and rationale, see the
+[中文设计差异说明](shared-standard-differences.md).
+
 ## Selectors
 
 - `method(...)` selects ordinary methods.

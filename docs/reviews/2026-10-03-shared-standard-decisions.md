@@ -2,6 +2,8 @@
 
 本文件记录用户对 [完整差异审计](2026-10-03-shared-standard-audit.md) 的裁决与实现。
 审计和 JSON 证据保留固定版本的原始观察，不随本次修复重写。
+面向表达式作者的完整中文说明、示例及差异原因见
+[Shared 与 Standard 已确认的设计差异](../language/shared-standard-differences.md)。
 当前语言契约以 [语言规范](../superpowers/specs/2026-07-31-aspectn-language-spec.md)
 和 [独立设计决策](../language/standard-design-decisions.md) 为准。
 
@@ -17,7 +19,7 @@
 | N06 | 泛型实参支持完整类型结构，短名不会缩减能力。 |
 | N07 | 别名指向对应 System 类型，并保留显式泛型子句约束。 |
 | N08 | 长 ValueTuple 按逻辑元素展开 Rest；显式 CLR 结构使用具名模式。 |
-| N09 | 保留当前 Standard 的 `+` 结构白名单。 |
+| N09 | tuple 空槽和尾逗号报错，不静默坍缩元素数；`+` 另保留此前确认的结构白名单。 |
 | N10 | 否定全通配匹配空集合，所有位置遵循正常 Boolean 补集，包括新增路径否定。 |
 | N11 | 索引器 setter 按关联属性类型匹配。 |
 | N12 | 属性名称取关联 Property 元数据，而非裁剪 accessor 方法名。 |

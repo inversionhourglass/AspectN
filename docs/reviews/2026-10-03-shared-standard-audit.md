@@ -1,6 +1,6 @@
 # Shared.Cecil.AspectN 与单语言 AspectN 的完整差异审计
 
-日期：2026-10-03。状态：**审计结果，新增取舍待用户确认；不是新增的已批准语言规范。**
+日期：2026-10-03。状态：**固定版本的历史审计，后续裁决已完成。下文保留修复前观察；当前已确认行为见[设计差异说明](../language/shared-standard-differences.md)。**
 
 Legacy 退役已提交为 `1fc3b44`（`refactor(core)!: retire Legacy and keep a single language contract`）。本次审计没有修改解析、绑定、求值或适配器行为。发现的实现缺陷不会以“设计如此”结案。
 

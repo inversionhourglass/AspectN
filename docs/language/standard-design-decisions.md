@@ -6,6 +6,9 @@ The [normative specification](../superpowers/specs/2026-07-31-aspectn-language-s
 defines the full contract; [migration guidance](../migration/shared-cecil-to-aspectn.md)
 explains the breaking transition from Shared.Cecil.AspectN.
 
+The [confirmed Shared/Standard comparison](shared-standard-differences.md)
+provides Chinese explanations, examples and the reason for each difference.
+
 ## Names and selector domains
 
 Keywords are lowercase and case-sensitive. Bare identifiers always denote
