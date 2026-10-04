@@ -31,7 +31,8 @@ internal static class AttributePatternEvaluator
             // 普通方法（非访问器）确定没有关联属性，直接 NotMatched；
             // 只有访问器候选在后端未填充 AssociatedProperty 链接时才是 Unknown
             // （能力守卫：三个一方后端都会填充，实际几乎不触发）。
-            if (candidate.Kind is not (MethodKind.PropertyGetter or
+            if (candidate.Availability.IsKnown(MetadataFacts.Kind) &&
+                candidate.Kind is not (MethodKind.PropertyGetter or
                     MethodKind.PropertySetter))
             {
                 return MatchStatus.NotMatched;
@@ -39,6 +40,9 @@ internal static class AttributePatternEvaluator
 
             if (candidate.AssociatedProperty is null)
             {
+                if (!candidate.Availability.IsKnown(MetadataFacts.AssociatedProperty | MetadataFacts.Kind))
+                    return MetadataQuery.Require(candidate.Availability,
+                        MetadataFacts.AssociatedProperty | MetadataFacts.Kind, pattern, context);
                 return Unknown(
                     pattern,
                     context,
@@ -48,12 +52,32 @@ internal static class AttributePatternEvaluator
 
         var targets = GetTargets(pattern, candidate);
         var status = MatchStatus.NotMatched;
+        if (pattern.Target is BoundAttributeTargetKind.Any or BoundAttributeTargetKind.Execution &&
+            candidate.AssociatedProperty is null &&
+            (!candidate.Availability.IsKnown(MetadataFacts.Kind) ||
+                candidate.Kind is MethodKind.PropertyGetter or MethodKind.PropertySetter))
+        {
+            status = !candidate.Availability.IsKnown(MetadataFacts.AssociatedProperty | MetadataFacts.Kind)
+                ? MetadataQuery.Require(candidate.Availability,
+                    MetadataFacts.AssociatedProperty | MetadataFacts.Kind, pattern, context)
+                : Unknown(pattern, context, "The associated property is unavailable for attribute lookup.");
+        }
         var matchedTargetBranches = hasConcreteAttributeType
             ? null
             : new List<EvaluationContext>();
         foreach (var target in targets)
         {
             context.CancellationToken.ThrowIfCancellationRequested();
+            var (availability, fact) = GetAvailability(target, candidate);
+            var metadataStatus = MetadataQuery.Require(availability, fact, pattern, context);
+            if (target.Kind == AttributeTargetKind.Property)
+                metadataStatus = MatchLogic.And(metadataStatus,
+                    MetadataQuery.Require(candidate.Availability, MetadataFacts.AssociatedProperty, pattern, context));
+            if (metadataStatus == MatchStatus.Unknown)
+            {
+                status = MatchLogic.Or(status, metadataStatus);
+                continue;
+            }
             if (hasConcreteAttributeType)
             {
                 var result = context.TypeSystem.HasDirectAttribute(
@@ -96,6 +120,18 @@ internal static class AttributePatternEvaluator
         }
 
         return status;
+    }
+
+    private static (MetadataAvailability, MetadataFacts) GetAvailability(AttributeTarget target, MethodSignature candidate)
+    {
+        return target.Kind switch
+        {
+            AttributeTargetKind.Method => (target.Method!.Availability, MetadataFacts.Attributes),
+            AttributeTargetKind.Property => (target.Property!.Availability, MetadataFacts.Attributes),
+            AttributeTargetKind.Parameter => (target.Parameter!.Availability, MetadataFacts.Attributes),
+            AttributeTargetKind.Return => (target.Method!.Availability, MetadataFacts.ReturnAttributes),
+            _ => (candidate.Availability, MetadataFacts.TypeAttributes)
+        };
     }
 
     private static MatchStatus EvaluateAttributes(

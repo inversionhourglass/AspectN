@@ -3,6 +3,9 @@ namespace AspectN.Diagnostics;
 /// <summary>Represents diagnostic codes.</summary>
 public static class DiagnosticCodes
 {
+    /// <summary>Identifies a recoverable metadata resolution or reading failure.</summary>
+    public static string ResolutionFailure => "AN3004";
+
     /// <summary>Gets the bad character.</summary>
     public static string BadCharacter => "AN0001";
 

@@ -1,3 +1,4 @@
+using AspectN.AdapterInternals;
 using AspectN.Cecil.Internal;
 using AspectN.Diagnostics;
 using AspectN.Evaluation;
@@ -113,7 +114,15 @@ public sealed class CecilTypeSystem : ITypeSystem, IDisposable
             throw new ArgumentNullException(nameof(attributeType));
 #endif
 
-        var attributes = GetAttributes(target);
+        var metadataFailure = AttributeAvailability.GetFailure(target);
+        if (metadataFailure is not null) return metadataFailure;
+        var attributes = GetAttributes(target, out var availability);
+        if (availability.UnavailableFacts != MetadataFacts.None)
+            return TypeRelationResult.Unknown(availability.Diagnostics.Count > 0 ? availability.Diagnostics.ToArray() : new[]
+            {
+                new AspectNDiagnostic(DiagnosticCodes.MissingBackendCapability, DiagnosticSeverity.Warning,
+                    "The attribute collection is unavailable.")
+            });
         if (attributes is null)
         {
             return MissingCapability(
@@ -163,12 +172,20 @@ public sealed class CecilTypeSystem : ITypeSystem, IDisposable
                 message));
     }
 
-    private IReadOnlyList<AttributeSignature>? GetAttributes(
-        AttributeTarget target)
+    private IReadOnlyList<AttributeSignature>? GetAttributes(AttributeTarget target, out MetadataAvailability availability)
     {
+        if (target.Kind == AttributeTargetKind.Type) return GetTypeAttributes(target.Type!, out availability);
+        var source = target.Kind switch
+        {
+            AttributeTargetKind.Property => target.Property!.Availability,
+            AttributeTargetKind.Parameter => target.Parameter!.Availability,
+            _ => target.Method!.Availability
+        };
+        var fact = target.Kind == AttributeTargetKind.Return ? MetadataFacts.ReturnAttributes : MetadataFacts.Attributes;
+        availability = source.IsKnown(fact) ? MetadataAvailability.Complete :
+            new MetadataAvailability(fact, source.Diagnostics);
         return target.Kind switch
         {
-            AttributeTargetKind.Type => GetTypeAttributes(target.Type!),
             AttributeTargetKind.Method => target.Method!.Attributes,
             AttributeTargetKind.Property => target.Property!.Attributes,
             AttributeTargetKind.Parameter => target.Parameter!.Attributes,
@@ -177,37 +194,13 @@ public sealed class CecilTypeSystem : ITypeSystem, IDisposable
         };
     }
 
-    private AttributeSignature[]? GetTypeAttributes(
-        TypeSignature type)
+    private AttributeSignature[]? GetTypeAttributes(TypeSignature type, out MetadataAvailability availability)
     {
-        if (!Mapper.TryGetTypeReference(type, out var reference) ||
-            reference is null)
-        {
-            return null;
-        }
-
-        TypeDefinition? definition;
-        try
-        {
-            definition = reference as TypeDefinition ?? reference.Resolve();
-        }
-        catch (AssemblyResolutionException)
-        {
-            return null;
-        }
-        catch (InvalidOperationException)
-        {
-            return null;
-        }
-        catch (NotSupportedException)
-        {
-            return null;
-        }
-
-        return definition?.CustomAttributes
-            .Select(attribute => new AttributeSignature(
-                Mapper.MapType(attribute.AttributeType),
-                AttributeTargetKind.Type))
-            .ToArray();
+        availability = MetadataAvailability.Complete;
+        if (!Mapper.TryGetTypeReference(type, out var reference) || reference is null) return null;
+        return CecilMetadataReader.Read(() =>
+            (reference as TypeDefinition ?? reference.Resolve())?.CustomAttributes
+                .Select(attribute => new AttributeSignature(Mapper.MapType(attribute.AttributeType), AttributeTargetKind.Type))
+                .ToArray(), reference.FullName, MetadataFacts.Attributes, out availability);
     }
 }

@@ -1,3 +1,4 @@
+using AspectN.Diagnostics;
 using AspectN.Evaluation;
 using AspectN.Metadata;
 using Mono.Cecil;
@@ -382,7 +383,7 @@ public sealed class CecilTypeSystemTests
         Assert.Equal(MatchStatus.Unknown, indeterminate.Status);
         Assert.Contains(
             indeterminate.Diagnostics,
-            diagnostic => diagnostic.Code == "AN3002");
+            diagnostic => diagnostic.Code == DiagnosticCodes.ResolutionFailure);
         Assert.Equal(
             MatchStatus.Unknown,
             TypePattern("!*Other+", mapped, typeSystem));
@@ -780,7 +781,7 @@ public sealed class CecilTypeSystemTests
         Assert.Equal(MatchStatus.Unknown, result.Status);
         Assert.Contains(
             result.Diagnostics,
-            diagnostic => diagnostic.Code == "AN3002");
+            diagnostic => diagnostic.Code == DiagnosticCodes.ResolutionFailure);
     }
 
     [Fact]
@@ -810,7 +811,7 @@ public sealed class CecilTypeSystemTests
         Assert.Equal(MatchStatus.Unknown, result.Status);
         Assert.Contains(
             result.Diagnostics,
-            diagnostic => diagnostic.Code == "AN3002");
+            diagnostic => diagnostic.Code == DiagnosticCodes.ResolutionFailure);
     }
 
     [Fact]

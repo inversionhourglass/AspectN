@@ -93,7 +93,7 @@ AspectN.Metadata.MethodSignature
 AspectN.Metadata.MethodSignature.Accessibility.get -> AspectN.Metadata.Accessibility
 AspectN.Metadata.MethodSignature.AssociatedProperty.get -> AspectN.Metadata.PropertySignature?
 AspectN.Metadata.MethodSignature.Attributes.get -> System.Collections.Generic.IReadOnlyList<AspectN.Metadata.AttributeSignature!>!
-AspectN.Metadata.MethodSignature.MethodSignature(string! name, AspectN.Metadata.MethodKind kind, AspectN.Metadata.Accessibility accessibility, bool isStatic, bool isAsync, AspectN.Metadata.TypeSignature! declaringType, AspectN.Metadata.TypeUseSignature! returnType, System.Collections.Generic.IEnumerable<AspectN.Metadata.ParameterSignature!>! parameters, System.Collections.Generic.IEnumerable<AspectN.Metadata.GenericParameterSignature!>! genericParameters, System.Collections.Generic.IEnumerable<AspectN.Metadata.TypeSignature!>! genericArguments, System.Collections.Generic.IEnumerable<AspectN.Metadata.AttributeSignature!>! attributes, System.Collections.Generic.IEnumerable<AspectN.Metadata.AttributeSignature!>! returnAttributes, System.Collections.Generic.IEnumerable<AspectN.Metadata.AttributeSignature!>? typeAttributes = null, AspectN.Metadata.MethodSignature? originalDefinition = null, AspectN.Metadata.PropertySignature? associatedProperty = null) -> void
+AspectN.Metadata.MethodSignature.MethodSignature(string! name, AspectN.Metadata.MethodKind kind, AspectN.Metadata.Accessibility accessibility, bool isStatic, bool isAsync, AspectN.Metadata.TypeSignature! declaringType, AspectN.Metadata.TypeUseSignature! returnType, System.Collections.Generic.IEnumerable<AspectN.Metadata.ParameterSignature!>! parameters, System.Collections.Generic.IEnumerable<AspectN.Metadata.GenericParameterSignature!>! genericParameters, System.Collections.Generic.IEnumerable<AspectN.Metadata.TypeSignature!>! genericArguments, System.Collections.Generic.IEnumerable<AspectN.Metadata.AttributeSignature!>! attributes, System.Collections.Generic.IEnumerable<AspectN.Metadata.AttributeSignature!>! returnAttributes, System.Collections.Generic.IEnumerable<AspectN.Metadata.AttributeSignature!>? typeAttributes = null, AspectN.Metadata.MethodSignature? originalDefinition = null, AspectN.Metadata.PropertySignature? associatedProperty = null, AspectN.Metadata.MetadataAvailability? availability = null) -> void
 AspectN.Metadata.MethodSignature.DeclaringType.get -> AspectN.Metadata.TypeSignature!
 AspectN.Metadata.MethodSignature.GenericArguments.get -> System.Collections.Generic.IReadOnlyList<AspectN.Metadata.TypeSignature!>!
 AspectN.Metadata.MethodSignature.GenericParameters.get -> System.Collections.Generic.IReadOnlyList<AspectN.Metadata.GenericParameterSignature!>!
@@ -129,7 +129,7 @@ AspectN.Metadata.ParameterSignature
 AspectN.Metadata.ParameterSignature.Attributes.get -> System.Collections.Generic.IReadOnlyList<AspectN.Metadata.AttributeSignature!>!
 AspectN.Metadata.ParameterSignature.IsOptional.get -> bool
 AspectN.Metadata.ParameterSignature.Name.get -> string!
-AspectN.Metadata.ParameterSignature.ParameterSignature(string! name, int position, AspectN.Metadata.TypeUseSignature! type, System.Collections.Generic.IEnumerable<AspectN.Metadata.AttributeSignature!>? attributes = null, bool isOptional = false) -> void
+AspectN.Metadata.ParameterSignature.ParameterSignature(string! name, int position, AspectN.Metadata.TypeUseSignature! type, System.Collections.Generic.IEnumerable<AspectN.Metadata.AttributeSignature!>? attributes = null, bool isOptional = false, AspectN.Metadata.MetadataAvailability? availability = null) -> void
 AspectN.Metadata.ParameterSignature.Position.get -> int
 AspectN.Metadata.ParameterSignature.Type.get -> AspectN.Metadata.TypeUseSignature!
 AspectN.Metadata.PropertySignature
@@ -139,7 +139,7 @@ AspectN.Metadata.PropertySignature.DeclaringType.get -> AspectN.Metadata.TypeSig
 AspectN.Metadata.PropertySignature.IsStatic.get -> bool
 AspectN.Metadata.PropertySignature.Name.get -> string!
 AspectN.Metadata.PropertySignature.Parameters.get -> System.Collections.Generic.IReadOnlyList<AspectN.Metadata.ParameterSignature!>!
-AspectN.Metadata.PropertySignature.PropertySignature(string! name, AspectN.Metadata.Accessibility accessibility, bool isStatic, AspectN.Metadata.TypeSignature! declaringType, AspectN.Metadata.TypeUseSignature! propertyType, System.Collections.Generic.IEnumerable<AspectN.Metadata.ParameterSignature!>! parameters, System.Collections.Generic.IEnumerable<AspectN.Metadata.AttributeSignature!>! attributes) -> void
+AspectN.Metadata.PropertySignature.PropertySignature(string! name, AspectN.Metadata.Accessibility accessibility, bool isStatic, AspectN.Metadata.TypeSignature! declaringType, AspectN.Metadata.TypeUseSignature! propertyType, System.Collections.Generic.IEnumerable<AspectN.Metadata.ParameterSignature!>! parameters, System.Collections.Generic.IEnumerable<AspectN.Metadata.AttributeSignature!>! attributes, AspectN.Metadata.MetadataAvailability? availability = null) -> void
 AspectN.Metadata.PropertySignature.PropertyType.get -> AspectN.Metadata.TypeUseSignature!
 AspectN.Metadata.RefKind
 AspectN.Metadata.RefKind.In = 3 -> AspectN.Metadata.RefKind
@@ -182,7 +182,7 @@ AspectN.Metadata.TypeUseKind.Return = 2 -> AspectN.Metadata.TypeUseKind
 AspectN.Metadata.TypeUseSignature
 AspectN.Metadata.TypeUseSignature.RefKind.get -> AspectN.Metadata.RefKind
 AspectN.Metadata.TypeUseSignature.Type.get -> AspectN.Metadata.TypeSignature!
-AspectN.Metadata.TypeUseSignature.TypeUseSignature(AspectN.Metadata.TypeSignature! type, AspectN.Metadata.RefKind refKind, AspectN.Metadata.TypeUseKind useKind) -> void
+AspectN.Metadata.TypeUseSignature.TypeUseSignature(AspectN.Metadata.TypeSignature! type, AspectN.Metadata.RefKind refKind, AspectN.Metadata.TypeUseKind useKind, AspectN.Metadata.MetadataAvailability? availability = null) -> void
 AspectN.Metadata.TypeUseSignature.UseKind.get -> AspectN.Metadata.TypeUseKind
 AspectN.Metadata.UnsupportedTypeSignature
 AspectN.Metadata.UnsupportedTypeSignature.DisplayName.get -> string!
@@ -532,3 +532,30 @@ AspectN.Syntax.UnaryMemberNamePatternSyntax
 AspectN.Syntax.UnaryMemberNamePatternSyntax.Operand.get -> AspectN.Syntax.MemberNamePatternSyntax!
 AspectN.Syntax.UnaryMemberNamePatternSyntax.OperatorToken.get -> AspectN.Syntax.SyntaxToken!
 AspectN.Syntax.UnaryMemberNamePatternSyntax.UnaryMemberNamePatternSyntax(AspectN.Syntax.SyntaxToken! operatorToken, AspectN.Syntax.MemberNamePatternSyntax! operand) -> void
+AspectN.Metadata.MethodSignature.Availability.get -> AspectN.Metadata.MetadataAvailability!
+AspectN.Metadata.PropertySignature.Availability.get -> AspectN.Metadata.MetadataAvailability!
+AspectN.Metadata.ParameterSignature.Availability.get -> AspectN.Metadata.MetadataAvailability!
+AspectN.Metadata.TypeUseSignature.Availability.get -> AspectN.Metadata.MetadataAvailability!
+AspectN.Metadata.TypeUseSignature.IsByReference.get -> bool
+AspectN.Metadata.MetadataAvailability
+AspectN.Metadata.MetadataAvailability.MetadataAvailability(AspectN.Metadata.MetadataFacts unavailableFacts = AspectN.Metadata.MetadataFacts.None, System.Collections.Generic.IEnumerable<AspectN.Diagnostics.AspectNDiagnostic!>? diagnostics = null) -> void
+AspectN.Metadata.MetadataAvailability.UnavailableFacts.get -> AspectN.Metadata.MetadataFacts
+AspectN.Metadata.MetadataAvailability.Diagnostics.get -> System.Collections.Generic.IReadOnlyList<AspectN.Diagnostics.AspectNDiagnostic!>!
+AspectN.Metadata.MetadataAvailability.IsKnown(AspectN.Metadata.MetadataFacts facts) -> bool
+static AspectN.Metadata.MetadataAvailability.Complete.get -> AspectN.Metadata.MetadataAvailability!
+AspectN.Metadata.MetadataFacts
+AspectN.Metadata.MetadataFacts.Kind = 1 -> AspectN.Metadata.MetadataFacts
+AspectN.Metadata.MetadataFacts.Accessibility = 2 -> AspectN.Metadata.MetadataFacts
+AspectN.Metadata.MetadataFacts.IsStatic = 4 -> AspectN.Metadata.MetadataFacts
+AspectN.Metadata.MetadataFacts.IsAsync = 8 -> AspectN.Metadata.MetadataFacts
+AspectN.Metadata.MetadataFacts.Attributes = 16 -> AspectN.Metadata.MetadataFacts
+AspectN.Metadata.MetadataFacts.ReturnAttributes = 32 -> AspectN.Metadata.MetadataFacts
+AspectN.Metadata.MetadataFacts.TypeAttributes = 64 -> AspectN.Metadata.MetadataFacts
+AspectN.Metadata.MetadataFacts.AssociatedProperty = 128 -> AspectN.Metadata.MetadataFacts
+AspectN.Metadata.MetadataFacts.RefKind = 256 -> AspectN.Metadata.MetadataFacts
+AspectN.Metadata.MetadataFacts.Name = 512 -> AspectN.Metadata.MetadataFacts
+AspectN.Metadata.MetadataFacts.IsOptional = 1024 -> AspectN.Metadata.MetadataFacts
+AspectN.Metadata.MetadataFacts.ByReference = 2048 -> AspectN.Metadata.MetadataFacts
+AspectN.Metadata.MetadataFacts.None = 0 -> AspectN.Metadata.MetadataFacts
+static AspectN.Diagnostics.DiagnosticCodes.ResolutionFailure.get -> string!
+AspectN.Metadata.MetadataFacts.Parameters = 4096 -> AspectN.Metadata.MetadataFacts

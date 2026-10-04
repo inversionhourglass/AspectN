@@ -68,12 +68,16 @@ internal static class MemberPatternEvaluator
         MethodSignature candidate,
         EvaluationContext context)
     {
-        if ((selector.TargetDomain & GetTargetDomain(candidate.Kind)) == 0)
+        var domainStatus = selector.TargetDomain == SelectorTargetDomain.All
+            ? MatchStatus.Matched
+            : MetadataQuery.Require(candidate.Availability, MetadataFacts.Kind, selector, context);
+        if (selector.TargetDomain != SelectorTargetDomain.All && domainStatus == MatchStatus.Matched &&
+            (selector.TargetDomain & GetTargetDomain(candidate.Kind)) == 0)
         {
             return MatchStatus.NotMatched;
         }
 
-        return selector.SelectorKind switch
+        var status = selector.SelectorKind switch
         {
             BoundSelectorKind.Callable or BoundSelectorKind.Method =>
                 EvaluateCallable(
@@ -107,6 +111,7 @@ internal static class MemberPatternEvaluator
                 context,
                 "This selector requires a later semantic evaluator.")
         };
+        return MatchLogic.And(domainStatus, status);
     }
 
     private static MatchStatus EvaluateCallable(
@@ -114,13 +119,10 @@ internal static class MemberPatternEvaluator
         MethodSignature candidate,
         EvaluationContext context)
     {
-        if (!ModifierMatcher.IsMatch(
-                pattern.Modifiers,
-                candidate.Accessibility,
-                candidate.IsStatic))
-        {
-            return MatchStatus.NotMatched;
-        }
+        var modifierStatus = ModifierMatcher.Evaluate(
+            pattern.Modifiers, candidate.Accessibility, candidate.IsStatic,
+            candidate.Availability, pattern, context);
+        if (modifierStatus == MatchStatus.NotMatched) return modifierStatus;
 
         var memberStatus = EvaluateMember(
             pattern.Member,
@@ -133,12 +135,8 @@ internal static class MemberPatternEvaluator
             return MatchStatus.NotMatched;
         }
 
-        if (!ModifierMatcher.IsRefKindMatch(
-                pattern.ReturnType,
-                candidate.ReturnType))
-        {
-            return MatchStatus.NotMatched;
-        }
+        var refStatus = ModifierMatcher.EvaluateRefKind(pattern.ReturnType, candidate.ReturnType, pattern, context);
+        if (refStatus == MatchStatus.NotMatched) return refStatus;
 
         var returnStatus = TypePatternEvaluator.Evaluate(
                 pattern.ReturnType.TypePattern,
@@ -150,8 +148,8 @@ internal static class MemberPatternEvaluator
             candidate.Parameters,
             context);
         return MatchLogic.And(
-            memberStatus,
-            MatchLogic.And(returnStatus, parameterStatus));
+            MatchLogic.And(modifierStatus, memberStatus),
+            MatchLogic.And(refStatus, MatchLogic.And(returnStatus, parameterStatus)));
     }
 
     private static MatchStatus EvaluateProperty(
@@ -159,9 +157,18 @@ internal static class MemberPatternEvaluator
         MethodSignature candidate,
         EvaluationContext context)
     {
+        var modifierStatus = ModifierMatcher.Evaluate(
+            pattern.Modifiers, candidate.Accessibility, candidate.IsStatic,
+            candidate.Availability, pattern, context);
+        if (modifierStatus == MatchStatus.NotMatched) return modifierStatus;
         var property = candidate.AssociatedProperty;
-        if (property is null)
+        if (property is null || !candidate.Availability.IsKnown(MetadataFacts.AssociatedProperty))
         {
+            if (pattern.Member.DeclaringType is not null &&
+                TypePatternEvaluator.Evaluate(pattern.Member.DeclaringType, candidate.DeclaringType, context) == MatchStatus.NotMatched)
+                return MatchStatus.NotMatched;
+            if (!candidate.Availability.IsKnown(MetadataFacts.AssociatedProperty))
+                return MetadataQuery.Require(candidate.Availability, MetadataFacts.AssociatedProperty, pattern, context);
             return Unknown(
                 pattern,
                 context,
@@ -171,28 +178,20 @@ internal static class MemberPatternEvaluator
         // property/getter/setter 一律用当前 accessor 自身的权限求值
         // （旧 PropertyPattern.IsMatch 用 accessor 的 signature.Modifiers），
         // 不能取关联属性的整体权限：public get / private set 时两者不同。
-        if (!ModifierMatcher.IsMatch(
-                pattern.Modifiers,
-                candidate.Accessibility,
-                candidate.IsStatic) ||
-            !ModifierMatcher.IsRefKindMatch(
-                pattern.PropertyType,
-                property.PropertyType))
-        {
-            return MatchStatus.NotMatched;
-        }
+        var refStatus = ModifierMatcher.EvaluateRefKind(pattern.PropertyType, property.PropertyType, pattern, context);
 
         var memberStatus = EvaluateMember(
             pattern.Member,
             property.DeclaringType,
             property.Name,
             null,
-            context);
+            context,
+            property.Availability);
         var typeStatus = TypePatternEvaluator.Evaluate(
             pattern.PropertyType.TypePattern,
             property.PropertyType.Type,
             context);
-        return MatchLogic.And(memberStatus, typeStatus);
+        return MatchLogic.And(MatchLogic.And(modifierStatus, refStatus), MatchLogic.And(memberStatus, typeStatus));
     }
 
     private static MatchStatus EvaluateConstructor(
@@ -238,19 +237,15 @@ internal static class MemberPatternEvaluator
         var status = MatchStatus.Matched;
         for (var index = 0; index < patterns.Count; index++)
         {
-            if (!ModifierMatcher.IsRefKindMatch(
-                    patterns[index],
-                    candidates[index].Type))
-            {
-                return MatchStatus.NotMatched;
-            }
+            var refStatus = ModifierMatcher.EvaluateRefKind(patterns[index], candidates[index].Type,
+                patterns[index].TypePattern, context);
 
             status = MatchLogic.And(
                 status,
-                TypePatternEvaluator.Evaluate(
+                MatchLogic.And(refStatus, TypePatternEvaluator.Evaluate(
                     patterns[index].TypePattern,
                     candidates[index].Type.Type,
-                    context));
+                    context)));
         }
 
         return status;
@@ -311,11 +306,12 @@ internal static class MemberPatternEvaluator
         TypeSignature declaringType,
         string memberName,
         MethodSignature? candidate,
-        EvaluationContext context)
+        EvaluationContext context,
+        MetadataAvailability? nameAvailability = null)
     {
-        if (!pattern.IsNegated) return EvaluateMemberCore(pattern, declaringType, memberName, candidate, context);
+        if (!pattern.IsNegated) return EvaluateMemberCore(pattern, declaringType, memberName, candidate, context, nameAvailability);
         return context.EvaluateNegation(
-            branch => EvaluateMemberCore(pattern, declaringType, memberName, candidate, branch));
+            branch => EvaluateMemberCore(pattern, declaringType, memberName, candidate, branch, nameAvailability));
     }
 
     private static MatchStatus EvaluateMemberCore(
@@ -323,39 +319,46 @@ internal static class MemberPatternEvaluator
         TypeSignature declaringType,
         string memberName,
         MethodSignature? candidate,
-        EvaluationContext context)
+        EvaluationContext context,
+        MetadataAvailability? nameAvailability = null)
     {
         var declaringStatus = pattern.DeclaringType is null
             ? MatchStatus.Matched
             : TypePatternEvaluator.Evaluate(pattern.DeclaringType, declaringType, context);
         if (declaringStatus == MatchStatus.NotMatched) return declaringStatus;
-        return MatchLogic.And(declaringStatus, EvaluateMemberName(pattern.Name, memberName, candidate, context));
+        return MatchLogic.And(declaringStatus, EvaluateMemberName(pattern.Name, memberName, candidate, context, nameAvailability));
     }
 
     private static MatchStatus EvaluateMemberName(
         BoundMemberNamePattern pattern,
         string memberName,
         MethodSignature? candidate,
-        EvaluationContext context)
+        EvaluationContext context,
+        MetadataAvailability? nameAvailability = null)
     {
         context.CancellationToken.ThrowIfCancellationRequested();
         switch (pattern)
         {
             case BoundNamedMemberPattern named:
-                if (!NamePatternMatcher.IsMatch(named.NamePattern, memberName)) return MatchStatus.NotMatched;
-                return candidate is null ? MatchStatus.Matched : EvaluateGeneric(named.Generic, candidate, named, context);
+                var availability = nameAvailability ?? candidate?.Availability ?? MetadataAvailability.Complete;
+                var nameStatus = named.NamePattern.All(character => character == '*') ? MatchStatus.Matched :
+                    MetadataQuery.Require(availability, MetadataFacts.Name, named, context);
+                if (nameStatus == MatchStatus.Matched && !NamePatternMatcher.IsMatch(named.NamePattern, memberName))
+                    return MatchStatus.NotMatched;
+                return MatchLogic.And(nameStatus,
+                    candidate is null ? MatchStatus.Matched : EvaluateGeneric(named.Generic, candidate, named, context));
             case BoundUnaryMemberNamePattern unary:
                 return context.EvaluateNegation(
-                    branch => EvaluateMemberName(unary.Operand, memberName, candidate, branch));
+                    branch => EvaluateMemberName(unary.Operand, memberName, candidate, branch, nameAvailability));
             case BoundBinaryMemberNamePattern binary when binary.Operator == BoundLogicalOperator.And:
                 return MatchLogic.And(
-                    EvaluateMemberName(binary.Left, memberName, candidate, context),
-                    EvaluateMemberName(binary.Right, memberName, candidate, context));
+                    EvaluateMemberName(binary.Left, memberName, candidate, context, nameAvailability),
+                    EvaluateMemberName(binary.Right, memberName, candidate, context, nameAvailability));
             case BoundBinaryMemberNamePattern binary:
                 var leftContext = context.Fork();
                 var rightContext = context.Fork();
-                var left = EvaluateMemberName(binary.Left, memberName, candidate, leftContext);
-                var right = EvaluateMemberName(binary.Right, memberName, candidate, rightContext);
+                var left = EvaluateMemberName(binary.Left, memberName, candidate, leftContext, nameAvailability);
+                var right = EvaluateMemberName(binary.Right, memberName, candidate, rightContext, nameAvailability);
                 context.MergeDiagnosticsFrom(leftContext);
                 context.MergeDiagnosticsFrom(rightContext);
                 var matchedBranches = new List<EvaluationContext>();

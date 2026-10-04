@@ -180,6 +180,8 @@ A successful bind produces an immutable, thread-safe compiled plan. A plan conta
 
 The core model distinguishes identity, type use, member signature, and relationship queries.
 
+Member and type-use signatures expose immutable `MetadataAvailability`: unavailable values are placeholders, and independent known facts remain usable. The applicable facts, by-reference marker/classification distinction and recoverable Cecil read failures are defined in [metadata availability](../../language/metadata-availability.md). Resolution failures use `AN3004`; `AN3002` remains invalid regex. This contract was approved on 2026-10-05.
+
 ### 8.1 Type identity
 
 Type identity contains backend-neutral facts such as:

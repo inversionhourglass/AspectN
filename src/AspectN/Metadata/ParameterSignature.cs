@@ -13,12 +13,14 @@ public sealed class ParameterSignature
     /// <param name="type">Specifies the type.</param>
     /// <param name="attributes">Specifies the attributes.</param>
     /// <param name="isOptional">Specifies the is optional.</param>
+    /// <param name="availability">Identifies facts whose values could not be read.</param>
     public ParameterSignature(
         string name,
         int position,
         TypeUseSignature type,
         IEnumerable<AttributeSignature>? attributes = null,
-        bool isOptional = false)
+        bool isOptional = false,
+        MetadataAvailability? availability = null)
     {
         Name = name ?? throw new ArgumentNullException(nameof(name));
         GuardNonNegative(position, nameof(position));
@@ -27,6 +29,7 @@ public sealed class ParameterSignature
         _attributes = new ReadOnlyCollection<AttributeSignature>(
             (attributes ?? Array.Empty<AttributeSignature>()).ToArray());
         IsOptional = isOptional;
+        Availability = availability ?? MetadataAvailability.Complete;
     }
 
     /// <summary>Gets the name.</summary>
@@ -43,6 +46,9 @@ public sealed class ParameterSignature
 
     /// <summary>Gets the is optional.</summary>
     public bool IsOptional { get; }
+
+    /// <summary>Gets the availability of the parameter metadata.</summary>
+    public MetadataAvailability Availability { get; }
 
     private static void GuardNonNegative(int value, string parameterName)
     {

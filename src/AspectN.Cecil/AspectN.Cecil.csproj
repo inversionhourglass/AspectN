@@ -18,6 +18,7 @@
   <ItemGroup>
     <ProjectReference Include="..\AspectN\AspectN.csproj" />
     <Compile Include="..\Shared\OperatorMetadata.cs" Link="Internal\OperatorMetadata.cs" />
+    <Compile Include="..\Shared\AttributeAvailability.cs" Link="Internal\AttributeAvailability.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Mono.Cecil" />

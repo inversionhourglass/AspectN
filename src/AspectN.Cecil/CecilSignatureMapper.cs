@@ -49,12 +49,13 @@ public sealed class CecilSignatureMapper
         TypeReference typeReference,
         TypeUseKind useKind)
     {
-        if (typeReference is ByReferenceType byReference)
+        if (CecilRefKindDetector.ContainsByReference(typeReference))
         {
             return new TypeUseSignature(
-                MapType(byReference.ElementType),
+                MapType(typeReference),
                 RefKind.Ref,
-                useKind);
+                useKind,
+                new MetadataAvailability(MetadataFacts.RefKind));
         }
 
         return new TypeUseSignature(
@@ -153,7 +154,10 @@ public sealed class CecilSignatureMapper
     private MethodSignature MapMethodCore(
         MethodReference methodReference)
     {
-        var definition = GetDefinition(methodReference);
+        var definition = GetDefinition(methodReference, out var methodAvailability);
+        var typeDefinition = CecilMetadataReader.Read(
+            () => methodReference.DeclaringType.Resolve(), methodReference.DeclaringType.Name,
+            MetadataFacts.TypeAttributes, out var typeAvailability);
         var genericInstance = methodReference as GenericInstanceMethod;
         var declaringInstance = methodReference.DeclaringType
             as GenericInstanceType;
@@ -161,8 +165,23 @@ public sealed class CecilSignatureMapper
             methodReference.Parameters,
             definition?.Parameters,
             genericInstance,
-            declaringInstance);
-        var associatedProperty = FindAssociatedProperty(definition);
+            declaringInstance,
+            methodAvailability);
+        var associatedProperty = CecilMetadataReader.ReadValue(
+            () => FindAssociatedProperty(definition), null,
+            methodReference.Name, MetadataFacts.AssociatedProperty, out var propertyAvailability);
+        var kind = CecilMetadataReader.ReadValue(
+            () => GetMethodKind(methodReference, definition), MethodKind.OrdinaryMethod,
+            methodReference.Name, MetadataFacts.Kind, out var kindAvailability);
+        var isAsync = CecilMetadataReader.ReadValue(
+            () => CecilAsyncDetector.IsAsync(definition), false,
+            methodReference.Name, MetadataFacts.IsAsync, out var asyncAvailability);
+        var attributes = ReadAttributes(() => definition?.CustomAttributes,
+            AttributeTargetKind.Method, methodReference.Name, MetadataFacts.Attributes, out var attributeAvailability);
+        var returnAttributes = ReadAttributes(() => definition?.MethodReturnType.CustomAttributes,
+            AttributeTargetKind.Return, methodReference.Name, MetadataFacts.ReturnAttributes, out var returnAvailability);
+        var typeAttributes = ReadAttributes(() => typeDefinition?.CustomAttributes,
+            AttributeTargetKind.Type, methodReference.DeclaringType.Name, MetadataFacts.TypeAttributes, out var typeAttributeAvailability);
         var genericParameters = genericInstance is null
             ? MapGenericParameters(methodReference.GenericParameters)
             : Array.Empty<GenericParameterSignature>();
@@ -179,32 +198,24 @@ public sealed class CecilSignatureMapper
 
         return new MethodSignature(
             methodReference.Name,
-            GetMethodKind(methodReference, definition),
+            kind,
             CecilAccessibility.ForMethod(definition),
             definition?.IsStatic ?? !methodReference.HasThis,
-            CecilAsyncDetector.IsAsync(definition),
+            isAsync,
             MapType(methodReference.DeclaringType),
-            new TypeUseSignature(
-                MapType(returnType),
-                CecilRefKindDetector.ForReturn(definition),
-                TypeUseKind.Return),
+            MapReturnType(returnType, definition, TypeUseKind.Return, methodAvailability),
             parameters,
             genericParameters,
             genericArguments,
-            MapAttributes(
-                definition?.CustomAttributes,
-                AttributeTargetKind.Method),
-            MapAttributes(
-                definition?.MethodReturnType.CustomAttributes,
-                AttributeTargetKind.Return),
-            // 声明类型特性：attr(type ...) 通配/复合查询需要。
-            MapAttributes(
-                definition?.DeclaringType?.CustomAttributes,
-                AttributeTargetKind.Type),
+            attributes,
+            returnAttributes,
+            typeAttributes,
             originalDefinition,
             associatedProperty is null
                 ? null
-                : MapPropertyCore(associatedProperty, declaringInstance));
+                : MapPropertyCore(associatedProperty, declaringInstance),
+            CecilMetadataReader.Merge(methodAvailability, typeAvailability, propertyAvailability,
+                kindAvailability, asyncAvailability, attributeAvailability, returnAvailability, typeAttributeAvailability));
     }
 
     private PropertySignature MapPropertyCore(
@@ -219,61 +230,78 @@ public sealed class CecilSignatureMapper
         PropertyReference propertyReference,
         GenericInstanceType? declaringInstance)
     {
-        var definition = GetDefinition(propertyReference);
-        var accessor = definition?.GetMethod ?? definition?.SetMethod ??
-            definition?.OtherMethods.FirstOrDefault();
+        var definition = GetDefinition(propertyReference, out var propertyAvailability);
+        var accessor = CecilMetadataReader.ReadValue(
+            () => definition?.GetMethod ?? definition?.SetMethod ?? definition?.OtherMethods.FirstOrDefault(),
+            null, propertyReference.Name, MetadataFacts.Accessibility | MetadataFacts.IsStatic,
+            out var accessorAvailability);
+        if (accessor is null)
+            accessorAvailability = new MetadataAvailability(MetadataFacts.Accessibility | MetadataFacts.IsStatic,
+                accessorAvailability.Diagnostics);
+        var getter = CecilMetadataReader.ReadValue(() => definition?.GetMethod, null,
+            propertyReference.Name, MetadataFacts.RefKind, out var getterAvailability);
+        var accessibility = CecilMetadataReader.ReadValue(() => CecilAccessibility.ForProperty(definition),
+            Accessibility.Unknown, propertyReference.Name, MetadataFacts.Accessibility, out var accessibilityAvailability);
+        var parameters = CecilMetadataReader.ReadValue(() => MapParameters(
+            propertyReference.Parameters, definition?.Parameters, genericInstance: null, declaringInstance, propertyAvailability),
+            Array.Empty<ParameterSignature>(), propertyReference.Name, MetadataFacts.Parameters, out var parameterAvailability);
         return new PropertySignature(
             propertyReference.Name,
-            CecilAccessibility.ForProperty(definition),
+            accessibility,
             accessor?.IsStatic ?? false,
             // 关联属性携带封闭声明类型上下文时，声明类型也必须是封闭构造，不能残留开放定义。
             MapType(declaringInstance ?? propertyReference.DeclaringType),
-            new TypeUseSignature(
-                MapType(SubstituteMemberGenericParameters(
-                    propertyReference.PropertyType,
-                    genericInstance: null,
-                    declaringInstance)),
-                CecilRefKindDetector.ForReturn(definition?.GetMethod),
-                TypeUseKind.Property),
-            MapParameters(
-                propertyReference.Parameters,
-                definition?.Parameters,
-                genericInstance: null,
-                declaringInstance),
-            MapAttributes(
-                definition?.CustomAttributes,
-                AttributeTargetKind.Property));
+            MapReturnType(SubstituteMemberGenericParameters(
+                propertyReference.PropertyType, genericInstance: null, declaringInstance),
+                getter, TypeUseKind.Property, CecilMetadataReader.Merge(propertyAvailability, getterAvailability)),
+            parameters,
+            ReadAttributes(() => definition?.CustomAttributes, AttributeTargetKind.Property,
+                propertyReference.Name, MetadataFacts.Attributes, out var attributeAvailability),
+            CecilMetadataReader.Merge(propertyAvailability, attributeAvailability, accessorAvailability,
+                accessibilityAvailability, parameterAvailability));
     }
 
     private ParameterSignature[] MapParameters(
         Collection<ParameterDefinition> parameters,
         Collection<ParameterDefinition>? definitions,
         GenericInstanceMethod? genericInstance,
-        GenericInstanceType? declaringInstance)
+        GenericInstanceType? declaringInstance,
+        MetadataAvailability memberAvailability)
     {
         var mapped = new ParameterSignature[parameters.Count];
         for (var index = 0; index < parameters.Count; index++)
         {
             var parameter = parameters[index];
-            var definition = definitions is not null && index < definitions.Count
-                ? definitions[index]
-                : parameter;
+            var definition = definitions is not null && index < definitions.Count ? definitions[index] : null;
+            var availability = definition is null
+                ? new MetadataAvailability(MetadataFacts.Name | MetadataFacts.Attributes | MetadataFacts.IsOptional,
+                    memberAvailability.Diagnostics)
+                : MetadataAvailability.Complete;
+            var classification = definition is null
+                ? new MetadataAvailability(MetadataFacts.RefKind, memberAvailability.Diagnostics)
+                : MetadataAvailability.Complete;
             var type = SubstituteMemberGenericParameters(
                 parameter.ParameterType,
                 genericInstance,
                 declaringInstance);
+            var byReference = CecilRefKindDetector.ContainsByReference(type);
+            var refKind = definition is null ? (byReference ? RefKind.Ref : RefKind.None) :
+                CecilMetadataReader.ReadValue(() => CecilRefKindDetector.ForParameter(definition),
+                    byReference ? RefKind.Ref : RefKind.None, parameter.Name, MetadataFacts.RefKind,
+                    out classification);
+            var attributes = ReadAttributes(() => definition?.CustomAttributes, AttributeTargetKind.Parameter,
+                parameter.Name, MetadataFacts.Attributes, out var attributeAvailability, index);
             mapped[index] = new ParameterSignature(
-                parameter.Name ?? string.Empty,
+                definition?.Name ?? parameter.Name ?? string.Empty,
                 index,
                 new TypeUseSignature(
                     MapType(type),
-                    CecilRefKindDetector.ForParameter(definition),
-                    TypeUseKind.Parameter),
-                MapAttributes(
-                    definition.CustomAttributes,
-                    AttributeTargetKind.Parameter,
-                    index),
-                definition.IsOptional);
+                    refKind,
+                    TypeUseKind.Parameter,
+                    byReference ? classification : MetadataAvailability.Complete),
+                attributes,
+                definition?.IsOptional ?? false,
+                CecilMetadataReader.Merge(availability, attributeAvailability));
         }
 
         return mapped;
@@ -312,58 +340,39 @@ public sealed class CecilSignatureMapper
             .ToArray();
     }
 
-    private static MethodDefinition? GetDefinition(
-        MethodReference methodReference)
+    private TypeUseSignature MapReturnType(TypeReference type, MethodDefinition? definition,
+        TypeUseKind useKind, MetadataAvailability memberAvailability)
     {
-        if (methodReference is MethodDefinition definition) return definition;
-        if (methodReference is GenericInstanceMethod generic &&
-            generic.ElementMethod is MethodDefinition elementDefinition)
-        {
-            return elementDefinition;
-        }
-
-        try
-        {
-            return methodReference.Resolve();
-        }
-        catch (AssemblyResolutionException)
-        {
-            return null;
-        }
-        catch (InvalidOperationException)
-        {
-            return null;
-        }
-        catch (NotSupportedException)
-        {
-            return null;
-        }
+        var byReference = CecilRefKindDetector.ContainsByReference(type);
+        var availability = definition is null && byReference
+            ? new MetadataAvailability(MetadataFacts.RefKind, memberAvailability.Diagnostics)
+            : MetadataAvailability.Complete;
+        var refKind = definition is null ? (byReference ? RefKind.Ref : RefKind.None) :
+            CecilMetadataReader.ReadValue(() => CecilRefKindDetector.ForReturn(definition),
+                byReference ? RefKind.Ref : RefKind.None, definition.Name, MetadataFacts.RefKind, out availability);
+        return new TypeUseSignature(MapType(type), refKind, useKind, availability);
     }
 
-    private static PropertyDefinition? GetDefinition(
-        PropertyReference propertyReference)
+    private AttributeSignature[] ReadAttributes(Func<Collection<CustomAttribute>?> read,
+        AttributeTargetKind target, string subject, MetadataFacts fact,
+        out MetadataAvailability availability, int? parameterIndex = null)
     {
-        if (propertyReference is PropertyDefinition definition)
-        {
-            return definition;
-        }
+        return CecilMetadataReader.ReadValue(() => MapAttributes(read(), target, parameterIndex),
+            Array.Empty<AttributeSignature>(), subject, fact, out availability);
+    }
 
-        try
-        {
-            return propertyReference.Resolve();
-        }
-        catch (AssemblyResolutionException)
-        {
-            return null;
-        }
-        catch (InvalidOperationException)
-        {
-            return null;
-        }
-        catch (NotSupportedException)
-        {
-            return null;
-        }
+    private static MethodDefinition? GetDefinition(MethodReference reference, out MetadataAvailability availability)
+    {
+        return CecilMetadataReader.Read(() => reference is MethodDefinition definition ? definition :
+            reference is GenericInstanceMethod { ElementMethod: MethodDefinition element } ? element : reference.Resolve(),
+            reference.Name, MetadataFacts.Kind | MetadataFacts.Accessibility | MetadataFacts.IsAsync |
+                MetadataFacts.Attributes | MetadataFacts.ReturnAttributes | MetadataFacts.AssociatedProperty, out availability);
+    }
+
+    private static PropertyDefinition? GetDefinition(PropertyReference reference, out MetadataAvailability availability)
+    {
+        return CecilMetadataReader.Read(() => reference as PropertyDefinition ?? reference.Resolve(),
+            reference.Name, MetadataFacts.Accessibility | MetadataFacts.IsStatic | MetadataFacts.Attributes, out availability);
     }
 
     private static MethodKind GetMethodKind(

@@ -1,3 +1,4 @@
+using AspectN.AdapterInternals;
 using AspectN.Diagnostics;
 using AspectN.Evaluation;
 using AspectN.Metadata;
@@ -186,6 +187,8 @@ public sealed class RoslynTypeSystem : ITypeSystem
 #endif
 
         cancellationToken.ThrowIfCancellationRequested();
+        var metadataFailure = AttributeAvailability.GetFailure(target);
+        if (metadataFailure is not null) return metadataFailure;
         IReadOnlyList<AttributeSignature>? attributes;
         try
         {

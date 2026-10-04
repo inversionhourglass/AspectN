@@ -8,7 +8,6 @@ namespace AspectN.Cecil.Internal;
 
 internal sealed class CecilResolver(CecilSignatureMapper mapper)
 {
-    private const string RESOLUTION_FAILURE_CODE = "AN3002";
 
     private readonly CecilSignatureMapper _mapper = mapper;
 
@@ -262,27 +261,7 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
                 : null;
             return definition;
         }
-        catch (AssemblyResolutionException exception)
-        {
-            failure = ResolutionFailure(reference, exception);
-        }
-        catch (InvalidOperationException exception)
-        {
-            failure = ResolutionFailure(reference, exception);
-        }
-        catch (IOException exception)
-        {
-            failure = ResolutionFailure(reference, exception);
-        }
-        catch (BadImageFormatException exception)
-        {
-            failure = ResolutionFailure(reference, exception);
-        }
-        catch (NotSupportedException exception)
-        {
-            failure = ResolutionFailure(reference, exception);
-        }
-        catch (ArgumentException exception)
+        catch (Exception exception) when (CecilMetadataReader.IsRecoverable(exception))
         {
             failure = ResolutionFailure(reference, exception);
         }
@@ -379,7 +358,7 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
             : $"{exception.GetType().Name}: {exception.Message}";
         return TypeRelationResult.Unknown(
             new AspectNDiagnostic(
-                RESOLUTION_FAILURE_CODE,
+                DiagnosticCodes.ResolutionFailure,
                 DiagnosticSeverity.Warning,
                 $"Could not resolve '{typeReference.FullName}'. {detail}"));
     }

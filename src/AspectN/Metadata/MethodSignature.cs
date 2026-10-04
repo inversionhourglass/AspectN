@@ -18,6 +18,7 @@ namespace AspectN.Metadata;
 /// <param name="typeAttributes">Specifies the declaring type attributes.</param>
 /// <param name="originalDefinition">Specifies the original definition.</param>
 /// <param name="associatedProperty">Specifies the associated property.</param>
+/// <param name="availability">Identifies facts whose values could not be read.</param>
 public sealed class MethodSignature(
     string name,
     MethodKind kind,
@@ -33,7 +34,8 @@ public sealed class MethodSignature(
     IEnumerable<AttributeSignature> returnAttributes,
     IEnumerable<AttributeSignature>? typeAttributes = null,
     MethodSignature? originalDefinition = null,
-    PropertySignature? associatedProperty = null)
+    PropertySignature? associatedProperty = null,
+    MetadataAvailability? availability = null)
 {
     private readonly IReadOnlyList<AttributeSignature> _attributes = new ReadOnlyCollection<AttributeSignature>(
             attributes.ToArray());
@@ -97,4 +99,7 @@ public sealed class MethodSignature(
 
     /// <summary>Gets the associated property.</summary>
     public PropertySignature? AssociatedProperty { get; } = associatedProperty;
+
+    /// <summary>Gets the availability of the method metadata, including attribute collections.</summary>
+    public MetadataAvailability Availability { get; } = availability ?? MetadataAvailability.Complete;
 }

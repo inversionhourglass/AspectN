@@ -57,7 +57,7 @@ internal static class CecilRefKindDetector
         return RefKind.Ref;
     }
 
-    private static bool ContainsByReference(TypeReference type)
+    internal static bool ContainsByReference(TypeReference type)
     {
         return type switch
         {

@@ -13,6 +13,17 @@ internal static class RegexPatternEvaluator
         EvaluationContext context)
     {
         context.CancellationToken.ThrowIfCancellationRequested();
+        var metadataStatus = MetadataQuery.Require(candidate.Availability,
+            MetadataFacts.Accessibility | MetadataFacts.IsStatic | MetadataFacts.Name, pattern, context);
+        if (candidate.Accessibility == Accessibility.Unknown && metadataStatus == MatchStatus.Matched)
+            metadataStatus = MetadataQuery.Require(new MetadataAvailability(MetadataFacts.Accessibility),
+                MetadataFacts.Accessibility, pattern, context);
+        metadataStatus = MatchLogic.And(metadataStatus, MetadataQuery.Require(candidate.ReturnType.Availability,
+            MetadataFacts.RefKind | MetadataFacts.ByReference, pattern, context));
+        foreach (var parameter in candidate.Parameters)
+            metadataStatus = MatchLogic.And(metadataStatus, MetadataQuery.Require(parameter.Type.Availability,
+                MetadataFacts.RefKind | MetadataFacts.ByReference, pattern, context));
+        if (metadataStatus == MatchStatus.Unknown) return metadataStatus;
         var signature = CanonicalSignatureFormatter.Format(candidate);
         try
         {

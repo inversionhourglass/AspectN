@@ -107,6 +107,8 @@ Consecutive unary negations, including whitespace-separated `! !`, are errors (A
 
 Evaluation uses `Matched`, `NotMatched`, and `Unknown`.
 
+Selectors query only the facts they consume. Unavailable metadata propagates `Unknown`, including through negation; known mismatches still dominate conjunctions and known matches dominate disjunctions. Empty collections whose availability is unknown do not establish absence. See [metadata availability](../../language/metadata-availability.md) for the signature contract and examples.
+
 ### 5.1 Negation
 
 | Input | Result |

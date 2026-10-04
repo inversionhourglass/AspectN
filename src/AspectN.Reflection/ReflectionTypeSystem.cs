@@ -1,3 +1,4 @@
+using AspectN.AdapterInternals;
 using System.Reflection;
 using AspectN.Diagnostics;
 using AspectN.Evaluation;
@@ -201,6 +202,8 @@ public sealed class ReflectionTypeSystem : ITypeSystem
 #endif
 
         cancellationToken.ThrowIfCancellationRequested();
+        var metadataFailure = AttributeAvailability.GetFailure(target);
+        if (metadataFailure is not null) return metadataFailure;
         IReadOnlyList<AttributeSignature>? attributes;
         try
         {

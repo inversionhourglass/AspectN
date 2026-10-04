@@ -10,6 +10,7 @@ namespace AspectN.Metadata;
 /// <param name="propertyType">Specifies the property type.</param>
 /// <param name="parameters">Specifies the parameters.</param>
 /// <param name="attributes">Specifies the attributes.</param>
+/// <param name="availability">Identifies facts whose values could not be read.</param>
 public sealed class PropertySignature(
     string name,
     Accessibility accessibility,
@@ -17,7 +18,8 @@ public sealed class PropertySignature(
     TypeSignature declaringType,
     TypeUseSignature propertyType,
     IEnumerable<ParameterSignature> parameters,
-    IEnumerable<AttributeSignature> attributes)
+    IEnumerable<AttributeSignature> attributes,
+    MetadataAvailability? availability = null)
 {
     private readonly IReadOnlyList<AttributeSignature> _attributes = new ReadOnlyCollection<AttributeSignature>(
             attributes.ToArray());
@@ -46,4 +48,7 @@ public sealed class PropertySignature(
 
     /// <summary>Gets the attributes.</summary>
     public IReadOnlyList<AttributeSignature> Attributes => _attributes;
+
+    /// <summary>Gets the availability of the property metadata.</summary>
+    public MetadataAvailability Availability { get; } = availability ?? MetadataAvailability.Complete;
 }

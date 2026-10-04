@@ -207,27 +207,7 @@ internal static class CecilTypeMapper
         {
             return typeReference as TypeDefinition ?? typeReference.Resolve();
         }
-        catch (AssemblyResolutionException)
-        {
-            return null;
-        }
-        catch (InvalidOperationException)
-        {
-            return null;
-        }
-        catch (IOException)
-        {
-            return null;
-        }
-        catch (BadImageFormatException)
-        {
-            return null;
-        }
-        catch (NotSupportedException)
-        {
-            return null;
-        }
-        catch (ArgumentException)
+        catch (Exception exception) when (CecilMetadataReader.IsRecoverable(exception))
         {
             return null;
         }

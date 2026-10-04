@@ -651,8 +651,8 @@ Standard 只支持内建选择器，不提供自定义 selector/predicate/matche
 
 ### 7.4 已记录的后端能力边界
 
-- Cecil 的准确类别需要可解析的 MethodDefinition。只有 unresolved MethodReference 时缺少 SpecialName/accessor semantics，
-  现有 MethodKind 没有 Unknown，非构造方法仍默认 OrdinaryMethod；不能把默认类别当作已证明事实，应提供可解析定义。
+- Cecil 的 unresolved MethodReference 使用逐项 MetadataAvailability；类别、权限、特性和 ref 分类不可读时按查询传播 Unknown，
+  已知的名称、形状和数量仍可判断。此前默认类别的局限已由 2026-10-05 裁决替代，见 [元数据可用性](metadata-availability.md)。
 - Cecil/Reflection 可识别 VB 的 op_Exponent、op_IntegerDivision、op_Concatenate、op_Like 等合法运算符，
   C# Roslyn 的元数据导入器仍把它们视为 Ordinary。这是既有后端分类边界，不是 Shared/Standard 的语法裁决。
 - Roslyn 4.12 对 C# 14 实例运算符的分类，由适配器按精确编译器功能标记和有效形状补齐；普通同名方法仍属普通域。

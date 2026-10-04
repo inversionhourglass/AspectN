@@ -22,7 +22,7 @@ public sealed class CecilMethodKindResolutionTests
     }
 
     [Fact]
-    public void MapMethod_UnresolvedOperatorReference_UsesExistingOrdinaryFallback()
+    public void MapMethod_UnresolvedOperatorReference_MarksKindUnavailable()
     {
         using var module = TestModuleFactory.Create();
         using var typeSystem = new CecilTypeSystem(module, new CecilMappingOptions(leaveOpen: true));
@@ -33,6 +33,6 @@ public sealed class CecilMethodKindResolutionTests
         reference.Parameters.Add(new ParameterDefinition(owner));
 
         // 无定义时没有 SpecialName/semantics，当前模型不能将此默认类别当作真实元数据事实。
-        Assert.Equal(MethodKind.OrdinaryMethod, typeSystem.Mapper.MapMethod(reference).Kind);
+        Assert.False(typeSystem.Mapper.MapMethod(reference).Availability.IsKnown(MetadataFacts.Kind));
     }
 }

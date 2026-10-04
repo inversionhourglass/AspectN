@@ -1130,7 +1130,7 @@ Test exact type, base class, interface, constructed generic identity, unresolved
 
 **Step 2: Implement guarded traversal**
 
-Track visited type identities to prevent cycles. Convert ordinary `Resolve()` failures to `Unknown` with `AN3002`; never swallow cancellation.
+Track visited type identities to prevent cycles. Convert ordinary `Resolve()` failures to `Unknown` with `AN3004`; never swallow cancellation.
 
 **Step 3: Run against both Cecil versions**
 
