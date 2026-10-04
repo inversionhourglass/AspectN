@@ -196,6 +196,8 @@ Type identity contains backend-neutral facts such as:
 
 Native backend objects never appear in public core model properties.
 
+`ArrayTypeSignature` retains rank and `ArrayShape.Vector`/`General`, including rank-one non-SZ arrays. All adapters map this shape into the neutral model. Structural equality and array-to-array relationships consume it without native cache side channels. The two-argument constructor defaults rank one to vector and higher ranks to general. See [array shape](../../language/array-shape.md).
+
 ### 8.2 Type use
 
 A type use records how a type occurs in a signature. It includes:
@@ -360,7 +362,9 @@ Equivalent facts must produce equivalent results. Missing information must produ
 
 ### 14.4 Performance
 
-Benchmark:
+**Deferred by the maintainer on 2026-10-05.** There is currently no executable benchmark suite or reproducible performance baseline. The performance gate remains open; correctness tests, caches and package verification do not establish it. The unused BenchmarkDotNet package pin is removed until benchmark work is scheduled.
+
+The future benchmark task must cover:
 
 - Lex and parse.
 - Bind and compile.
@@ -369,6 +373,8 @@ Benchmark:
 - Adapter conversion and cache reuse.
 
 Performance evidence for Rougamo integration belongs to the future migration task. The Legacy retirement only removes compatibility-driven overhead and redundancy.
+
+Record the SDK, runtime, hardware, dependency versions, corpus, commands and raw results. Separate cold compilation, warm matching and allocations, and set explicit acceptance thresholds before treating this gate as complete. No performance conclusion is claimed by the 2026-10-05 review repairs.
 
 ## 15. Migration and Release Plan
 

@@ -2,6 +2,8 @@
 
 > Scope update (2026-10-05): custom semantic extensions were removed by user decision. Extension tasks and API examples below are historical and are superseded by the current language specification and `2026-10-05-review-ds-decisions.md`.
 
+> Performance update (2026-10-05): reproducible benchmarks are deferred by user decision. Benchmark tasks below remain future work and are not completed release evidence. The unused BenchmarkDotNet pin is removed; the normative design records the open performance gate.
+
 > **Superseded requirements (2026-10-03):** The [single-language plan](2026-10-03-single-language-aspectn.md) replaces this plan's Legacy mode, oracle parity, compatibility facade and approved-differences requirements. Historical tasks below remain as context; current API and verification follow the single-language contract. Rougamo migration and publication remain separate future work.
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
