@@ -7,7 +7,7 @@ public sealed class BooleanParserTests
     [Fact]
     public void ParseMemberExpression_WithoutOptions_UsesStandardLanguage()
     {
-        var tree = AspectNParser.ParseMemberExpression("a()");
+        var tree = AspectNParser.ParseMemberExpression("method(* A())");
 
         Assert.Empty(tree.Diagnostics);
     }
@@ -15,7 +15,7 @@ public sealed class BooleanParserTests
     [Fact]
     public void ParseMemberExpression_OrThenAndAndNot_UsesSpecifiedPrecedence()
     {
-        var tree = AspectNParser.ParseMemberExpression("a() || b() && !c()");
+        var tree = AspectNParser.ParseMemberExpression("method(* A()) || method(* B()) && !method(* C())");
 
         var root = Assert.IsType<BinaryExpressionSyntax>(tree.Root);
         Assert.Equal(SyntaxKind.PipePipeToken, root.OperatorToken.Kind);
@@ -28,7 +28,7 @@ public sealed class BooleanParserTests
     [Fact]
     public void ParseMemberExpression_Parentheses_OverridePrecedence()
     {
-        var tree = AspectNParser.ParseMemberExpression("(a() || b()) && c()");
+        var tree = AspectNParser.ParseMemberExpression("(method(* A()) || method(* B())) && method(* C())");
 
         var root = Assert.IsType<BinaryExpressionSyntax>(tree.Root);
         Assert.Equal(SyntaxKind.AmpersandAmpersandToken, root.OperatorToken.Kind);
@@ -41,11 +41,11 @@ public sealed class BooleanParserTests
     [Fact]
     public void ParseMemberExpression_DoubleNegation_PreservesRecoveryNodesAndReportsError()
     {
-        var tree = AspectNParser.ParseMemberExpression("!!a()");
+        var tree = AspectNParser.ParseMemberExpression("!!method(* A())");
 
         var outer = Assert.IsType<UnaryExpressionSyntax>(tree.Root);
         var inner = Assert.IsType<UnaryExpressionSyntax>(outer.Operand);
-        Assert.IsType<ExtensionSelectorSyntax>(inner.Operand);
+        Assert.IsType<MethodSelectorSyntax>(inner.Operand);
         Assert.Contains(tree.Diagnostics, diagnostic => diagnostic.Code == "AN1001");
     }
 }

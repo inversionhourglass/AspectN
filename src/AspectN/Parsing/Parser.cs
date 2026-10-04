@@ -134,12 +134,16 @@ internal sealed partial class Parser
             .ToArray();
     }
 
-    private static ExtensionSelectorSyntax CreateMissingSelector(int position)
+    private static InvalidSelectorSyntax CreateMissingSelector(int position)
     {
-        return new ExtensionSelectorSyntax(
+        var openParen = SyntaxToken.Missing(SyntaxKind.OpenParenToken, position);
+        var closeParen = SyntaxToken.Missing(SyntaxKind.CloseParenToken, position);
+        return new InvalidSelectorSyntax(new SyntaxNode[]
+        {
             SyntaxToken.Missing(SyntaxKind.IdentifierToken, position),
-            SyntaxToken.Missing(SyntaxKind.OpenParenToken, position),
-            SyntaxToken.Missing(SyntaxKind.CloseParenToken, position));
+            openParen,
+            closeParen
+        }, openParen, closeParen);
     }
 
     private static int GetUnaryPrecedence(SyntaxKind kind)

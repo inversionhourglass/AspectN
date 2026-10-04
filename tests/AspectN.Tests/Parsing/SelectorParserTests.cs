@@ -30,10 +30,6 @@ public sealed class SelectorParserTests
         {
             "attr(para[0] RequiredAttribute)",
             typeof(AttributeSelectorSyntax)
-        },
-        {
-            "vendor.feature(\"x\", -2, true, System.IDisposable+)",
-            typeof(ExtensionSelectorSyntax)
         }
     };
 
@@ -50,37 +46,16 @@ public sealed class SelectorParserTests
         Assert.Equal(source.Length, tree.Root.FullSpan.Length);
     }
 
-    [Fact]
-    public void ParseMemberExpression_ExtensionArguments_UseFixedArgumentGrammar()
+    [Theory]
+    [InlineData("vendor.feature(\"x\", -2, true, System.IDisposable+)")]
+    [InlineData("accessor()")]
+    [InlineData("METHOD()")]
+    public void ParseMemberExpression_UnknownSelector_ReportsDiagnostic(string source)
     {
-        var tree = AspectNParser.ParseMemberExpression(
-            "vendor.feature(\"x\", -2, true, System.IDisposable+)");
+        var tree = AspectNParser.ParseMemberExpression(source);
 
-        var extension = Assert.IsType<ExtensionSelectorSyntax>(tree.Root);
-        Assert.Equal(4, extension.Arguments.Count);
-        Assert.Equal(SyntaxKind.StringToken, extension.Arguments[0].Kind);
-        Assert.Equal(SyntaxKind.IntegerToken, extension.Arguments[1].Kind);
-        Assert.Equal(SyntaxKind.IdentifierToken, extension.Arguments[2].Kind);
-        Assert.IsType<AssignableTypePatternSyntax>(extension.Arguments[3]);
-        Assert.Equal(3, extension.Separators.Count);
-    }
-
-    [Fact]
-    public void ParseMemberExpression_RemovedAccessorKeyword_IsExtension()
-    {
-        var tree = AspectNParser.ParseMemberExpression("accessor()");
-
-        Assert.IsType<ExtensionSelectorSyntax>(tree.Root);
-        Assert.Empty(tree.Diagnostics);
-    }
-
-    [Fact]
-    public void ParseMemberExpression_StandardKeywordWithWrongCase_IsExtension()
-    {
-        var tree = AspectNParser.ParseMemberExpression("METHOD()");
-
-        Assert.IsType<ExtensionSelectorSyntax>(tree.Root);
-        Assert.Empty(tree.Diagnostics);
+        Assert.Equal(SyntaxKind.InvalidSelector, tree.Root.Kind);
+        Assert.Equal(DiagnosticCodes.UnknownSelector, Assert.Single(tree.Diagnostics).Code);
     }
 
     [Theory]

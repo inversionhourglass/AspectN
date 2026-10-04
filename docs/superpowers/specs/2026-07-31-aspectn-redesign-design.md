@@ -29,7 +29,7 @@ The Legacy compatibility layer and language selection APIs are removed. Its part
 - Expose incomplete backend knowledge as `Unknown` instead of silently treating it as a negative match.
 - Provide deterministic, thread-safe compilation and matching without global mutable state.
 - Publish normal NuGet packages instead of consuming a shared-project submodule.
-- Make third-party semantic extensions possible without allowing grammar mutation.
+- Keep the matching language and semantic contract closed.
 
 ## 3. Non-goals for 1.0
 
@@ -39,7 +39,7 @@ The Legacy compatibility layer and language selection APIs are removed. Its part
 - Field and event declaration selectors.
 - DSL syntax for `params`, `scoped`, pointers, or function pointers.
 - Nullable reference annotation matching.
-- Arbitrary third-party lexer, token, or grammar extensions.
+- Third-party selectors, predicates, matching semantics or grammar extensions.
 - A general AOP weaving model. AspectN matches metadata; Rougamo decides whether and how a match can be woven.
 
 ## 4. Language and Migration Contract
@@ -161,7 +161,7 @@ The binder:
 - Resolves aliases and syntax sugar.
 - Creates and scopes `$T` variables.
 - Validates selector target domains.
-- Binds registered semantic extensions.
+- Receives only known selectors from syntax trees that have no parse errors.
 - Emits semantic diagnostics.
 - Produces immutable bound nodes.
 
@@ -229,7 +229,7 @@ Every constructed type or member can expose:
 - The generic substitution map.
 - The effective return and parameter types after substitution.
 
-Matching uses the effective signature by default. Explicit original-definition matching is an extension point, not the default.
+Matching uses the effective signature by default. Original definitions remain inspectable metadata; there is no custom matching hook.
 
 ### 8.5 Type-system service
 
@@ -291,24 +291,9 @@ The core never silently rewrites `Unknown` to `NotMatched`.
 
 `$T` variables are internal unification variables. They constrain equality across pattern positions but are not returned to callers in 1.0.
 
-## 11. Extensibility
+## 11. Closed Semantic Contract
 
-The grammar is closed. Third parties cannot:
-
-- Add token kinds.
-- Change lexical rules.
-- Replace parser productions.
-- Mutate a global parser registry.
-
-Semantic extensions are open through an immutable registry owned by one `AspectNCompilation` or `AspectNEngine`. An extension:
-
-- Has a qualified, collision-resistant name.
-- Declares its valid target domain.
-- Declares required type-system capabilities.
-- Binds syntax arguments to an immutable semantic node.
-- Returns `Unknown` when a backend cannot provide a required capability.
-
-The registry identity participates in compiled-plan cache keys.
+The core supports the built-in Standard selectors only. There is no custom selector, predicate, matcher or extension registry API. Unknown names, including qualified names, produce `AN2001` and an error-recovery node. This decision was approved on 2026-10-05 and supersedes the original extension design.
 
 ## 12. Caching and Lifetime
 
@@ -317,7 +302,7 @@ There are no unbounded global static caches.
 - Syntax trees and compiled plans are immutable.
 - Parser and binder do not hide global caches.
 - An optional engine-scoped cache is explicit and bounded.
-- Cache keys include source text, parse entry point, regex timeout and extension-registry identity.
+- Cache keys include source text, parse entry point, regex timeout.
 - Adapter caches follow `ModuleDefinition`, `Compilation`, or collectible assembly lifetime.
 - Rougamo may reuse one engine for a weave operation and dispose it when the operation completes.
 
@@ -398,7 +383,7 @@ Public roles and naming are fixed:
 
 - `AspectNParser`: parse source into syntax trees and diagnostics.
 - `AspectNSyntaxTree`: immutable parsed representation.
-- `AspectNCompilation`: syntax tree, compilation options, extensions, and binding.
+- `AspectNCompilation`: syntax tree, compilation options, and binding.
 - `CompiledPattern`: immutable executable plan.
 - `MatchResult` and `MatchStatus`: three-state evaluation.
 - `ITypeSystem`: backend-neutral relationship contract.

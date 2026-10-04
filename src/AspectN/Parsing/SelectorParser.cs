@@ -15,7 +15,7 @@ internal sealed partial class SelectorParser(Parser parser)
         var nameTokens = ParseQualifiedName();
         if (nameTokens.Count != 1)
         {
-            return ParseExtension(nameTokens);
+            return ParseUnknownSelector(nameTokens);
         }
 
         var keyword = nameTokens[0];
@@ -31,7 +31,7 @@ internal sealed partial class SelectorParser(Parser parser)
             SelectorFamily.StaticConstructor => ParseStaticConstructor(keyword),
             SelectorFamily.Attribute => ParseAttribute(keyword),
             SelectorFamily.Regex => ParseRegex(keyword),
-            _ => ParseExtension(nameTokens)
+            _ => ParseUnknownSelector(nameTokens)
         };
     }
 
@@ -43,7 +43,7 @@ internal sealed partial class SelectorParser(Parser parser)
             tokens.Add(NextToken());
             if (Current.Kind != SyntaxKind.IdentifierToken)
             {
-                ReportUnexpected(Current, "extension name segment");
+                ReportUnexpected(Current, "selector name segment");
                 break;
             }
 
@@ -232,43 +232,34 @@ internal sealed partial class SelectorParser(Parser parser)
             MatchToken(SyntaxKind.CloseParenToken));
     }
 
-    private ExtensionSelectorSyntax ParseExtension(
-        IReadOnlyList<SyntaxToken> nameTokens)
+    private InvalidSelectorSyntax ParseUnknownSelector(List<SyntaxToken> nameTokens)
     {
+        _parser.AddSelectorDiagnostic(
+            DiagnosticCodes.UnknownSelector,
+            $"Selector '{string.Concat(nameTokens.Select(token => token.Text))}' is not recognized.",
+            nameTokens[0]);
+        var tokens = new List<SyntaxNode>(nameTokens);
         var openParen = MatchToken(SyntaxKind.OpenParenToken);
-        var arguments = new List<SyntaxNode>();
-        var separators = new List<SyntaxToken>();
-        while (Current.Kind is not
-               SyntaxKind.CloseParenToken and not
-               SyntaxKind.EndOfFileToken)
+        tokens.Add(openParen);
+        var hasClosingParen = _parser.HasSelectorClosingParen(openParen);
+        var depth = 1;
+        while (Current.Kind != SyntaxKind.EndOfFileToken && depth > 0)
         {
-            arguments.Add(ParseExtensionArgument());
-            if (Current.Kind != SyntaxKind.CommaToken) break;
-            separators.Add(NextToken());
+            // 未知选择器只恢复括号边界，不解释参数；外层 Boolean 运算符保留给主解析器。
+            if (!hasClosingParen && depth == 1 &&
+                Current.Kind is SyntaxKind.AmpersandAmpersandToken or SyntaxKind.PipePipeToken)
+                break;
+            var token = NextToken();
+            tokens.Add(token);
+            if (token.Kind == SyntaxKind.OpenParenToken) depth++;
+            else if (token.Kind == SyntaxKind.CloseParenToken) depth--;
         }
 
-        return new ExtensionSelectorSyntax(
-            nameTokens,
-            openParen,
-            arguments,
-            separators,
-            MatchToken(SyntaxKind.CloseParenToken));
-    }
-
-    private SyntaxNode ParseExtensionArgument()
-    {
-        if (Current.Kind is SyntaxKind.StringToken or SyntaxKind.IntegerToken)
-        {
-            return NextToken();
-        }
-
-        if (Current.Kind == SyntaxKind.IdentifierToken &&
-            Current.Text is "true" or "false")
-        {
-            return NextToken();
-        }
-
-        return ParseTypePattern();
+        var closeParen = depth > 0
+            ? MatchToken(SyntaxKind.CloseParenToken)
+            : (SyntaxToken)tokens[tokens.Count - 1];
+        if (depth > 0) tokens.Add(closeParen);
+        return new InvalidSelectorSyntax(tokens, openParen, closeParen);
     }
 
     private MethodSignatureSyntax ParseMethodSignature()
@@ -1033,7 +1024,7 @@ internal sealed partial class SelectorParser(Parser parser)
         if (EqualsKeyword(text, "cctor")) return SelectorFamily.StaticConstructor;
         if (EqualsKeyword(text, "attr")) return SelectorFamily.Attribute;
         if (EqualsKeyword(text, "regex")) return SelectorFamily.Regex;
-        return SelectorFamily.Extension;
+        return SelectorFamily.Unknown;
     }
 
     private static bool IsModifier(string text)
@@ -1115,7 +1106,7 @@ internal sealed partial class SelectorParser(Parser parser)
 
     private enum SelectorFamily
     {
-        Extension,
+        Unknown,
         Callable,
         Method,
         Property,

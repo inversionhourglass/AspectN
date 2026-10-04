@@ -57,9 +57,6 @@ public static class DiagnosticCodes
     /// <summary>Gets the invalid variable scope.</summary>
     public static string InvalidVariableScope => "AN2007";
 
-    /// <summary>Gets the missing extension.</summary>
-    public static string MissingExtension => "AN2008";
-
     /// <summary>Gets the invalid parameter index.</summary>
     public static string InvalidParameterIndex => "AN2009";
 

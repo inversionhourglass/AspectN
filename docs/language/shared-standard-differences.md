@@ -633,21 +633,21 @@ Unknown 取反仍是 Unknown；Unknown OR Matched 得到 Matched，Unknown AND N
 ### 7.2 中立签名、生命周期和缓存隔离
 
 Shared 直接依赖 Cecil，静态缓存持有类型/方法；Standard 将 Cecil、Roslyn、Reflection 映射为中立签名，
-编译缓存有界且按源文本、解析入口、正则超时和扩展注册表身份隔离。
+编译缓存有界且按源文本、解析入口、正则超时隔离。
 适配器缓存受上下文生命周期约束，并保留程序集卸载覆盖。
 例如使用 `CecilMappingOptions(leaveOpen: true)` 时，模块仍由调用方关闭。
 
-**原因：架构取舍。** 同一语言不绑定单一后端，不让长期缓存阻止程序集卸载或串用不同注册表的规则。
+**原因：架构取舍。** 同一语言不绑定单一后端，不让长期缓存阻止程序集卸载。
 Legacy 与语言选择 API 已删除，不再增加模式维度；Rougamo 实际迁移和破坏性大版本发布属于后续任务。
 
-### 7.3 扩展固定参数契约，不扩展任意语法
+### 7.3 不提供自定义匹配语义
 
 Shared 有公开的任意 type-prefix parser 注册点，但默认 MatcherFactory 的选择器是固定 switch。
-Standard 的不可变 registry 可以提供 qualified selector/predicate，参数限定为 string、integer、Boolean、type。
-例如 `vendor.feature(...)` 需要先注册对应扩展，不能让插件重新解释任意 token 或增加标点。
+Standard 只支持内建选择器，不提供自定义 selector/predicate/matcher 或扩展注册表。
+`vendor.feature(...)` 和未知非限定选择器在解析期统一报 AN2001；原 AN2008 保留为空号，不重新分配。
 
-**原因：架构取舍、功能增强。** 扩展可以增加语义能力，而解析、诊断和语法组合仍由核心维护。
-自建 Shared parser 子类或注册任意前缀的消费者，需要单独迁移；其自定义语言不在本文的内建比较范围内。
+**原因：范围裁决（2026-10-05）。** 当前产品不需要自定义匹配语义，删除此前的固定参数扩展设计和实现。
+自建 Shared parser 子类或注册任意前缀的消费者，其自定义语言仍不在内建兼容范围内。
 
 ### 7.4 已记录的后端能力边界
 

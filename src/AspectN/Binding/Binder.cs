@@ -1,7 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Text;
 using AspectN.Diagnostics;
-using AspectN.Extensibility;
 using AspectN.Metadata;
 using AspectN.Parsing;
 using AspectN.Syntax;
@@ -10,8 +9,7 @@ using AspectN.Text;
 namespace AspectN.Binding;
 
 internal sealed partial class Binder(
-    AspectNSyntaxTree syntaxTree,
-    AspectNExtensionRegistry extensions)
+    AspectNSyntaxTree syntaxTree)
 {
     private static readonly Dictionary<string, string> _PrimitiveAliases =
         new(StringComparer.Ordinal)
@@ -35,8 +33,6 @@ internal sealed partial class Binder(
         };
 
     private readonly DiagnosticBag _diagnostics = new();
-    private readonly AspectNExtensionRegistry _extensions = extensions ??
-            throw new ArgumentNullException(nameof(extensions));
     private readonly AspectNSyntaxTree _syntaxTree = syntaxTree ??
             throw new ArgumentNullException(nameof(syntaxTree));
     private int _negationDepth;
@@ -224,57 +220,9 @@ internal sealed partial class Binder(
                 new BoundRegexPattern(
                     regex.RegexBodyToken.Span,
                     regex.RegexBodyToken.Text)),
-            ExtensionSelectorSyntax extension => BindExtension(extension),
             _ => throw new InvalidOperationException(
                 $"Unsupported selector syntax '{syntax.Kind}'.")
         };
-    }
-
-    private BoundSelector BindExtension(ExtensionSelectorSyntax syntax)
-    {
-        var qualifiedName = GetExtensionName(syntax);
-        if (!_extensions.TryGet(qualifiedName, out var extension))
-        {
-            var isQualified = syntax.NameTokens.Count > 1;
-            _diagnostics.Add(
-                isQualified
-                    ? DiagnosticCodes.MissingExtension
-                    : DiagnosticCodes.UnknownSelector,
-                DiagnosticSeverity.Error,
-                isQualified
-                    ? $"Extension '{qualifiedName}' is not registered."
-                    : $"Selector '{qualifiedName}' is not recognized.",
-                syntax.FullSpan);
-            return InvalidSelector(syntax);
-        }
-
-        var targetDomain = (SelectorTargetDomain)(int)extension!.TargetDomain;
-        if (targetDomain == SelectorTargetDomain.None)
-        {
-            _diagnostics.Add(
-                DiagnosticCodes.InvalidTargetDomain,
-                DiagnosticSeverity.Error,
-                $"Extension '{qualifiedName}' does not declare a target domain.",
-                syntax.FullSpan);
-            return InvalidSelector(syntax);
-        }
-
-        var compileContext = new ExtensionCompileContext(
-            qualifiedName,
-            syntax.Arguments.Select(ExtensionArgument.FromSyntax),
-            syntax.FullSpan);
-        var matcher = extension.Compile(compileContext) ??
-            throw new InvalidOperationException(
-                $"Extension '{qualifiedName}' returned a null matcher.");
-        return new BoundSelector(
-            syntax.FullSpan,
-            BoundSelectorKind.Extension,
-            targetDomain,
-            new BoundExtensionPattern(
-                syntax.FullSpan,
-                qualifiedName,
-                extension.RequiredCapabilities,
-                matcher));
     }
 
     private BoundSelector BindAttributeSelector(
@@ -823,15 +771,6 @@ internal sealed partial class Binder(
         }
     }
 
-    private static BoundSelector InvalidSelector(SelectorSyntax syntax)
-    {
-        return new BoundSelector(
-            syntax.FullSpan,
-            BoundSelectorKind.Regex,
-            SelectorTargetDomain.All,
-            new BoundRegexPattern(syntax.FullSpan, string.Empty));
-    }
-
     private static bool MatchesAnyParameters(IReadOnlyList<SyntaxNode> parts)
     {
         for (var index = 0; index < parts.Count - 1; index++)
@@ -913,11 +852,6 @@ internal sealed partial class Binder(
             "exec" => BoundAttributeTargetKind.Execution,
             _ => BoundAttributeTargetKind.Any
         };
-    }
-
-    private static string GetExtensionName(ExtensionSelectorSyntax syntax)
-    {
-        return string.Concat(syntax.NameTokens.Select(token => token.Text));
     }
 
     private void ReportInvalidModifiers(ModifierSyntax syntax, string message)

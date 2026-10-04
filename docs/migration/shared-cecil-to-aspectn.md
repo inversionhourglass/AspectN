@@ -40,9 +40,11 @@ if (!compilation.TryGetMemberPattern(out var pattern))
 
 `ParseMemberExpression(string source)` and `ParseTypePattern(string source)`
 have no options parameter. Engine compilation methods accept `source`,
-`compilationOptions` and `extensions`. Remove references to
+and optional `compilationOptions`. Remove references to
 `AspectNLanguageVersion`, `AspectNParseOptions` and `LanguageVersion` on trees,
-compilations, compiled patterns and extension contexts. Keywords are lowercase
+compilations and compiled patterns. Custom selectors, predicates and matchers
+are not supported; remove extension registries and extension contexts. Unknown
+selector names (including qualified names) report AN2001. Keywords are lowercase
 and case-sensitive; no mode is inferred from input.
 
 ## Map Cecil metadata before matching

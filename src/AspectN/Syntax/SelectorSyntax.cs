@@ -205,105 +205,13 @@ public sealed class RegexSelectorSyntax(
     public SyntaxToken RegexBodyToken { get; } = regexBodyToken;
 }
 
-/// <summary>Represents a extension selector syntax node.</summary>
-public sealed class ExtensionSelectorSyntax : SelectorSyntax
+internal sealed class InvalidSelectorSyntax(
+    IEnumerable<SyntaxNode> children,
+    SyntaxToken openParenToken,
+    SyntaxToken closeParenToken)
+    : SelectorSyntax(SyntaxKind.InvalidSelector, children)
 {
-    private readonly IReadOnlyList<SyntaxNode> _arguments;
-    private readonly IReadOnlyList<SyntaxToken> _nameTokens;
-    private readonly IReadOnlyList<SyntaxToken> _separators;
+    public override SyntaxToken OpenParenToken { get; } = openParenToken;
 
-    /// <summary>Initializes a new instance of the ExtensionSelectorSyntax class.</summary>
-    /// <param name="nameToken">Specifies the name token.</param>
-    /// <param name="openParenToken">Specifies the open paren token.</param>
-    /// <param name="closeParenToken">Specifies the close paren token.</param>
-    public ExtensionSelectorSyntax(
-        SyntaxToken nameToken,
-        SyntaxToken openParenToken,
-        SyntaxToken closeParenToken)
-        : this(
-            new[] { nameToken },
-            openParenToken,
-            Array.Empty<SyntaxNode>(),
-            Array.Empty<SyntaxToken>(),
-            closeParenToken)
-    {
-    }
-
-    /// <summary>Initializes a new instance of the ExtensionSelectorSyntax class.</summary>
-    /// <param name="nameTokens">Specifies the name tokens.</param>
-    /// <param name="openParenToken">Specifies the open paren token.</param>
-    /// <param name="arguments">Specifies the arguments.</param>
-    /// <param name="separators">Specifies the separators.</param>
-    /// <param name="closeParenToken">Specifies the close paren token.</param>
-    public ExtensionSelectorSyntax(
-        IEnumerable<SyntaxToken> nameTokens,
-        SyntaxToken openParenToken,
-        IEnumerable<SyntaxNode> arguments,
-        IEnumerable<SyntaxToken> separators,
-        SyntaxToken closeParenToken)
-        : this(
-            nameTokens.ToArray(),
-            openParenToken,
-            arguments.ToArray(),
-            separators.ToArray(),
-            closeParenToken)
-    {
-    }
-
-    private ExtensionSelectorSyntax(
-        IReadOnlyList<SyntaxToken> nameTokens,
-        SyntaxToken openParenToken,
-        IReadOnlyList<SyntaxNode> arguments,
-        IReadOnlyList<SyntaxToken> separators,
-        SyntaxToken closeParenToken)
-        : base(
-            SyntaxKind.ExtensionSelector,
-            BuildChildren(
-                nameTokens,
-                openParenToken,
-                arguments,
-                separators,
-                closeParenToken))
-    {
-        _nameTokens = nameTokens;
-        _arguments = arguments;
-        _separators = separators;
-        OpenParenToken = openParenToken;
-        CloseParenToken = closeParenToken;
-    }
-
-    /// <summary>Gets the name tokens.</summary>
-    public IReadOnlyList<SyntaxToken> NameTokens => _nameTokens;
-
-    /// <summary>Gets the arguments.</summary>
-    public IReadOnlyList<SyntaxNode> Arguments => _arguments;
-
-    /// <summary>Gets the separators.</summary>
-    public IReadOnlyList<SyntaxToken> Separators => _separators;
-
-    /// <summary>Gets the keyword token.</summary>
-    public override SyntaxToken? KeywordToken => null;
-
-    /// <summary>Gets the open paren token.</summary>
-    public override SyntaxToken OpenParenToken { get; }
-
-    /// <summary>Gets the body.</summary>
-    public override SyntaxNode? Body => null;
-
-    /// <summary>Gets the close paren token.</summary>
-    public override SyntaxToken CloseParenToken { get; }
-
-    private static IReadOnlyList<SyntaxNode> BuildChildren(
-        IReadOnlyList<SyntaxToken> nameTokens,
-        SyntaxToken openParenToken,
-        IReadOnlyList<SyntaxNode> arguments,
-        IReadOnlyList<SyntaxToken> separators,
-        SyntaxToken closeParenToken)
-    {
-        return SyntaxChildren.Create(
-            nameTokens,
-            openParenToken,
-            SyntaxChildren.Interleave(arguments, separators),
-            closeParenToken);
-    }
+    public override SyntaxToken CloseParenToken { get; } = closeParenToken;
 }

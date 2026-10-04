@@ -114,11 +114,11 @@ public sealed class BinderTests
     }
 
     [Fact]
-    public void Create_MissingQualifiedExtension_ReportsDiagnostic()
+    public void Create_UnknownQualifiedSelector_ReportsDiagnostic()
     {
         var compilation = CompileMember("vendor.feature()");
 
-        AssertDiagnostic(compilation, DiagnosticCodes.MissingExtension);
+        AssertDiagnostic(compilation, DiagnosticCodes.UnknownSelector);
         Assert.Null(compilation.BoundRoot);
     }
 

@@ -1,4 +1,3 @@
-using AspectN.Extensibility;
 using AspectN.Parsing;
 
 namespace AspectN.Caching;
@@ -123,8 +122,7 @@ internal sealed class CompiledPatternCache
 internal readonly struct CompiledPatternCacheKey(
     string source,
     AspectNParseKind parseKind,
-    AspectNCompilationOptions compilationOptions,
-    AspectNExtensionRegistry extensions) :
+    AspectNCompilationOptions compilationOptions) :
     IEquatable<CompiledPatternCacheKey>
 {
     public string Source { get; } = source ?? throw new ArgumentNullException(nameof(source));
@@ -134,15 +132,11 @@ internal readonly struct CompiledPatternCacheKey(
     public long RegexTimeoutTicks { get; } = compilationOptions?.RegexTimeout.Ticks ??
             throw new ArgumentNullException(nameof(compilationOptions));
 
-    public Guid ExtensionIdentity { get; } = extensions?.CacheIdentity ??
-            throw new ArgumentNullException(nameof(extensions));
-
     public bool Equals(CompiledPatternCacheKey other)
     {
         return StringComparer.Ordinal.Equals(Source, other.Source) &&
                ParseKind == other.ParseKind &&
-               RegexTimeoutTicks == other.RegexTimeoutTicks &&
-               ExtensionIdentity == other.ExtensionIdentity;
+               RegexTimeoutTicks == other.RegexTimeoutTicks;
     }
 
     public override bool Equals(object? obj)
@@ -157,7 +151,6 @@ internal readonly struct CompiledPatternCacheKey(
             var hash = StringComparer.Ordinal.GetHashCode(Source);
             hash = (hash * 397) ^ (int)ParseKind;
             hash = (hash * 397) ^ RegexTimeoutTicks.GetHashCode();
-            hash = (hash * 397) ^ ExtensionIdentity.GetHashCode();
             return hash;
         }
     }

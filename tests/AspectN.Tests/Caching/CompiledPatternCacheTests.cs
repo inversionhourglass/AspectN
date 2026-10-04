@@ -1,6 +1,5 @@
 using System.Reflection;
 using AspectN.Caching;
-using AspectN.Extensibility;
 
 namespace AspectN.Tests.Caching;
 
@@ -40,12 +39,6 @@ public sealed class CompiledPatternCacheTests
                 "Name",
                 compilationOptions: new AspectNCompilationOptions(
                     TimeSpan.FromMilliseconds(10))));
-        var extensions = AspectNExtensionRegistry
-            .CreateBuilder("different")
-            .Build();
-        Assert.NotSame(
-            baseline,
-            engine.CompileTypePattern("Name", extensions: extensions));
     }
 
     [Fact]

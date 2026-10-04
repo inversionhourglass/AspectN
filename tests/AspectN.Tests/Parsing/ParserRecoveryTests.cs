@@ -35,7 +35,7 @@ public sealed class ParserRecoveryTests
     [Fact]
     public void ParseMemberExpression_DuplicateBinaryOperator_ReportsBothRecoveryPoints()
     {
-        var tree = AspectNParser.ParseMemberExpression("a() && && b()");
+        var tree = AspectNParser.ParseMemberExpression("method(* A()) && && method(* B())");
 
         Assert.True(tree.Diagnostics.Count >= 2);
         Assert.All(

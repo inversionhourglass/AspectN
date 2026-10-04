@@ -1,5 +1,4 @@
 using AspectN.Caching;
-using AspectN.Extensibility;
 using AspectN.Parsing;
 
 namespace AspectN;
@@ -11,63 +10,50 @@ public sealed class AspectNEngine
 
     /// <summary>Initializes a new instance of the AspectNEngine class.</summary>
     /// <param name="options">Specifies the options.</param>
-    /// <param name="extensions">Specifies the extensions.</param>
     public AspectNEngine(
-        AspectNEngineOptions? options = null,
-        AspectNExtensionRegistry? extensions = null)
+        AspectNEngineOptions? options = null)
     {
         Options = options ?? new AspectNEngineOptions();
-        Extensions = extensions ?? AspectNExtensionRegistry.Empty;
         _cache = new CompiledPatternCache(Options.CacheCapacity);
     }
 
     /// <summary>Gets the options.</summary>
     public AspectNEngineOptions Options { get; }
 
-    /// <summary>Gets the extensions.</summary>
-    public AspectNExtensionRegistry Extensions { get; }
-
     internal int CacheCount => _cache.Count;
 
     /// <summary>Compiles member expression into a matching pattern.</summary>
     /// <param name="source">Specifies the source.</param>
     /// <param name="compilationOptions">Specifies the compilation options.</param>
-    /// <param name="extensions">Specifies the extensions.</param>
     /// <returns>Returns the result of the operation.</returns>
     public AspectNCompilation CompileMemberExpression(
         string source,
-        AspectNCompilationOptions? compilationOptions = null,
-        AspectNExtensionRegistry? extensions = null)
+        AspectNCompilationOptions? compilationOptions = null)
     {
         return Compile(
             source,
             AspectNParseKind.MemberExpression,
-            compilationOptions,
-            extensions);
+            compilationOptions);
     }
 
     /// <summary>Compiles type pattern into a matching pattern.</summary>
     /// <param name="source">Specifies the source.</param>
     /// <param name="compilationOptions">Specifies the compilation options.</param>
-    /// <param name="extensions">Specifies the extensions.</param>
     /// <returns>Returns the result of the operation.</returns>
     public AspectNCompilation CompileTypePattern(
         string source,
-        AspectNCompilationOptions? compilationOptions = null,
-        AspectNExtensionRegistry? extensions = null)
+        AspectNCompilationOptions? compilationOptions = null)
     {
         return Compile(
             source,
             AspectNParseKind.TypePattern,
-            compilationOptions,
-            extensions);
+            compilationOptions);
     }
 
     private AspectNCompilation Compile(
         string source,
         AspectNParseKind parseKind,
-        AspectNCompilationOptions? compilationOptions,
-        AspectNExtensionRegistry? extensions)
+        AspectNCompilationOptions? compilationOptions)
     {
 #if NET10_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(source);
@@ -77,33 +63,28 @@ public sealed class AspectNEngine
 
         var effectiveCompilationOptions = compilationOptions ??
             new AspectNCompilationOptions();
-        var effectiveExtensions = extensions ?? Extensions;
         var key = new CompiledPatternCacheKey(
             source,
             parseKind,
-            effectiveCompilationOptions,
-            effectiveExtensions);
+            effectiveCompilationOptions);
         return _cache.GetOrAdd(
             key,
             () => CompileUncached(
                 source,
                 parseKind,
-                effectiveCompilationOptions,
-                effectiveExtensions));
+                effectiveCompilationOptions));
     }
 
     private static AspectNCompilation CompileUncached(
         string source,
         AspectNParseKind parseKind,
-        AspectNCompilationOptions compilationOptions,
-        AspectNExtensionRegistry extensions)
+        AspectNCompilationOptions compilationOptions)
     {
         var syntaxTree = parseKind == AspectNParseKind.MemberExpression
             ? AspectNParser.ParseMemberExpression(source)
             : AspectNParser.ParseTypePattern(source);
         return AspectNCompilation.Create(
             syntaxTree,
-            compilationOptions,
-            extensions);
+            compilationOptions);
     }
 }

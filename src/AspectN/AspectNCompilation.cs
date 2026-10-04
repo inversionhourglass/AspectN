@@ -1,7 +1,6 @@
 using System.Collections.ObjectModel;
 using AspectN.Binding;
 using AspectN.Diagnostics;
-using AspectN.Extensibility;
 using AspectN.Syntax;
 
 namespace AspectN;
@@ -16,13 +15,11 @@ public sealed class AspectNCompilation
     private AspectNCompilation(
         AspectNSyntaxTree syntaxTree,
         AspectNCompilationOptions options,
-        AspectNExtensionRegistry extensions,
         BoundNode? boundRoot,
         IEnumerable<AspectNDiagnostic> diagnostics)
     {
         SyntaxTree = syntaxTree;
         Options = options;
-        Extensions = extensions;
         BoundRoot = boundRoot;
         _memberPattern = boundRoot is BoundExpression expression
             ? new CompiledMemberPattern(
@@ -43,9 +40,6 @@ public sealed class AspectNCompilation
 
     /// <summary>Gets the options.</summary>
     public AspectNCompilationOptions Options { get; }
-
-    /// <summary>Gets the extensions.</summary>
-    public AspectNExtensionRegistry Extensions { get; }
 
     /// <summary>Gets the diagnostics.</summary>
     public IReadOnlyList<AspectNDiagnostic> Diagnostics => _diagnostics;
@@ -73,12 +67,10 @@ public sealed class AspectNCompilation
     /// <summary>Creates a compilation from the specified syntax tree and options.</summary>
     /// <param name="syntaxTree">Specifies the syntax tree.</param>
     /// <param name="options">Specifies the options.</param>
-    /// <param name="extensions">Specifies the extensions.</param>
     /// <returns>Returns the result of the operation.</returns>
     public static AspectNCompilation Create(
         AspectNSyntaxTree syntaxTree,
-        AspectNCompilationOptions? options = null,
-        AspectNExtensionRegistry? extensions = null)
+        AspectNCompilationOptions? options = null)
     {
 #if NET10_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(syntaxTree);
@@ -88,19 +80,17 @@ public sealed class AspectNCompilation
 #endif
 
         var effectiveOptions = options ?? new AspectNCompilationOptions();
-        var effectiveExtensions = extensions ?? AspectNExtensionRegistry.Empty;
         // Error recovery nodes preserve source text but are not valid binding input.
         if (syntaxTree.Diagnostics.Any(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error))
         {
             return new AspectNCompilation(
                 syntaxTree,
                 effectiveOptions,
-                effectiveExtensions,
                 null,
                 syntaxTree.Diagnostics.ToArray());
         }
 
-        var binder = new Binder(syntaxTree, effectiveExtensions);
+        var binder = new Binder(syntaxTree);
         var boundRoot = binder.Bind();
         var diagnostics = syntaxTree.Diagnostics
             .Concat(binder.Diagnostics)
@@ -114,7 +104,6 @@ public sealed class AspectNCompilation
         return new AspectNCompilation(
             syntaxTree,
             effectiveOptions,
-            effectiveExtensions,
             boundRoot,
             diagnostics);
     }

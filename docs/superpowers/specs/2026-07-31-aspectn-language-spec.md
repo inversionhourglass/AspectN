@@ -29,7 +29,7 @@ AspectN directly implements the existing Standard grammar. It uses:
 - Task-like return matching via `tasklike` or `tasklike<T>`; no `async` modifier.
 - Explicit `ref`, `out`, `in`, and `ref readonly`.
 
-There is no language selection API or compatibility mode. `AspectNParser` exposes `ParseMemberExpression(string source)` and `ParseTypePattern(string source)`. `AspectNEngine` compilation methods accept source, optional compilation options and optional extensions. Cache keys contain source text, parse entry point, regex timeout and extension-registry identity. Migrating from Shared.Cecil.AspectN is a breaking change; Rougamo integration and its major release are separate tasks.
+There is no language selection API or compatibility mode. `AspectNParser` exposes `ParseMemberExpression(string source)` and `ParseTypePattern(string source)`. `AspectNEngine` compilation methods accept source and optional compilation options. Cache keys contain source text, parse entry point, regex timeout. Migrating from Shared.Cecil.AspectN is a breaking change; Rougamo integration and its major release are separate tasks.
 
 ## 3. Lexical Rules
 
@@ -72,11 +72,10 @@ Comments are not part of AspectN 1.0 expression syntax.
 
 ### 3.4 Identifiers, name patterns, and literals
 
-`identifier` follows Unicode identifier start/part rules and is used for extension names and pattern variables. `name-pattern` is a non-empty metadata-name segment containing literal name characters and `*`; reserved punctuation and whitespace terminate the segment. Matching is ordinal.
+`identifier` follows Unicode identifier start/part rules and is used for selector names and pattern variables. `name-pattern` is a non-empty metadata-name segment containing literal name characters and `*`; reserved punctuation and whitespace terminate the segment. Matching is ordinal.
 
 ```ebnf
 name-pattern             = ( name-character | "*" ), { name-character | "*" } ;
-qualified-extension-name = identifier, { ".", identifier } ;
 boolean-literal         = "true" | "false" ;
 ```
 
@@ -159,8 +158,7 @@ selector =
     | ctor-selector
     | cctor-selector
     | attribute-selector
-    | regex-selector
-    | extension-selector ;
+    | regex-selector ;
 
 callable-selector  = "callable",  "(", callable-signature, ")" ;
 execution-selector = "execution", "(", callable-signature, ")" ;
@@ -171,15 +169,6 @@ setter-selector    = "setter",    "(", property-signature, ")" ;
 ctor-selector      = "ctor",      "(", ctor-signature, ")" ;
 cctor-selector     = "cctor",     "(", type-pattern, ")" ;
 
-extension-selector =
-    qualified-extension-name,
-    "(", [ extension-argument, { ",", extension-argument } ], ")" ;
-
-extension-argument =
-      string-literal
-    | integer-literal
-    | boolean-literal
-    | type-pattern ;
 ```
 
 ### 6.1 Selector domains
@@ -657,15 +646,11 @@ Positional numbering is deliberate: patterns stay valid when source renames a ge
 
 Regex evaluation has a mandatory finite timeout. Timeout produces `Unknown` with a diagnostic.
 
-## 16. Extension Selectors and Predicates
+## 16. Closed Semantic Contract
 
-Qualified extension names may participate in selector or predicate positions defined by the fixed grammar:
+Custom selectors, predicates and matching semantics are not supported. Selector names are the built-in names in section 6 and are case-sensitive. Both unqualified unknown names and qualified names such as `vendor.feature(...)` produce `AN2001` (`UnknownSelector`) during parsing. Recovery retains consumed tokens and continues at the next outer expression boundary; it does not interpret custom arguments.
 
-```text
-vendor.feature(argument1, argument2)
-```
-
-An extension registry is supplied to `AspectNCompilation` before binding and becomes immutable. Arguments use the fixed scalar-or-type grammar from section 6; an extension cannot reinterpret an arbitrary token stream. Unknown extensions produce diagnostics, and extensions cannot add punctuation or alter parsing rules.
+The engine and compilation APIs have no extension registry parameter. The former extension diagnostic `AN2008` is retired and is not reassigned.
 
 ## 17. Diagnostics
 

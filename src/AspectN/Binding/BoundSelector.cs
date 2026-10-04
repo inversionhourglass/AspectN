@@ -1,8 +1,6 @@
 using System.Collections.ObjectModel;
-using AspectN.Extensibility;
 using AspectN.Metadata;
 using AspectN.Text;
-using AspectN.TypeSystem;
 
 namespace AspectN.Binding;
 
@@ -39,8 +37,7 @@ internal enum BoundSelectorKind
     Constructor,
     StaticConstructor,
     Attribute,
-    Regex,
-    Extension
+    Regex
 }
 
 internal enum BoundModifierKind
@@ -206,20 +203,6 @@ internal sealed class BoundAttributePattern(
 internal sealed class BoundRegexPattern(TextSpan span, string pattern) : BoundSelectorPayload(span)
 {
     public string Pattern { get; } = pattern ?? throw new ArgumentNullException(nameof(pattern));
-}
-
-internal sealed class BoundExtensionPattern(
-    TextSpan span,
-    string qualifiedName,
-    TypeSystemCapabilities requiredCapabilities,
-    IAspectNExtensionMatcher matcher) : BoundSelectorPayload(span)
-{
-    public string QualifiedName { get; } = qualifiedName ??
-            throw new ArgumentNullException(nameof(qualifiedName));
-
-    public TypeSystemCapabilities RequiredCapabilities { get; } = requiredCapabilities;
-
-    public IAspectNExtensionMatcher Matcher { get; } = matcher ?? throw new ArgumentNullException(nameof(matcher));
 }
 
 internal sealed class BoundStaticConstructorSignature(

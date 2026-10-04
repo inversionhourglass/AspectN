@@ -10,8 +10,8 @@ public sealed class SyntaxTreeTests
     [Fact]
     public void FullSpan_CompositeExpression_CoversChildrenInSourceOrder()
     {
-        var left = Extension("a", 0);
-        var right = Extension("b", 7);
+        var left = Selector("a", 0);
+        var right = Selector("b", 7);
         var expression = new BinaryExpressionSyntax(
             left,
             Token(SyntaxKind.AmpersandAmpersandToken, 4, "&&"),
@@ -74,7 +74,7 @@ public sealed class SyntaxTreeTests
         var tree = new AspectNSyntaxTree(
             SourceText.From("a("),
             AspectNParseKind.MemberExpression,
-            Extension("a", 0, closeParenMissing: true),
+            Selector("a", 0, closeParenMissing: true),
             diagnostics);
 
         diagnostics.Clear();
@@ -101,7 +101,6 @@ public sealed class SyntaxTreeTests
             typeof(StaticConstructorSelectorSyntax),
             typeof(AttributeSelectorSyntax),
             typeof(RegexSelectorSyntax),
-            typeof(ExtensionSelectorSyntax),
             typeof(MethodSignatureSyntax),
             typeof(PropertySignatureSyntax),
             typeof(ConstructorSignatureSyntax),
@@ -149,14 +148,15 @@ public sealed class SyntaxTreeTests
         }
     }
 
-    private static ExtensionSelectorSyntax Extension(
+    private static MethodSelectorSyntax Selector(
         string name,
         int start,
         bool closeParenMissing = false)
     {
-        return new ExtensionSelectorSyntax(
+        return new MethodSelectorSyntax(
             Token(SyntaxKind.IdentifierToken, start, name),
             Token(SyntaxKind.OpenParenToken, start + 1, "("),
+            new MethodSignatureSyntax(Array.Empty<SyntaxNode>()),
             closeParenMissing
                 ? SyntaxToken.Missing(SyntaxKind.CloseParenToken, start + 2)
                 : Token(SyntaxKind.CloseParenToken, start + 2, ")"));

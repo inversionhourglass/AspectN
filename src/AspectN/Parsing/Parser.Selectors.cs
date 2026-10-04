@@ -5,6 +5,30 @@ namespace AspectN.Parsing;
 
 internal sealed partial class Parser
 {
+    private HashSet<int>? _matchedOpenParens;
+
+    internal bool HasSelectorClosingParen(SyntaxToken openParen)
+    {
+        if (openParen.IsMissing) return false;
+        if (_matchedOpenParens is null)
+        {
+            // 错误恢复用的括号配对只扫描一次，避免多处缺括号时重复扫描后缀。
+            _matchedOpenParens = new HashSet<int>();
+            var lexer = new Lexer(_source);
+            var opens = new Stack<int>();
+            while (true)
+            {
+                var token = lexer.Lex();
+                if (token.Kind == SyntaxKind.EndOfFileToken) break;
+                if (token.Kind == SyntaxKind.OpenParenToken) opens.Push(token.Span.Start);
+                else if (token.Kind == SyntaxKind.CloseParenToken && opens.Count > 0)
+                    _matchedOpenParens.Add(opens.Pop());
+            }
+        }
+
+        return _matchedOpenParens.Contains(openParen.Span.Start);
+    }
+
     internal SyntaxToken SelectorCurrent => Current;
 
     internal SyntaxToken NextSelectorToken()

@@ -1,6 +1,5 @@
 using AspectN.Binding;
 using AspectN.Diagnostics;
-using AspectN.Extensibility;
 using AspectN.Metadata;
 
 namespace AspectN.Evaluation;
@@ -101,10 +100,6 @@ internal static class MemberPatternEvaluator
                 context),
             BoundSelectorKind.Regex => RegexPatternEvaluator.Evaluate(
                 (BoundRegexPattern)selector.Payload,
-                candidate,
-                context),
-            BoundSelectorKind.Extension => EvaluateExtension(
-                (BoundExtensionPattern)selector.Payload,
                 candidate,
                 context),
             _ => Unknown(
@@ -371,31 +366,6 @@ internal static class MemberPatternEvaluator
             default:
                 return Unknown(pattern, context, "This member-name node cannot be evaluated.");
         }
-    }
-
-    private static MatchStatus EvaluateExtension(
-        BoundExtensionPattern pattern,
-        MethodSignature candidate,
-        EvaluationContext context)
-    {
-        var availableCapabilities = context.TypeSystem.Capabilities;
-        if ((availableCapabilities & pattern.RequiredCapabilities) !=
-            pattern.RequiredCapabilities)
-        {
-            return Unknown(
-                pattern,
-                context,
-                $"Extension '{pattern.QualifiedName}' requires unavailable " +
-                $"capabilities '{pattern.RequiredCapabilities}'.");
-        }
-
-        var result = pattern.Matcher.Match(
-            new ExtensionMatchContext(
-                candidate,
-                context.TypeSystem,
-                context.CancellationToken));
-        context.AddDiagnostics(result.Diagnostics);
-        return result.Status;
     }
 
     private static SelectorTargetDomain GetTargetDomain(MethodKind kind)

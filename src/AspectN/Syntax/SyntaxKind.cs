@@ -38,7 +38,7 @@ public enum SyntaxKind
     StaticConstructorSelector,
     AttributeSelector,
     RegexSelector,
-    ExtensionSelector,
+    InvalidSelector,
     MethodSignature,
     PropertySignature,
     ConstructorSignature,
