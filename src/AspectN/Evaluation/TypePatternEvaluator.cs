@@ -46,12 +46,8 @@ internal static class TypePatternEvaluator
             case BoundAssignableTypePattern assignable:
                 return EvaluateAssignable(assignable, candidate, context);
             case BoundUnaryTypePattern unary:
-                {
-                    var branch = context.Fork();
-                    var status = Evaluate(unary.Operand, candidate, branch);
-                    context.MergeDiagnosticsFrom(branch);
-                    return MatchLogic.Not(status);
-                }
+                return context.EvaluateNegation(
+                    branch => Evaluate(unary.Operand, candidate, branch));
             case BoundBinaryTypePattern binary
                 when binary.Operator == BoundTypeLogicalOperator.And:
                 {

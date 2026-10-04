@@ -6,6 +6,46 @@ namespace AspectN.Reflection.Tests;
 
 public sealed class AssignablePatternMatchingTests
 {
+    [Theory]
+    [InlineData("IValue<$T>+ && !IExclude<$T>+", MatchStatus.Matched)]
+    [InlineData("IValue<$T>+ && !IExclude<$T>+ && IValue<string>+", MatchStatus.Matched)]
+    [InlineData("IValue<$T>+ && !IExclude<$T>+ && IExclude<$T>+", MatchStatus.NotMatched)]
+    [InlineData("IValue<$T>+ && !(!IExclude<$T>+)", MatchStatus.Matched)]
+    public void TypePattern_NegationWithAlternativeBindings_FiltersEachBinding(
+        string source,
+        MatchStatus expected)
+    {
+        var typeSystem = new ReflectionTypeSystem();
+        var candidate = typeSystem.Mapper.MapType(typeof(ReflectionBindingFixture));
+        var compilation = new AspectNEngine().CompileTypePattern(source);
+        Assert.True(compilation.TryGetTypePattern(out var pattern));
+
+        Assert.Equal(expected, pattern!.Match(candidate, typeSystem).Status);
+    }
+
+    [Theory]
+    [InlineData("!method(* IExclude<$T>+.Run<?>(..))", "method($T Run<?>(..))", MatchStatus.Matched)]
+    [InlineData("method(* !IExclude<$T>+.Run<?>(..))", "method($T Run<?>(..))", MatchStatus.Matched)]
+    [InlineData("method(* ReflectionBindingFixture.(!Run<$T>)(..))", "method($T Run<?>(..))", MatchStatus.Matched)]
+    [InlineData("!method(* IExclude<$T>+.Run<?>(..))", "method(* IExclude<$T>+.Run<?>(..))", MatchStatus.NotMatched)]
+    [InlineData("method(* !IExclude<$T>+.Run<?>(..))", "method(* IExclude<$T>+.Run<?>(..))", MatchStatus.NotMatched)]
+    [InlineData("method(* ReflectionBindingFixture.(!Run<$T>)(..))", "method(* IExclude<$T>+.Run<?>(..))", MatchStatus.NotMatched)]
+    public void MemberPattern_NegationWithAlternativeBindings_PreservesSurvivingBinding(
+        string exclusion,
+        string subsequentConstraint,
+        MatchStatus expected)
+    {
+        var typeSystem = new ReflectionTypeSystem();
+        var method = typeof(ReflectionBindingFixture).GetMethod(nameof(ReflectionBindingFixture.Run))!
+            .MakeGenericMethod(typeof(int));
+        var candidate = typeSystem.Mapper.MapMethod(method);
+        var compilation = AspectNCompilation.Create(AspectNParser.ParseMemberExpression(
+            $"method(* IValue<$T>+.Run<?>(..)) && {exclusion} && {subsequentConstraint}"));
+        Assert.True(compilation.TryGetMemberPattern(out var pattern));
+
+        Assert.Equal(expected, pattern!.Match(candidate, typeSystem).Status);
+    }
+
     [Fact]
     public void MemberPattern_StandardNullableReferenceArgumentInAssignableTarget_MatchesUnderlyingType()
     {
@@ -131,6 +171,19 @@ public sealed class AssignablePatternMatchingTests
 
         return pattern!.Match(candidate, typeSystem).Status;
     }
+}
+
+internal interface IValue<T>
+{
+}
+
+internal interface IExclude<T>
+{
+}
+
+internal sealed class ReflectionBindingFixture : IValue<int>, IValue<string>, IExclude<int>
+{
+    public static string Run<T>() => string.Empty;
 }
 
 internal sealed class ReflectionAssignableFixture

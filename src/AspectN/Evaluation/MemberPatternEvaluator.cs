@@ -19,12 +19,8 @@ internal static class MemberPatternEvaluator
             case BoundSelector selector:
                 return EvaluateSelector(selector, candidate, context);
             case BoundUnaryExpression unary:
-                {
-                    var branch = context.Fork();
-                    var status = Evaluate(unary.Operand, candidate, branch);
-                    context.MergeDiagnosticsFrom(branch);
-                    return MatchLogic.Not(status);
-                }
+                return context.EvaluateNegation(
+                    branch => Evaluate(unary.Operand, candidate, branch));
             case BoundBinaryExpression binary
                 when binary.Operator == BoundLogicalOperator.And:
                 {
@@ -323,10 +319,8 @@ internal static class MemberPatternEvaluator
         EvaluationContext context)
     {
         if (!pattern.IsNegated) return EvaluateMemberCore(pattern, declaringType, memberName, candidate, context);
-        var branch = context.Fork();
-        var status = EvaluateMemberCore(pattern, declaringType, memberName, candidate, branch);
-        context.MergeDiagnosticsFrom(branch);
-        return MatchLogic.Not(status);
+        return context.EvaluateNegation(
+            branch => EvaluateMemberCore(pattern, declaringType, memberName, candidate, branch));
     }
 
     private static MatchStatus EvaluateMemberCore(
@@ -356,10 +350,8 @@ internal static class MemberPatternEvaluator
                 if (!NamePatternMatcher.IsMatch(named.NamePattern, memberName)) return MatchStatus.NotMatched;
                 return candidate is null ? MatchStatus.Matched : EvaluateGeneric(named.Generic, candidate, named, context);
             case BoundUnaryMemberNamePattern unary:
-                var branch = context.Fork();
-                var status = EvaluateMemberName(unary.Operand, memberName, candidate, branch);
-                context.MergeDiagnosticsFrom(branch);
-                return MatchLogic.Not(status);
+                return context.EvaluateNegation(
+                    branch => EvaluateMemberName(unary.Operand, memberName, candidate, branch));
             case BoundBinaryMemberNamePattern binary when binary.Operator == BoundLogicalOperator.And:
                 return MatchLogic.And(
                     EvaluateMemberName(binary.Left, memberName, candidate, context),

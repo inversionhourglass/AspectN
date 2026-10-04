@@ -76,6 +76,42 @@ internal sealed class EvaluationContext
             _diagnostics);
     }
 
+    public MatchStatus EvaluateNegation(Func<EvaluationContext, MatchStatus> evaluateOperand)
+    {
+        var survivingBranches = new List<EvaluationContext>();
+        var status = MatchStatus.NotMatched;
+        // 否定逐个筛选已有绑定；操作数在副本上求值，不能把其内部绑定带出否定作用域。
+        foreach (var bindings in _bindings.CloneAlternatives())
+        {
+            CancellationToken.ThrowIfCancellationRequested();
+            var branch = new EvaluationContext(
+                TypeSystem,
+                bindings,
+                new List<AspectNDiagnostic>(),
+                Options,
+                CancellationToken);
+            var operandContext = branch.Fork();
+            // 传入分支的未知约束属于外层合取；操作数只判断自身的真假。
+            operandContext._bindings.SetUnknown(false);
+            var operandStatus = operandContext._bindings.GetStatus(evaluateOperand(operandContext));
+            var branchStatus = MatchLogic.Not(operandStatus);
+            MergeDiagnosticsFrom(operandContext);
+            status = MatchLogic.Or(status, branchStatus);
+            if (branchStatus == MatchStatus.Matched)
+            {
+                survivingBranches.Add(branch);
+            }
+            else if (branchStatus == MatchStatus.Unknown)
+            {
+                branch._bindings.SetUnknown(true);
+                survivingBranches.Add(branch);
+            }
+        }
+
+        ReplaceBindingsWithAlternativesFrom(survivingBranches);
+        return status;
+    }
+
     public void ReplaceBindingsWithAlternativesFrom(
         IEnumerable<EvaluationContext> branches)
     {
@@ -100,6 +136,6 @@ internal sealed class EvaluationContext
 
     public MatchResult CreateResult(MatchStatus status)
     {
-        return new MatchResult(status, _diagnostics);
+        return new MatchResult(_bindings.GetStatus(status), _diagnostics);
     }
 }

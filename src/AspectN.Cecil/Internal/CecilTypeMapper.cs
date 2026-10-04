@@ -147,7 +147,7 @@ internal static class CecilTypeMapper
             : MapIdentity(typeReference.DeclaringType);
         var (metadataName, genericArity) = SplitMetadataName(
             typeReference.Name,
-            typeReference.GenericParameters.Count);
+            GetOwnArityFallback(typeReference));
         return new TypeIdentity(
             MapAssemblyIdentity(typeReference),
             typeReference.Namespace ?? string.Empty,

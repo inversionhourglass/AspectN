@@ -7,19 +7,19 @@ namespace AspectN.Evaluation;
 
 internal sealed class BindingEnvironment
 {
-    private List<Dictionary<VariableSymbol, TypeSignature>> _alternatives;
+    private List<Alternative> _alternatives;
 
     public BindingEnvironment()
         : this(
-            new List<Dictionary<VariableSymbol, TypeSignature>>
+            new List<Alternative>
             {
-                new()
+                new(new Dictionary<VariableSymbol, TypeSignature>(), false)
             })
     {
     }
 
     private BindingEnvironment(
-        List<Dictionary<VariableSymbol, TypeSignature>> alternatives)
+        List<Alternative> alternatives)
     {
         _alternatives = alternatives;
     }
@@ -28,9 +28,35 @@ internal sealed class BindingEnvironment
     {
         return new BindingEnvironment(
             _alternatives
-                .Select(alternative =>
-                    new Dictionary<VariableSymbol, TypeSignature>(alternative))
+                .Select(alternative => alternative.Clone())
                 .ToList());
+    }
+
+    public IEnumerable<BindingEnvironment> CloneAlternatives()
+    {
+        return _alternatives.Select(alternative =>
+            new BindingEnvironment(
+                new List<Alternative>
+                {
+                    alternative.Clone()
+                }));
+    }
+
+    public void SetUnknown(bool isUnknown)
+    {
+        foreach (var alternative in _alternatives)
+        {
+            alternative.IsUnknown = isUnknown;
+        }
+    }
+
+    public MatchStatus GetStatus(MatchStatus status)
+    {
+        if (status != MatchStatus.Matched) return status;
+        if (_alternatives.Count == 0) return MatchStatus.NotMatched;
+        return _alternatives.Any(alternative => !alternative.IsUnknown)
+            ? MatchStatus.Matched
+            : MatchStatus.Unknown;
     }
 
     public MatchStatus Bind(
@@ -39,14 +65,15 @@ internal sealed class BindingEnvironment
         ITypeSystem typeSystem,
         ICollection<AspectNDiagnostic> diagnostics)
     {
-        var matched = new List<Dictionary<VariableSymbol, TypeSignature>>();
-        var hasUnknown = false;
+        var surviving = new List<Alternative>();
+        var hasMatched = false;
         foreach (var alternative in _alternatives)
         {
-            if (!alternative.TryGetValue(variable, out var existing))
+            if (!alternative.Bindings.TryGetValue(variable, out var existing))
             {
-                alternative.Add(variable, candidate);
-                matched.Add(alternative);
+                alternative.Bindings.Add(variable, candidate);
+                surviving.Add(alternative);
+                hasMatched = true;
                 continue;
             }
 
@@ -58,24 +85,19 @@ internal sealed class BindingEnvironment
 
             if (result.Status == MatchStatus.Matched)
             {
-                matched.Add(alternative);
+                surviving.Add(alternative);
+                hasMatched = true;
             }
             else if (result.Status == MatchStatus.Unknown)
             {
-                hasUnknown = true;
+                alternative.IsUnknown = true;
+                surviving.Add(alternative);
             }
         }
 
-        if (matched.Count > 0)
-        {
-            _alternatives = matched;
-            return MatchStatus.Matched;
-        }
-
-        if (hasUnknown) return MatchStatus.Unknown;
-
-        _alternatives.Clear();
-        return MatchStatus.NotMatched;
+        _alternatives = surviving;
+        if (hasMatched) return MatchStatus.Matched;
+        return surviving.Count > 0 ? MatchStatus.Unknown : MatchStatus.NotMatched;
     }
 
     public void ReplaceWithAlternativesFrom(
@@ -83,8 +105,22 @@ internal sealed class BindingEnvironment
     {
         _alternatives = branches
             .SelectMany(branch => branch._alternatives)
-            .Select(alternative =>
-                new Dictionary<VariableSymbol, TypeSignature>(alternative))
+            .Select(alternative => alternative.Clone())
             .ToList();
+    }
+
+    // 未知约束跟随绑定分支传播，后续筛选只剩该分支时仍应报告 Unknown。
+    private sealed class Alternative(
+        Dictionary<VariableSymbol, TypeSignature> bindings,
+        bool isUnknown)
+    {
+        public Dictionary<VariableSymbol, TypeSignature> Bindings { get; } = bindings;
+
+        public bool IsUnknown { get; set; } = isUnknown;
+
+        public Alternative Clone()
+        {
+            return new Alternative(new Dictionary<VariableSymbol, TypeSignature>(Bindings), IsUnknown);
+        }
     }
 }

@@ -111,9 +111,6 @@ internal sealed class Lexer
     {
         var start = _position;
         var groupDepth = 0;
-        var inCharacterClass = false;
-        var atClassStart = false;
-        var negationSeen = false;
         var inComment = false;
         var escaped = false;
         var foundDelimiter = false;
@@ -144,40 +141,14 @@ internal sealed class Lexer
 
             if (character == '\\')
             {
-                // 转义元素也是一个字符类元素，会消耗起始位置（[\d] 的 ] 是结束符）。
                 escaped = true;
-                atClassStart = false;
-                _position++;
-                continue;
-            }
-
-            if (inCharacterClass)
-            {
-                // .NET 语义：字符类起始位置的 ] 是字面量而非结束符；
-                // 起始 ^ 只允许出现一次作为否定符，其后的 ^ 是字面量元素（[^^]）。
-                if (atClassStart && character == '^' && !negationSeen)
-                {
-                    negationSeen = true;
-                    _position++;
-                    continue;
-                }
-
-                if (character == ']' && !atClassStart)
-                {
-                    inCharacterClass = false;
-                }
-
-                atClassStart = false;
                 _position++;
                 continue;
             }
 
             if (character == '[')
             {
-                inCharacterClass = true;
-                atClassStart = true;
-                negationSeen = false;
-                _position++;
+                SkipRegexCharacterClass();
                 continue;
             }
 
@@ -222,6 +193,119 @@ internal sealed class Lexer
         }
 
         return CreateToken(SyntaxKind.RegexBodyToken, start);
+    }
+
+    // 按 .NET 字符类的原子、范围、减法层级扫描；每层首位 ]（含 ^ 后）是字面量。
+    private void SkipRegexCharacterClass()
+    {
+        _position++;
+        var depth = 1;
+        var atStart = true;
+        var negationSeen = false;
+        var inRange = false;
+        while (!IsAtEnd)
+        {
+            var character = Current;
+            if (atStart && character == '^' && !negationSeen)
+            {
+                negationSeen = true;
+                _position++;
+                continue;
+            }
+
+            if (character == ']' && !atStart)
+            {
+                _position++;
+                depth--;
+                if (depth == 0) return;
+                // 减法必须位于外层末尾，外层已消费元素，无需恢复首位或范围状态。
+                inRange = false;
+                continue;
+            }
+
+            var translated = character == '\\';
+            var canStartRange = true;
+            if (translated)
+            {
+                canStartRange = SkipRegexClassEscape();
+            }
+            else
+            {
+                _position++;
+            }
+
+            if (inRange)
+            {
+                inRange = false;
+                if (character == '[' && !translated)
+                {
+                    depth++;
+                    atStart = true;
+                    negationSeen = false;
+                    continue;
+                }
+                // 范围端点已被消费；即使端点是 '-' 也不能再次解释为减法开头。
+            }
+            else if (canStartRange && Current == '-' &&
+                     _position + 1 < _source.Length && Peek(1) != ']')
+            {
+                inRange = true;
+                _position++;
+            }
+            else if (character == '-' && !translated && Current == '[' && !atStart)
+            {
+                _position++;
+                depth++;
+                atStart = true;
+                negationSeen = false;
+                continue;
+            }
+
+            atStart = false;
+        }
+    }
+
+    // 转义必须作为完整原子消费，避免把 \xNN、\uNNNN 或 \p{...} 的尾部当作范围起点。
+    private bool SkipRegexClassEscape()
+    {
+        _position++;
+        if (IsAtEnd) return false;
+        var escape = Current;
+        _position++;
+        switch (escape)
+        {
+            case 'd' or 'D' or 's' or 'S' or 'w' or 'W' or '-':
+                return false;
+            case 'p' or 'P':
+                if (Current == '{')
+                {
+                    _position++;
+                    while (!IsAtEnd && Current != '}') _position++;
+                    if (!IsAtEnd) _position++;
+                }
+
+                return false;
+            case 'x' or 'u':
+                for (var index = 0; index < 4 && Current is
+                         >= '0' and <= '9' or >= 'a' and <= 'f' or >= 'A' and <= 'F'; index++)
+                {
+                    _position++;
+                }
+
+                break;
+            case 'c':
+                if (!IsAtEnd) _position++;
+                break;
+            case >= '0' and <= '7':
+                for (var index = 0; index < 2 && Current is >= '0' and <= '7'; index++)
+                {
+                    _position++;
+                }
+
+                break;
+        }
+
+        return true;
     }
 
     private bool IsAtEnd => _position >= _source.Length;

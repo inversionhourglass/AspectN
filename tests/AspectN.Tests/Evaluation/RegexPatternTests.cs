@@ -190,6 +190,19 @@ public sealed class RegexPatternTests
         Assert.Equal(MatchStatus.Matched, result.Status);
     }
 
+    [Theory]
+    [InlineData("[a-[])]]", MatchStatus.Matched)]
+    [InlineData("[a-[b-[])]]]", MatchStatus.Matched)]
+    [InlineData("[a-[^])]]", MatchStatus.NotMatched)]
+    public void Match_RegexSubtractionWithLeadingBracket_PreservesNestedClass(
+        string body,
+        MatchStatus expected)
+    {
+        var result = Match($"regex({body})", Callable("Load"));
+
+        Assert.Equal(expected, result.Status);
+    }
+
     [Fact]
     public void Match_RegexCommentWithOpenParen_CompilesAndMatches()
     {

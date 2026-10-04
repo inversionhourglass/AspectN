@@ -178,6 +178,32 @@ public sealed class LexerTests
         Assert.Equal(SyntaxKind.EndOfFileToken, lexer.Lex().Kind);
     }
 
+    [Theory]
+    [InlineData("[a-[])]]")]
+    [InlineData("[a-[^])]]")]
+    [InlineData("[a-[b-[])]]]")]
+    [InlineData("[a[)]")]
+    [InlineData(@"[a\-[)]]")]
+    [InlineData("[-[)]]")]
+    [InlineData("[---[]")]
+    [InlineData("[)--[]")]
+    [InlineData(@"[\x2d--[]")]
+    [InlineData(@"[\d-[])]]")]
+    [InlineData(@"[\p{L}-[])]]")]
+    [InlineData("[a-z-[])]]")]
+    public void LexRegexBody_CharacterClassSubtraction_LeavesSelectorDelimiter(string source)
+    {
+        _ = new System.Text.RegularExpressions.Regex(source);
+        var lexer = CreateLexer(source + ")tail");
+
+        var body = lexer.LexRegexBody();
+
+        Assert.Equal(source, body.Text);
+        Assert.Equal(SyntaxKind.CloseParenToken, lexer.Lex().Kind);
+        Assert.Equal("tail", lexer.Lex().Text);
+        Assert.Empty(lexer.Diagnostics);
+    }
+
     private static Lexer CreateLexer(string source)
     {
         return new Lexer(SourceText.From(source));

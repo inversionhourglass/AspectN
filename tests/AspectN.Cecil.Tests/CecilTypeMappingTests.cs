@@ -54,6 +54,32 @@ public sealed class CecilTypeMappingTests
     }
 
     [Fact]
+    public void MapType_NestedDefinitionWithOnlyInheritedParameters_PreservesZeroOwnArity()
+    {
+        using var typeSystem = EmittedFixture.Open();
+        var inner = typeSystem.Module.GetType(
+            "AspectN.Cecil.Tests.NestedParamOuter`1/NestedNonGenericInner");
+        Assert.NotNull(inner);
+        Assert.Single(inner.GenericParameters);
+
+        var signature = Assert.IsType<NamedTypeSignature>(
+            typeSystem.Mapper.MapType(inner));
+
+        Assert.Equal(0, signature.Identity.GenericArity);
+        Assert.Equal(1, signature.Identity.ContainingType!.GenericArity);
+        Assert.Equal(
+            "AspectN.Cecil.Tests.NestedParamOuter`1/NestedNonGenericInner",
+            signature.Identity.FullMetadataName);
+
+        var compilation = new AspectNEngine().CompileTypePattern(
+            "AspectN.Cecil.Tests.NestedParamOuter<>/NestedNonGenericInner");
+        Assert.True(compilation.TryGetTypePattern(out var pattern));
+        Assert.Equal(
+            MatchStatus.Matched,
+            pattern!.Match(signature, typeSystem).Status);
+    }
+
+    [Fact]
     public void MapType_GenericInstance_RetainsDefinitionAndEffectiveArguments()
     {
         var module = TestModuleFactory.Create();
