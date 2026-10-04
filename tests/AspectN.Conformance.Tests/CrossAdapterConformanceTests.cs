@@ -493,7 +493,7 @@ internal static class SignatureSnapshot
                 $"<{string.Join(",", named.TypeArguments.Select(Type))}>" +
                 $"~{(named.OriginalDefinition is null ? string.Empty : Identity(named.OriginalDefinition.Identity))}",
             ArrayTypeSignature array =>
-                $"array:{array.Rank}:{Type(array.ElementType)}",
+                $"array:{array.Rank}:{array.Shape}:{Type(array.ElementType)}",
             GenericParameterTypeSignature generic =>
                 $"generic:{Generic(generic.Parameter)}",
             UnsupportedTypeSignature unsupported =>

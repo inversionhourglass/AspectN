@@ -144,7 +144,7 @@ public sealed class ReflectionSignatureMapper
         {
             return new ArrayTypeSignature(
                 MapType(RequiredElementType(type)),
-                type.GetArrayRank());
+                type.GetArrayRank(), RuntimeTypeFacts.IsVector(type) ? ArrayShape.Vector : ArrayShape.General);
         }
 
         if (type.IsGenericParameter)
@@ -701,7 +701,7 @@ public sealed class ReflectionSignatureMapper
         if (type.IsArray)
         {
             return CanonicalParameterForm(RequiredElementType(type)) +
-                   ArraySuffix(type.GetArrayRank());
+                   (type.GetArrayRank() == 1 && !RuntimeTypeFacts.IsVector(type) ? "[*]" : ArraySuffix(type.GetArrayRank()));
         }
 
         return ConstructedNamedForm(type);

@@ -35,19 +35,40 @@ public sealed class NamedTypeSignature(
     public bool IsConstructed => _typeArguments.Count > 0;
 }
 
-/// <summary>Represents metadata for a array type signature.</summary>
+/// <summary>Identifies vector versus general CLI array shape.</summary>
+public enum ArrayShape
+{
+    /// <summary>A zero-based, one-dimensional SZ array.</summary>
+    Vector = 0,
+    /// <summary>A general CLI array, including a rank-one non-SZ array.</summary>
+    General = 1
+}
+
+/// <summary>Represents metadata for an array type signature.</summary>
 public sealed class ArrayTypeSignature : TypeSignature
 {
     /// <summary>Initializes a new instance of the ArrayTypeSignature class.</summary>
     /// <param name="elementType">Specifies the element type.</param>
     /// <param name="rank">Specifies the rank.</param>
     public ArrayTypeSignature(TypeSignature elementType, int rank)
+        : this(elementType, rank, rank == 1 ? ArrayShape.Vector : ArrayShape.General)
+    {
+    }
+
+    /// <summary>Creates an array signature with explicit CLI shape.</summary>
+    /// <param name="elementType">Specifies the element type.</param>
+    /// <param name="rank">Specifies the positive rank.</param>
+    /// <param name="shape">Specifies vector or general shape; vectors must have rank one.</param>
+    public ArrayTypeSignature(TypeSignature elementType, int rank, ArrayShape shape)
         : base(TypeSignatureKind.Array)
     {
         ElementType = elementType ??
             throw new ArgumentNullException(nameof(elementType));
         GuardPositive(rank, nameof(rank));
+        if (shape is not (ArrayShape.Vector or ArrayShape.General) || shape == ArrayShape.Vector && rank != 1)
+            throw new ArgumentOutOfRangeException(nameof(shape));
         Rank = rank;
+        Shape = shape;
     }
 
     /// <summary>Gets the element type.</summary>
@@ -55,6 +76,9 @@ public sealed class ArrayTypeSignature : TypeSignature
 
     /// <summary>Gets the rank.</summary>
     public int Rank { get; }
+
+    /// <summary>Gets the CLI array shape, independently of its rank.</summary>
+    public ArrayShape Shape { get; }
 
     private static void GuardPositive(int value, string parameterName)
     {

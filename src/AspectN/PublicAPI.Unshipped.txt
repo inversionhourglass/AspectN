@@ -559,3 +559,8 @@ AspectN.Metadata.MetadataFacts.ByReference = 2048 -> AspectN.Metadata.MetadataFa
 AspectN.Metadata.MetadataFacts.None = 0 -> AspectN.Metadata.MetadataFacts
 static AspectN.Diagnostics.DiagnosticCodes.ResolutionFailure.get -> string!
 AspectN.Metadata.MetadataFacts.Parameters = 4096 -> AspectN.Metadata.MetadataFacts
+AspectN.Metadata.ArrayShape
+AspectN.Metadata.ArrayShape.Vector = 0 -> AspectN.Metadata.ArrayShape
+AspectN.Metadata.ArrayShape.General = 1 -> AspectN.Metadata.ArrayShape
+AspectN.Metadata.ArrayTypeSignature.ArrayTypeSignature(AspectN.Metadata.TypeSignature! elementType, int rank, AspectN.Metadata.ArrayShape shape) -> void
+AspectN.Metadata.ArrayTypeSignature.Shape.get -> AspectN.Metadata.ArrayShape

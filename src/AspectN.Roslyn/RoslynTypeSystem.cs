@@ -58,6 +58,8 @@ public sealed class RoslynTypeSystem : ITypeSystem
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        var arrayRelation = ArrayRelations.Compare(candidate, target, CompareUnqualified);
+        if (arrayRelation is not null) return arrayRelation;
         var structural = CompareUnqualified(candidate, target);
         if (structural.Status != MatchStatus.NotMatched) return structural;
 
@@ -274,7 +276,7 @@ public sealed class RoslynTypeSystem : ITypeSystem
                     CompareNamed(actualNamed, expectedNamed),
             ArrayTypeSignature actualArray
                 when expected is ArrayTypeSignature expectedArray =>
-                    actualArray.Rank == expectedArray.Rank
+                    actualArray.Rank == expectedArray.Rank && actualArray.Shape == expectedArray.Shape
                         ? CompareUnqualified(
                             actualArray.ElementType,
                             expectedArray.ElementType)

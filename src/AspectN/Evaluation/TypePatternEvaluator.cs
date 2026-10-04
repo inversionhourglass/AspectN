@@ -688,7 +688,9 @@ internal static class TypePatternEvaluator
                 out type);
         }
 
-        if (pattern is BoundArrayTypePattern array &&
+        // 一维 [] 是同时接受 SZ/non-SZ 的秩模式，不能具体化为唯一数组身份；
+        // 命名关系目标与特性目标包含它时必须保留模式求值语义。
+        if (pattern is BoundArrayTypePattern { Rank: > 1 } array &&
             TryCreateConcreteType(
                 array.ElementType,
                 out var elementType))

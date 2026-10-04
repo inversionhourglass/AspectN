@@ -82,20 +82,20 @@ public sealed class AssignableRelationshipTargetTests
         Assert.Equal("System.String", Name(argument));
     }
 
-    [Fact]
-    public void Match_NullableReferenceAliasArrayElement_ConcretizesToUnderlying()
+    [Theory]
+    [InlineData(ArrayShape.Vector)]
+    [InlineData(ArrayShape.General)]
+    public void Match_NullableReferenceAliasArrayElement_PreservesUnderlyingInPatternWalk(ArrayShape shape)
     {
+        var listOfArray = Named("System.Collections.Generic", "List", 1, TypeKind.Class,
+            new ArrayTypeSignature(Named("System", "String", 0), 1, shape));
         var (result, target) = MatchWithObservedTarget(
             "System.Collections.Generic.List<string?[]>+",
             Named("Example", "Resource", 0),
-            relation: TypeRelationResult.Matched);
+            closure: new InheritanceClosure(new TypeSignature[] { listOfArray }, null));
 
         Assert.Equal(MatchStatus.Matched, result.Status);
-        var namedTarget = Assert.IsType<NamedTypeSignature>(target);
-        var argument = Assert.IsType<ArrayTypeSignature>(
-            Assert.Single(namedTarget.TypeArguments));
-        Assert.Equal(1, argument.Rank);
-        Assert.Equal("System.String", Name(argument.ElementType));
+        Assert.Null(target);
     }
 
     [Fact]

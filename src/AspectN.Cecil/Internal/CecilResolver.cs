@@ -1,3 +1,4 @@
+using AspectN.AdapterInternals;
 using AspectN.Diagnostics;
 using AspectN.Evaluation;
 using AspectN.Metadata;
@@ -20,14 +21,10 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        var arrayRelation = ArrayRelations.Compare(candidate, target, UnqualifiedTypeComparer.AreEqual);
+        if (arrayRelation is not null) return arrayRelation;
         var structural = UnqualifiedTypeComparer.AreEqual(candidate, target);
-        if (structural.Status != MatchStatus.NotMatched)
-        {
-            // 结构相等不足以证明可赋值：同元素的一维非向量数组不能赋给向量数组。
-            return IsArrayIdentityAdmissible(candidate, target)
-                ? structural
-                : TypeRelationResult.NotMatched;
-        }
+        if (structural.Status != MatchStatus.NotMatched) return structural;
 
         if (!_mapper.TryGetTypeReference(candidate, out var candidateReference) ||
             candidateReference is null)
@@ -223,30 +220,6 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
         yield return "IList";
         yield return "IReadOnlyList";
         yield return "IReadOnlyCollection";
-    }
-
-    // 同元素数组的恒等还要求形状方向兼容：非向量（非零下界）一维数组不能赋给向量数组。
-    private bool IsArrayIdentityAdmissible(
-        TypeSignature candidate,
-        TypeSignature target)
-    {
-        if (candidate is not ArrayTypeSignature ||
-            target is not ArrayTypeSignature ||
-            !_mapper.TryGetTypeReference(candidate, out var reference) ||
-            reference is not ArrayType array)
-        {
-            return true;
-        }
-
-        return array.IsVector || !IsVectorTarget(target);
-    }
-
-    // 判定数组目标是否为向量：模式构造的秩 1 目标无法表达下界，按向量处理。
-    private bool IsVectorTarget(TypeSignature target)
-    {
-        return !_mapper.TryGetTypeReference(target, out var reference) ||
-               reference is not ArrayType array ||
-               array.IsVector;
     }
 
     private static TypeDefinition? TryResolve(

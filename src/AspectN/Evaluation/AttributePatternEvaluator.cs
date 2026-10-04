@@ -300,7 +300,7 @@ internal static class AttributePatternEvaluator
         {
             BoundNamedTypePattern named =>
                 HasSpecifiedGenericArguments(named),
-            BoundArrayTypePattern array => IsFullyConcrete(array.ElementType),
+            BoundArrayTypePattern array => array.Rank > 1 && IsFullyConcrete(array.ElementType),
             _ => false
         };
     }

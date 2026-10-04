@@ -29,7 +29,7 @@ internal static class UnqualifiedTypeComparer
                     CompareNamed(actualNamed, expectedNamed),
             ArrayTypeSignature actualArray
                 when expected is ArrayTypeSignature expectedArray =>
-                    actualArray.Rank == expectedArray.Rank
+                    actualArray.Rank == expectedArray.Rank && actualArray.Shape == expectedArray.Shape
                         ? AreEqual(
                             actualArray.ElementType,
                             expectedArray.ElementType)

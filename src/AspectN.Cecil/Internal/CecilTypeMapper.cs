@@ -18,7 +18,7 @@ internal static class CecilTypeMapper
             GenericInstanceType generic => MapGenericInstance(generic, mapType),
             ArrayType array => new ArrayTypeSignature(
                 mapType(array.ElementType),
-                array.Rank),
+                array.Rank, array.IsVector ? ArrayShape.Vector : ArrayShape.General),
             GenericParameter parameter => MapGenericParameter(parameter),
             ByReferenceType byReference => mapType(byReference.ElementType),
             OptionalModifierType optional => mapType(optional.ElementType),
@@ -320,7 +320,7 @@ internal static class CecilTypeMapper
                 return CanonicalParameterForm(pointer.ElementType) + "*";
             case ArrayType array:
                 return CanonicalParameterForm(array.ElementType) +
-                       ArraySuffix(array.Rank);
+                       (array.Rank == 1 && !array.IsVector ? "[*]" : ArraySuffix(array.Rank));
             case GenericInstanceType:
                 return ConstructedNamedForm((GenericInstanceType)type);
             case FunctionPointerType functionPointer:

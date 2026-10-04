@@ -140,7 +140,7 @@ public sealed class RoslynSignatureMapper
         {
             IArrayTypeSymbol array => new ArrayTypeSignature(
                 MapType(array.ElementType),
-                array.Rank),
+                array.Rank, array.IsSZArray ? AspectN.Metadata.ArrayShape.Vector : AspectN.Metadata.ArrayShape.General),
             ITypeParameterSymbol parameter =>
                 new GenericParameterTypeSignature(
                     MapGenericParameter(parameter)),
@@ -509,7 +509,7 @@ public sealed class RoslynSignatureMapper
             case IArrayTypeSymbol array:
                 return CanonicalParameterForm(array.ElementType) +
                        "[" + (array.Rank == 1
-                           ? string.Empty
+                           ? array.IsSZArray ? string.Empty : "*"
                            : new string(',', array.Rank - 1)) + "]";
             case IFunctionPointerTypeSymbol functionPointer:
                 return FunctionPointerForm(functionPointer);

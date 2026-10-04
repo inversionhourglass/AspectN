@@ -482,6 +482,8 @@ string[][]
 
 Ranks and nesting must match exactly unless a wildcard pattern explicitly removes that constraint.
 
+Standard array patterns constrain rank and element patterns. `int[]` accepts both a vector (`int[]`, SZ) and a general rank-one array (`int[*]`, non-SZ); `[*]` is metadata notation, not added DSL syntax. The public `ArrayTypeSignature.Shape` preserves this distinction for identity and nominal relationship queries. Shape is compared recursively in nested arrays and generic arguments. Nominal array-to-array queries permit vector-to-general shape conversion with identical elements, but not the reverse; they do not introduce CLR element covariance. See [array shape](../../language/array-shape.md).
+
 ### 12.6 Nullability
 
 Standard rules:

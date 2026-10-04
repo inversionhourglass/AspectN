@@ -84,7 +84,7 @@ public static class StructuralTypeComparer
         ArrayTypeSignature left,
         ArrayTypeSignature right)
     {
-        return left.Rank == right.Rank
+        return left.Rank == right.Rank && left.Shape == right.Shape
             ? AreEqual(left.ElementType, right.ElementType)
             : TypeRelationResult.NotMatched;
     }
