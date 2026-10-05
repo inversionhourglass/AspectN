@@ -2,6 +2,8 @@
 
 **Goal:** Close every verified, deterministic issue in REVIEW-DS without changing the Standard language contract or reopening the four maintainer decisions.
 
+**Status:** Completed and verified at `18483b7`; see [the item-by-item remediation and validation record](../reviews/2026-10-05-review-ds-remediation.md). Performance work remains deferred.
+
 **Architecture:** Preserve backend-neutral signatures and the existing nominal relation contract. Reject excessive syntax nesting with diagnostics, make neutral structural comparison stack-safe, and preserve unavailable metadata as Unknown. Backend-specific gaps must be documented and tested rather than inferred from names.
 
 **Technology:** C#, xUnit/FsCheck, Cecil 0.11.5/0.11.6, Roslyn 4.12.0/5.6.0, net10.0/netstandard2.0/net472, PowerShell/GitHub Actions. Work in this checkout and preserve the original untracked reports.
