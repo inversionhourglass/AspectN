@@ -8,6 +8,23 @@ namespace AspectN.Tests.Evaluation;
 
 public sealed class RegexPatternTests
 {
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Match_OpenGenericArityExceedsFormattingBudget_ReturnsUnknown(bool declaringType)
+    {
+        var assembly = new AssemblyIdentity("Example");
+        var outer = new TypeIdentity(assembly, "Example", "Outer", int.MaxValue, TypeKind.Class);
+        var huge = new NamedTypeSignature(new TypeIdentity(assembly, "", "Inner", 1, TypeKind.Class, outer));
+        var candidate = new MethodSignature("M", MethodKind.OrdinaryMethod, Accessibility.Public, false, false,
+            declaringType ? huge : Named("Example", "Service"),
+            new TypeUseSignature(declaringType ? Named("System", "Void", TypeKind.Struct) : huge,
+                RefKind.None, TypeUseKind.Return), [], [], [], [], []);
+        var result = Match("regex(.*)", candidate);
+        Assert.Equal(MatchStatus.Unknown, result.Status);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == DiagnosticCodes.MissingBackendCapability);
+    }
+
     [Fact]
     public async Task Match_SharedCanonicalTypeGraph_ReturnsUnknownWithoutExponentialOutput()
     {

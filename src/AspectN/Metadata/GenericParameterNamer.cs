@@ -35,6 +35,7 @@ internal static class GenericParameterNamer
         var slot = 0;
         foreach (var identity in identities)
         {
+            var ownerId = identity.FullMetadataName;
             for (var localPosition = 0;
                  localPosition < identity.GenericArity;
                  localPosition++,
@@ -45,7 +46,7 @@ internal static class GenericParameterNamer
                         new GenericParameterSignature(
                             $"T{slot + 1}",
                             GenericParameterOwnerKind.Type,
-                            identity.FullMetadataName,
+                            ownerId,
                             identity.Assembly,
                             slot)));
             }

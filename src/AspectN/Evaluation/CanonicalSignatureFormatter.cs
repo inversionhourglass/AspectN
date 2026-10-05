@@ -9,9 +9,11 @@ internal static class CanonicalSignatureFormatter
     // 再内层、最后方法泛型），总数为 1 时渲染为裸 T；封闭构造仍展开实际实参。
     public static string Format(MethodSignature candidate, CancellationToken cancellationToken = default)
     {
+        var builder = new BoundedSignatureBuilder(cancellationToken);
+        if (candidate.DeclaringType is NamedTypeSignature declaring) builder.ValidateEffectiveArity(declaring);
+        builder.ValidateArity(candidate.GenericParameters.Count);
         var genericNames = GenericParameterNamer.CreatePositionalNames(
             candidate);
-        var builder = new BoundedSignatureBuilder(cancellationToken);
         builder.Append(
             FormatAccessibility(candidate.Accessibility));
         if (candidate.IsStatic) builder.Append(" static");
@@ -113,6 +115,7 @@ internal static class CanonicalSignatureFormatter
         NamedTypeSignature named,
         IReadOnlyDictionary<GenericParameterKey, string> genericNames)
     {
+        builder.ValidateEffectiveArity(named);
         var chain = GenericParameterNamer.GetTypeChain(named.Identity);
         // 开放定义没有实参，回退到按声明链合成的位置形参，类型子句因此与
         // 使用位置共用同一套 T1..Tn 编号，不会出现一侧抹名一侧保名的分裂。
@@ -202,6 +205,24 @@ internal static class CanonicalSignatureFormatter
     {
         private const int MAX_LENGTH = 65_536;
         private readonly StringBuilder _builder = new();
+
+        public void ValidateEffectiveArity(NamedTypeSignature named)
+        {
+            long arity = 0;
+            for (var identity = named.Identity; identity is not null; identity = identity.ContainingType)
+            {
+                arity += identity.GenericArity;
+                ValidateArity(arity);
+            }
+        }
+
+        public void ValidateArity(long arity)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (arity > MAX_LENGTH)
+                throw new CanonicalSignatureUnavailableException(
+                    $"Generic arity exceeds the {MAX_LENGTH}-character formatting budget.");
+        }
 
         public void Append(string? value)
         {

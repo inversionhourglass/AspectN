@@ -737,3 +737,5 @@ Public diagnostic collections are immutable snapshots. Exact duplicates with the
 Regex generic names require declaration identity and positional slots. An incomplete externally constructed signature that cannot supply them produces Unknown/AN3001; the formatter never substitutes source parameter names.
 
 Canonical regex signatures are limited to 65,536 UTF-16 characters. The formatter checks this cumulative budget before appending, including repeated shared-type subgraphs and bulk array-rank punctuation. Exceeding the budget produces Unknown/AN3001 with a formatting-limit diagnostic. Formatting observes the match cancellation token; the regex timeout starts only after formatting.
+
+Before synthesizing positional generic arguments, the formatter also checks total arity across containing types and method generic parameters against the formatting budget using overflow-safe arithmetic. Excessive arity produces Unknown/AN3001 before allocation.
