@@ -96,8 +96,8 @@ public sealed class GenericPatternListSyntax : SyntaxNode
             lessThanToken,
             form,
             arity,
-            arguments.ToArray(),
-            separators.ToArray(),
+            CollectionSnapshot.Copy(arguments, nameof(arguments)),
+            CollectionSnapshot.Copy(separators, nameof(separators)),
             wildcardToken,
             greaterThanToken)
     {

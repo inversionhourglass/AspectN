@@ -1,5 +1,12 @@
 [CmdletBinding()]
-param()
+param(
+    [string] $PackageVersion,
+    [string] $PackageDirectory = "artifacts/packages",
+    [string] $CecilVersion,
+    [string] $RoslynVersion,
+    [string] $FodyHelpersVersion,
+    [switch] $ValidateExisting
+)
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
@@ -7,11 +14,22 @@ Set-StrictMode -Version Latest
 $repositoryRoot = [System.IO.Path]::GetFullPath(
     (Join-Path $PSScriptRoot ".."))
 $packageDirectory = [System.IO.Path]::GetFullPath(
-    (Join-Path $repositoryRoot "artifacts\packages"))
+    (Join-Path $repositoryRoot $PackageDirectory))
 $artifactRoot = [System.IO.Path]::GetFullPath(
     (Join-Path $repositoryRoot "artifacts"))
 $validationId = [System.Guid]::NewGuid().ToString("N").Substring(0, 12)
-$packageVersion = "0.0.0-validation-$validationId"
+if ([string]::IsNullOrWhiteSpace($PackageVersion)) {
+    if ($ValidateExisting) { throw "ValidateExisting requires PackageVersion." }
+    $PackageVersion = "0.0.0-validation-$validationId"
+}
+[xml] $centralPackages = Get-Content -LiteralPath (Join-Path $repositoryRoot "Directory.Packages.props") -Raw
+foreach ($propertyName in @("CecilVersion", "RoslynVersion", "FodyHelpersVersion")) {
+    if ([string]::IsNullOrWhiteSpace((Get-Variable -Name $propertyName -ValueOnly))) {
+        Set-Variable -Name $propertyName -Value $centralPackages.Project.PropertyGroup.$propertyName.InnerText
+    }
+}
+$buildProperties = @("-p:CecilVersion=$CecilVersion", "-p:RoslynVersion=$RoslynVersion",
+    "-p:FodyHelpersVersion=$FodyHelpersVersion")
 $projectUrl = "https://github.com/AspectN/AspectN"
 $nugetSource = "https://api.nuget.org/v3/index.json"
 
@@ -112,6 +130,7 @@ function Get-ConsumerSource {
         "AspectN" {
             return @"
 using AspectN;
+using AspectN.Metadata;
 
 var compilation = new AspectNEngine().CompileMemberExpression(
     "method(* Example.Service.Run(..))");
@@ -119,6 +138,10 @@ if (!compilation.TryGetMemberPattern(out _))
 {
     throw new InvalidOperationException("AspectN compilation failed.");
 }
+var parameter = new GenericParameterSignature(
+    "T", GenericParameterOwnerKind.Type, "Example.Container`1",
+    new AssemblyIdentity("Example.Assembly"), position: 0);
+_ = new GenericParameterTypeSignature(parameter);
 "@
         }
         "AspectN.Cecil" {
@@ -195,23 +218,16 @@ $packages = @(
     }
 )
 
-if (Test-Path -LiteralPath $packageDirectory) {
-    Remove-Item -LiteralPath $packageDirectory -Recurse -Force
-}
-New-Item -ItemType Directory -Path $packageDirectory | Out-Null
-
-foreach ($package in $packages) {
-    $projectPath = Join-Path $repositoryRoot $package.Project
-    Invoke-DotNet @(
-        "pack",
-        $projectPath,
-        "-c",
-        "Release",
-        "--output",
-        $packageDirectory,
-        "-p:Version=$packageVersion",
-        "-p:PackageVersion=$packageVersion"
-    )
+if (-not $ValidateExisting) {
+    if (Test-Path -LiteralPath $packageDirectory) {
+        Remove-Item -LiteralPath $packageDirectory -Recurse -Force
+    }
+    New-Item -ItemType Directory -Path $packageDirectory | Out-Null
+    foreach ($package in $packages) {
+        $projectPath = Join-Path $repositoryRoot $package.Project
+        Invoke-DotNet (@("pack", $projectPath, "-c", "Release", "--output", $packageDirectory,
+            "-p:Version=$PackageVersion", "-p:PackageVersion=$PackageVersion") + $buildProperties)
+    }
 }
 
 $descriptions = New-Object "System.Collections.Generic.HashSet[string]" (
@@ -276,11 +292,33 @@ foreach ($package in $packages) {
         Assert-True ($repository.GetAttribute("url") -eq $projectUrl) (
             "$packageId has an invalid repository URL.")
 
+        Assert-True ((Get-MetadataNode $metadata "version").InnerText -eq $PackageVersion) (
+            "$packageId has an unexpected package version.")
+        foreach ($dependency in $metadata.SelectNodes(".//*[local-name()='dependency']")) {
+            $expectedVersion = switch ($dependency.GetAttribute("id")) {
+                "AspectN" { $PackageVersion }
+                "Mono.Cecil" { $CecilVersion }
+                "Microsoft.CodeAnalysis.CSharp" { $RoslynVersion }
+                "FodyHelpers" { $FodyHelpersVersion }
+            }
+            Assert-True ($dependency.GetAttribute("version").TrimStart('[', '(').Split(',')[0].TrimEnd(']') -eq $expectedVersion) (
+                "$packageId has an unexpected dependency version: $($dependency.OuterXml)")
+        }
+
         $dependencyIds = @(
             $metadata.SelectNodes(".//*[local-name()='dependency']") |
                 ForEach-Object { $_.GetAttribute("id") } |
                 Sort-Object -Unique)
         Assert-DependencySet $packageId $dependencyIds $package.Dependencies
+        $dependencyGroups = @($metadata.SelectNodes(".//*[local-name()='dependencies']/*[local-name()='group']"))
+        Assert-True ($dependencyGroups.Count -eq 2) "$packageId must have exactly two dependency groups."
+        foreach ($framework in @(".NETStandard2.0", "net10.0")) {
+            $group = @($dependencyGroups | Where-Object { $_.GetAttribute("targetFramework") -eq $framework })
+            Assert-True ($group.Count -eq 1) "$packageId has no unique dependency group for $framework."
+            $groupIds = @($group[0].SelectNodes("./*[local-name()='dependency']") |
+                ForEach-Object { $_.GetAttribute("id") })
+            Assert-DependencySet "$packageId/$framework" $groupIds $package.Dependencies
+        }
     }
     finally {
         $archive.Dispose()
@@ -303,6 +341,13 @@ foreach ($package in $packages) {
 
 $consumerRoot = Join-Path ([System.IO.Path]::GetTempPath()) (
     "AspectN.PackageValidation." + [System.Guid]::NewGuid().ToString("N"))
+$consumerRoot = [System.IO.Path]::GetFullPath($consumerRoot)
+$temporaryRoot = [System.IO.Path]::GetFullPath([System.IO.Path]::GetTempPath()).TrimEnd('\', '/')
+if (-not $consumerRoot.StartsWith($temporaryRoot + [System.IO.Path]::DirectorySeparatorChar,
+        [System.StringComparison]::OrdinalIgnoreCase) -or
+    [System.IO.Path]::GetFileName($consumerRoot) -notmatch '^AspectN\.PackageValidation\.[a-f0-9]{32}$') {
+    throw "Consumer directory escaped the validation temporary directory."
+}
 New-Item -ItemType Directory -Path $consumerRoot | Out-Null
 try {
     $nugetConfigPath = Join-Path $consumerRoot "NuGet.Config"
@@ -329,7 +374,8 @@ try {
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFrameworks>net472;net10.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -357,6 +403,10 @@ try {
             "Release",
             "--no-restore",
             "-warnaserror")
+        foreach ($framework in @("net472", "net10.0")) {
+            Invoke-DotNet @("run", "--project", $projectPath, "-c", "Release", "-f", $framework,
+                "--no-build", "--no-restore")
+        }
     }
 }
 finally {
@@ -365,4 +415,4 @@ finally {
     }
 }
 
-Write-Host "Validated five AspectN packages and temporary consumers."
+Write-Host "Validated five AspectN packages, both dependency groups, and ten consumer builds/runs."

@@ -38,15 +38,15 @@ public sealed class MethodSignature(
     MetadataAvailability? availability = null)
 {
     private readonly IReadOnlyList<AttributeSignature> _attributes = new ReadOnlyCollection<AttributeSignature>(
-            attributes.ToArray());
+            CollectionSnapshot.Copy(attributes, nameof(attributes)));
     private readonly IReadOnlyList<TypeSignature> _genericArguments = new ReadOnlyCollection<TypeSignature>(
-            genericArguments.ToArray());
+            CollectionSnapshot.Copy(genericArguments, nameof(genericArguments)));
     private readonly IReadOnlyList<GenericParameterSignature> _genericParameters = new ReadOnlyCollection<GenericParameterSignature>(
-            genericParameters.ToArray());
+            CollectionSnapshot.Copy(genericParameters, nameof(genericParameters)));
     private readonly IReadOnlyList<ParameterSignature> _parameters = new ReadOnlyCollection<ParameterSignature>(
-            parameters.ToArray());
+            CollectionSnapshot.Copy(parameters, nameof(parameters)));
     private readonly IReadOnlyList<AttributeSignature> _returnAttributes = new ReadOnlyCollection<AttributeSignature>(
-            returnAttributes.ToArray());
+            CollectionSnapshot.Copy(returnAttributes, nameof(returnAttributes)));
     private readonly IReadOnlyList<AttributeSignature> _typeAttributes = new ReadOnlyCollection<AttributeSignature>(
             (typeAttributes ?? Array.Empty<AttributeSignature>()).ToArray());
 
@@ -62,7 +62,7 @@ public sealed class MethodSignature(
     /// <summary>Gets the is static.</summary>
     public bool IsStatic { get; } = isStatic;
 
-    /// <summary>Gets the is async.</summary>
+    /// <summary>Gets whether the compiler declared an async method or async iterator, independently of its return type.</summary>
     public bool IsAsync { get; } = isAsync;
 
     /// <summary>Gets the declaring type.</summary>

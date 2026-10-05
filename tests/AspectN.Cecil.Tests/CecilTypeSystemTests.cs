@@ -406,10 +406,8 @@ public sealed class CecilTypeSystemTests
     {
         var compilation = AspectN.AspectNCompilation.Create(
             AspectN.AspectNParser.ParseTypePattern(source));
-        if (!compilation.TryGetTypePattern(out var pattern))
-        {
-            return MatchStatus.Unknown;
-        }
+        Assert.True(compilation.TryGetTypePattern(out var pattern),
+            string.Join(Environment.NewLine, compilation.Diagnostics.Select(diagnostic => diagnostic.Message)));
 
         return pattern!.Match(candidate, typeSystem).Status;
     }

@@ -447,7 +447,7 @@ static AspectN.AspectNParser.ParseMemberExpression(string! source) -> AspectN.Sy
 static AspectN.AspectNParser.ParseTypePattern(string! source) -> AspectN.Syntax.AspectNSyntaxTree!
 static AspectN.Diagnostics.DiagnosticCodes.AttributePositionMigration.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.BadCharacter.get -> string!
-static AspectN.Diagnostics.DiagnosticCodes.CompositeAccessibilityMigration.get -> string!
+static AspectN.Diagnostics.DiagnosticCodes.CompoundAccessibilityMigration.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.InvalidEscapeSequence.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.InvalidInteger.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.InvalidModifierCombination.get -> string!
@@ -564,3 +564,5 @@ AspectN.Metadata.ArrayShape.Vector = 0 -> AspectN.Metadata.ArrayShape
 AspectN.Metadata.ArrayShape.General = 1 -> AspectN.Metadata.ArrayShape
 AspectN.Metadata.ArrayTypeSignature.ArrayTypeSignature(AspectN.Metadata.TypeSignature! elementType, int rank, AspectN.Metadata.ArrayShape shape) -> void
 AspectN.Metadata.ArrayTypeSignature.Shape.get -> AspectN.Metadata.ArrayShape
+static AspectN.Diagnostics.DiagnosticCodes.InputDepthExceeded.get -> string!
+static AspectN.Diagnostics.DiagnosticCodes.MetadataDepthExceeded.get -> string!

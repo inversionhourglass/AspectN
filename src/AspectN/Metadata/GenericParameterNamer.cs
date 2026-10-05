@@ -127,11 +127,13 @@ internal readonly struct GenericParameterKey(GenericParameterSignature parameter
 {
     private readonly GenericParameterOwnerKind _ownerKind = parameter.OwnerKind;
     private readonly string _ownerId = parameter.OwnerId;
+    private readonly AssemblyIdentity _ownerAssembly = parameter.OwnerAssembly;
     private readonly int _position = parameter.Position;
 
     public bool Equals(GenericParameterKey other)
     {
         return _ownerKind == other._ownerKind &&
+               _ownerAssembly.Equals(other._ownerAssembly) &&
                _position == other._position &&
                StringComparer.Ordinal.Equals(_ownerId, other._ownerId);
     }
@@ -146,6 +148,7 @@ internal readonly struct GenericParameterKey(GenericParameterSignature parameter
         unchecked
         {
             var hash = (int)_ownerKind;
+            hash = (hash * 397) ^ _ownerAssembly.GetHashCode();
             hash = (hash * 397) ^ _position;
             hash = (hash * 397) ^
                    StringComparer.Ordinal.GetHashCode(_ownerId);

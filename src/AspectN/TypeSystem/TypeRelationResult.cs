@@ -23,7 +23,7 @@ public sealed class TypeRelationResult
     {
         Status = status;
         _diagnostics = new ReadOnlyCollection<AspectNDiagnostic>(
-            (diagnostics ?? Array.Empty<AspectNDiagnostic>()).ToArray());
+            DiagnosticSnapshot.Create(diagnostics));
 
         if (status == MatchStatus.Unknown && _diagnostics.Count == 0)
         {
@@ -36,13 +36,13 @@ public sealed class TypeRelationResult
     /// <summary>Gets the status.</summary>
     public MatchStatus Status { get; }
 
-    /// <summary>Gets the diagnostics.</summary>
+    /// <summary>Gets immutable diagnostics in deterministic source/code order, with exact duplicates removed.</summary>
     public IReadOnlyList<AspectNDiagnostic> Diagnostics => _diagnostics;
 
-    /// <summary>Gets the matched.</summary>
+    /// <summary>Gets a successful result with no diagnostics.</summary>
     public static TypeRelationResult Matched => _Matched;
 
-    /// <summary>Gets the not matched.</summary>
+    /// <summary>Gets a definite negative result with no diagnostics.</summary>
     public static TypeRelationResult NotMatched => _NotMatched;
 
     /// <summary>Creates an unknown result with the supplied diagnostics.</summary>

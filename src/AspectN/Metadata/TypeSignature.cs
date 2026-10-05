@@ -99,7 +99,7 @@ public sealed class GenericParameterTypeSignature(GenericParameterSignature para
             throw new ArgumentNullException(nameof(parameter));
 }
 
-/// <summary>Represents metadata for a unsupported type signature.</summary>
+/// <summary>Preserves the display form and reason for a type that cannot be matched structurally.</summary>
 /// <param name="displayName">Specifies the display name.</param>
 /// <param name="reason">Specifies the reason.</param>
 public sealed class UnsupportedTypeSignature(string displayName, string reason) : TypeSignature(TypeSignatureKind.Unsupported)

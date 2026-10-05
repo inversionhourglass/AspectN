@@ -4,6 +4,8 @@
 
 AspectN is a backend-neutral expression parser and matcher with one language contract: the existing Standard grammar. The target layout is defined in `docs/plans/2026-07-31-aspectn-industrial-redesign.md`; its Legacy compatibility requirements are superseded by `docs/plans/2026-10-03-single-language-aspectn.md`. Core syntax, semantics, signatures, and matching belong in `src/AspectN`; backend types must not enter its public API. Mono.Cecil, Roslyn, and Reflection mappings live in `src/AspectN.Cecil`, `src/AspectN.Roslyn`, and `src/AspectN.Reflection`; Fody consumes the Cecil sources through `src/AspectN.Cecil.Fody`.
 
+`src/Shared` contains adapter-only sources compiled into each backend assembly under `AspectN.AdapterInternals`; they are not a separate assembly and must not enter the core public API.
+
 Mirror production projects under `tests/`. Keep cross-adapter conformance, .NET Framework compatibility, and fixture assemblies in their dedicated test projects. Place benchmarks in `benchmarks/`, engineering scripts in `eng/`, and normative architecture/language documents in `docs/superpowers/specs/`.
 
 ## Build, Test, and Development Commands

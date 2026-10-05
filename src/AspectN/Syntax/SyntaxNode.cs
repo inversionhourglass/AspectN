@@ -13,14 +13,21 @@ public abstract class SyntaxNode
         Kind = kind;
         FullSpan = span;
         _children = Array.Empty<SyntaxNode>();
+        Depth = 1;
     }
 
     protected SyntaxNode(SyntaxKind kind, IEnumerable<SyntaxNode> children)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(children);
+#else
+        if (children is null) throw new ArgumentNullException(nameof(children));
+#endif
         var copy = children.ToArray();
         Kind = kind;
         _children = new ReadOnlyCollection<SyntaxNode>(copy);
         FullSpan = GetFullSpan(copy);
+        Depth = copy.Length == 0 ? 1 : 1 + copy.Max(child => child.Depth);
     }
 
     /// <summary>Gets the kind.</summary>
@@ -31,6 +38,8 @@ public abstract class SyntaxNode
 
     /// <summary>Gets the children.</summary>
     public IReadOnlyList<SyntaxNode> Children => _children;
+
+    internal int Depth { get; }
 
     private static TextSpan GetFullSpan(SyntaxNode[] children)
     {

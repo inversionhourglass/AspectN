@@ -4,7 +4,7 @@
 这里的 Standard 指 AspectN 当前唯一的语言契约，不再是可选择的兼容模式。
 
 比较基准：Shared 为 `03a9d1030f92a64449b6220eb45d7198d31653db`；Standard 为完成裁决实现后的
-`084dfb6`。整理日期：2026-10-03。后续行为变更应同步本文和语言规范。
+`084dfb6`。这是历史比较基准；当前实现验证的提交与版本矩阵见 [修复记录](../reviews/2026-10-05-review-ds-remediation.md)。整理日期：2026-10-03。后续行为变更应同步本文和语言规范。
 
 原始审计记录的是修复前的 Standard，不能直接当作当前行为。本文结合
 [完整审计及证据](../reviews/2026-10-03-shared-standard-audit.md)、
@@ -688,4 +688,16 @@ Standard 只支持内建选择器，不提供自定义 selector/predicate/matche
 
 迁移时应同时检查表达式是否有效和实际匹配范围；“能解析”不意味着与 Shared 结果相同。
 具体 API、模块生命周期和表达式改写见 [迁移指南](../migration/shared-cecil-to-aspectn.md)。
-已确认的实现基线在默认和替代依赖组合下各有 952 项测试通过；本文只整理既有裁决，不引入新的行为变更。
+历史裁决基线 `084dfb6` 的默认和替代依赖组合各有 952 项测试通过；这是当时的测试数，不是当前 HEAD 的数量，也不是审计表达式数。当前验证见 [2026-10-05 修复记录](../reviews/2026-10-05-review-ds-remediation.md)。
+
+## 后端元数据能力边界（2026-10-05）
+
+`IsAsync` 表示编译器标记的异步方法（包括异步迭代器）。Roslyn 源符号的标志和 PE 中的 AsyncStateMachine/AsyncIteratorStateMachine 标记合并；`tasklike<T>` 仍只看返回类型，与该标志无关。普通指针统一显示为 CLI 名称，如 `System.Int32*`，结构匹配仍为 Unknown。
+
+函数指针 owner 身份使用 modified parameter Type 读取调用约定，包含 Cdecl/Stdcall 及 SuppressGCTransition。原始 Type 的空约定列表不能证明 managed。不可读取约定时使用未知标记，并附加模块 MVID 与方法 token 的 `#declaration:` 身份。没有 IsFunctionPointer 的旧 CLR（实测 .NET 7）还可能把函数指针暴露成 IntPtr，因此含这种不可辨形状的 owner 同样保留物理声明身份。它保证同一 PE 声明在不同 mapper 中一致、不同重载不合并，但不能与其他后端的规范 owner 字符串直接比较；旧 CLR 的 IntPtr 类型视图不能恢复原函数指针形状。需要完整 CLI 形状时使用 Cecil/Roslyn，或具备现代反射 API 的运行时。
+
+Reflection 从封闭声明类型取出的泛型方法形参 Type 仍可能隶属开放定义，不携带封闭声明上下文；其名义闭包保留声明约束。Cecil MethodReference 可以保留封闭 declaring-type 上下文，约束遍历会沿传递形参继续替换类型实参。
+
+真实 CLI `.raise` 方法在 Cecil/Reflection 为 EventRaiser；当前 Roslyn C# PE 导入器可将其视为 OrdinaryMethod，且 IEventSymbol.RaiseMethod 为空。无 CompilerFeatureRequired 标记的合法实例复合赋值方法在 Cecil/Reflection 为 Operator，Roslyn 4.12 PE 为 OrdinaryMethod；替代矩阵的 Roslyn 5.6 已识别为 Operator。此边界由 emitted IL 回归固定；不按 raise_/op_ 名称猜测访问器，也不扩大 C# 编译器标记的适用范围。后端和版本选择会影响这些成员的选择器域。
+
+官方反射 API 依据：[GetModifiedParameterType](https://learn.microsoft.com/en-us/dotnet/api/system.reflection.parameterinfo.getmodifiedparametertype?view=net-10.0)、[GetFunctionPointerCallingConventions](https://learn.microsoft.com/en-us/dotnet/api/system.type.getfunctionpointercallingconventions?view=net-10.0)、[IsUnmanagedFunctionPointer](https://learn.microsoft.com/en-us/dotnet/api/system.type.isunmanagedfunctionpointer?view=net-10.0)。具体运行时覆盖见修复记录。

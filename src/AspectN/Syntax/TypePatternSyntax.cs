@@ -185,7 +185,7 @@ public sealed class VariableTypePatternSyntax(
     public SyntaxToken IdentifierToken { get; } = identifierToken;
 }
 
-/// <summary>Represents a array type pattern syntax node.</summary>
+/// <summary>Matches an element pattern with a specified array rank.</summary>
 public sealed class ArrayTypePatternSyntax : TypePatternSyntax
 {
     private readonly IReadOnlyList<SyntaxToken> _commaTokens;
@@ -259,7 +259,7 @@ public sealed class NullableTypePatternSyntax(
     public SyntaxToken QuestionToken { get; } = questionToken;
 }
 
-/// <summary>Represents a assignable type pattern syntax node.</summary>
+/// <summary>Matches a named target through its declared nominal relationships.</summary>
 /// <param name="targetType">Specifies the target type.</param>
 /// <param name="plusToken">Specifies the plus token.</param>
 public sealed class AssignableTypePatternSyntax(
@@ -296,7 +296,7 @@ public sealed class ParenthesizedTypePatternSyntax(
     public SyntaxToken CloseParenToken { get; } = closeParenToken;
 }
 
-/// <summary>Represents a unary type pattern syntax node.</summary>
+/// <summary>Negates a type pattern while preserving Unknown results.</summary>
 /// <param name="operatorToken">Specifies the operator token.</param>
 /// <param name="operand">Specifies the operand.</param>
 public sealed class UnaryTypePatternSyntax(

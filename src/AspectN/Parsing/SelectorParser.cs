@@ -569,6 +569,7 @@ internal sealed partial class SelectorParser(Parser parser)
     // 使用优先级爬升解析类型表达式，以保持一元、二元和后缀构造的结合顺序。
     private TypePatternSyntax ParseTypePattern(int parentPrecedence = 0, bool taskLikeIsName = false)
     {
+        using var nesting = _parser.DepthGuard.Enter(Current.Span);
         TypePatternSyntax left;
         var unaryPrecedence = GetUnaryPrecedence(Current.Kind);
         if (unaryPrecedence != 0 && unaryPrecedence >= parentPrecedence)
@@ -709,6 +710,7 @@ internal sealed partial class SelectorParser(Parser parser)
             ParseNameSegment(first)
         };
         var separators = new List<SyntaxToken>();
+        var inNestedType = false;
         while (Current.Kind is
                SyntaxKind.DotToken or
                SyntaxKind.DotDotToken or
@@ -724,6 +726,9 @@ internal sealed partial class SelectorParser(Parser parser)
             if (Current.Span.Start == _memberSeparatorStart) break;
 
             var separator = NextToken();
+            if (inNestedType && separator.Kind != SyntaxKind.SlashToken)
+                ReportUnexpected(separator, "'/' between nested types");
+            if (separator.Kind == SyntaxKind.SlashToken) inNestedType = true;
             separators.Add(separator);
             if (TypePatternSyntaxFacts.IsNamePart(Current) &&
                 Current.Span.Start != separator.Span.End)
@@ -873,6 +878,12 @@ internal sealed partial class SelectorParser(Parser parser)
     private TypePatternSyntax ParseParenthesizedOrTupleType(bool taskLikeIsName)
     {
         var openParen = NextToken();
+        if (Current.Kind == SyntaxKind.CloseParenToken)
+        {
+            ReportUnexpected(Current, "type pattern");
+            return new ParenthesizedTypePatternSyntax(openParen,
+                CreateMissingType(Current.Span.Start), NextToken());
+        }
         var first = ParseTypePattern(taskLikeIsName: taskLikeIsName);
         if (Current.Kind != SyntaxKind.CommaToken)
         {
@@ -893,6 +904,12 @@ internal sealed partial class SelectorParser(Parser parser)
         while (Current.Kind == SyntaxKind.CommaToken)
         {
             separators.Add(NextToken());
+            if (Current.Kind == SyntaxKind.CloseParenToken)
+            {
+                ReportUnexpected(Current, "tuple element");
+                elements.Add(CreateMissingType(Current.Span.Start));
+                break;
+            }
             elements.Add(ParseTypePattern(taskLikeIsName: taskLikeIsName));
         }
 
@@ -1007,7 +1024,7 @@ internal sealed partial class SelectorParser(Parser parser)
         string replacement)
     {
         _parser.AddSelectorDiagnostic(
-            DiagnosticCodes.CompositeAccessibilityMigration,
+            DiagnosticCodes.CompoundAccessibilityMigration,
             $"Use '{replacement}' instead of '{token.Text}'.",
             token);
     }

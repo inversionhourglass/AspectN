@@ -51,17 +51,20 @@ public sealed class TypeIdentity : IEquatable<TypeIdentity>
     {
         get
         {
-            var currentName = GenericArity == 0
-                ? MetadataName
-                : $"{MetadataName}`{GenericArity}";
-            if (ContainingType is not null)
+            var chain = new Stack<TypeIdentity>();
+            for (var current = this; current is not null; current = current.ContainingType)
+                chain.Push(current);
+            var builder = new System.Text.StringBuilder();
+            var outer = chain.Peek();
+            if (!string.IsNullOrEmpty(outer.Namespace)) builder.Append(outer.Namespace).Append('.');
+            while (chain.Count != 0)
             {
-                return $"{ContainingType.FullMetadataName}/{currentName}";
+                var current = chain.Pop();
+                builder.Append(current.MetadataName);
+                if (current.GenericArity != 0) builder.Append('`').Append(current.GenericArity);
+                if (chain.Count != 0) builder.Append('/');
             }
-
-            return string.IsNullOrEmpty(Namespace)
-                ? currentName
-                : $"{Namespace}.{currentName}";
+            return builder.ToString();
         }
     }
 
@@ -70,13 +73,17 @@ public sealed class TypeIdentity : IEquatable<TypeIdentity>
     /// <returns>Returns the result of the operation.</returns>
     public bool Equals(TypeIdentity? other)
     {
-        return other is not null &&
-               Assembly.Equals(other.Assembly) &&
-               StringComparer.Ordinal.Equals(Namespace, other.Namespace) &&
-               StringComparer.Ordinal.Equals(MetadataName, other.MetadataName) &&
-               GenericArity == other.GenericArity &&
-               Kind == other.Kind &&
-               Equals(ContainingType, other.ContainingType);
+        TypeIdentity? current = this;
+        while (current is not null && other is not null)
+        {
+            if (!current.Assembly.Equals(other.Assembly) ||
+                !StringComparer.Ordinal.Equals(current.Namespace, other.Namespace) ||
+                !StringComparer.Ordinal.Equals(current.MetadataName, other.MetadataName) ||
+                current.GenericArity != other.GenericArity || current.Kind != other.Kind) return false;
+            current = current.ContainingType;
+            other = other.ContainingType;
+        }
+        return current is null && other is null;
     }
 
     /// <summary>Determines whether the specified value is equal to this instance.</summary>
@@ -93,13 +100,19 @@ public sealed class TypeIdentity : IEquatable<TypeIdentity>
     {
         unchecked
         {
-            var hash = Assembly.GetHashCode();
-            hash = (hash * 397) ^ StringComparer.Ordinal.GetHashCode(Namespace);
-            hash = (hash * 397) ^ StringComparer.Ordinal.GetHashCode(MetadataName);
-            hash = (hash * 397) ^ GenericArity;
-            hash = (hash * 397) ^ (int)Kind;
-            hash = (hash * 397) ^ (ContainingType?.GetHashCode() ?? 0);
-            return hash;
+            var hashes = new Stack<int>();
+            for (var current = this; current is not null; current = current.ContainingType)
+            {
+                var local = current.Assembly.GetHashCode();
+                local = (local * 397) ^ StringComparer.Ordinal.GetHashCode(current.Namespace);
+                local = (local * 397) ^ StringComparer.Ordinal.GetHashCode(current.MetadataName);
+                local = (local * 397) ^ current.GenericArity;
+                local = (local * 397) ^ (int)current.Kind;
+                hashes.Push(local * 397);
+            }
+            var result = 0;
+            while (hashes.Count != 0) result = hashes.Pop() ^ result;
+            return result;
         }
     }
 

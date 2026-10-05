@@ -1,6 +1,6 @@
 namespace AspectN.TypeSystem;
 
-/// <summary>Specifies the type system capabilities values.</summary>
+/// <summary>Advertises backend operations; individual queries may still return Unknown for unavailable metadata.</summary>
 [Flags]
 public enum TypeSystemCapabilities
 {

@@ -167,7 +167,7 @@ public sealed class StaticConstructorSelectorSyntax(
 {
 }
 
-/// <summary>Represents a attribute selector syntax node.</summary>
+/// <summary>Selects attributes on the locations described by its signature.</summary>
 /// <param name="keywordToken">Specifies the keyword token.</param>
 /// <param name="openParenToken">Specifies the open paren token.</param>
 /// <param name="body">Specifies the body.</param>

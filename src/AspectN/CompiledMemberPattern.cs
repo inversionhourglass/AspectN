@@ -5,7 +5,7 @@ using AspectN.TypeSystem;
 
 namespace AspectN;
 
-/// <summary>Represents a compiled compiled member pattern.</summary>
+/// <summary>Evaluates a bound member expression against a backend-neutral method signature.</summary>
 public sealed class CompiledMemberPattern : CompiledPattern
 {
     private readonly BoundExpression _root;
@@ -18,11 +18,11 @@ public sealed class CompiledMemberPattern : CompiledPattern
         _root = root ?? throw new ArgumentNullException(nameof(root));
     }
 
-    /// <summary>Evaluates match against the current matching context.</summary>
-    /// <param name="candidate">Specifies the candidate.</param>
-    /// <param name="typeSystem">Specifies the type system.</param>
+    /// <summary>Evaluates the candidate using the supplied backend and cancellation token.</summary>
+    /// <param name="candidate">Backend-neutral candidate signature.</param>
+    /// <param name="typeSystem">Backend providing metadata queries and declared type relationships.</param>
     /// <param name="cancellationToken">Specifies the cancellation token.</param>
-    /// <returns>Returns the result of the operation.</returns>
+    /// <returns>Matched, NotMatched, or Unknown with diagnostics when required facts are unavailable.</returns>
     public MatchResult Match(
         MethodSignature candidate,
         ITypeSystem typeSystem,
@@ -39,6 +39,7 @@ public sealed class CompiledMemberPattern : CompiledPattern
 #endif
 
         cancellationToken.ThrowIfCancellationRequested();
+        if (MetadataDepthGuard.ExceedsLimit(candidate, cancellationToken)) return MetadataDepthGuard.Failure();
         var context = new EvaluationContext(
             typeSystem,
             Options,

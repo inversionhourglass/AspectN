@@ -9,6 +9,9 @@ permissions:
   contents: read
 
 env:
+  CECIL_VERSION: 0.11.5
+  ROSLYN_VERSION: 4.12.0
+  FODY_HELPERS_VERSION: 6.8.1
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
 
@@ -38,28 +41,22 @@ jobs:
           "version=$($Matches.version)" >> $env:GITHUB_OUTPUT
 
       - name: Restore
-        run: dotnet restore AspectN.sln -p:CecilVersion=0.11.5 -p:RoslynVersion=4.12.0
+        run: dotnet restore AspectN.sln -p:CecilVersion=${{ env.CECIL_VERSION }} -p:RoslynVersion=${{ env.ROSLYN_VERSION }} -p:FodyHelpersVersion=${{ env.FODY_HELPERS_VERSION }} -p:Version=${{ steps.version.outputs.version }} -p:PackageVersion=${{ steps.version.outputs.version }}
 
-      - name: Build core, adapters, and conformance
-        # bash 封装带 -e -o pipefail，任一命令失败立即中止；pwsh 只保留最后一条命令的退出码。
-        shell: bash
-        run: |
-          dotnet build tests/AspectN.Tests/AspectN.Tests.csproj -c Release --no-restore
-          dotnet build tests/AspectN.Cecil.Tests/AspectN.Cecil.Tests.csproj -c Release --no-restore
-          dotnet build tests/AspectN.Cecil.Fody.Tests/AspectN.Cecil.Fody.Tests.csproj -c Release --no-restore
-          dotnet build tests/AspectN.Reflection.Tests/AspectN.Reflection.Tests.csproj -c Release --no-restore
-          dotnet build tests/AspectN.Roslyn.Tests/AspectN.Roslyn.Tests.csproj -c Release --no-restore
-          dotnet build tests/AspectN.Conformance.Tests/AspectN.Conformance.Tests.csproj -c Release --no-restore
+      - name: Build all release assets and tests
+        run: dotnet build AspectN.sln -c Release --no-restore -p:CecilVersion=${{ env.CECIL_VERSION }} -p:RoslynVersion=${{ env.ROSLYN_VERSION }} -p:FodyHelpersVersion=${{ env.FODY_HELPERS_VERSION }} -p:Version=${{ steps.version.outputs.version }} -p:PackageVersion=${{ steps.version.outputs.version }}
 
       - name: Test core, adapters, and conformance
         shell: bash
         run: |
-          dotnet test tests/AspectN.Tests/AspectN.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=core.trx" --results-directory artifacts/test-results/${{ runner.os }}
-          dotnet test tests/AspectN.Cecil.Tests/AspectN.Cecil.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=cecil.trx" --results-directory artifacts/test-results/${{ runner.os }}
-          dotnet test tests/AspectN.Cecil.Fody.Tests/AspectN.Cecil.Fody.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=cecil-fody.trx" --results-directory artifacts/test-results/${{ runner.os }}
-          dotnet test tests/AspectN.Reflection.Tests/AspectN.Reflection.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=reflection.trx" --results-directory artifacts/test-results/${{ runner.os }}
-          dotnet test tests/AspectN.Roslyn.Tests/AspectN.Roslyn.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=roslyn.trx" --results-directory artifacts/test-results/${{ runner.os }}
-          dotnet test tests/AspectN.Conformance.Tests/AspectN.Conformance.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=conformance.trx" --results-directory artifacts/test-results/${{ runner.os }}
+          dotnet test tests/AspectN.Tests/AspectN.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=core.trx" --results-directory artifacts/test-results/${{ runner.os }} -p:CecilVersion=${{ env.CECIL_VERSION }} -p:RoslynVersion=${{ env.ROSLYN_VERSION }} -p:FodyHelpersVersion=${{ env.FODY_HELPERS_VERSION }} -p:Version=${{ steps.version.outputs.version }} -p:PackageVersion=${{ steps.version.outputs.version }}
+          dotnet test tests/AspectN.Cecil.Tests/AspectN.Cecil.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=cecil.trx" --results-directory artifacts/test-results/${{ runner.os }} -p:CecilVersion=${{ env.CECIL_VERSION }} -p:RoslynVersion=${{ env.ROSLYN_VERSION }} -p:FodyHelpersVersion=${{ env.FODY_HELPERS_VERSION }} -p:Version=${{ steps.version.outputs.version }} -p:PackageVersion=${{ steps.version.outputs.version }}
+          dotnet test tests/AspectN.Cecil.Fody.Tests/AspectN.Cecil.Fody.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=cecil-fody.trx" --results-directory artifacts/test-results/${{ runner.os }} -p:CecilVersion=${{ env.CECIL_VERSION }} -p:RoslynVersion=${{ env.ROSLYN_VERSION }} -p:FodyHelpersVersion=${{ env.FODY_HELPERS_VERSION }} -p:Version=${{ steps.version.outputs.version }} -p:PackageVersion=${{ steps.version.outputs.version }}
+          dotnet test tests/AspectN.Reflection.Tests/AspectN.Reflection.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=reflection.trx" --results-directory artifacts/test-results/${{ runner.os }} -p:CecilVersion=${{ env.CECIL_VERSION }} -p:RoslynVersion=${{ env.ROSLYN_VERSION }} -p:FodyHelpersVersion=${{ env.FODY_HELPERS_VERSION }} -p:Version=${{ steps.version.outputs.version }} -p:PackageVersion=${{ steps.version.outputs.version }}
+          dotnet test tests/AspectN.Roslyn.Tests/AspectN.Roslyn.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=roslyn.trx" --results-directory artifacts/test-results/${{ runner.os }} -p:CecilVersion=${{ env.CECIL_VERSION }} -p:RoslynVersion=${{ env.ROSLYN_VERSION }} -p:FodyHelpersVersion=${{ env.FODY_HELPERS_VERSION }} -p:Version=${{ steps.version.outputs.version }} -p:PackageVersion=${{ steps.version.outputs.version }}
+          dotnet test tests/AspectN.Conformance.Tests/AspectN.Conformance.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=conformance.trx" --results-directory artifacts/test-results/${{ runner.os }} -p:CecilVersion=${{ env.CECIL_VERSION }} -p:RoslynVersion=${{ env.ROSLYN_VERSION }} -p:FodyHelpersVersion=${{ env.FODY_HELPERS_VERSION }} -p:Version=${{ steps.version.outputs.version }} -p:PackageVersion=${{ steps.version.outputs.version }}
+          dotnet test tests/AspectN.NetFramework.Tests/AspectN.NetFramework.Tests.csproj -c Release -f net472 --no-build --no-restore --logger "trx;LogFileName=net472.trx" --results-directory artifacts/test-results/${{ runner.os }} -p:CecilVersion=${{ env.CECIL_VERSION }} -p:RoslynVersion=${{ env.ROSLYN_VERSION }} -p:FodyHelpersVersion=${{ env.FODY_HELPERS_VERSION }} -p:Version=${{ steps.version.outputs.version }} -p:PackageVersion=${{ steps.version.outputs.version }}
+          dotnet test tests/AspectN.NetFramework.Tests/AspectN.NetFramework.Tests.csproj -c Release -f net10.0 --no-build --no-restore --logger "trx;LogFileName=netstandard-modern.trx" --results-directory artifacts/test-results/${{ runner.os }} -p:CecilVersion=${{ env.CECIL_VERSION }} -p:RoslynVersion=${{ env.ROSLYN_VERSION }} -p:FodyHelpersVersion=${{ env.FODY_HELPERS_VERSION }} -p:Version=${{ steps.version.outputs.version }} -p:PackageVersion=${{ steps.version.outputs.version }}
 
       - name: Upload test results
         if: always()
@@ -69,13 +66,14 @@ jobs:
           path: artifacts/test-results/${{ runner.os }}/*.trx
           if-no-files-found: error
 
-      - name: Verify package configuration and consumers
-        run: powershell -NoProfile -File eng/verify-packages.ps1
-
       - name: Pack release version
         shell: pwsh
         run: |
           $output = "artifacts/release"
+          $output = [System.IO.Path]::GetFullPath($output)
+          if ($output -ne [System.IO.Path]::GetFullPath((Join-Path $env:GITHUB_WORKSPACE "artifacts/release"))) {
+            throw "Unexpected release output directory."
+          }
           if (Test-Path -LiteralPath $output) {
             Remove-Item -LiteralPath $output -Recurse -Force
           }
@@ -88,11 +86,14 @@ jobs:
             "src/AspectN.Roslyn/AspectN.Roslyn.csproj",
             "src/AspectN.Reflection/AspectN.Reflection.csproj")
           foreach ($project in $projects) {
-            dotnet pack $project -c Release --output $output -p:Version=$version -p:PackageVersion=$version
+            dotnet pack $project -c Release --no-build --no-restore --output $output -p:Version=$version -p:PackageVersion=$version -p:CecilVersion=${{ env.CECIL_VERSION }} -p:RoslynVersion=${{ env.ROSLYN_VERSION }} -p:FodyHelpersVersion=${{ env.FODY_HELPERS_VERSION }}
             if ($LASTEXITCODE -ne 0) {
               throw "Packing '$project' failed."
             }
           }
+
+      - name: Verify final release packages and consumers
+        run: powershell -NoProfile -File eng/verify-packages.ps1 -ValidateExisting -PackageDirectory artifacts/release -PackageVersion ${{ steps.version.outputs.version }} -CecilVersion ${{ env.CECIL_VERSION }} -RoslynVersion ${{ env.ROSLYN_VERSION }} -FodyHelpersVersion ${{ env.FODY_HELPERS_VERSION }}
 
       - name: Record unsigned checksums
         shell: pwsh
@@ -103,10 +104,10 @@ jobs:
               $hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash
               "$hash *$($_.Name)"
             }
-          [System.IO.File]::WriteAllLines(
+          [System.IO.File]::WriteAllText(
             (Join-Path (Resolve-Path artifacts/release) "SHA256SUMS.unsigned"),
-            $lines,
-            [System.Text.Encoding]::ASCII)
+            (($lines -join "`n") + "`n"),
+            (New-Object System.Text.UTF8Encoding($false)))
 
       - name: Upload unsigned release artifacts
         uses: actions/upload-artifact@v4
@@ -184,10 +185,10 @@ jobs:
               $hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash
               "$hash *$($_.Name)"
             }
-          [System.IO.File]::WriteAllLines(
+          [System.IO.File]::WriteAllText(
             (Join-Path (Resolve-Path artifacts/release) "SHA256SUMS"),
-            $lines,
-            [System.Text.Encoding]::ASCII)
+            (($lines -join "`n") + "`n"),
+            (New-Object System.Text.UTF8Encoding($false)))
 
       - name: Upload signed release artifacts
         uses: actions/upload-artifact@v4

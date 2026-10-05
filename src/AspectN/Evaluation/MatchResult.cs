@@ -29,7 +29,7 @@ public sealed class MatchResult
     {
         Status = status;
         _diagnostics = new ReadOnlyCollection<AspectNDiagnostic>(
-            (diagnostics ?? Array.Empty<AspectNDiagnostic>()).ToArray());
+            DiagnosticSnapshot.Create(diagnostics));
         if (status == MatchStatus.Unknown && _diagnostics.Count == 0)
         {
             throw new ArgumentException(
@@ -41,13 +41,13 @@ public sealed class MatchResult
     /// <summary>Gets the status.</summary>
     public MatchStatus Status { get; }
 
-    /// <summary>Gets the diagnostics.</summary>
+    /// <summary>Gets immutable diagnostics in deterministic source/code order, with exact duplicates removed.</summary>
     public IReadOnlyList<AspectNDiagnostic> Diagnostics => _diagnostics;
 
-    /// <summary>Gets the matched.</summary>
+    /// <summary>Gets a successful result with no diagnostics.</summary>
     public static MatchResult Matched => _Matched;
 
-    /// <summary>Gets the not matched.</summary>
+    /// <summary>Gets a definite negative result with no diagnostics.</summary>
     public static MatchResult NotMatched => _NotMatched;
 
     /// <summary>Creates an unknown result with the supplied diagnostics.</summary>

@@ -22,9 +22,9 @@ public sealed class PropertySignature(
     MetadataAvailability? availability = null)
 {
     private readonly IReadOnlyList<AttributeSignature> _attributes = new ReadOnlyCollection<AttributeSignature>(
-            attributes.ToArray());
+            CollectionSnapshot.Copy(attributes, nameof(attributes)));
     private readonly IReadOnlyList<ParameterSignature> _parameters = new ReadOnlyCollection<ParameterSignature>(
-            parameters.ToArray());
+            CollectionSnapshot.Copy(parameters, nameof(parameters)));
 
     /// <summary>Gets the property name.</summary>
     public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));

@@ -48,6 +48,18 @@ public sealed class PublicApiTests
                 Assert.DoesNotContain(
                     adapterPrefixes,
                     prefix => UsesNamespace(type.BaseType, prefix));
+                var additionalTypes = type.GetInterfaces()
+                    .Concat(type.GetFields().Select(field => field.FieldType))
+                    .Concat(type.GetEvents().Select(@event => @event.EventHandlerType!))
+                    .Concat(type.GetGenericArguments().Where(argument => argument.IsGenericParameter)
+                        .SelectMany(argument => argument.GetGenericParameterConstraints()))
+                    .Concat(type.GetConstructors().SelectMany(constructor => constructor.GetParameters())
+                        .Select(parameter => parameter.ParameterType))
+                    .Concat(type.GetMethods().Where(method => method.IsGenericMethodDefinition)
+                        .SelectMany(method => method.GetGenericArguments())
+                        .SelectMany(argument => argument.GetGenericParameterConstraints()));
+                Assert.All(additionalTypes, exposed => Assert.DoesNotContain(adapterPrefixes,
+                    prefix => UsesNamespace(exposed, prefix)));
                 Assert.All(
                     type.GetProperties(),
                     property => Assert.DoesNotContain(

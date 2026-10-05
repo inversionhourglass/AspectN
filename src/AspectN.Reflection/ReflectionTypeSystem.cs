@@ -60,14 +60,14 @@ public sealed class ReflectionTypeSystem : ITypeSystem
         {
             // + 只匹配声明的继承/实现关系；IsAssignableFrom 额外包含数组协变与泛型变型，
             // 与模式路径的合成目标语义不一致，统一按名义闭包遍历（GetInterfaces 含运行时合成的数组接口）。
-            var pending = new Queue<Type>();
-            var visited = new HashSet<Type>();
-            pending.Enqueue(candidateType);
+            var pending = new Queue<(Type Type, Type? Context)>();
+            var visited = new HashSet<(Type Type, Type? Context)>();
+            pending.Enqueue((candidateType, null));
             while (pending.Count > 0)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var current = pending.Dequeue();
-                if (!visited.Add(current)) continue;
+                var (current, context) = pending.Dequeue();
+                if (!visited.Add((current, context))) continue;
                 var relation = CompareUnqualified(
                     Mapper.MapType(current),
                     target);
@@ -76,15 +76,7 @@ public sealed class ReflectionTypeSystem : ITypeSystem
                     return relation;
                 }
 
-                if (current.BaseType is not null)
-                {
-                    pending.Enqueue(current.BaseType);
-                }
-
-                foreach (var implementation in current.GetInterfaces())
-                {
-                    pending.Enqueue(implementation);
-                }
+                EnqueueNominalAncestors(current, pending, context);
             }
 
             return TypeRelationResult.NotMatched;
@@ -114,33 +106,18 @@ public sealed class ReflectionTypeSystem : ITypeSystem
         var closure = new List<TypeSignature>();
         try
         {
-            var pending = new Queue<Type>();
-            if (candidateType.BaseType is not null)
-            {
-                pending.Enqueue(candidateType.BaseType);
-            }
+            var pending = new Queue<(Type Type, Type? Context)>();
+            EnqueueNominalAncestors(candidateType, pending, null);
 
-            foreach (var implementation in candidateType.GetInterfaces())
-            {
-                pending.Enqueue(implementation);
-            }
-
-            var visited = new HashSet<Type>();
+            var visited = new HashSet<(Type Type, Type? Context)> { (candidateType, null) };
             while (pending.Count > 0)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var current = pending.Dequeue();
-                if (!visited.Add(current)) continue;
+                var (current, context) = pending.Dequeue();
+                if (!visited.Add((current, context))) continue;
+                if (current == candidateType) continue;
                 closure.Add(Mapper.MapType(current));
-                if (current.BaseType is not null)
-                {
-                    pending.Enqueue(current.BaseType);
-                }
-
-                foreach (var implementation in current.GetInterfaces())
-                {
-                    pending.Enqueue(implementation);
-                }
+                EnqueueNominalAncestors(current, pending, context);
             }
         }
         catch (Exception exception) when (IsMetadataFailure(exception))
@@ -236,93 +213,41 @@ public sealed class ReflectionTypeSystem : ITypeSystem
         }
     }
 
-    private static TypeRelationResult CompareUnqualified(
-        TypeSignature actual,
-        TypeSignature expected)
+    private static void EnqueueNominalAncestors(Type type, Queue<(Type Type, Type? Context)> pending, Type? context)
     {
-        if (actual.Kind == TypeSignatureKind.Unsupported ||
-            expected.Kind == TypeSignatureKind.Unsupported)
+        if (type.IsGenericParameter)
         {
-            return StructuralTypeComparer.AreEqual(actual, expected);
+            context ??= type.DeclaringMethod?.DeclaringType ?? type.DeclaringType;
+            pending.Enqueue((typeof(object), null));
+            if ((type.GenericParameterAttributes & GenericParameterAttributes.NotNullableValueTypeConstraint) != 0)
+                pending.Enqueue((typeof(ValueType), null));
+            foreach (var constraint in type.GetGenericParameterConstraints())
+                pending.Enqueue((SubstituteConstraint(constraint, context), context));
+            return;
         }
-
-        if (actual.Kind != expected.Kind)
-        {
-            return TypeRelationResult.NotMatched;
-        }
-
-        return actual switch
-        {
-            NamedTypeSignature actualNamed
-                when expected is NamedTypeSignature expectedNamed =>
-                    CompareNamed(actualNamed, expectedNamed),
-            ArrayTypeSignature actualArray
-                when expected is ArrayTypeSignature expectedArray =>
-                    actualArray.Rank == expectedArray.Rank && actualArray.Shape == expectedArray.Shape
-                        ? CompareUnqualified(
-                            actualArray.ElementType,
-                            expectedArray.ElementType)
-                        : TypeRelationResult.NotMatched,
-            _ => StructuralTypeComparer.AreEqual(actual, expected)
-        };
+        if (type.BaseType is not null) pending.Enqueue((type.BaseType, null));
+        foreach (var implementation in type.GetInterfaces()) pending.Enqueue((implementation, null));
     }
 
-    private static TypeRelationResult CompareNamed(
-        NamedTypeSignature actual,
-        NamedTypeSignature expected)
+    private static Type SubstituteConstraint(Type type, Type? context)
     {
-        if (!IdentityMatches(actual.Identity, expected.Identity) ||
-            actual.TypeArguments.Count != expected.TypeArguments.Count)
+        if (context is null || !context.IsConstructedGenericType) return type;
+        if (type.IsGenericParameter && type.DeclaringMethod is null)
+            return context.GetGenericArguments()[type.GenericParameterPosition];
+        if (type.IsArray)
         {
-            return TypeRelationResult.NotMatched;
+            var element = SubstituteConstraint(type.GetElementType()!, context);
+            return RuntimeTypeFacts.IsVector(type) ? element.MakeArrayType() : element.MakeArrayType(type.GetArrayRank());
         }
-
-        List<AspectNDiagnostic>? unknownDiagnostics = null;
-        for (var index = 0; index < actual.TypeArguments.Count; index++)
-        {
-            var relation = CompareUnqualified(
-                actual.TypeArguments[index],
-                expected.TypeArguments[index]);
-            if (relation.Status == MatchStatus.NotMatched) return relation;
-            if (relation.Status == MatchStatus.Unknown)
-            {
-                unknownDiagnostics ??= [];
-                unknownDiagnostics.AddRange(relation.Diagnostics);
-            }
-        }
-
-        return unknownDiagnostics is null
-            ? TypeRelationResult.Matched
-            : TypeRelationResult.Unknown(unknownDiagnostics.ToArray());
+        if (type.IsConstructedGenericType)
+            return type.GetGenericTypeDefinition().MakeGenericType(type.GetGenericArguments()
+                .Select(argument => SubstituteConstraint(argument, context)).ToArray());
+        return type;
     }
 
-    private static bool IdentityMatches(
-        TypeIdentity actual,
-        TypeIdentity expected)
+    private static TypeRelationResult CompareUnqualified(TypeSignature actual, TypeSignature expected)
     {
-        if ((!string.IsNullOrEmpty(expected.Assembly.Name) &&
-             actual.Assembly != expected.Assembly) ||
-            (!string.IsNullOrEmpty(expected.Namespace) &&
-             !StringComparer.Ordinal.Equals(
-                 actual.Namespace,
-                 expected.Namespace)) ||
-            !StringComparer.Ordinal.Equals(
-                actual.MetadataName,
-                expected.MetadataName) ||
-            actual.GenericArity != expected.GenericArity ||
-            (expected.Kind != TypeKind.Unknown &&
-             actual.Kind != expected.Kind))
-        {
-            return false;
-        }
-
-        if (actual.ContainingType is null || expected.ContainingType is null)
-        {
-            return actual.ContainingType is null &&
-                   expected.ContainingType is null;
-        }
-
-        return IdentityMatches(actual.ContainingType, expected.ContainingType);
+        return UnqualifiedStructuralComparer.AreEqual(actual, expected);
     }
 
     private static bool IsMetadataFailure(Exception exception)

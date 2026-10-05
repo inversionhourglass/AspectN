@@ -88,7 +88,7 @@ public sealed class SelectorParserTests
 
         var diagnostic = Assert.Single(tree.Diagnostics);
         Assert.Equal(
-            DiagnosticCodes.CompositeAccessibilityMigration,
+            DiagnosticCodes.CompoundAccessibilityMigration,
             diagnostic.Code);
         Assert.Contains(misspelled, diagnostic.Message, StringComparison.Ordinal);
         Assert.Contains(replacement, diagnostic.Message, StringComparison.Ordinal);

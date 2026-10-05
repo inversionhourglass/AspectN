@@ -8,18 +8,14 @@
     <PackageProjectUrl>https://github.com/AspectN/AspectN</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\AspectN\AspectN.csproj" />
     <Compile Include="..\Shared\OperatorMetadata.cs" Link="Internal\OperatorMetadata.cs" />
     <Compile Include="..\Shared\AttributeAvailability.cs" Link="Internal\AttributeAvailability.cs" />
     <Compile Include="..\Shared\ArrayRelations.cs" Link="Internal\ArrayRelations.cs" />
+    <Compile Include="..\Shared\FunctionPointerConventions.cs" Link="Internal\FunctionPointerConventions.cs" />
+    <Compile Include="..\Shared\UnqualifiedStructuralComparer.cs" Link="Internal\UnqualifiedStructuralComparer.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />

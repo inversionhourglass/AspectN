@@ -9,6 +9,53 @@ namespace AspectN.Tests.Evaluation;
 public sealed class RegexPatternTests
 {
     [Fact]
+    public async Task Match_SharedCanonicalTypeGraph_ReturnsUnknownWithoutExponentialOutput()
+    {
+        TypeSignature node = Named("System", "Int32", TypeKind.Struct);
+        var identity = new TypeIdentity(new AssemblyIdentity("Example"), "Example", "Box", 2, TypeKind.Class);
+        for (var index = 0; index < 40; index++) node = new NamedTypeSignature(identity, [node, node]);
+        var candidate = new MethodSignature("M", MethodKind.OrdinaryMethod, Accessibility.Public, false, false,
+            Named("Example", "Service"), new TypeUseSignature(node, RefKind.None, TypeUseKind.Return), [], [], [], [], []);
+        var result = await Task.Run(() => Match("regex(.*)", candidate)).WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.Equal(MatchStatus.Unknown, result.Status);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == DiagnosticCodes.MissingBackendCapability
+            && diagnostic.Message.Contains("formatting limit", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Match_CanonicalSignatureExceedsOutputLimit_ReturnsUnknown()
+    {
+        var result = Match("regex(.*)", Callable(new string('M', 100_000)));
+        Assert.Equal(MatchStatus.Unknown, result.Status);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == DiagnosticCodes.MissingBackendCapability);
+    }
+
+    [Fact]
+    public void Match_UnknownGenericDeclaration_ReturnsUnknownInsteadOfSourceName()
+    {
+        var missing = new GenericParameterSignature("SourceName", GenericParameterOwnerKind.Method,
+            "Other.M", new AssemblyIdentity("Other"), 0);
+        var candidate = new MethodSignature("M", MethodKind.OrdinaryMethod, Accessibility.Public, false, false,
+            Named("Example", "Service"),
+            new TypeUseSignature(new GenericParameterTypeSignature(missing), RefKind.None, TypeUseKind.Return),
+            [], [], [], [], []);
+        var result = Match("regex(SourceName)", candidate);
+        Assert.Equal(MatchStatus.Unknown, result.Status);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == DiagnosticCodes.MissingBackendCapability);
+    }
+
+    [Fact]
+    public void GenericParameterKey_SameDeclarationTextInDifferentAssemblies_IsDistinct()
+    {
+        var first = new GenericParameterKey(new GenericParameterSignature("T", GenericParameterOwnerKind.Type,
+            "Example.Owner", new AssemblyIdentity("First"), 0));
+        var second = new GenericParameterKey(new GenericParameterSignature("T", GenericParameterOwnerKind.Type,
+            "Example.Owner", new AssemblyIdentity("Second"), 0));
+        Assert.NotEqual(first, second);
+        Assert.Equal(2, new HashSet<GenericParameterKey> { first, second }.Count);
+    }
+
+    [Fact]
     public void Format_ComplexConstructedCallable_IsCanonical()
     {
         var candidate = ComplexCandidate();

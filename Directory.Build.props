@@ -12,8 +12,11 @@
     <RepositoryType>git</RepositoryType>
     <Authors>AspectN contributors</Authors>
     <Copyright>Copyright © AspectN contributors</Copyright>
+    <_AspectNProductionParent>$([System.IO.Path]::GetDirectoryName('$(MSBuildProjectDirectory)'))</_AspectNProductionParent>
+    <_AspectNSourceDirectory>$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', 'src'))</_AspectNSourceDirectory>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(IsPackable)' == 'true'">
+  <!-- All production libraries live directly under src; these defaults must precede SDK documentation-path evaluation. -->
+  <PropertyGroup Condition="'$(_AspectNProductionParent)' == '$(_AspectNSourceDirectory)'">
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>

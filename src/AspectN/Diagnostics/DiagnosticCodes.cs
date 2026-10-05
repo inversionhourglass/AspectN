@@ -3,6 +3,12 @@ namespace AspectN.Diagnostics;
 /// <summary>Represents diagnostic codes.</summary>
 public static class DiagnosticCodes
 {
+    /// <summary>Identifies syntax that exceeds the supported recursion or tree depth.</summary>
+    public static string InputDepthExceeded => "AN1002";
+
+    /// <summary>Identifies a candidate whose nested type structure exceeds matching limits.</summary>
+    public static string MetadataDepthExceeded => "AN3005";
+
     /// <summary>Identifies a recoverable metadata resolution or reading failure.</summary>
     public static string ResolutionFailure => "AN3004";
 
@@ -24,8 +30,8 @@ public static class DiagnosticCodes
     /// <summary>Gets the unexpected token.</summary>
     public static string UnexpectedToken => "AN1001";
 
-    /// <summary>Gets the composite accessibility modifier migration.</summary>
-    public static string CompositeAccessibilityMigration => "AN4003";
+    /// <summary>Identifies an obsolete compound accessibility spelling that requires spaces.</summary>
+    public static string CompoundAccessibilityMigration => "AN4003";
 
     /// <summary>Gets the tasklike void result migration.</summary>
     public static string TaskLikeVoidMigration => "AN4004";

@@ -12,6 +12,8 @@ public sealed class ReflectionSignatureMapper
 {
     private const string ASYNC_STATE_MACHINE_ATTRIBUTE =
         "System.Runtime.CompilerServices.AsyncStateMachineAttribute";
+    private const string ASYNC_ITERATOR_STATE_MACHINE_ATTRIBUTE =
+        "System.Runtime.CompilerServices.AsyncIteratorStateMachineAttribute";
     private const string IS_READ_ONLY_ATTRIBUTE =
         "System.Runtime.CompilerServices.IsReadOnlyAttribute";
     private const string REQUIRES_LOCATION_ATTRIBUTE =
@@ -25,12 +27,8 @@ public sealed class ReflectionSignatureMapper
 
     private readonly ConditionalWeakTable<MethodBase, MethodSignature>
         _callables = new();
-    private readonly ConditionalWeakTable<MethodSignature,
-        WeakReference<MemberInfo>> _callableReverse = new();
     private readonly ConditionalWeakTable<PropertyInfo, PropertySignature>
         _properties = new();
-    private readonly ConditionalWeakTable<PropertySignature,
-        WeakReference<MemberInfo>> _propertyReverse = new();
     private readonly ReflectionTypeCache _types = new();
 
     internal ReflectionSignatureMapper()
@@ -85,11 +83,7 @@ public sealed class ReflectionSignatureMapper
         if (method is null) throw new ArgumentNullException(nameof(method));
 #endif
 
-        var signature = _callables.GetValue(method, MapMethodCore);
-        _callableReverse.GetValue(
-            signature,
-            _ => new WeakReference<MemberInfo>(method));
-        return signature;
+        return _callables.GetValue(method, MapMethodCore);
     }
 
     /// <summary>Maps property metadata to an AspectN signature.</summary>
@@ -103,34 +97,12 @@ public sealed class ReflectionSignatureMapper
         if (property is null) throw new ArgumentNullException(nameof(property));
 #endif
 
-        var signature = _properties.GetValue(property, MapPropertyCore);
-        _propertyReverse.GetValue(
-            signature,
-            _ => new WeakReference<MemberInfo>(property));
-        return signature;
+        return _properties.GetValue(property, MapPropertyCore);
     }
 
     internal bool TryGetType(TypeSignature signature, out Type? type)
     {
         return _types.TryGetType(signature, out type);
-    }
-
-    internal bool TryGetMember(
-        MethodSignature signature,
-        out MemberInfo? member)
-    {
-        member = null;
-        return _callableReverse.TryGetValue(signature, out var reference) &&
-               reference.TryGetTarget(out member);
-    }
-
-    internal bool TryGetMember(
-        PropertySignature signature,
-        out MemberInfo? member)
-    {
-        member = null;
-        return _propertyReverse.TryGetValue(signature, out var reference) &&
-               reference.TryGetTarget(out member);
     }
 
     private TypeSignature MapTypeCore(Type type)
@@ -208,7 +180,7 @@ public sealed class ReflectionSignatureMapper
             GetMethodKind(method, associatedProperty),
             GetMethodAccessibility(method),
             method.IsStatic,
-            HasAttribute(method, ASYNC_STATE_MACHINE_ATTRIBUTE),
+            HasAttribute(method, ASYNC_STATE_MACHINE_ATTRIBUTE) || HasAttribute(method, ASYNC_ITERATOR_STATE_MACHINE_ATTRIBUTE),
             MapType(RequiredDeclaringType(method)),
             new TypeUseSignature(
                 MapType(UnwrapByReference(returnType)),
@@ -657,54 +629,69 @@ public sealed class ReflectionSignatureMapper
         // owner ID 必须能区分同名同元数的重载，参数形状参与身份；
         // 三个适配器按相同规则构造，跨适配器一致性由一致性测试快照保障。
         var parameters = method.GetParameters()
-            .Select(parameter => CanonicalParameterForm(
-                parameter.ParameterType))
+            .Select(CanonicalParameterForm)
             .ToArray();
-        return $"{MapMetadataName(RequiredDeclaringType(method))}." +
+        var owner = $"{MapMetadataName(RequiredDeclaringType(method))}." +
                $"{method.Name}`{method.GetGenericArguments().Length}" +
                $"({string.Join(",", parameters)})";
+        // 旧运行时不能读取调用约定时保留物理声明身份，避免仅约定不同的重载折叠。
+        return method.GetParameters().Any(parameter => RuntimeTypeFacts.MayHideFunctionPointer(parameter.ParameterType)) || parameters.Any(parameter =>
+            parameter.Contains("delegate*[unknown]") ||
+            parameter.Contains("delegate*[unmanaged:unknown]"))
+            ? $"{owner}#declaration:{method.Module.ModuleVersionId:N}/{method.MetadataToken:X8}"
+            : owner;
     }
 
     private static string CanonicalParameterForm(Type type)
+        => CanonicalParameterForm(type, false);
+
+    private static string CanonicalParameterForm(ParameterInfo parameter)
+    {
+        var type = RuntimeTypeFacts.GetParameterType(parameter, out var isModified);
+        return CanonicalParameterForm(type, isModified);
+    }
+
+    private static string CanonicalParameterForm(Type type, bool isModified)
     {
         if (type.IsGenericParameter)
         {
-            return (type.DeclaringMethod is null ? "!" : "!!") +
-                   type.GenericParameterPosition;
+            var parameter = type.UnderlyingSystemType;
+            return (parameter.DeclaringMethod is null ? "!" : "!!") +
+                   parameter.GenericParameterPosition;
         }
 
         if (type.IsByRef)
         {
-            return CanonicalParameterForm(RequiredElementType(type)) + "&";
+            return CanonicalParameterForm(RequiredElementType(type), isModified) + "&";
         }
 
         if (type.IsPointer)
         {
-            return CanonicalParameterForm(RequiredElementType(type)) + "*";
+            return CanonicalParameterForm(RequiredElementType(type), isModified) + "*";
         }
 
         // 函数指针的 Name/Namespace 为空，落入命名形式会把 owner ID 折叠成空参形状；
         // 形状由参数与返回类型的规范形式递归构造，与 Cecil、Roslyn 的
-        // delegate*[约定]<参数...,返回> 逐字节一致。运行时反射不暴露函数指针的
-        // CallKind 字节（GetFunctionPointerCallingConventions 只报告 modreq 形式，
-        // Roslyn 不为函数指针发出），调用约定按 managed 编码。
+        // delegate*[约定]<参数...,返回> 逐字节一致。必须保留 ParameterInfo 的
+        // modified Type 才能读取调用约定；原始 Type 的空列表不代表 managed。
         if (RuntimeTypeFacts.IsFunctionPointer(type))
         {
             var parameterForms = RuntimeTypeFacts
                 .GetFunctionPointerParameterTypes(type)
-                .Select(CanonicalParameterForm)
+                .Select(parameter => CanonicalParameterForm(parameter, isModified))
                 .Append(CanonicalParameterForm(
-                    RuntimeTypeFacts.GetFunctionPointerReturnType(type)));
-            return $"delegate*[managed]<{string.Join(",", parameterForms)}>";
+                    RuntimeTypeFacts.GetFunctionPointerReturnType(type), isModified));
+            var convention = RuntimeTypeFacts.CallingConvention(type, isModified);
+            return $"delegate*[{convention}]<{string.Join(",", parameterForms)}>";
         }
 
         if (type.IsArray)
         {
-            return CanonicalParameterForm(RequiredElementType(type)) +
+            return CanonicalParameterForm(RequiredElementType(type), isModified) +
                    (type.GetArrayRank() == 1 && !RuntimeTypeFacts.IsVector(type) ? "[*]" : ArraySuffix(type.GetArrayRank()));
         }
 
-        return ConstructedNamedForm(type);
+        return ConstructedNamedForm(type.UnderlyingSystemType);
     }
 
     // 嵌套构造类型的规范形式按包含链逐层携带各自的构造实参；与 Cecil、Roslyn 逐字节一致。

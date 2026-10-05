@@ -92,6 +92,7 @@ internal sealed partial class SelectorParser
 
     private MemberNamePatternSyntax ParseMemberName(int parentPrecedence = 0)
     {
+        using var nesting = _parser.DepthGuard.Enter(Current.Span);
         MemberNamePatternSyntax left;
         if (Current.Kind == SyntaxKind.BangToken)
         {

@@ -155,3 +155,18 @@ See the [language guide](../language/README.md) and the
 [normative language specification](../superpowers/specs/2026-07-31-aspectn-language-spec.md)
 and the [design decisions](../language/standard-design-decisions.md) for full
 semantics and rationale.
+
+## Constructing neutral signatures
+
+Current public names are `MethodSignature`, `MethodKind`, `MapMethod`, and `AttributeTarget.ForMethod`; historical intermediate Callable names are not compatibility aliases. A generic parameter declaration now includes its assembly identity:
+
+```csharp
+using AspectN.Metadata;
+
+var parameter = new GenericParameterSignature(
+    "T", GenericParameterOwnerKind.Type, "Example.Container`1",
+    new AssemblyIdentity("Example.Assembly"), position: 0);
+var type = new GenericParameterTypeSignature(parameter);
+```
+
+Use mapper-produced signatures where possible. Required collection arguments cannot be null; optional attribute collections default to empty. Parameter attributes require a zero-based ParameterIndex, and non-parameter attributes require null. InheritanceClosure copies its ancestor list and only accepts an Unknown failure. Runtime type-system capabilities advertise operations; unavailable metadata can still produce Unknown. Standalone type patterns do not carry ref-kind information—use member return/parameter positions for ref annotations.

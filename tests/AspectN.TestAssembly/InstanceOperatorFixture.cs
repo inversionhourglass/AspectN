@@ -1,4 +1,3 @@
-#if NET10_0_OR_GREATER
 namespace AspectN.TestAssembly;
 
 public sealed class InstanceOperatorFixture
@@ -60,4 +59,3 @@ public sealed class OperatorNamedMethodsFixture
     [System.Runtime.CompilerServices.SpecialName]
     public static int op_BitwiseOr(int left, params System.Collections.Generic.IEnumerable<int> right) => left + System.Linq.Enumerable.Count(right);
 }
-#endif

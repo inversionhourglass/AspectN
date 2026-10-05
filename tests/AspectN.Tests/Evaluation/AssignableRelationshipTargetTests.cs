@@ -241,6 +241,12 @@ public sealed class AssignableRelationshipTargetTests
             candidate);
 
         Assert.Equal(MatchStatus.NotMatched, result.Status);
+        var dictionary = Assert.IsType<NamedTypeSignature>(target);
+        Assert.Equal(2, dictionary.Identity.GenericArity);
+        var nested = Assert.IsType<NamedTypeSignature>(dictionary.TypeArguments[1]);
+        Assert.Equal("List", nested.Identity.MetadataName);
+        Assert.Equal(0, nested.Identity.GenericArity);
+        Assert.Empty(nested.TypeArguments);
     }
 
     [Fact]

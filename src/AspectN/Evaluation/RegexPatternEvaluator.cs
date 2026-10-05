@@ -24,9 +24,9 @@ internal static class RegexPatternEvaluator
             metadataStatus = MatchLogic.And(metadataStatus, MetadataQuery.Require(parameter.Type.Availability,
                 MetadataFacts.RefKind | MetadataFacts.ByReference, pattern, context));
         if (metadataStatus == MatchStatus.Unknown) return metadataStatus;
-        var signature = CanonicalSignatureFormatter.Format(candidate);
         try
         {
+            var signature = CanonicalSignatureFormatter.Format(candidate, context.CancellationToken);
             return Regex.IsMatch(
                 signature,
                 pattern.Pattern,
@@ -34,6 +34,12 @@ internal static class RegexPatternEvaluator
                 context.Options.RegexTimeout)
                 ? MatchStatus.Matched
                 : MatchStatus.NotMatched;
+        }
+        catch (CanonicalSignatureUnavailableException exception)
+        {
+            context.AddDiagnostic(new AspectNDiagnostic(DiagnosticCodes.MissingBackendCapability,
+                DiagnosticSeverity.Warning, exception.Message, pattern.Span));
+            return MatchStatus.Unknown;
         }
         catch (RegexMatchTimeoutException)
         {

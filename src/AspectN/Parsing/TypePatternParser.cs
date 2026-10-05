@@ -10,6 +10,7 @@ internal sealed class TypePatternParser
     private readonly Lexer _lexer;
     private readonly SourceText _source;
     private SyntaxToken _current;
+    private readonly ParserDepthGuard _depthGuard = new();
 
     public TypePatternParser(SourceText source)
     {
@@ -22,7 +23,18 @@ internal sealed class TypePatternParser
 
     public AspectNSyntaxTree Parse()
     {
-        SyntaxNode root = ParseTypeUseOrPattern();
+        SyntaxNode root;
+        try
+        {
+            root = ParseTypeUseOrPattern();
+        }
+        catch (ParserDepthException exception)
+        {
+            _diagnostics.Add(DiagnosticCodes.InputDepthExceeded, DiagnosticSeverity.Error,
+                "Parser recursion exceeds the supported depth of 128 levels.", exception.Span);
+            root = CreateMissingType(exception.Span.Start);
+            while (Current.Kind != SyntaxKind.EndOfFileToken) NextToken();
+        }
         while (Current.Kind != SyntaxKind.EndOfFileToken)
         {
             ReportUnexpected(Current, "end of input");
@@ -50,20 +62,18 @@ internal sealed class TypePatternParser
         {
             refKindTokens.Add(NextToken());
         }
-        else if (refKindTokens[0].Text is "out" or "in")
-        {
-            _diagnostics.Add(
-                DiagnosticCodes.UnexpectedToken,
-                DiagnosticSeverity.Error,
-                "Only ref and ref readonly are valid at the type-pattern entry point.",
-                refKindTokens[0].Span);
-        }
+        _diagnostics.Add(
+            DiagnosticCodes.InvalidRefKind,
+            DiagnosticSeverity.Error,
+            "Ref-kind annotations require a member parameter or return type use; the type-pattern entry point accepts types only.",
+            refKindTokens[0].Span);
 
         return new TypeUseSyntax(refKindTokens, ParseTypeExpression());
     }
 
     private TypePatternSyntax ParseTypeExpression(int parentPrecedence = 0)
     {
+        using var nesting = _depthGuard.Enter(Current.Span);
         TypePatternSyntax left;
         var unaryPrecedence = GetUnaryPrecedence(Current.Kind);
         if (unaryPrecedence != 0 && unaryPrecedence >= parentPrecedence)
@@ -192,6 +202,7 @@ internal sealed class TypePatternParser
             ParseNameSegment(firstNamePart)
         };
         var separators = new List<SyntaxToken>();
+        var inNestedType = false;
 
         while (Current.Kind is
                SyntaxKind.DotToken or
@@ -205,6 +216,9 @@ internal sealed class TypePatternParser
             }
 
             var separator = NextToken();
+            if (inNestedType && separator.Kind != SyntaxKind.SlashToken)
+                ReportUnexpected(separator, "'/' between nested types");
+            if (separator.Kind == SyntaxKind.SlashToken) inNestedType = true;
             separators.Add(separator);
             if (TypePatternSyntaxFacts.IsNamePart(Current) &&
                 Current.Span.Start != separator.Span.End)

@@ -1,6 +1,6 @@
 namespace AspectN;
 
-/// <summary>Represents a compiled compiled pattern.</summary>
+/// <summary>Stores options shared by compiled member and type patterns.</summary>
 public abstract class CompiledPattern
 {
     internal CompiledPattern(

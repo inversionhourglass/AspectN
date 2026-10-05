@@ -204,7 +204,9 @@ internal static class TypePatternEvaluator
         }
 
         var elements = new List<TypeSignature>();
-        if (!TryFlattenTuple(named, elements))
+        var shape = FlattenTuple(named, elements);
+        if (shape == MatchStatus.NotMatched) return shape;
+        if (shape == MatchStatus.Unknown)
         {
             return Unknown(
                 pattern,
@@ -272,7 +274,7 @@ internal static class TypePatternEvaluator
         return Evaluate(resultType, named.TypeArguments[0], context);
     }
 
-    private static bool TryFlattenTuple(
+    private static MatchStatus FlattenTuple(
         NamedTypeSignature tuple,
         List<TypeSignature> elements)
     {
@@ -280,10 +282,9 @@ internal static class TypePatternEvaluator
         while (true)
         {
             var arity = current.Identity.GenericArity;
-            if (arity < 1 || current.TypeArguments.Count != arity)
-            {
-                return false;
-            }
+            if (arity > 8) return MatchStatus.NotMatched;
+            if (current.TypeArguments.Count != arity) return MatchStatus.Unknown;
+            if (arity == 0) return MatchStatus.Matched;
 
             var directElementCount = arity == 8 ? 7 : arity;
             for (var index = 0; index < directElementCount; index++)
@@ -291,14 +292,13 @@ internal static class TypePatternEvaluator
                 elements.Add(current.TypeArguments[index]);
             }
 
-            if (arity != 8) return true;
-            if (current.TypeArguments[7] is not NamedTypeSignature rest ||
-                !IsTupleDefinition(rest.Identity))
-            {
-                return false;
-            }
-
-            current = rest;
+            if (arity != 8) return MatchStatus.Matched;
+            // 具体非元组 TRest 是已知形状错误；缺失类型或未实例化形参才是 Unknown。
+            var rest = current.TypeArguments[7];
+            if (rest is UnsupportedTypeSignature or GenericParameterTypeSignature) return MatchStatus.Unknown;
+            if (rest is not NamedTypeSignature restTuple || !IsTupleDefinition(restTuple.Identity))
+                return MatchStatus.NotMatched;
+            current = restTuple;
         }
     }
 

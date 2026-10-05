@@ -17,6 +17,22 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: true
 
 jobs:
+  reflection-runtime-fallback:
+    name: Reflection netstandard asset on .NET 7
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            10.0.x
+            7.0.20
+      - name: Build netstandard assets
+        run: dotnet build src/AspectN.Reflection/AspectN.Reflection.csproj -c Release -f netstandard2.0
+      - name: Verify function pointer declaration identity on old runtime
+        run: powershell -NoProfile -File eng/verify-function-pointer-fallback.ps1 -RuntimeVersion 7.0.20
+
   cecil:
     name: Mono.Cecil ${{ matrix.version }}
     runs-on: ubuntu-latest

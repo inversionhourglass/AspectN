@@ -1,6 +1,6 @@
 namespace AspectN.Parsing;
 
-/// <summary>Specifies the aspect nparse kind values.</summary>
+/// <summary>Identifies the member-expression or standalone type-pattern parsing entry point.</summary>
 public enum AspectNParseKind
 {
     MemberExpression,

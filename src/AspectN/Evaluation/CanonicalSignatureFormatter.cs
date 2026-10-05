@@ -7,11 +7,11 @@ internal static class CanonicalSignatureFormatter
 {
     // Standard 定义签名的泛型形参按扁平槽位渲染为 T1..Tn（外层类型从左到右、
     // 再内层、最后方法泛型），总数为 1 时渲染为裸 T；封闭构造仍展开实际实参。
-    public static string Format(MethodSignature candidate)
+    public static string Format(MethodSignature candidate, CancellationToken cancellationToken = default)
     {
         var genericNames = GenericParameterNamer.CreatePositionalNames(
             candidate);
-        var builder = new StringBuilder();
+        var builder = new BoundedSignatureBuilder(cancellationToken);
         builder.Append(
             FormatAccessibility(candidate.Accessibility));
         if (candidate.IsStatic) builder.Append(" static");
@@ -37,7 +37,7 @@ internal static class CanonicalSignatureFormatter
     }
 
     private static void AppendCallableGeneric(
-        StringBuilder builder,
+        BoundedSignatureBuilder builder,
         MethodSignature candidate,
         IReadOnlyDictionary<GenericParameterKey, string> genericNames)
     {
@@ -62,7 +62,7 @@ internal static class CanonicalSignatureFormatter
     }
 
     private static void AppendTypeUse(
-        StringBuilder builder,
+        BoundedSignatureBuilder builder,
         TypeUseSignature typeUse,
         IReadOnlyDictionary<GenericParameterKey, string> genericNames)
     {
@@ -78,7 +78,7 @@ internal static class CanonicalSignatureFormatter
     }
 
     private static void AppendType(
-        StringBuilder builder,
+        BoundedSignatureBuilder builder,
         TypeSignature type,
         IReadOnlyDictionary<GenericParameterKey, string> genericNames)
     {
@@ -109,7 +109,7 @@ internal static class CanonicalSignatureFormatter
     }
 
     private static void AppendNamedType(
-        StringBuilder builder,
+        BoundedSignatureBuilder builder,
         NamedTypeSignature named,
         IReadOnlyDictionary<GenericParameterKey, string> genericNames)
     {
@@ -142,7 +142,7 @@ internal static class CanonicalSignatureFormatter
     }
 
     private static void AppendNamedGeneric(
-        StringBuilder builder,
+        BoundedSignatureBuilder builder,
         int arity,
         TypeSignature[] arguments,
         ref int argumentOffset,
@@ -172,7 +172,7 @@ internal static class CanonicalSignatureFormatter
     }
 
     private static void AppendTypeList(
-        StringBuilder builder,
+        BoundedSignatureBuilder builder,
         IReadOnlyList<TypeSignature> arguments,
         IReadOnlyDictionary<GenericParameterKey, string> genericNames)
     {
@@ -187,16 +187,49 @@ internal static class CanonicalSignatureFormatter
     }
 
     private static void AppendGenericParameter(
-        StringBuilder builder,
+        BoundedSignatureBuilder builder,
         GenericParameterSignature parameter,
         IReadOnlyDictionary<GenericParameterKey, string> genericNames)
     {
-        builder.Append(
-            genericNames.TryGetValue(
-                new GenericParameterKey(parameter),
-                out var name)
-                ? name
-                : parameter.Name);
+        if (!genericNames.TryGetValue(new GenericParameterKey(parameter), out var name))
+            throw new CanonicalSignatureUnavailableException(
+                $"Cannot determine a positional generic name for declaration '{parameter.OwnerId}'.");
+        builder.Append(name);
+    }
+
+    // 深度合规的共享图也可能展开成指数长度文本，必须在分配输出前限制累计大小。
+    private sealed class BoundedSignatureBuilder(CancellationToken cancellationToken)
+    {
+        private const int MAX_LENGTH = 65_536;
+        private readonly StringBuilder _builder = new();
+
+        public void Append(string? value)
+        {
+            EnsureSpace(value?.Length ?? 0);
+            _builder.Append(value);
+        }
+
+        public void Append(char value)
+        {
+            EnsureSpace(1);
+            _builder.Append(value);
+        }
+
+        public void Append(char value, int count)
+        {
+            EnsureSpace(count);
+            _builder.Append(value, count);
+        }
+
+        public override string ToString() => _builder.ToString();
+
+        private void EnsureSpace(int length)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (length > MAX_LENGTH - _builder.Length)
+                throw new CanonicalSignatureUnavailableException(
+                    $"Canonical signature exceeds the {MAX_LENGTH}-character formatting limit.");
+        }
     }
 
     private static string FormatAccessibility(Accessibility accessibility)

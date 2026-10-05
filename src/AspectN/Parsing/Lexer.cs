@@ -26,7 +26,7 @@ internal sealed class Lexer
     public IReadOnlyList<AspectNDiagnostic> Diagnostics => _diagnostics.ToArray();
 
     // 供选择器解析做投机性前瞻：将词法位置回退到指定偏移重新扫描。
-    // 前瞻使用独立 Lexer 实例，诊断不会混入主实例。
+    // 前瞻使用独立 Lexer 实例；Reset 只移动游标，保留本实例已经产生的诊断。
     internal void Reset(int position)
     {
         _position = position;
@@ -44,7 +44,7 @@ internal sealed class Lexer
         }
 
         if (IsIdentifierStart(Current)) return LexIdentifier();
-        if (char.IsDigit(Current) || (Current == '-' && char.IsDigit(Peek(1))))
+        if (IsAsciiDigit(Current) || (Current == '-' && IsAsciiDigit(Peek(1))))
         {
             return LexInteger();
         }
@@ -330,7 +330,7 @@ internal sealed class Lexer
     {
         var start = _position;
         if (Current == '-') _position++;
-        while (!IsAtEnd && char.IsDigit(Current)) _position++;
+        while (!IsAtEnd && IsAsciiDigit(Current)) _position++;
 
         var span = new TextSpan(start, _position - start);
         var text = _source.Substring(span);
@@ -382,9 +382,20 @@ internal sealed class Lexer
             if (IsAtEnd) break;
 
             character = Current;
+            if (character is '\r' or '\n')
+            {
+                _diagnostics.Add(DiagnosticCodes.InvalidEscapeSequence, DiagnosticSeverity.Error,
+                    "A string escape cannot cross a physical line break.", new TextSpan(escapeStart, 1));
+                break;
+            }
             _position++;
             switch (character)
             {
+                case 'u':
+                case 'U':
+                case 'x':
+                    LexUnicodeEscape(value, character, escapeStart);
+                    break;
                 case '\'':
                     value.Append('\'');
                     break;
@@ -444,6 +455,39 @@ internal sealed class Lexer
             span,
             _source.Substring(span),
             value.ToString());
+    }
+
+    private static bool IsAsciiDigit(char character) => character is >= '0' and <= '9';
+
+    private void LexUnicodeEscape(StringBuilder value, char escape, int escapeStart)
+    {
+        var maximum = escape == 'U' ? 8 : 4;
+        var minimum = escape == 'x' ? 1 : maximum;
+        var count = 0;
+        uint scalar = 0;
+        while (!IsAtEnd && count < maximum)
+        {
+            var digit = Current switch
+            {
+                >= '0' and <= '9' => Current - '0',
+                >= 'a' and <= 'f' => Current - 'a' + 10,
+                >= 'A' and <= 'F' => Current - 'A' + 10,
+                _ => -1
+            };
+            if (digit < 0) break;
+            scalar = (scalar << 4) | (uint)digit;
+            _position++;
+            count++;
+        }
+        if (count < minimum || scalar > 0x10FFFF)
+        {
+            _diagnostics.Add(DiagnosticCodes.InvalidEscapeSequence, DiagnosticSeverity.Error,
+                "Invalid Unicode string escape sequence.", new TextSpan(escapeStart, _position - escapeStart));
+            return;
+        }
+        // BMP 转义保留 UTF-16 代码单元；补充平面码点按代理对写入字符串。
+        if (scalar <= 0xFFFF) value.Append((char)scalar);
+        else value.Append(char.ConvertFromUtf32((int)scalar));
     }
 
     private SyntaxToken CreateToken(SyntaxKind kind, int start)

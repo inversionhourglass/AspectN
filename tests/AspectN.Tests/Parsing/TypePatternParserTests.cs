@@ -1,3 +1,4 @@
+using AspectN.Diagnostics;
 using AspectN.Syntax;
 using AspectN.Text;
 
@@ -109,7 +110,7 @@ public sealed class TypePatternParserTests
     }
 
     [Fact]
-    public void ParseTypePattern_RefReadonly_CreatesTypeUse()
+    public void ParseTypePattern_RefReadonly_PreservesTypeUseAndRejectsStandaloneRefKind()
     {
         var tree = AspectNParser.ParseTypePattern("ref readonly int");
 
@@ -119,7 +120,7 @@ public sealed class TypePatternParserTests
             token => Assert.Equal("ref", token.Text),
             token => Assert.Equal("readonly", token.Text));
         Assert.IsType<NamedTypePatternSyntax>(typeUse.TypePattern);
-        Assert.Empty(tree.Diagnostics);
+        Assert.Equal(DiagnosticCodes.InvalidRefKind, Assert.Single(tree.Diagnostics).Code);
     }
 
     [Theory]

@@ -238,7 +238,7 @@ method(tasklike<string> Service.Get(..))
 method(tasklike Service.Flush(..))
 ```
 
-`tasklike<T>` matches `Task<T>` or `ValueTask<T>` regardless of whether the method was compiled with `async`. Bare `tasklike` matches non-generic `Task` or `ValueTask`; `tasklike<void>` is rejected with a migration diagnostic. Custom awaitables are outside 1.0 task-like syntax.
+`tasklike<T>` matches `Task<T>` or `ValueTask<T>` regardless of whether the method was compiled with `async`. Bare `tasklike` matches non-generic `Task` or `ValueTask`; `tasklike<void>` and `tasklike<System.Void>` are rejected with a migration diagnostic. Custom awaitables are outside 1.0 task-like syntax.
 
 The historical `async` return sugar is unsupported. General `MethodSignature.IsAsync` metadata remains available to consumers.
 
@@ -361,6 +361,9 @@ Rules:
 ## 12. Type Patterns
 
 ### 12.1 Structure
+
+Parentheses group Boolean type expressions such as `(A || B)`. A lone `(int)` is rejected; write `int`. Tuple syntax requires at least two elements, so `()` and `(int,)` are invalid. Standalone `ParseTypePattern` accepts pure type patterns; `ref`, `out`, `in`, `ref readonly`, and `!ref` belong to member return/parameter type-use positions.
+
 
 ```ebnf
 type-pattern =
@@ -638,7 +641,7 @@ regex-selector = "regex", "(", regex-body, ")" ;
 
 `regex-body` preserves its original characters. The closing delimiter is the unmatched outer `)` after honoring escapes, character classes, nested regex groups, and `(?#...)` comments. Comment content is opaque — escapes, character classes, and groups are not recognized inside it — and the comment ends at the first `)`. `(?#` opens a comment only outside an escape and outside a character class, so `\(` and `[(` never start one.
 
-Regex applies to one culture-invariant canonical member signature:
+Regex uses culture-invariant `Regex.IsMatch` substring search on one canonical member signature. Use `^...$` for a full-signature match:
 
 ```text
 <accessibility> [static] <return-type> <declaring-type>.<member-name><generic-part>(<parameters>)
@@ -724,3 +727,13 @@ method(* Service.*(..)) && !attr(call ObsoleteAttribute)
 ## 20. Design Rationale and Migration
 
 The [design decisions](../../language/standard-design-decisions.md) explain the name model, generic arity, wildcard family, ref kinds and structural suffix rules. The [migration guide](../../migration/shared-cecil-to-aspectn.md) describes the breaking transition from Shared.Cecil.AspectN and the removed public APIs.
+
+## 18. Implementation limits and diagnostic presentation
+
+Parsing limits recursive nesting to 128 entries and resulting syntax-tree depth to 256 nodes. Exceeding either limit reports AN1002 and prevents binding. Candidate type structures deeper than 256 nodes produce Unknown/AN3005 before evaluation. These are robustness limits, not an alternate grammar.
+
+Public diagnostic collections are immutable snapshots. Exact duplicates with the same code, severity, span and message are removed. Ordering is by span start (unlocated diagnostics last), ordinal code, severity, span length, then ordinal message. Distinct messages at the same code/span remain distinct.
+
+Regex generic names require declaration identity and positional slots. An incomplete externally constructed signature that cannot supply them produces Unknown/AN3001; the formatter never substitutes source parameter names.
+
+Canonical regex signatures are limited to 65,536 UTF-16 characters. The formatter checks this cumulative budget before appending, including repeated shared-type subgraphs and bulk array-rank punctuation. Exceeding the budget produces Unknown/AN3001 with a formatting-limit diagnostic. Formatting observes the match cancellation token; the regex timeout starts only after formatting.

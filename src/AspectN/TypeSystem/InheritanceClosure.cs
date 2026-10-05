@@ -12,8 +12,10 @@ public sealed class InheritanceClosure
         IReadOnlyList<TypeSignature> ancestors,
         TypeRelationResult? failure)
     {
-        Ancestors = ancestors ??
-            throw new ArgumentNullException(nameof(ancestors));
+        Ancestors = new System.Collections.ObjectModel.ReadOnlyCollection<TypeSignature>(
+            CollectionSnapshot.Copy(ancestors, nameof(ancestors)));
+        if (failure is not null && failure.Status != Evaluation.MatchStatus.Unknown)
+            throw new ArgumentException("A partial closure requires an Unknown failure.", nameof(failure));
         Failure = failure;
     }
 

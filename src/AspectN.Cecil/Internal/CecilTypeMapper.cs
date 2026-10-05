@@ -344,11 +344,24 @@ internal static class CecilTypeMapper
     // 逐字节一致；Cecil 的 FullName 不含调用约定，无法区分仅调用约定不同的重载。
     private static string FunctionPointerForm(FunctionPointerType functionPointer)
     {
+        var conventions = new List<string>();
+        var returnType = functionPointer.ReturnType;
+        while (returnType is OptionalModifierType or RequiredModifierType)
+        {
+            if (returnType is OptionalModifierType optional)
+            {
+                if (optional.ModifierType.FullName.StartsWith("System.Runtime.CompilerServices.CallConv", StringComparison.Ordinal))
+                    conventions.Add(optional.ModifierType.FullName);
+                returnType = optional.ElementType;
+            }
+            else returnType = ((RequiredModifierType)returnType).ElementType;
+        }
         var forms = functionPointer.Parameters
             .Select(parameter => CanonicalParameterForm(parameter.ParameterType))
             .Append(CanonicalParameterForm(functionPointer.ReturnType));
         return "delegate*[" +
-               CallingConventionToken(functionPointer.CallingConvention) +
+               AspectN.AdapterInternals.FunctionPointerConventions.Format(
+                   CallingConventionToken(functionPointer.CallingConvention), conventions) +
                "]<" +
                string.Join(",", forms) +
                ">";

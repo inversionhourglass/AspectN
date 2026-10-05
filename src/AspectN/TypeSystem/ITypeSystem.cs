@@ -5,7 +5,7 @@ namespace AspectN.TypeSystem;
 /// <summary>Defines the backend-neutral type and metadata operations used by AspectN matching.</summary>
 public interface ITypeSystem
 {
-    /// <summary>Gets the capabilities supported by the type system.</summary>
+    /// <summary>Gets advertised backend operations. Structural equality can succeed without native metadata; attribute selectors require DirectAttributeLookup.</summary>
     TypeSystemCapabilities Capabilities { get; }
 
     /// <summary>Compares two type signatures for structural equality.</summary>
@@ -14,7 +14,7 @@ public interface ITypeSystem
     /// <returns>The comparison result.</returns>
     TypeRelationResult AreEqual(TypeSignature left, TypeSignature right);
 
-    /// <summary>Determines whether one type signature is assignable to another.</summary>
+    /// <summary>Tests structural identity or declared base/interface/constraint relationships, excluding arbitrary CLR conversions.</summary>
     /// <param name="candidate">The candidate type signature.</param>
     /// <param name="target">The target type signature.</param>
     /// <param name="cancellationToken">The token used to cancel the operation.</param>

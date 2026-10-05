@@ -90,15 +90,7 @@ public sealed class RoslynTypeSystem : ITypeSystem
                     return relation;
                 }
 
-                if (current.BaseType is not null)
-                {
-                    pending.Enqueue(current.BaseType);
-                }
-
-                foreach (var implementation in current.Interfaces)
-                {
-                    pending.Enqueue(implementation);
-                }
+                EnqueueNominalAncestors(current, pending);
             }
 
             return TypeRelationResult.NotMatched;
@@ -129,33 +121,17 @@ public sealed class RoslynTypeSystem : ITypeSystem
         try
         {
             var pending = new Queue<ITypeSymbol>();
-            if (candidateSymbol.BaseType is not null)
-            {
-                pending.Enqueue(candidateSymbol.BaseType);
-            }
-
-            foreach (var implementation in candidateSymbol.Interfaces)
-            {
-                pending.Enqueue(implementation);
-            }
+            EnqueueNominalAncestors(candidateSymbol, pending);
 
             var visited = new HashSet<ITypeSymbol>(
-                SymbolEqualityComparer.Default);
+                SymbolEqualityComparer.Default) { candidateSymbol };
             while (pending.Count > 0)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var current = pending.Dequeue();
                 if (!visited.Add(current)) continue;
                 closure.Add(Mapper.MapType(current));
-                if (current.BaseType is not null)
-                {
-                    pending.Enqueue(current.BaseType);
-                }
-
-                foreach (var implementation in current.Interfaces)
-                {
-                    pending.Enqueue(implementation);
-                }
+                EnqueueNominalAncestors(current, pending);
             }
         }
         catch (Exception exception) when (IsSymbolFailure(exception))
@@ -254,93 +230,24 @@ public sealed class RoslynTypeSystem : ITypeSystem
         }
     }
 
-    private static TypeRelationResult CompareUnqualified(
-        TypeSignature actual,
-        TypeSignature expected)
+    private void EnqueueNominalAncestors(ITypeSymbol symbol, Queue<ITypeSymbol> pending)
     {
-        if (actual.Kind == TypeSignatureKind.Unsupported ||
-            expected.Kind == TypeSignatureKind.Unsupported)
+        if (symbol is ITypeParameterSymbol parameter)
         {
-            return StructuralTypeComparer.AreEqual(actual, expected);
+            // Roslyn 的类型形参没有普通 BaseType/Interfaces；使用声明约束并补充隐含基类。
+            pending.Enqueue(Compilation.GetSpecialType(SpecialType.System_Object));
+            if (parameter.HasValueTypeConstraint || parameter.HasUnmanagedTypeConstraint)
+                pending.Enqueue(Compilation.GetSpecialType(SpecialType.System_ValueType));
+            foreach (var constraint in parameter.ConstraintTypes) pending.Enqueue(constraint);
+            return;
         }
-
-        if (actual.Kind != expected.Kind)
-        {
-            return TypeRelationResult.NotMatched;
-        }
-
-        return actual switch
-        {
-            NamedTypeSignature actualNamed
-                when expected is NamedTypeSignature expectedNamed =>
-                    CompareNamed(actualNamed, expectedNamed),
-            ArrayTypeSignature actualArray
-                when expected is ArrayTypeSignature expectedArray =>
-                    actualArray.Rank == expectedArray.Rank && actualArray.Shape == expectedArray.Shape
-                        ? CompareUnqualified(
-                            actualArray.ElementType,
-                            expectedArray.ElementType)
-                        : TypeRelationResult.NotMatched,
-            _ => StructuralTypeComparer.AreEqual(actual, expected)
-        };
+        if (symbol.BaseType is not null) pending.Enqueue(symbol.BaseType);
+        foreach (var implementation in symbol.Interfaces) pending.Enqueue(implementation);
     }
 
-    private static TypeRelationResult CompareNamed(
-        NamedTypeSignature actual,
-        NamedTypeSignature expected)
+    private static TypeRelationResult CompareUnqualified(TypeSignature actual, TypeSignature expected)
     {
-        if (!IdentityMatches(actual.Identity, expected.Identity) ||
-            actual.TypeArguments.Count != expected.TypeArguments.Count)
-        {
-            return TypeRelationResult.NotMatched;
-        }
-
-        List<AspectNDiagnostic>? unknownDiagnostics = null;
-        for (var index = 0; index < actual.TypeArguments.Count; index++)
-        {
-            var relation = CompareUnqualified(
-                actual.TypeArguments[index],
-                expected.TypeArguments[index]);
-            if (relation.Status == MatchStatus.NotMatched) return relation;
-            if (relation.Status == MatchStatus.Unknown)
-            {
-                unknownDiagnostics ??= [];
-                unknownDiagnostics.AddRange(relation.Diagnostics);
-            }
-        }
-
-        return unknownDiagnostics is null
-            ? TypeRelationResult.Matched
-            : TypeRelationResult.Unknown(unknownDiagnostics.ToArray());
-    }
-
-    private static bool IdentityMatches(
-        TypeIdentity actual,
-        TypeIdentity expected)
-    {
-        if ((!string.IsNullOrEmpty(expected.Assembly.Name) &&
-             actual.Assembly != expected.Assembly) ||
-            (!string.IsNullOrEmpty(expected.Namespace) &&
-             !StringComparer.Ordinal.Equals(
-                 actual.Namespace,
-                 expected.Namespace)) ||
-            !StringComparer.Ordinal.Equals(
-                actual.MetadataName,
-                expected.MetadataName) ||
-            actual.GenericArity != expected.GenericArity ||
-            (expected.Kind != CoreTypeKind.Unknown &&
-             actual.Kind != expected.Kind))
-        {
-            return false;
-        }
-
-        if (actual.ContainingType is null || expected.ContainingType is null)
-        {
-            return actual.ContainingType is null &&
-                   expected.ContainingType is null;
-        }
-
-        return IdentityMatches(actual.ContainingType, expected.ContainingType);
+        return UnqualifiedStructuralComparer.AreEqual(actual, expected);
     }
 
     private static bool IsSymbolFailure(Exception exception)

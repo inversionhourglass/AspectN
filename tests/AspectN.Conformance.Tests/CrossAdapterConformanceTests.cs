@@ -55,13 +55,26 @@ public sealed class CrossAdapterConformanceTests :
     public void FixtureCase_ThreeBackends_ProduceEquivalentResults(
         ConformanceCase @case)
     {
-        if (@case.Kind == "nested-type")
+        switch (@case.Kind)
         {
-            AssertTypeCase(@case);
-            return;
+            case "nested-type":
+                AssertTypeCase(@case);
+                break;
+            case "method":
+                AssertCallableCase(@case);
+                break;
+            default:
+                throw new ArgumentException($"Conformance case '{@case.Id}' has unknown kind '{@case.Kind}'.", nameof(@case));
         }
+    }
 
-        AssertCallableCase(@case);
+    [Fact]
+    public void FixtureCase_UnknownKind_ReportsCaseIdentity()
+    {
+        var exception = Assert.Throws<ArgumentException>(() => FixtureCase_ThreeBackends_ProduceEquivalentResults(
+            new ConformanceCase { Id = "misspelled-kind", Kind = "methdo" }));
+        Assert.Contains("misspelled-kind", exception.Message);
+        Assert.Contains("methdo", exception.Message);
     }
 
     [Fact]
@@ -476,6 +489,7 @@ internal static class SignatureSnapshot
             string.Join(";", signature.GenericArguments.Select(Type)),
             Attributes(signature.Attributes),
             Attributes(signature.ReturnAttributes),
+            Attributes(signature.TypeAttributes),
             signature.OriginalDefinition is null
                 ? string.Empty
                 : CallableDefinition(signature.OriginalDefinition),

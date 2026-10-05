@@ -13,6 +13,9 @@ public sealed class CecilContextTests
 
         Assert.Same(module, typeSystem.Module);
         Assert.Same(typeSystem.Mapper, typeSystem.Mapper);
+        Assert.NotNull(typeSystem.Mapper);
+        var mapped = Assert.IsType<AspectN.Metadata.NamedTypeSignature>(typeSystem.Mapper.MapType(module.TypeSystem.String));
+        Assert.Equal("System.String", mapped.Identity.FullMetadataName);
         Assert.IsAssignableFrom<ITypeSystem>(typeSystem);
         Assert.IsAssignableFrom<IDisposable>(typeSystem);
         Assert.Equal(

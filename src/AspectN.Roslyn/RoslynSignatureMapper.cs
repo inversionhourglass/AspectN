@@ -145,7 +145,7 @@ public sealed class RoslynSignatureMapper
                 new GenericParameterTypeSignature(
                     MapGenericParameter(parameter)),
             IPointerTypeSymbol pointer => new UnsupportedTypeSignature(
-                pointer.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                CanonicalParameterForm(pointer),
                 "Roslyn pointer types are unsupported."),
             IFunctionPointerTypeSymbol functionPointer =>
                 new UnsupportedTypeSignature(
@@ -189,7 +189,10 @@ public sealed class RoslynSignatureMapper
             MapMethodKind(methodSymbol),
             MapAccessibility(methodSymbol.DeclaredAccessibility),
             methodSymbol.IsStatic,
-            methodSymbol.IsAsync,
+            methodSymbol.IsAsync || methodSymbol.GetAttributes().Any(attribute =>
+                attribute.AttributeClass?.ToDisplayString() is
+                    "System.Runtime.CompilerServices.AsyncStateMachineAttribute" or
+                    "System.Runtime.CompilerServices.AsyncIteratorStateMachineAttribute"),
             MapType(methodSymbol.ContainingType),
             new TypeUseSignature(
                 MapType(methodSymbol.ReturnType),
@@ -499,6 +502,8 @@ public sealed class RoslynSignatureMapper
     {
         switch (type)
         {
+            case IDynamicTypeSymbol:
+                return "System.Object";
             case ITypeParameterSymbol parameter:
                 return parameter.TypeParameterKind ==
                     TypeParameterKind.Method
@@ -538,7 +543,8 @@ public sealed class RoslynSignatureMapper
                     ? string.Empty
                     : "&"));
         return "delegate*[" +
-               CallingConventionToken(signature.CallingConvention) +
+               FunctionPointerConventions.Format(CallingConventionToken(signature.CallingConvention),
+                   signature.UnmanagedCallingConventionTypes.Select(type => type.ToDisplayString())) +
                "]<" +
                string.Join(",", forms) +
                ">";

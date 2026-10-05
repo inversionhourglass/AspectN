@@ -32,7 +32,7 @@ public sealed class AspectNCompilation
                 options)
             : null;
         _diagnostics = new ReadOnlyCollection<AspectNDiagnostic>(
-            diagnostics.ToArray());
+            DiagnosticSnapshot.Create(diagnostics));
     }
 
     /// <summary>Gets the syntax tree.</summary>
@@ -41,7 +41,7 @@ public sealed class AspectNCompilation
     /// <summary>Gets the options.</summary>
     public AspectNCompilationOptions Options { get; }
 
-    /// <summary>Gets the diagnostics.</summary>
+    /// <summary>Gets immutable diagnostics in deterministic source/code order, with exact duplicates removed.</summary>
     public IReadOnlyList<AspectNDiagnostic> Diagnostics => _diagnostics;
 
     internal BoundNode? BoundRoot { get; }

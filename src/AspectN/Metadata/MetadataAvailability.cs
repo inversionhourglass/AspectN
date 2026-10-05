@@ -44,7 +44,7 @@ public sealed class MetadataAvailability
             throw new ArgumentOutOfRangeException(nameof(unavailableFacts));
         UnavailableFacts = unavailableFacts;
         _diagnostics = new ReadOnlyCollection<AspectNDiagnostic>(
-            (diagnostics ?? Array.Empty<AspectNDiagnostic>()).ToArray());
+            DiagnosticSnapshot.Create(diagnostics));
     }
 
     /// <summary>Gets the shared snapshot used when all signature facts are readable.</summary>

@@ -20,9 +20,22 @@ internal sealed partial class Parser
 
     private SyntaxToken Current => _current;
 
+    internal ParserDepthGuard DepthGuard { get; } = new();
+
     public AspectNSyntaxTree ParseMemberExpression()
     {
-        var root = ParseExpression();
+        ExpressionSyntax root;
+        try
+        {
+            root = ParseExpression();
+        }
+        catch (ParserDepthException exception)
+        {
+            _diagnostics.Add(DiagnosticCodes.InputDepthExceeded, DiagnosticSeverity.Error,
+                "Parser recursion exceeds the supported depth of 128 levels.", exception.Span);
+            root = CreateMissingSelector(exception.Span.Start);
+            while (Current.Kind != SyntaxKind.EndOfFileToken) NextToken();
+        }
         while (Current.Kind != SyntaxKind.EndOfFileToken)
         {
             ReportUnexpected(Current, "end of input");
@@ -38,6 +51,7 @@ internal sealed partial class Parser
 
     private ExpressionSyntax ParseExpression(int parentPrecedence = 0)
     {
+        using var nesting = DepthGuard.Enter(Current.Span);
         ExpressionSyntax left;
         var unaryPrecedence = GetUnaryPrecedence(Current.Kind);
         if (unaryPrecedence != 0 && unaryPrecedence >= parentPrecedence)

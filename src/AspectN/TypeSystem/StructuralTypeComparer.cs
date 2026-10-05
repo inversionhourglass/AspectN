@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using AspectN.Diagnostics;
 using AspectN.Evaluation;
 using AspectN.Metadata;
@@ -23,55 +24,43 @@ public static class StructuralTypeComparer
         if (right is null) throw new ArgumentNullException(nameof(right));
 #endif
 
-        if (left.Kind == TypeSignatureKind.Unsupported ||
-            right.Kind == TypeSignatureKind.Unsupported)
-        {
-            return Unsupported(left, right);
-        }
-
-        if (left.Kind != right.Kind)
-        {
-            return TypeRelationResult.NotMatched;
-        }
-
-        return left switch
-        {
-            NamedTypeSignature leftNamed when right is NamedTypeSignature rightNamed =>
-                CompareNamed(leftNamed, rightNamed),
-            ArrayTypeSignature leftArray when right is ArrayTypeSignature rightArray =>
-                CompareArray(leftArray, rightArray),
-            GenericParameterTypeSignature leftParameter
-                when right is GenericParameterTypeSignature rightParameter =>
-                CompareGenericParameter(leftParameter, rightParameter),
-            _ => Unsupported(left, right)
-        };
-    }
-
-    private static TypeRelationResult CompareNamed(
-        NamedTypeSignature left,
-        NamedTypeSignature right)
-    {
-        if (left.Identity != right.Identity ||
-            left.TypeArguments.Count != right.TypeArguments.Count)
-        {
-            return TypeRelationResult.NotMatched;
-        }
-
+        var pending = new Stack<(TypeSignature Left, TypeSignature Right)>();
+        var visited = new HashSet<(TypeSignature Left, TypeSignature Right)>(SignaturePairComparer.Instance);
+        pending.Push((left, right));
         List<AspectNDiagnostic>? unknownDiagnostics = null;
-        for (var index = 0; index < left.TypeArguments.Count; index++)
+        // 使用显式工作栈，保持 NotMatched 优先于其他分支的 Unknown。
+        while (pending.Count != 0)
         {
-            var result = AreEqual(
-                left.TypeArguments[index],
-                right.TypeArguments[index]);
-            if (result.Status == MatchStatus.NotMatched)
-            {
-                return result;
-            }
-
-            if (result.Status == MatchStatus.Unknown)
+            var pair = pending.Pop();
+            // 共享子图只比较一次；引用相同的 Unsupported 节点仍须保留 Unknown。
+            if (!visited.Add(pair)) continue;
+            if (pair.Left.Kind == TypeSignatureKind.Unsupported || pair.Right.Kind == TypeSignatureKind.Unsupported)
             {
                 unknownDiagnostics ??= [];
-                unknownDiagnostics.AddRange(result.Diagnostics);
+                unknownDiagnostics.AddRange(Unsupported(pair.Left, pair.Right).Diagnostics);
+                continue;
+            }
+            if (pair.Left.Kind != pair.Right.Kind) return TypeRelationResult.NotMatched;
+            switch (pair.Left)
+            {
+                case NamedTypeSignature a when pair.Right is NamedTypeSignature b:
+                    if (a.Identity != b.Identity || a.TypeArguments.Count != b.TypeArguments.Count)
+                        return TypeRelationResult.NotMatched;
+                    for (var index = a.TypeArguments.Count - 1; index >= 0; index--)
+                        pending.Push((a.TypeArguments[index], b.TypeArguments[index]));
+                    break;
+                case ArrayTypeSignature a when pair.Right is ArrayTypeSignature b:
+                    if (a.Rank != b.Rank || a.Shape != b.Shape) return TypeRelationResult.NotMatched;
+                    pending.Push((a.ElementType, b.ElementType));
+                    break;
+                case GenericParameterTypeSignature a when pair.Right is GenericParameterTypeSignature b:
+                    if (CompareGenericParameter(a, b).Status == MatchStatus.NotMatched)
+                        return TypeRelationResult.NotMatched;
+                    break;
+                default:
+                    unknownDiagnostics ??= [];
+                    unknownDiagnostics.AddRange(Unsupported(pair.Left, pair.Right).Diagnostics);
+                    break;
             }
         }
 
@@ -80,13 +69,15 @@ public static class StructuralTypeComparer
             : TypeRelationResult.Unknown(unknownDiagnostics.ToArray());
     }
 
-    private static TypeRelationResult CompareArray(
-        ArrayTypeSignature left,
-        ArrayTypeSignature right)
+    private sealed class SignaturePairComparer : IEqualityComparer<(TypeSignature Left, TypeSignature Right)>
     {
-        return left.Rank == right.Rank && left.Shape == right.Shape
-            ? AreEqual(left.ElementType, right.ElementType)
-            : TypeRelationResult.NotMatched;
+        public static readonly SignaturePairComparer Instance = new();
+
+        public bool Equals((TypeSignature Left, TypeSignature Right) x, (TypeSignature Left, TypeSignature Right) y)
+            => ReferenceEquals(x.Left, y.Left) && ReferenceEquals(x.Right, y.Right);
+
+        public int GetHashCode((TypeSignature Left, TypeSignature Right) pair)
+            => unchecked(RuntimeHelpers.GetHashCode(pair.Left) * 397 ^ RuntimeHelpers.GetHashCode(pair.Right));
     }
 
     private static TypeRelationResult CompareGenericParameter(

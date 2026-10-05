@@ -2,11 +2,21 @@ using System.Reflection;
 
 namespace AspectN.Reflection.Internal;
 
-// Type.IsFunctionPointer、Type.IsSZArray 与函数指针签名自省的编译时 API
-// 自 .NET Standard 2.1 起才可用；netstandard2.0 资产运行在 .NET 5+ 运行时上
-// 仍可能遇到函数指针与非 SZ 数组，缺失的判定在此按运行时能力补齐。
+// netstandard2.0 没有现代 Type 自省 API。按宿主实际能力探测；
+// 旧 CLR 可把函数指针暴露为 IntPtr，不能把这种降级误当完整签名事实。
 internal static class RuntimeTypeFacts
 {
+    internal static bool MayHideFunctionPointer(Type type)
+    {
+#if NETSTANDARD2_0
+        if (_IsFunctionPointerProperty is not null) return false;
+        if (type == typeof(IntPtr)) return true;
+        if (type.HasElementType) return MayHideFunctionPointer(type.GetElementType()!);
+        return type.IsGenericType && type.GetGenericArguments().Any(MayHideFunctionPointer);
+#else
+        return false;
+#endif
+    }
 #if NETSTANDARD2_0
     private static readonly PropertyInfo? _IsFunctionPointerProperty =
         typeof(Type).GetProperty("IsFunctionPointer");
@@ -18,6 +28,12 @@ internal static class RuntimeTypeFacts
         typeof(Type).GetMethod(
             "GetFunctionPointerReturnType",
             Type.EmptyTypes);
+    private static readonly MethodInfo? _GetModifiedParameterType =
+        typeof(ParameterInfo).GetMethod("GetModifiedParameterType", Type.EmptyTypes);
+    private static readonly PropertyInfo? _IsUnmanagedFunctionPointer =
+        typeof(Type).GetProperty("IsUnmanagedFunctionPointer");
+    private static readonly MethodInfo? _GetFunctionPointerCallingConventions =
+        typeof(Type).GetMethod("GetFunctionPointerCallingConventions", Type.EmptyTypes);
 #endif
 
     public static bool IsFunctionPointer(Type type)
@@ -62,14 +78,13 @@ internal static class RuntimeTypeFacts
         }
 
         var element = array.GetElementType();
-        return element is not null && array == element.MakeArrayType();
+        return element is not null && array.UnderlyingSystemType == element.UnderlyingSystemType.MakeArrayType();
 #else
         return array.IsSZArray;
 #endif
     }
 
-    // 调用方须先经 IsFunctionPointer 判定；探测失败仅可能发生在不支持
-    // 函数指针的运行时（那里也不可能存在函数指针类型），按空形状回退。
+    // 调用方须先经 IsFunctionPointer 判定；旧宿主无法自省时不推断参数形状。
     public static Type[] GetFunctionPointerParameterTypes(Type type)
     {
 #if NETSTANDARD2_0
@@ -88,5 +103,52 @@ internal static class RuntimeTypeFacts
 #else
         return type.GetFunctionPointerReturnType();
 #endif
+    }
+
+    internal static Type GetParameterType(ParameterInfo parameter, out bool isModified)
+    {
+        isModified = false;
+        try
+        {
+#if NETSTANDARD2_0
+            if (_GetModifiedParameterType?.Invoke(parameter, null) is not Type modified)
+                return parameter.ParameterType;
+#else
+            var modified = parameter.GetModifiedParameterType();
+#endif
+            isModified = true;
+            return modified;
+        }
+        catch (Exception exception) when (exception is NotSupportedException or TargetInvocationException)
+        {
+            return parameter.ParameterType;
+        }
+    }
+
+    internal static string CallingConvention(Type type, bool isModified)
+    {
+        try
+        {
+#if NETSTANDARD2_0
+            if (_IsUnmanagedFunctionPointer?.GetValue(type) is not bool unmanaged) return "unknown";
+#else
+            var unmanaged = type.IsUnmanagedFunctionPointer;
+#endif
+            if (!unmanaged) return "managed";
+            // 原始 Type 的空约定列表不能证明默认 unmanaged，更不能猜成 managed。
+            if (!isModified) return "unmanaged:unknown";
+#if NETSTANDARD2_0
+            if (_GetFunctionPointerCallingConventions?.Invoke(type, null) is not Type[] conventions)
+                return "unmanaged:unknown";
+#else
+            var conventions = type.GetFunctionPointerCallingConventions();
+#endif
+            return AspectN.AdapterInternals.FunctionPointerConventions.Format("unmanaged",
+                conventions.Select(convention => convention.FullName ?? convention.Name));
+        }
+        catch (Exception exception) when (exception is NotSupportedException or TargetInvocationException)
+        {
+            return "unknown";
+        }
     }
 }

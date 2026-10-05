@@ -4,11 +4,11 @@ namespace AspectN.Metadata;
 public sealed class GenericParameterSignature
 {
     /// <summary>Initializes a new instance of the GenericParameterSignature class.</summary>
-    /// <param name="name">Specifies the name.</param>
+    /// <param name="name">Source display name; it does not participate in parameter identity.</param>
     /// <param name="ownerKind">Specifies the owner kind.</param>
-    /// <param name="ownerId">Specifies the owner id.</param>
+    /// <param name="ownerId">Canonical declaration identity, including method overload parameter shapes.</param>
     /// <param name="ownerAssembly">Specifies the assembly identity of the owner declaration.</param>
-    /// <param name="position">Specifies the position.</param>
+    /// <param name="position">Zero-based slot in the declaring type or method.</param>
     public GenericParameterSignature(
         string name,
         GenericParameterOwnerKind ownerKind,
@@ -31,13 +31,13 @@ public sealed class GenericParameterSignature
     /// <summary>Gets the owner kind.</summary>
     public GenericParameterOwnerKind OwnerKind { get; }
 
-    /// <summary>Gets the owner id.</summary>
+    /// <summary>Gets the declaration identity used with OwnerKind, OwnerAssembly, and Position.</summary>
     public string OwnerId { get; }
 
     /// <summary>Gets the assembly identity of the owner declaration.</summary>
     public AssemblyIdentity OwnerAssembly { get; }
 
-    /// <summary>Gets the position.</summary>
+    /// <summary>Gets the zero-based declaration slot.</summary>
     public int Position { get; }
 
     private static void GuardNonNegative(int value, string parameterName)

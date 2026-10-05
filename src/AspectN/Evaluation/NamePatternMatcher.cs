@@ -4,8 +4,7 @@ internal static class NamePatternMatcher
 {
     public static bool IsMatch(
         string pattern,
-        string candidate,
-        bool ignoreCase = false)
+        string candidate)
     {
 #if NET10_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(pattern);
@@ -23,10 +22,7 @@ internal static class NamePatternMatcher
         {
             if (patternIndex < pattern.Length &&
                 pattern[patternIndex] != '*' &&
-                CharactersEqual(
-                    pattern[patternIndex],
-                    candidate[candidateIndex],
-                    ignoreCase))
+                pattern[patternIndex] == candidate[candidateIndex])
             {
                 patternIndex++;
                 candidateIndex++;
@@ -53,13 +49,4 @@ internal static class NamePatternMatcher
         return patternIndex == pattern.Length;
     }
 
-    private static bool CharactersEqual(
-        char left,
-        char right,
-        bool ignoreCase)
-    {
-        return left == right ||
-               (ignoreCase &&
-                char.ToUpperInvariant(left) == char.ToUpperInvariant(right));
-    }
 }

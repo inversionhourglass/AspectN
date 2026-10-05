@@ -32,16 +32,16 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
             return MissingNativeReference(candidate);
         }
 
-        var pending = new Queue<TypeReference>();
-        var visited = new HashSet<CecilTypeCacheKey>();
-        pending.Enqueue(candidateReference);
+        var pending = new Queue<(TypeReference Type, GenericInstanceType? Context)>();
+        var visited = new HashSet<(CecilTypeCacheKey Type, CecilTypeCacheKey? Context)>();
+        pending.Enqueue((candidateReference, null));
         TypeRelationResult? unresolved = null;
 
         while (pending.Count > 0)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var current = pending.Dequeue();
-            if (!visited.Add(CecilTypeCacheKey.Create(current))) continue;
+            var (current, constraintContext) = pending.Dequeue();
+            if (!visited.Add((CecilTypeCacheKey.Create(current), constraintContext is null ? null : CecilTypeCacheKey.Create(constraintContext)))) continue;
 
             var relation = UnqualifiedTypeComparer.AreEqual(
                 _mapper.MapType(current),
@@ -61,6 +61,13 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
                 return TypeRelationResult.NotMatched;
             }
 
+            if (current is GenericParameter parameter)
+            {
+                var constraintFailure = EnqueueConstraints(parameter, pending, constraintContext);
+                unresolved ??= constraintFailure;
+                continue;
+            }
+
             var definition = TryResolve(current, out var failure);
             if (definition is null)
             {
@@ -72,13 +79,13 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
             var constructed = current as GenericInstanceType;
             if (definition.BaseType is not null)
             {
-                pending.Enqueue(Substitute(definition.BaseType, constructed));
+                pending.Enqueue((Substitute(definition.BaseType, constructed), null));
             }
 
             foreach (var implementation in definition.Interfaces)
             {
                 pending.Enqueue(
-                    Substitute(implementation.InterfaceType, constructed));
+                    (Substitute(implementation.InterfaceType, constructed), null));
             }
         }
 
@@ -102,15 +109,15 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
         }
 
         var ancestors = new List<TypeSignature>();
-        var pending = new Queue<TypeReference>();
-        var visited = new HashSet<CecilTypeCacheKey>();
-        pending.Enqueue(reference);
+        var pending = new Queue<(TypeReference Type, GenericInstanceType? Context)>();
+        var visited = new HashSet<(CecilTypeCacheKey Type, CecilTypeCacheKey? Context)>();
+        pending.Enqueue((reference, null));
         TypeRelationResult? unresolved = null;
         while (pending.Count > 0)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var current = pending.Dequeue();
-            if (!visited.Add(CecilTypeCacheKey.Create(current))) continue;
+            var (current, constraintContext) = pending.Dequeue();
+            if (!visited.Add((CecilTypeCacheKey.Create(current), constraintContext is null ? null : CecilTypeCacheKey.Create(constraintContext)))) continue;
 
             if (current is ArrayType array)
             {
@@ -125,6 +132,13 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
                 ancestors.Add(_mapper.MapType(current));
             }
 
+            if (current is GenericParameter parameter)
+            {
+                var constraintFailure = EnqueueConstraints(parameter, pending, constraintContext);
+                unresolved ??= constraintFailure;
+                continue;
+            }
+
             var definition = TryResolve(current, out var failure);
             if (definition is null)
             {
@@ -136,17 +150,51 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
             var constructed = current as GenericInstanceType;
             if (definition.BaseType is not null)
             {
-                pending.Enqueue(Substitute(definition.BaseType, constructed));
+                pending.Enqueue((Substitute(definition.BaseType, constructed), null));
             }
 
             foreach (var implementation in definition.Interfaces)
             {
                 pending.Enqueue(
-                    Substitute(implementation.InterfaceType, constructed));
+                    (Substitute(implementation.InterfaceType, constructed), null));
             }
         }
 
         return new InheritanceClosure(ancestors, unresolved);
+    }
+
+    private static TypeRelationResult? EnqueueConstraints(GenericParameter parameter, Queue<(TypeReference Type, GenericInstanceType? Context)> pending, GenericInstanceType? constraintContext)
+    {
+        // 泛型形参不能 Resolve 为类型定义；约束及隐含基类本身构成可遍历的名义关系。
+        pending.Enqueue((parameter.Module.TypeSystem.Object, null));
+        try
+        {
+            // 约束链中的中间方法形参仍需沿用最初封闭声明类型的替换上下文。
+            var constructed = constraintContext ?? (parameter.Owner is MethodReference methodOwner
+                ? methodOwner.DeclaringType as GenericInstanceType
+                : parameter.Owner as GenericInstanceType);
+            var declaration = parameter.Owner switch
+            {
+                MethodReference method when !method.IsDefinition => method.Resolve()?.GenericParameters,
+                TypeReference type when !type.IsDefinition => type.Resolve()?.GenericParameters,
+                _ => null
+            };
+            if (parameter.Owner is MethodReference { IsDefinition: false } or TypeReference { IsDefinition: false })
+            {
+                if (declaration is null || parameter.Position >= declaration.Count)
+                    return ResolutionFailure(parameter, null);
+                parameter = declaration[parameter.Position];
+            }
+            if (parameter.HasNotNullableValueTypeConstraint)
+                pending.Enqueue((SyntheticReference(parameter.Module, "System", "ValueType"), null));
+            foreach (var constraint in parameter.Constraints)
+                pending.Enqueue((Substitute(constraint.ConstraintType, constructed), constructed));
+            return null;
+        }
+        catch (Exception exception) when (CecilMetadataReader.IsRecoverable(exception))
+        {
+            return ResolutionFailure(parameter, exception);
+        }
     }
 
     private TypeRelationResult CompareArrayRelations(

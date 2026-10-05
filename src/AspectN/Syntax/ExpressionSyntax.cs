@@ -1,13 +1,13 @@
 namespace AspectN.Syntax;
 
-/// <summary>Represents a expression syntax node.</summary>
+/// <summary>Provides the base node for member expressions and Boolean composition.</summary>
 /// <param name="kind">Specifies the kind.</param>
 /// <param name="children">Specifies the children.</param>
 public abstract class ExpressionSyntax(SyntaxKind kind, IEnumerable<SyntaxNode> children) : SyntaxNode(kind, children)
 {
 }
 
-/// <summary>Represents a unary expression syntax node.</summary>
+/// <summary>Negates a member expression.</summary>
 /// <param name="operatorToken">Specifies the operator token.</param>
 /// <param name="operand">Specifies the operand.</param>
 public sealed class UnaryExpressionSyntax(

@@ -1,3 +1,5 @@
+> Historical design/execution record. Machine paths and branch names below describe the original session and are not prerequisites for a new checkout. Current implementation and verification entry points are in [the 2026-10-05 remediation record](../reviews/2026-10-05-review-ds-remediation.md). Legacy/oracle and adjacent-repository steps are superseded by the single-language plan and are not part of the current task.
+
 # AspectN Industrial Redesign Implementation Plan
 
 > Scope update (2026-10-05): custom semantic extensions were removed by user decision. Extension tasks and API examples below are historical and are superseded by the current language specification and `2026-10-05-review-ds-decisions.md`.
