@@ -63,23 +63,10 @@ internal static class TypePatternEvaluator
                     var right = Evaluate(binary.Right, candidate, rightContext);
                     context.MergeDiagnosticsFrom(leftContext);
                     context.MergeDiagnosticsFrom(rightContext);
-                    // 与成员 OR 一致：成功分支对变量的约束必须延续到后续合取。
-                    var matchedBranches = new List<EvaluationContext>();
-                    if (left == MatchStatus.Matched)
-                    {
-                        matchedBranches.Add(leftContext);
-                    }
-
-                    if (right == MatchStatus.Matched)
-                    {
-                        matchedBranches.Add(rightContext);
-                    }
-
-                    if (matchedBranches.Count > 0)
-                    {
-                        context.ReplaceBindingsWithAlternativesFrom(
-                            matchedBranches);
-                    }
+                    var alternatives = new List<EvaluationContext>();
+                    EvaluationContext.RetainAlternative(alternatives, leftContext, left);
+                    EvaluationContext.RetainAlternative(alternatives, rightContext, right);
+                    context.ReplaceBindingsWithAlternativesFrom(alternatives);
 
                     return MatchLogic.Or(left, right);
                 }
@@ -388,47 +375,34 @@ internal static class TypePatternEvaluator
         var closure = context.TypeSystem.GetInheritanceClosure(
             candidate,
             cancellationToken);
-        var hasUnknown = false;
-        var matchedBranches = new List<EvaluationContext>();
+        var status = MatchStatus.NotMatched;
+        var alternatives = new List<EvaluationContext>();
         foreach (var ancestor in AncestorsIncludingSelf(
                      candidate,
                      closure.Ancestors))
         {
             cancellationToken.ThrowIfCancellationRequested();
             var branch = context.Fork();
-            var status = Evaluate(pattern.TargetType, ancestor, branch);
+            var branchStatus = Evaluate(pattern.TargetType, ancestor, branch);
             context.MergeDiagnosticsFrom(branch);
-            if (status == MatchStatus.Matched)
-            {
-                matchedBranches.Add(branch);
-            }
-            else if (status == MatchStatus.Unknown)
-            {
-                hasUnknown = true;
-            }
-        }
-
-        if (matchedBranches.Count > 0)
-        {
-            context.ReplaceBindingsWithAlternativesFrom(matchedBranches);
-            return MatchStatus.Matched;
+            status = MatchLogic.Or(status, branchStatus);
+            EvaluationContext.RetainAlternative(alternatives, branch, branchStatus);
         }
 
         // 部分闭包意味着未产出的祖先仍可能匹配，不能静默判为不匹配（规范 12.4）。
-        if (closure.Failure is not null || hasUnknown)
+        if (closure.Failure is not null)
         {
-            if (closure.Failure is not null)
-            {
-                context.AddDiagnostics(closure.Failure.Diagnostics);
-            }
-
-            return Unknown(
+            context.AddDiagnostics(closure.Failure.Diagnostics);
+            var unknownStatus = Unknown(
                 pattern,
                 context,
                 "The inheritance closure could not be fully resolved.");
+            status = MatchLogic.Or(status, unknownStatus);
+            EvaluationContext.RetainAlternative(alternatives, context.Fork(), unknownStatus);
         }
 
-        return MatchStatus.NotMatched;
+        context.ReplaceBindingsWithAlternativesFrom(alternatives);
+        return status;
     }
 
     private static IEnumerable<TypeSignature> AncestorsIncludingSelf(

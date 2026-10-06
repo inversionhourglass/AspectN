@@ -6,6 +6,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\Shared\OwnerIdentityFixture.cs" Link="SharedTests\OwnerIdentityFixture.cs" />
     <ProjectReference Include="..\..\src\AspectN.Reflection\AspectN.Reflection.csproj" />
     <ProjectReference Include="..\AspectN.TestAssembly\AspectN.TestAssembly.csproj" />
   </ItemGroup>

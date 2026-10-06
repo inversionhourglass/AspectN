@@ -8,6 +8,22 @@
     "expected": "Matched"
   },
   {
+    "id": "generic-variable-return-and-parameter-references",
+    "kind": "method",
+    "member": "Generic",
+    "parameterCount": 2,
+    "expression": "method($R AspectN.TestAssembly.Conformance.ConformanceFixture.Generic<$L,$R>($L,$R))",
+    "expected": "Matched"
+  },
+  {
+    "id": "generic-variable-negated-return-reference",
+    "kind": "method",
+    "member": "Generic",
+    "parameterCount": 2,
+    "expression": "method(!$L AspectN.TestAssembly.Conformance.ConformanceFixture.Generic<$L,$R>(..))",
+    "expected": "Matched"
+  },
+  {
     "id": "constructed-generic-method",
     "kind": "method",
     "member": "Generic",

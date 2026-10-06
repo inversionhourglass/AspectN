@@ -26,7 +26,7 @@ internal static class CecilTypeMapper
             PointerType pointer => Unsupported(pointer),
             // DisplayName 与 Reflection、Roslyn 统一为规范文本（FullName 不含调用约定）。
             FunctionPointerType functionPointer => new UnsupportedTypeSignature(
-                FunctionPointerForm(functionPointer),
+                FunctionPointerForm(functionPointer, qualifyAssembly: false),
                 "Cecil FunctionPointerType shapes are unsupported."),
             PinnedType pinned => Unsupported(pinned),
             SentinelType sentinel => Unsupported(sentinel),
@@ -290,11 +290,21 @@ internal static class CecilTypeMapper
 
     private static string GetMethodOwnerId(MethodReference method)
     {
+        if (method is GenericInstanceMethod instance) method = instance.ElementMethod;
+        try
+        {
+            method = ResolveMethodDeclaration(method) ?? method;
+        }
+        catch (Exception exception) when (CecilMetadataReader.IsRecoverable(exception))
+        {
+            // 未解析引用仍有声明名称与参数形状；保留这些可用的身份信息。
+        }
+
         // 参数形状参与 owner ID 以区分同名同元数的重载；构造规则与 Reflection、Roslyn 适配器一致。
         var parameters = method.Parameters
             .Select(parameter => CanonicalParameterForm(parameter.ParameterType))
             .ToArray();
-        return $"{method.DeclaringType.FullName}.{method.Name}`" +
+        return $"{MapIdentity(method.DeclaringType).FullMetadataName}.{method.Name}`" +
                MethodGenericArity(method) +
                $"({string.Join(",", parameters)})";
     }
@@ -306,7 +316,42 @@ internal static class CecilTypeMapper
             : method.GenericParameters.Count;
     }
 
-    private static string CanonicalParameterForm(TypeReference type)
+    internal static MethodDefinition? ResolveMethodDeclaration(MethodReference method)
+    {
+        if (method is GenericInstanceMethod instance) method = instance.ElementMethod;
+        if (method is MethodDefinition definition) return definition;
+        // 先保留 !n 声明槽位比较；闭合后相同的实参不能把不同声明重载折叠。
+        // vararg 调用点在 sentinel 后携带可选实参，声明只包含 sentinel 前的固定参数。
+        var isVarArg = (method.CallingConvention & ~MethodCallingConvention.Generic) == MethodCallingConvention.VarArg;
+        var parameters = method.Parameters
+            .TakeWhile(parameter => !isVarArg || parameter.ParameterType is not SentinelType)
+            .Select(parameter => CanonicalParameterForm(parameter.ParameterType)).ToArray();
+        var returnType = CanonicalParameterForm(method.ReturnType);
+        bool Matches(MethodDefinition candidate) =>
+            candidate.Name == method.Name && candidate.GenericParameters.Count == MethodGenericArity(method) &&
+            candidate.HasThis == method.HasThis && candidate.ExplicitThis == method.ExplicitThis &&
+            (candidate.CallingConvention & ~MethodCallingConvention.Generic) ==
+                (method.CallingConvention & ~MethodCallingConvention.Generic) &&
+            candidate.Parameters.Select(parameter => CanonicalParameterForm(parameter.ParameterType)).SequenceEqual(parameters) &&
+            CanonicalParameterForm(candidate.ReturnType) == returnType;
+        // 原生解析负责继承链查找，但必须验证其结果包含正确的参数程序集身份。
+        var resolved = method.Resolve();
+        if (resolved is not null && Matches(resolved)) return resolved;
+        var declaring = resolved?.DeclaringType ?? method.DeclaringType.Resolve();
+        if (declaring is null) return null;
+        MethodDefinition? match = null;
+        // Cecil 的原生方法解析不比较参数的程序集作用域；显式比较递归身份，避免 alias 重载串用。
+        foreach (var candidate in declaring.Methods)
+        {
+            if (!Matches(candidate)) continue;
+            if (match is not null) return null;
+            match = candidate;
+        }
+
+        return match;
+    }
+
+    private static string CanonicalParameterForm(TypeReference type, bool qualifyAssembly = true)
     {
         switch (type)
         {
@@ -315,34 +360,34 @@ internal static class CecilTypeMapper
                     ? "!"
                     : "!!") + parameter.Position;
             case ByReferenceType byReference:
-                return CanonicalParameterForm(byReference.ElementType) + "&";
+                return CanonicalParameterForm(byReference.ElementType, qualifyAssembly) + "&";
             case PointerType pointer:
-                return CanonicalParameterForm(pointer.ElementType) + "*";
+                return CanonicalParameterForm(pointer.ElementType, qualifyAssembly) + "*";
             case ArrayType array:
-                return CanonicalParameterForm(array.ElementType) +
+                return CanonicalParameterForm(array.ElementType, qualifyAssembly) +
                        (array.Rank == 1 && !array.IsVector ? "[*]" : ArraySuffix(array.Rank));
             case GenericInstanceType:
-                return ConstructedNamedForm((GenericInstanceType)type);
+                return ConstructedNamedForm((GenericInstanceType)type, qualifyAssembly);
             case FunctionPointerType functionPointer:
-                return FunctionPointerForm(functionPointer);
+                return FunctionPointerForm(functionPointer, qualifyAssembly);
             case RequiredModifierType required:
                 // 函数指针签名内的 in/ref readonly 以 modreq 包裹元素；修饰符不参与
                 // 身份形状，按元素递归，否则泛型参数会按名字而非 !!n 槽位编码。
-                return CanonicalParameterForm(required.ElementType);
+                return CanonicalParameterForm(required.ElementType, qualifyAssembly);
             case OptionalModifierType optional:
-                return CanonicalParameterForm(optional.ElementType);
+                return CanonicalParameterForm(optional.ElementType, qualifyAssembly);
             case TypeSpecification specification:
                 return specification.ElementType is null
                     ? specification.GetType().Name
-                    : ConstructedNamedForm(specification.ElementType);
+                    : ConstructedNamedForm(specification.ElementType, qualifyAssembly);
             default:
-                return ConstructedNamedForm(type);
+                return ConstructedNamedForm(type, qualifyAssembly);
         }
     }
 
     // 函数指针的规范形式：delegate*[调用约定]<参数...,返回类型>，与 Reflection、Roslyn
     // 逐字节一致；Cecil 的 FullName 不含调用约定，无法区分仅调用约定不同的重载。
-    private static string FunctionPointerForm(FunctionPointerType functionPointer)
+    private static string FunctionPointerForm(FunctionPointerType functionPointer, bool qualifyAssembly = true)
     {
         var conventions = new List<string>();
         var returnType = functionPointer.ReturnType;
@@ -357,8 +402,8 @@ internal static class CecilTypeMapper
             else returnType = ((RequiredModifierType)returnType).ElementType;
         }
         var forms = functionPointer.Parameters
-            .Select(parameter => CanonicalParameterForm(parameter.ParameterType))
-            .Append(CanonicalParameterForm(functionPointer.ReturnType));
+            .Select(parameter => CanonicalParameterForm(parameter.ParameterType, qualifyAssembly))
+            .Append(CanonicalParameterForm(functionPointer.ReturnType, qualifyAssembly));
         return "delegate*[" +
                AspectN.AdapterInternals.FunctionPointerConventions.Format(
                    CallingConventionToken(functionPointer.CallingConvention), conventions) +
@@ -386,7 +431,7 @@ internal static class CecilTypeMapper
 
     // 嵌套构造类型的规范形式按包含链逐层携带各自的构造实参；与 Reflection、Roslyn 逐字节一致。
     // ECMA 编码把包含链的实参扁平挂在内层实例上，需要按各层元数自外向内分发。
-    private static string ConstructedNamedForm(TypeReference typeReference)
+    private static string ConstructedNamedForm(TypeReference typeReference, bool qualifyAssembly = true)
     {
         var chain = new List<TypeReference>();
         var collected = new List<TypeReference>();
@@ -415,7 +460,7 @@ internal static class CecilTypeMapper
             if (ownArity > 0 && offset + ownArity <= collected.Count)
             {
                 var slice = collected.GetRange(offset, ownArity);
-                form += $"<{string.Join(",", slice.Select(CanonicalParameterForm))}>";
+                form += $"<{string.Join(",", slice.Select(argument => CanonicalParameterForm(argument, qualifyAssembly)))}>";
                 offset += ownArity;
             }
 
@@ -427,9 +472,16 @@ internal static class CecilTypeMapper
             : chain[0];
         var namespaceName = outermost.Namespace ?? string.Empty;
         var joined = string.Join("/", parts);
-        return string.IsNullOrEmpty(namespaceName)
+        var name = string.IsNullOrEmpty(namespaceName)
             ? joined
             : $"{namespaceName}.{joined}";
+        var definitionType = typeReference is GenericInstanceType generic
+            ? generic.ElementType
+            : typeReference;
+        return qualifyAssembly
+            ? AspectN.AdapterInternals.GenericOwnerIdentity.Qualify(
+                name, MapAssemblyIdentity(TryResolve(definitionType) ?? definitionType))
+            : name;
     }
 
     private static int MetadataArity(TypeReference definition)

@@ -1,3 +1,4 @@
+using static AspectN.Tests.Shared.OwnerIdentityFixture;
 using System.Globalization;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -350,10 +351,12 @@ public sealed class ReflectionMappingTests
 
         // 嵌套类型的构造实参按包含链逐层编入 owner ID。
         Assert.Equal(
-            "AspectN.Reflection.Tests.NestedOuter`1<System.Int32>/NestedInner",
+            RuntimeType(
+                $"AspectN.Reflection.Tests.NestedOuter`1<{FrameworkType("System.Int32")}>/NestedInner", typeof(NestedOuter<>)),
             ExtractParameterForm(first.Parameter.OwnerId));
         Assert.Equal(
-            "AspectN.Reflection.Tests.NestedOuter`1<System.String>/NestedInner",
+            RuntimeType(
+                $"AspectN.Reflection.Tests.NestedOuter`1<{FrameworkType("System.String")}>/NestedInner", typeof(NestedOuter<>)),
             ExtractParameterForm(second.Parameter.OwnerId));
         Assert.Equal(
             MatchStatus.NotMatched,
@@ -560,11 +563,11 @@ public sealed class ReflectionMappingTests
         // 开放构造类型（含方法泛型参数）保留实参，占位参数用规范形式 !!0 表示。
         Assert.Equal(
             "AspectN.Reflection.Tests.OpenConstructedOwner.M`1(" +
-                "System.Collections.Generic.Dictionary`2<!!0,System.Int32>)",
+                $"{FrameworkType($"System.Collections.Generic.Dictionary`2<!!0,{FrameworkType("System.Int32")}>")})",
             first.Parameter.OwnerId);
         Assert.Equal(
             "AspectN.Reflection.Tests.OpenConstructedOwner.M`1(" +
-                "System.Collections.Generic.Dictionary`2<!!0,System.String>)",
+                $"{FrameworkType($"System.Collections.Generic.Dictionary`2<!!0,{FrameworkType("System.String")}>")})",
             second.Parameter.OwnerId);
         Assert.Equal(
             MatchStatus.NotMatched,

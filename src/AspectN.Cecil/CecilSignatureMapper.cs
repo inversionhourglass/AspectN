@@ -364,7 +364,7 @@ public sealed class CecilSignatureMapper
     private static MethodDefinition? GetDefinition(MethodReference reference, out MetadataAvailability availability)
     {
         return CecilMetadataReader.Read(() => reference is MethodDefinition definition ? definition :
-            reference is GenericInstanceMethod { ElementMethod: MethodDefinition element } ? element : reference.Resolve(),
+            CecilTypeMapper.ResolveMethodDeclaration(reference),
             reference.Name, MetadataFacts.Kind | MetadataFacts.Accessibility | MetadataFacts.IsAsync |
                 MetadataFacts.Attributes | MetadataFacts.ReturnAttributes | MetadataFacts.AssociatedProperty, out availability);
     }

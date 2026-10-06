@@ -1,3 +1,4 @@
+using static AspectN.Tests.Shared.OwnerIdentityFixture;
 using System.Runtime.CompilerServices;
 using AspectN.Evaluation;
 using AspectN.Metadata;
@@ -63,9 +64,9 @@ public sealed class RoslynMappingTests
             typeSystem.Mapper.MapType(stringOverload.TypeParameters[0]));
 
         // 嵌套类型的构造实参按包含链逐层编入 owner ID，与 Reflection/Cecil 逐字节一致。
-        Assert.Equal("Owner.M`1(Outer`1<System.Int32>/Inner)", first.Parameter.OwnerId);
+        Assert.Equal($"Owner.M`1({SourceType($"Outer`1<{FrameworkType("System.Int32")}>/Inner", compilation.AssemblyName!)})", first.Parameter.OwnerId);
         Assert.Equal(
-            "Owner.M`1(Outer`1<System.String>/Inner)",
+            $"Owner.M`1({SourceType($"Outer`1<{FrameworkType("System.String")}>/Inner", compilation.AssemblyName!)})",
             second.Parameter.OwnerId);
         Assert.Equal(
             MatchStatus.NotMatched,
@@ -601,11 +602,11 @@ public sealed class RoslynMappingTests
         // 与 Cecil/Reflection 逐字节一致的统一文本；仅调用约定不同的重载必须区分。
         Assert.Equal(
             "FunctionPointerProbe.Convert`1(" +
-            "delegate*[cdecl]<System.Int32,!!0>,System.Int32)",
+            $"delegate*[cdecl]<{FrameworkType("System.Int32")},!!0>,{FrameworkType("System.Int32")})",
             cdecl.Parameter.OwnerId);
         Assert.Equal(
             "FunctionPointerProbe.Convert`1(" +
-            "delegate*[managed]<System.Int32,!!0>,System.Int32)",
+            $"delegate*[managed]<{FrameworkType("System.Int32")},!!0>,{FrameworkType("System.Int32")})",
             managed.Parameter.OwnerId);
         Assert.Equal(
             MatchStatus.NotMatched,
@@ -653,11 +654,11 @@ public sealed class RoslynMappingTests
         // RefKind；只读性不同的重载不得折叠，且文本与 Cecil 一致（!!0& 带 &）。
         Assert.Equal(
             "RefReturnProbe.Convert`1(" +
-            "delegate*[managed]<System.Int32&,!!0&>,System.Int32)",
+            $"delegate*[managed]<{FrameworkType("System.Int32")}&,!!0&>,{FrameworkType("System.Int32")})",
             refReadonlyReturn.Parameter.OwnerId);
         Assert.Equal(
             "RefReturnProbe.Convert`1(" +
-            "delegate*[managed]<System.Int32&,!!0>,System.Int32)",
+            $"delegate*[managed]<{FrameworkType("System.Int32")}&,!!0>,{FrameworkType("System.Int32")})",
             plainReturn.Parameter.OwnerId);
         Assert.Equal(
             MatchStatus.NotMatched,

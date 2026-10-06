@@ -65,6 +65,8 @@ internal static class AttributePatternEvaluator
         var matchedTargetBranches = hasConcreteAttributeType
             ? null
             : new List<EvaluationContext>();
+        if (matchedTargetBranches is not null)
+            EvaluationContext.RetainAlternative(matchedTargetBranches, context.Fork(), status);
         foreach (var target in targets)
         {
             context.CancellationToken.ThrowIfCancellationRequested();
@@ -76,6 +78,8 @@ internal static class AttributePatternEvaluator
             if (metadataStatus == MatchStatus.Unknown)
             {
                 status = MatchLogic.Or(status, metadataStatus);
+                if (matchedTargetBranches is not null)
+                    EvaluationContext.RetainAlternative(matchedTargetBranches, context.Fork(), metadataStatus);
                 continue;
             }
             if (hasConcreteAttributeType)
@@ -108,13 +112,10 @@ internal static class AttributePatternEvaluator
 
             context.MergeDiagnosticsFrom(branch);
             status = MatchLogic.Or(status, targetStatus);
-            if (targetStatus == MatchStatus.Matched)
-            {
-                matchedTargetBranches!.Add(branch);
-            }
+            EvaluationContext.RetainAlternative(matchedTargetBranches!, branch, targetStatus);
         }
 
-        if (matchedTargetBranches?.Count > 0)
+        if (matchedTargetBranches is not null)
         {
             context.ReplaceBindingsWithAlternativesFrom(matchedTargetBranches);
         }
@@ -151,16 +152,10 @@ internal static class AttributePatternEvaluator
                 branch);
             context.MergeDiagnosticsFrom(branch);
             status = MatchLogic.Or(status, branchStatus);
-            if (branchStatus == MatchStatus.Matched)
-            {
-                matchedBranches.Add(branch);
-            }
+            EvaluationContext.RetainAlternative(matchedBranches, branch, branchStatus);
         }
 
-        if (matchedBranches.Count > 0)
-        {
-            context.ReplaceBindingsWithAlternativesFrom(matchedBranches);
-        }
+        context.ReplaceBindingsWithAlternativesFrom(matchedBranches);
 
         return status;
     }

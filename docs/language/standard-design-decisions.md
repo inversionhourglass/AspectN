@@ -53,6 +53,15 @@ These rules apply to type, declaring-type and method clauses. Explicit clauses
 retain their constraints even on primitive aliases and assignable targets.
 Every clause on `void` is invalid (AN2011). `$T` can bind a formal generic
 parameter or a constructed type; repeated occurrences enforce equality.
+Variables are declared in positive type or method generic clauses. Return,
+property and parameter types only reference visible declarations, including
+inside their nested generic clauses. The declaring-type/method clauses are
+processed before those references regardless of textual order.
+`method($T Service.M<!$T>())` is invalid; negated generic-variable declaration
+arguments remain invalid even when the variable is already visible.
+`method(!$T Service.M<$T>())` is a valid negated return reference.
+Adapter declaration identity and closed query contexts are described in
+[generic parameter identity](generic-parameter-identity.md).
 Variables introduced under negation are invalid, and variables introduced in
 isolated OR branches cannot escape. Bare `T` never becomes a variable.
 

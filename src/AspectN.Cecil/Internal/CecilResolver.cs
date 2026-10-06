@@ -175,7 +175,7 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
                 : parameter.Owner as GenericInstanceType);
             var declaration = parameter.Owner switch
             {
-                MethodReference method when !method.IsDefinition => method.Resolve()?.GenericParameters,
+                MethodReference method when !method.IsDefinition => CecilTypeMapper.ResolveMethodDeclaration(method)?.GenericParameters,
                 TypeReference type when !type.IsDefinition => type.Resolve()?.GenericParameters,
                 _ => null
             };

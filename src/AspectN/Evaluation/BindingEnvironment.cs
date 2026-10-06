@@ -2,6 +2,7 @@ using AspectN.Binding;
 using AspectN.Diagnostics;
 using AspectN.Metadata;
 using AspectN.TypeSystem;
+using System.Runtime.CompilerServices;
 
 namespace AspectN.Evaluation;
 
@@ -105,8 +106,37 @@ internal sealed class BindingEnvironment
     {
         _alternatives = branches
             .SelectMany(branch => branch._alternatives)
+            .Distinct(AlternativeComparer.Instance)
             .Select(alternative => alternative.Clone())
             .ToList();
+    }
+
+    // 只合并相同签名实例的绑定，避免丢失后端保留的闭合泛型查询上下文。
+    private sealed class AlternativeComparer : IEqualityComparer<Alternative>
+    {
+        public static AlternativeComparer Instance { get; } = new();
+
+        public bool Equals(Alternative? left, Alternative? right)
+        {
+            if (ReferenceEquals(left, right)) return true;
+            if (left is null || right is null || left.IsUnknown != right.IsUnknown ||
+                left.Bindings.Count != right.Bindings.Count) return false;
+            return left.Bindings.All(binding =>
+                right.Bindings.TryGetValue(binding.Key, out var value) &&
+                ReferenceEquals(binding.Value, value));
+        }
+
+        public int GetHashCode(Alternative alternative)
+        {
+            var hash = alternative.IsUnknown ? 1 : 0;
+            foreach (var binding in alternative.Bindings)
+            {
+                hash ^= RuntimeHelpers.GetHashCode(binding.Key) * 397 ^
+                        RuntimeHelpers.GetHashCode(binding.Value);
+            }
+
+            return hash;
+        }
     }
 
     // 未知约束跟随绑定分支传播，后续筛选只剩该分支时仍应报告 Unknown。

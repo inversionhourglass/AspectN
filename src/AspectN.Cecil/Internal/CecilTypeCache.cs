@@ -275,6 +275,10 @@ internal readonly struct CecilTypeCacheKey : IEquatable<CecilTypeCacheKey>
     private static string GetOwnerIdentity(GenericParameter parameter)
     {
         // 与 CecilTypeMapper 的 owner ID 使用同一公式：参数形状参与身份，避免重载碰撞导致缓存串用。
-        return CecilTypeMapper.GetGenericParameterOwner(parameter);
+        var owner = CecilTypeMapper.GetGenericParameterOwner(parameter);
+        // 声明身份相同的形参在不同闭合类型下仍有不同约束；缓存必须保留查询上下文。
+        return parameter.Owner is MethodReference { DeclaringType: GenericInstanceType } method
+            ? owner + "#context:" + BuildShapeIdentity(method.DeclaringType)
+            : owner;
     }
 }

@@ -145,11 +145,11 @@ public sealed class RoslynSignatureMapper
                 new GenericParameterTypeSignature(
                     MapGenericParameter(parameter)),
             IPointerTypeSymbol pointer => new UnsupportedTypeSignature(
-                CanonicalParameterForm(pointer),
+                CanonicalParameterForm(pointer, qualifyAssembly: false),
                 "Roslyn pointer types are unsupported."),
             IFunctionPointerTypeSymbol functionPointer =>
                 new UnsupportedTypeSignature(
-                    FunctionPointerForm(functionPointer),
+                    FunctionPointerForm(functionPointer, qualifyAssembly: false),
                     "Roslyn function pointer types are unsupported."),
             IErrorTypeSymbol error => new UnsupportedTypeSignature(
                 error.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
@@ -482,7 +482,7 @@ public sealed class RoslynSignatureMapper
                 "A named type definition must map to a named signature.");
     }
 
-    private static string GetMethodOwnerId(IMethodSymbol method)
+    private string GetMethodOwnerId(IMethodSymbol method)
     {
         var definition = method.OriginalDefinition;
         // 参数形状（含 ref 方式的 & 后缀）参与 owner ID 以区分重载；
@@ -498,28 +498,28 @@ public sealed class RoslynSignatureMapper
                $"({string.Join(",", parameters)})";
     }
 
-    private static string CanonicalParameterForm(ITypeSymbol type)
+    private string CanonicalParameterForm(ITypeSymbol type, bool qualifyAssembly = true)
     {
         switch (type)
         {
             case IDynamicTypeSymbol:
-                return "System.Object";
+                return ConstructedNamedForm(_compilation.GetSpecialType(SpecialType.System_Object), qualifyAssembly);
             case ITypeParameterSymbol parameter:
                 return parameter.TypeParameterKind ==
                     TypeParameterKind.Method
                     ? "!!" + parameter.Ordinal
                     : "!" + FlattenedOrdinal(parameter);
             case IPointerTypeSymbol pointer:
-                return CanonicalParameterForm(pointer.PointedAtType) + "*";
+                return CanonicalParameterForm(pointer.PointedAtType, qualifyAssembly) + "*";
             case IArrayTypeSymbol array:
-                return CanonicalParameterForm(array.ElementType) +
+                return CanonicalParameterForm(array.ElementType, qualifyAssembly) +
                        "[" + (array.Rank == 1
                            ? array.IsSZArray ? string.Empty : "*"
                            : new string(',', array.Rank - 1)) + "]";
             case IFunctionPointerTypeSymbol functionPointer:
-                return FunctionPointerForm(functionPointer);
+                return FunctionPointerForm(functionPointer, qualifyAssembly);
             case INamedTypeSymbol:
-                return ConstructedNamedForm((INamedTypeSymbol)type);
+                return ConstructedNamedForm((INamedTypeSymbol)type, qualifyAssembly);
             default:
                 return type.ToDisplayString();
         }
@@ -527,16 +527,17 @@ public sealed class RoslynSignatureMapper
 
     // 函数指针的规范形式：delegate*[调用约定]<参数...,返回类型>，与 Cecil、Reflection
     // 逐字节一致；ToDisplayString 含 C# 别名与显示格式，不适合作跨适配器身份。
-    private static string FunctionPointerForm(
-        IFunctionPointerTypeSymbol functionPointer)
+    private string FunctionPointerForm(
+        IFunctionPointerTypeSymbol functionPointer,
+        bool qualifyAssembly = true)
     {
         var signature = functionPointer.Signature;
         var forms = signature.Parameters
-            .Select(parameter => CanonicalParameterForm(parameter.Type) +
+            .Select(parameter => CanonicalParameterForm(parameter.Type, qualifyAssembly) +
                 (parameter.RefKind == Microsoft.CodeAnalysis.RefKind.None
                     ? string.Empty
                     : "&"))
-            .Append(CanonicalParameterForm(signature.ReturnType) +
+            .Append(CanonicalParameterForm(signature.ReturnType, qualifyAssembly) +
                 // ref readonly 返回上报 ReturnsByRef=false / RefKind=In，
                 // 判定必须与参数侧一致地走 RefKind，否则只读性不同的重载会折叠。
                 (signature.RefKind == Microsoft.CodeAnalysis.RefKind.None
@@ -582,7 +583,7 @@ public sealed class RoslynSignatureMapper
     }
 
     // 嵌套构造类型的规范形式按包含链逐层携带各自的构造实参；与 Reflection、Cecil 逐字节一致。
-    private static string ConstructedNamedForm(INamedTypeSymbol named)
+    private string ConstructedNamedForm(INamedTypeSymbol named, bool qualifyAssembly = true)
     {
         var levels = new Stack<string>();
         for (var current = named;
@@ -593,7 +594,7 @@ public sealed class RoslynSignatureMapper
             if (current.IsGenericType && !current.IsDefinition)
             {
                 var arguments = current.TypeArguments
-                    .Select(CanonicalParameterForm)
+                    .Select(argument => CanonicalParameterForm(argument, qualifyAssembly))
                     .ToArray();
                 if (arguments.Length > 0)
                 {
@@ -614,6 +615,9 @@ public sealed class RoslynSignatureMapper
 
         var joined = string.Join("/", levels.ToArray());
         var prefix = string.Join(".", namespaces.ToArray());
-        return string.IsNullOrEmpty(prefix) ? joined : $"{prefix}.{joined}";
+        var name = string.IsNullOrEmpty(prefix) ? joined : $"{prefix}.{joined}";
+        return qualifyAssembly
+            ? GenericOwnerIdentity.Qualify(name, MapAssemblyIdentity(named.ContainingAssembly.Identity))
+            : name;
     }
 }

@@ -5,6 +5,7 @@
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\Shared\OwnerIdentityFixture.cs" Link="SharedTests\OwnerIdentityFixture.cs" />
     <ProjectReference Include="..\..\src\AspectN.Roslyn\AspectN.Roslyn.csproj" />
   </ItemGroup>
   <ItemGroup>

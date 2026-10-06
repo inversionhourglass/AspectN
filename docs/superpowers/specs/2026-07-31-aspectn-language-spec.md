@@ -502,7 +502,7 @@ Standard:
 
 ```text
 (int, string)
-($T, decimal)
+method(($T, decimal) Service.M<$T>())
 ```
 
 matches `System.ValueTuple` only. Long tuples are normalized structurally so callers do not need to express the runtime `TRest` nesting.
@@ -568,13 +568,17 @@ Example:
 method($T Service.Convert<$T>($T))
 ```
 
-The first positive occurrence binds the variable for one evaluation. Later occurrences must be type-equal under the active `ITypeSystem`.
+A variable is declared by a positive occurrence in a type or method generic clause. Its first evaluation binds it; later references must be type-equal under the active `ITypeSystem`. Within a member signature, the declaring-type and method generic clauses are bound and evaluated before return/property types and parameters, regardless of textual order.
 
 Rules:
 
 - Ordinary `T` or `Result` is a type name, never an implicit variable.
+- Return/property types and method/constructor parameter types can only reference variables already declared in an enclosing type or method generic clause or the visible conjunction scope. Nested generic clauses in those type uses do not declare variables.
+- A standalone `$T` cannot declare a variable. A generic declaration argument cannot negate a variable, even when that name is already visible: `method($T Service.M<!$T>())` and `method($T Service<$T>.M<!$T>())` are invalid. Concrete negated arguments such as `Box<!int>` remain valid.
+- A return or parameter reference may be negated: `method(!$T Service.M<$T>())` is valid. Negating a whole type pattern can reference an existing variable, as in `Box<$T> && !Box<$T>`.
 - Conjunction shares a binding environment.
 - Each OR branch evaluates with an isolated copy.
+- Matched and unknown binding alternatives survive OR and inheritance/attribute enumeration; unknown alternatives retain their uncertainty through later conjunctions. Equivalent alternatives may be coalesced without adding a resource budget or changing match status.
 - Bindings created inside negation do not escape it.
 - A variable may not be introduced for the first time under negation.
 - Bindings are not returned in public `MatchResult`.

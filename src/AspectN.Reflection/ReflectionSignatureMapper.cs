@@ -134,7 +134,7 @@ public sealed class ReflectionSignatureMapper
         if (RuntimeTypeFacts.IsFunctionPointer(type))
         {
             return new UnsupportedTypeSignature(
-                CanonicalParameterForm(type),
+                CanonicalParameterForm(type, isModified: false, qualifyAssembly: false),
                 "Reflection function pointer types are unsupported.");
         }
 
@@ -651,7 +651,7 @@ public sealed class ReflectionSignatureMapper
         return CanonicalParameterForm(type, isModified);
     }
 
-    private static string CanonicalParameterForm(Type type, bool isModified)
+    private static string CanonicalParameterForm(Type type, bool isModified, bool qualifyAssembly = true)
     {
         if (type.IsGenericParameter)
         {
@@ -662,12 +662,12 @@ public sealed class ReflectionSignatureMapper
 
         if (type.IsByRef)
         {
-            return CanonicalParameterForm(RequiredElementType(type), isModified) + "&";
+            return CanonicalParameterForm(RequiredElementType(type), isModified, qualifyAssembly) + "&";
         }
 
         if (type.IsPointer)
         {
-            return CanonicalParameterForm(RequiredElementType(type), isModified) + "*";
+            return CanonicalParameterForm(RequiredElementType(type), isModified, qualifyAssembly) + "*";
         }
 
         // 函数指针的 Name/Namespace 为空，落入命名形式会把 owner ID 折叠成空参形状；
@@ -678,25 +678,25 @@ public sealed class ReflectionSignatureMapper
         {
             var parameterForms = RuntimeTypeFacts
                 .GetFunctionPointerParameterTypes(type)
-                .Select(parameter => CanonicalParameterForm(parameter, isModified))
+                .Select(parameter => CanonicalParameterForm(parameter, isModified, qualifyAssembly))
                 .Append(CanonicalParameterForm(
-                    RuntimeTypeFacts.GetFunctionPointerReturnType(type), isModified));
+                    RuntimeTypeFacts.GetFunctionPointerReturnType(type), isModified, qualifyAssembly));
             var convention = RuntimeTypeFacts.CallingConvention(type, isModified);
             return $"delegate*[{convention}]<{string.Join(",", parameterForms)}>";
         }
 
         if (type.IsArray)
         {
-            return CanonicalParameterForm(RequiredElementType(type), isModified) +
+            return CanonicalParameterForm(RequiredElementType(type), isModified, qualifyAssembly) +
                    (type.GetArrayRank() == 1 && !RuntimeTypeFacts.IsVector(type) ? "[*]" : ArraySuffix(type.GetArrayRank()));
         }
 
-        return ConstructedNamedForm(type.UnderlyingSystemType);
+        return ConstructedNamedForm(type.UnderlyingSystemType, qualifyAssembly);
     }
 
     // 嵌套构造类型的规范形式按包含链逐层携带各自的构造实参；与 Cecil、Roslyn 逐字节一致。
     // .NET 中构造嵌套类型的 DeclaringType 链是开放定义，构造实参只在封闭类型上扁平可见，需按层分发。
-    private static string ConstructedNamedForm(Type type)
+    private static string ConstructedNamedForm(Type type, bool qualifyAssembly = true)
     {
         var chain = new List<Type>();
         for (var current = type;
@@ -724,7 +724,7 @@ public sealed class ReflectionSignatureMapper
             {
                 var slice = new Type[ownArity];
                 Array.Copy(flattened, offset, slice, 0, ownArity);
-                form += $"<{string.Join(",", slice.Select(CanonicalParameterForm))}>";
+                form += $"<{string.Join(",", slice.Select(argument => CanonicalParameterForm(argument, false, qualifyAssembly)))}>";
                 offset += ownArity;
             }
 
@@ -733,7 +733,8 @@ public sealed class ReflectionSignatureMapper
 
         var prefix = type.Namespace;
         var joined = string.Join("/", parts);
-        return string.IsNullOrEmpty(prefix) ? joined : $"{prefix}.{joined}";
+        var name = string.IsNullOrEmpty(prefix) ? joined : $"{prefix}.{joined}";
+        return qualifyAssembly ? GenericOwnerIdentity.Qualify(name, MapAssemblyIdentity(type.Assembly.GetName())) : name;
     }
 
     private static string ArraySuffix(int rank)

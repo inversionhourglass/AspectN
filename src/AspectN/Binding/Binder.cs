@@ -36,6 +36,9 @@ internal sealed partial class Binder(
     private readonly AspectNSyntaxTree _syntaxTree = syntaxTree ??
             throw new ArgumentNullException(nameof(syntaxTree));
     private int _negationDepth;
+    private int _referenceOnlyDepth;
+    private int _genericDefinitionDepth;
+    private int _genericDefinitionNegationDepth;
 
     public IReadOnlyList<AspectNDiagnostic> Diagnostics =>
         new ReadOnlyCollection<AspectNDiagnostic>(_diagnostics.ToArray());
@@ -347,10 +350,18 @@ internal sealed partial class Binder(
         }
 
         var negatedRef = syntax.NegatedRefTokens.Count > 0;
-        return new BoundTypeUsePattern(
-            refKind,
-            negatedRef,
-            BindTypePattern(syntax.TypePattern, scope, IsUnderNegation));
+        _referenceOnlyDepth++;
+        try
+        {
+            return new BoundTypeUsePattern(
+                refKind,
+                negatedRef,
+                BindTypePattern(syntax.TypePattern, scope, IsUnderNegation));
+        }
+        finally
+        {
+            _referenceOnlyDepth--;
+        }
     }
 
     private List<BoundModifier> BindModifiers(
@@ -547,9 +558,18 @@ internal sealed partial class Binder(
             case UnaryTypePatternSyntax unary:
                 {
                     var childScope = scope.Clone();
-                    var operand = BindTypePattern(unary.Operand, childScope, true);
-                    scope.HideNewVariablesFrom(childScope);
-                    return new BoundUnaryTypePattern(unary.FullSpan, operand);
+                    var negatesGenericDefinition = _genericDefinitionDepth > 0 && _referenceOnlyDepth == 0;
+                    if (negatesGenericDefinition) _genericDefinitionNegationDepth++;
+                    try
+                    {
+                        var operand = BindTypePattern(unary.Operand, childScope, true);
+                        scope.HideNewVariablesFrom(childScope);
+                        return new BoundUnaryTypePattern(unary.FullSpan, operand);
+                    }
+                    finally
+                    {
+                        if (negatesGenericDefinition) _genericDefinitionNegationDepth--;
+                    }
                 }
             case BinaryTypePatternSyntax binary:
                 return BindBinaryTypePattern(binary, scope, underNegation);
@@ -695,8 +715,17 @@ internal sealed partial class Binder(
                 0);
         }
 
-        var arguments = syntax.Arguments.Select(argument =>
-            BindTypePattern(argument, scope, underNegation));
+        BoundTypePattern[] arguments;
+        _genericDefinitionDepth++;
+        try
+        {
+            arguments = syntax.Arguments.Select(argument =>
+                BindTypePattern(argument, scope, underNegation)).ToArray();
+        }
+        finally
+        {
+            _genericDefinitionDepth--;
+        }
         return syntax.Form switch
         {
             GenericPatternForm.AnyPositiveArity => new BoundGenericPattern(
@@ -721,6 +750,16 @@ internal sealed partial class Binder(
         VariableScope scope,
         bool underNegation)
     {
+        if (_genericDefinitionNegationDepth > 0)
+        {
+            _diagnostics.Add(
+                DiagnosticCodes.InvalidVariable,
+                DiagnosticSeverity.Error,
+                $"Variable '${name}' cannot be negated in a generic declaration.",
+                span);
+            return new BoundVariableTypePattern(span, new VariableSymbol(name));
+        }
+
         if (scope.TryGet(name, out var existing))
         {
             return new BoundVariableTypePattern(span, existing!);
@@ -744,6 +783,16 @@ internal sealed partial class Binder(
                 DiagnosticCodes.InvalidVariableScope,
                 DiagnosticSeverity.Error,
                 $"Variable '${name}' was introduced in an isolated branch and cannot escape it.",
+                span);
+            return new BoundVariableTypePattern(span, variable);
+        }
+
+        if (_referenceOnlyDepth > 0 || _genericDefinitionDepth == 0)
+        {
+            _diagnostics.Add(
+                DiagnosticCodes.InvalidVariable,
+                DiagnosticSeverity.Error,
+                $"Variable '${name}' must be declared in a type or method generic clause before it is referenced.",
                 span);
             return new BoundVariableTypePattern(span, variable);
         }

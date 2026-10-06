@@ -47,7 +47,7 @@ public sealed class ModifierSyntax : SyntaxNode
     /// <summary>Initializes a new instance of the ModifierSyntax class.</summary>
     /// <param name="tokens">Specifies the tokens.</param>
     public ModifierSyntax(IEnumerable<SyntaxToken> tokens)
-        : this(tokens.ToArray())
+        : this(Array.AsReadOnly(tokens.ToArray()))
     {
     }
 
@@ -96,8 +96,8 @@ public sealed class GenericPatternListSyntax : SyntaxNode
             lessThanToken,
             form,
             arity,
-            CollectionSnapshot.Copy(arguments, nameof(arguments)),
-            CollectionSnapshot.Copy(separators, nameof(separators)),
+            Array.AsReadOnly(CollectionSnapshot.Copy(arguments, nameof(arguments))),
+            Array.AsReadOnly(CollectionSnapshot.Copy(separators, nameof(separators))),
             wildcardToken,
             greaterThanToken)
     {
@@ -183,9 +183,9 @@ public sealed class TypeUseSyntax : SyntaxNode
         TypePatternSyntax typePattern,
         IReadOnlyList<SyntaxToken>? negatedRefTokens = null)
         : this(
-            refKindTokens.ToArray(),
+            Array.AsReadOnly(refKindTokens.ToArray()),
             typePattern,
-            negatedRefTokens ?? Array.Empty<SyntaxToken>())
+            Array.AsReadOnly((negatedRefTokens ?? Array.Empty<SyntaxToken>()).ToArray()))
     {
     }
 

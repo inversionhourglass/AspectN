@@ -1,3 +1,4 @@
+using static AspectN.Tests.Shared.OwnerIdentityFixture;
 using AspectN.Cecil.Tests.Fixtures;
 using AspectN.Evaluation;
 using AspectN.Metadata;
@@ -88,6 +89,8 @@ public sealed class CecilFunctionPointerTests
             .Select(signature => signature.Parameter.OwnerId)
             .OrderBy(id => id, StringComparer.Ordinal)
             .ToArray();
+        var intForm = FrameworkType("System.Int32");
+        var stringForm = FrameworkType("System.String");
 
         // 函数指针参数在 owner ID 中以统一文本标记（与 Reflection/Roslyn 逐字节一致），
         // 不递归空的 ElementType，且不同函数指针形状必须区分同名同元数的泛型重载；
@@ -95,23 +98,23 @@ public sealed class CecilFunctionPointerTests
         // 重载也必须区分；ref readonly 的 modreq 不得使泛型参数退化为按名编码。
         Assert.Equal(
             "AspectN.Cecil.Tests.Fixtures.FunctionPointerFixture.Convert`1(" +
-            "delegate*[cdecl]<System.Int32,!!0>,System.Int32)",
+            $"delegate*[cdecl]<{intForm},!!0>,{intForm})",
             ownerIds[0]);
         Assert.Equal(
             "AspectN.Cecil.Tests.Fixtures.FunctionPointerFixture.Convert`1(" +
-            "delegate*[managed]<System.Int32&,!!0&>,System.Int32)",
+            $"delegate*[managed]<{intForm}&,!!0&>,{intForm})",
             ownerIds[1]);
         Assert.Equal(
             "AspectN.Cecil.Tests.Fixtures.FunctionPointerFixture.Convert`1(" +
-            "delegate*[managed]<System.Int32&,!!0>,System.Int32)",
+            $"delegate*[managed]<{intForm}&,!!0>,{intForm})",
             ownerIds[2]);
         Assert.Equal(
             "AspectN.Cecil.Tests.Fixtures.FunctionPointerFixture.Convert`1(" +
-            "delegate*[managed]<System.Int32,!!0>,System.Int32)",
+            $"delegate*[managed]<{intForm},!!0>,{intForm})",
             ownerIds[3]);
         Assert.Equal(
             "AspectN.Cecil.Tests.Fixtures.FunctionPointerFixture.Convert`1(" +
-            "delegate*[managed]<System.String,!!0>,System.String)",
+            $"delegate*[managed]<{stringForm},!!0>,{stringForm})",
             ownerIds[4]);
         Assert.All(
             mapped,
@@ -126,17 +129,17 @@ public sealed class CecilFunctionPointerTests
         var managedIndex = Array.FindIndex(
             mapped,
             signature => signature.Parameter.OwnerId.Contains(
-                "delegate*[managed]<System.Int32,",
+                $"delegate*[managed]<{intForm},",
                 StringComparison.Ordinal));
         var byValueReturnIndex = Array.FindIndex(
             mapped,
             signature => signature.Parameter.OwnerId.Contains(
-                "delegate*[managed]<System.Int32&,!!0>,",
+                $"delegate*[managed]<{intForm}&,!!0>,",
                 StringComparison.Ordinal));
         var refReadonlyReturnIndex = Array.FindIndex(
             mapped,
             signature => signature.Parameter.OwnerId.Contains(
-                "delegate*[managed]<System.Int32&,!!0&>,",
+                $"delegate*[managed]<{intForm}&,!!0&>,",
                 StringComparison.Ordinal));
         Assert.True(
             cdeclIndex >= 0 &&

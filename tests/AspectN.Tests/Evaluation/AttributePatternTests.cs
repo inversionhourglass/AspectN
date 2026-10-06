@@ -42,17 +42,17 @@ public sealed class AttributePatternTests
         var second = Named("Example.Markers", "SecondAttribute");
         var attributes = new[]
         {
-            new AttributeSignature(first, AttributeTargetKind.Method),
-            new AttributeSignature(second, AttributeTargetKind.Method)
+            new AttributeSignature(Generic("Example", "TagAttribute", first), AttributeTargetKind.Method),
+            new AttributeSignature(Generic("Example", "TagAttribute", second), AttributeTargetKind.Method)
         };
         var typeSystem = new AttributeTypeSystem(_ => false);
 
         var matched = Match(
-            "attr(call $A) && callable($A Service.get_Name(..))",
+            "attr(call TagAttribute<$A>) && callable($A Service.get_Name(..))",
             Candidate(returnType: second, attributes: attributes),
             typeSystem);
         var notMatched = Match(
-            "attr(call $A) && callable($A Service.get_Name(..))",
+            "attr(call TagAttribute<$A>) && callable($A Service.get_Name(..))",
             Candidate(returnType: second, attributes: attributes.Take(1)),
             typeSystem);
 
@@ -68,16 +68,16 @@ public sealed class AttributePatternTests
         var typeSystem = new AttributeTypeSystem(_ => false);
 
         var result = Match(
-            "attr(any $A) && callable($A Service.get_Name(..))",
+            "attr(any TagAttribute<$A>) && callable($A Service.get_Name(..))",
             Candidate(
                 returnType: second,
                 attributes:
                 [
-                    new AttributeSignature(first, AttributeTargetKind.Method)
+                    new AttributeSignature(Generic("Example", "TagAttribute", first), AttributeTargetKind.Method)
                 ],
                 propertyAttributes:
                 [
-                    new AttributeSignature(second, AttributeTargetKind.Property)
+                    new AttributeSignature(Generic("Example", "TagAttribute", second), AttributeTargetKind.Property)
                 ]),
             typeSystem);
 
@@ -359,8 +359,8 @@ public sealed class AttributePatternTests
             returnType: alpha,
             attributes:
             [
-                new AttributeSignature(alpha, AttributeTargetKind.Method),
-                new AttributeSignature(beta, AttributeTargetKind.Method)
+                new AttributeSignature(Generic("Example", "TagAttribute", alpha), AttributeTargetKind.Method),
+                new AttributeSignature(Generic("Example", "TagAttribute", beta), AttributeTargetKind.Method)
             ],
             returnAttributes:
             [
@@ -370,8 +370,8 @@ public sealed class AttributePatternTests
             returnType: alpha,
             attributes:
             [
-                new AttributeSignature(alpha, AttributeTargetKind.Method),
-                new AttributeSignature(beta, AttributeTargetKind.Method)
+                new AttributeSignature(Generic("Example", "TagAttribute", alpha), AttributeTargetKind.Method),
+                new AttributeSignature(Generic("Example", "TagAttribute", beta), AttributeTargetKind.Method)
             ],
             returnAttributes:
             [
@@ -380,12 +380,12 @@ public sealed class AttributePatternTests
 
         // 成员 OR 与类型 OR 两种形式必须对同一约束给出一致结果。
         var memberOr =
-            "attr(call $A) && " +
+            "attr(call TagAttribute<$A>) && " +
             "(callable($A Service.get_Name(..)) || " +
             "callable($A Service.Missing(..))) && " +
             "attr(ret $A)";
         var typeOr =
-            "attr(call $A) && " +
+            "attr(call TagAttribute<$A>) && " +
             "callable(($A || Missing) Service.get_Name(..)) && " +
             "attr(ret $A)";
 

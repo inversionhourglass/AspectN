@@ -6,6 +6,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\Shared\OwnerIdentityFixture.cs" Link="SharedTests\OwnerIdentityFixture.cs" />
     <ProjectReference Include="..\..\src\AspectN.Cecil.Fody\AspectN.Cecil.Fody.csproj" />
   </ItemGroup>
   <ItemGroup>

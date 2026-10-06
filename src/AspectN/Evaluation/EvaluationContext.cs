@@ -119,6 +119,16 @@ internal sealed class EvaluationContext
             branches.Select(branch => branch._bindings));
     }
 
+    public static void RetainAlternative(
+        ICollection<EvaluationContext> alternatives,
+        EvaluationContext branch,
+        MatchStatus status)
+    {
+        if (status == MatchStatus.NotMatched) return;
+        if (status == MatchStatus.Unknown) branch._bindings.SetUnknown(true);
+        alternatives.Add(branch);
+    }
+
     public void AddDiagnostic(AspectNDiagnostic diagnostic)
     {
         _diagnostics.Add(diagnostic);

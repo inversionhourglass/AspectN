@@ -18,7 +18,7 @@ public sealed class NamePatternSegmentSyntax : SyntaxNode
     public NamePatternSegmentSyntax(
         IEnumerable<SyntaxToken> nameParts,
         GenericPatternListSyntax? genericArguments = null)
-        : this(nameParts.ToArray(), genericArguments)
+        : this(Array.AsReadOnly(nameParts.ToArray()), genericArguments)
     {
     }
 
@@ -52,7 +52,7 @@ public sealed class NamedTypePatternSyntax : TypePatternSyntax
     public NamedTypePatternSyntax(
         IEnumerable<NamePatternSegmentSyntax> segments,
         IEnumerable<SyntaxToken> separators)
-        : this(segments.ToArray(), separators.ToArray())
+        : this(Array.AsReadOnly(segments.ToArray()), Array.AsReadOnly(separators.ToArray()))
     {
     }
 
@@ -102,8 +102,8 @@ public sealed class TupleTypePatternSyntax : TypePatternSyntax
         SyntaxToken closeParenToken)
         : this(
             openParenToken,
-            elements.ToArray(),
-            separators.ToArray(),
+            Array.AsReadOnly(elements.ToArray()),
+            Array.AsReadOnly(separators.ToArray()),
             closeParenToken)
     {
     }
@@ -203,7 +203,7 @@ public sealed class ArrayTypePatternSyntax : TypePatternSyntax
         : this(
             elementType,
             openBracketToken,
-            commaTokens.ToArray(),
+            Array.AsReadOnly(commaTokens.ToArray()),
             closeBracketToken)
     {
     }

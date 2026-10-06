@@ -84,7 +84,7 @@ public sealed class BinderTests
     [Fact]
     public void Create_DuplicateVariableIntroductionsAcrossOr_ReportsDiagnostic()
     {
-        var compilation = CompileType("$T || $T");
+        var compilation = CompileType("Box<$T> || Box<$T>");
 
         AssertDiagnostic(compilation, DiagnosticCodes.InvalidVariable);
         Assert.Null(compilation.BoundRoot);
@@ -93,7 +93,7 @@ public sealed class BinderTests
     [Fact]
     public void Create_VariableIntroducedInOrThenUsedOutside_ReportsDiagnostic()
     {
-        var compilation = CompileType("($T || string) && $T");
+        var compilation = CompileType("(Box<$T> || string) && $T");
 
         AssertDiagnostic(compilation, DiagnosticCodes.InvalidVariableScope);
         Assert.Null(compilation.BoundRoot);
@@ -102,11 +102,13 @@ public sealed class BinderTests
     [Fact]
     public void Create_RepeatedPositiveVariable_ReusesSymbol()
     {
-        var compilation = CompileType("$T && $T");
+        var compilation = CompileType("Box<$T> && Box<$T>");
 
         var binary = Assert.IsType<BoundBinaryTypePattern>(compilation.BoundRoot);
-        var left = Assert.IsType<BoundVariableTypePattern>(binary.Left);
-        var right = Assert.IsType<BoundVariableTypePattern>(binary.Right);
+        var leftName = Assert.IsType<BoundNamedTypePattern>(binary.Left);
+        var rightName = Assert.IsType<BoundNamedTypePattern>(binary.Right);
+        var left = Assert.IsType<BoundVariableTypePattern>(Assert.Single(leftName.Segments[0].Generic.Arguments));
+        var right = Assert.IsType<BoundVariableTypePattern>(Assert.Single(rightName.Segments[0].Generic.Arguments));
         Assert.Same(left.Variable, right.Variable);
         Assert.DoesNotContain(
             compilation.Diagnostics,

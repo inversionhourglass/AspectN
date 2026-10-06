@@ -1,3 +1,4 @@
+using static AspectN.Tests.Shared.OwnerIdentityFixture;
 using System.Runtime.CompilerServices;
 using AspectN.Cecil.Tests.Fixtures;
 using AspectN.Evaluation;
@@ -168,7 +169,7 @@ public sealed class CecilTypeMappingTests
 
         Assert.Equal("Example.Overloads.Map`1(!!0)", first.Parameter.OwnerId);
         Assert.Equal(
-            "Example.Overloads.Map`1(!!0,System.Int32)",
+            $"Example.Overloads.Map`1(!!0,{FrameworkType("System.Int32")})",
             second.Parameter.OwnerId);
         Assert.Equal(
             MatchStatus.NotMatched,

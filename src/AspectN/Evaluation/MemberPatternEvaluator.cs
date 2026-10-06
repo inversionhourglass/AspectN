@@ -35,23 +35,10 @@ internal static class MemberPatternEvaluator
                     var right = Evaluate(binary.Right, candidate, rightContext);
                     context.MergeDiagnosticsFrom(leftContext);
                     context.MergeDiagnosticsFrom(rightContext);
-                    // 成功分支对变量的约束必须延续到后续合取，否则被 OR 排除的绑定会被重新放行。
-                    var matchedBranches = new List<EvaluationContext>();
-                    if (left == MatchStatus.Matched)
-                    {
-                        matchedBranches.Add(leftContext);
-                    }
-
-                    if (right == MatchStatus.Matched)
-                    {
-                        matchedBranches.Add(rightContext);
-                    }
-
-                    if (matchedBranches.Count > 0)
-                    {
-                        context.ReplaceBindingsWithAlternativesFrom(
-                            matchedBranches);
-                    }
+                    var alternatives = new List<EvaluationContext>();
+                    EvaluationContext.RetainAlternative(alternatives, leftContext, left);
+                    EvaluationContext.RetainAlternative(alternatives, rightContext, right);
+                    context.ReplaceBindingsWithAlternativesFrom(alternatives);
 
                     return MatchLogic.Or(left, right);
                 }
@@ -362,9 +349,9 @@ internal static class MemberPatternEvaluator
                 context.MergeDiagnosticsFrom(leftContext);
                 context.MergeDiagnosticsFrom(rightContext);
                 var matchedBranches = new List<EvaluationContext>();
-                if (left == MatchStatus.Matched) matchedBranches.Add(leftContext);
-                if (right == MatchStatus.Matched) matchedBranches.Add(rightContext);
-                if (matchedBranches.Count > 0) context.ReplaceBindingsWithAlternativesFrom(matchedBranches);
+                EvaluationContext.RetainAlternative(matchedBranches, leftContext, left);
+                EvaluationContext.RetainAlternative(matchedBranches, rightContext, right);
+                context.ReplaceBindingsWithAlternativesFrom(matchedBranches);
                 return MatchLogic.Or(left, right);
             default:
                 return Unknown(pattern, context, "This member-name node cannot be evaluated.");

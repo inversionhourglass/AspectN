@@ -9,7 +9,7 @@ public sealed class CompiledPatternTests
     [Fact]
     public void TryGetTypePattern_ValidCompilation_ReturnsImmutablePlan()
     {
-        var tree = AspectNParser.ParseTypePattern("$T && $T");
+        var tree = AspectNParser.ParseTypePattern("Box<$T> && Box<$T>");
         var compilation = AspectNCompilation.Create(tree);
 
         var success = compilation.TryGetTypePattern(out var pattern);
@@ -45,10 +45,10 @@ public sealed class CompiledPatternTests
     [Fact]
     public async Task Match_ConcurrentCandidates_DoNotShareVariableBindings()
     {
-        var pattern = CompileTypePattern("$T && $T");
+        var pattern = CompileTypePattern("Box<$T> && Box<$T>");
         var typeSystem = new StubTypeSystem();
-        var first = Named("First");
-        var second = Named("Second");
+        var first = Box(Named("First"));
+        var second = Box(Named("Second"));
         var tasks = Enumerable.Range(0, 100)
             .Select(index => Task.Run(() =>
                 pattern.Match(
@@ -66,13 +66,13 @@ public sealed class CompiledPatternTests
     [Fact]
     public async Task Match_ConcurrentUnknowns_DoNotShareDiagnostics()
     {
-        var pattern = CompileTypePattern("$T && $T");
+        var pattern = CompileTypePattern("Box<$T> && Box<$T>");
         var typeSystem = new StubTypeSystem();
         var unsupported = new UnsupportedTypeSignature(
             "delegate*<void>",
             "Function pointers are unavailable.");
         var tasks = Enumerable.Range(0, 50)
-            .Select(_ => Task.Run(() => pattern.Match(unsupported, typeSystem)))
+            .Select(_ => Task.Run(() => pattern.Match(Box(unsupported), typeSystem)))
             .ToArray();
 
         var results = await Task.WhenAll(tasks);
@@ -103,5 +103,12 @@ public sealed class CompiledPatternTests
                 name,
                 0,
                 TypeKind.Class));
+    }
+
+    private static NamedTypeSignature Box(TypeSignature argument)
+    {
+        var definition = new NamedTypeSignature(
+            new TypeIdentity(new AssemblyIdentity("Example.Assembly"), "Example", "Box", 1, TypeKind.Class));
+        return new NamedTypeSignature(definition.Identity, [argument], definition);
     }
 }
