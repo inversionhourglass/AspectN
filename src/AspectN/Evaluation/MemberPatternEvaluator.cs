@@ -151,9 +151,16 @@ internal static class MemberPatternEvaluator
         var property = candidate.AssociatedProperty;
         if (property is null || !candidate.Availability.IsKnown(MetadataFacts.AssociatedProperty))
         {
-            if (pattern.Member.DeclaringType is not null &&
-                TypePatternEvaluator.Evaluate(pattern.Member.DeclaringType, candidate.DeclaringType, context) == MatchStatus.NotMatched)
-                return MatchStatus.NotMatched;
+            // 声明类型仍可判断，但属性名不可读；复用完整路径的否定与绑定隔离逻辑。
+            var unavailableMemberStatus = EvaluateMember(
+                pattern.Member,
+                candidate.DeclaringType,
+                string.Empty,
+                null,
+                context,
+                new MetadataAvailability(MetadataFacts.Name));
+            if (unavailableMemberStatus == MatchStatus.NotMatched) return unavailableMemberStatus;
+            // 否定路径即使确定匹配，也不能补全缺失的属性类型/ref 信息。
             if (!candidate.Availability.IsKnown(MetadataFacts.AssociatedProperty))
                 return MetadataQuery.Require(candidate.Availability, MetadataFacts.AssociatedProperty, pattern, context);
             return Unknown(

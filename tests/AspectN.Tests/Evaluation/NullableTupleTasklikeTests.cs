@@ -7,6 +7,34 @@ namespace AspectN.Tests.Evaluation;
 
 public sealed class NullableTupleTasklikeTests
 {
+    [Theory]
+    [InlineData("System.Threading.Tasks", "Task", TypeKind.Class, 1, "tasklike<*>", MatchStatus.Matched)]
+    [InlineData("System.Threading.Tasks", "ValueTask", TypeKind.Struct, 1, "tasklike<*>", MatchStatus.Matched)]
+    [InlineData("System", "ValueTuple", TypeKind.Struct, 2, "(*,*)", MatchStatus.Matched)]
+    [InlineData("System", "ValueTuple", TypeKind.Struct, 7, "(*,*,*,*,*,*,*)", MatchStatus.Matched)]
+    [InlineData("System", "ValueTuple", TypeKind.Struct, 8, "(*,*,*,*,*,*,*,*)", MatchStatus.Unknown)]
+    public void Match_OpenGenericDefinition_UsesFormalTypeArguments(
+        string @namespace, string name, TypeKind kind, int arity, string source, MatchStatus expected)
+    {
+        var definition = new NamedTypeSignature(new TypeIdentity(
+            new AssemblyIdentity("Example.Assembly"), @namespace, name, arity, kind));
+
+        Assert.Equal(expected, Match(source, definition).Status);
+    }
+
+    [Theory]
+    [InlineData("System.Threading.Tasks", "Task", TypeKind.Class, 1, "tasklike<*>")]
+    [InlineData("System", "ValueTuple", TypeKind.Struct, 3, "(*,*,*)")]
+    public void Match_IncompleteGenericArguments_RemainsUnknown(
+        string @namespace, string name, TypeKind kind, int arity, string source)
+    {
+        var candidate = new NamedTypeSignature(new TypeIdentity(
+            new AssemblyIdentity("Example.Assembly"), @namespace, name, arity, kind),
+            new TypeSignature[] { Named("System", "Int32", TypeKind.Struct), Named("System", "String") });
+
+        Assert.Equal(MatchStatus.Unknown, Match(source, candidate).Status);
+    }
+
     [Fact]
     public void Match_NullableReferencePattern_EqualsReferenceType()
     {

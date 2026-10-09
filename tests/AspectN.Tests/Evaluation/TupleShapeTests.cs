@@ -40,6 +40,18 @@ public sealed class TupleShapeTests
         AssertStatus("(int,int,int,int,int,int,int)", Tuple(elements), MatchStatus.Matched);
     }
 
+    [Fact]
+    public void Match_ZeroArityRestWithUnexpectedArguments_RemainsUnknown()
+    {
+        var rest = new NamedTypeSignature(
+            new TypeIdentity(new AssemblyIdentity("Example"), "System", "ValueTuple", 0, TypeKind.Struct),
+            new TypeSignature[] { Int() });
+        var elements = Enumerable.Repeat<TypeSignature>(Int(), 7).Append(rest).ToArray();
+
+        AssertStatus("(int,int,int,int,int,int,int)", Tuple(elements), MatchStatus.Unknown);
+        AssertStatus("!(int,int,int,int,int,int,int)", Tuple(elements), MatchStatus.Unknown);
+    }
+
     private static void AssertStatus(string expression, TypeSignature candidate, MatchStatus status)
     {
         var compilation = new AspectNEngine().CompileTypePattern(expression);

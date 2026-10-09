@@ -250,7 +250,8 @@ internal static class TypePatternEvaluator
             return MatchStatus.NotMatched;
         }
 
-        if (named.TypeArguments.Count != 1)
+        var arguments = GenericParameterNamer.GetEffectiveTypeArguments(named);
+        if (arguments.Length != 1)
         {
             return Unknown(
                 pattern,
@@ -258,7 +259,7 @@ internal static class TypePatternEvaluator
                 "The task-like result type is unavailable.");
         }
 
-        return Evaluate(resultType, named.TypeArguments[0], context);
+        return Evaluate(resultType, arguments[0], context);
     }
 
     private static MatchStatus FlattenTuple(
@@ -270,18 +271,20 @@ internal static class TypePatternEvaluator
         {
             var arity = current.Identity.GenericArity;
             if (arity > 8) return MatchStatus.NotMatched;
-            if (current.TypeArguments.Count != arity) return MatchStatus.Unknown;
+            if (current.TypeArguments.Count != 0 && current.TypeArguments.Count != arity) return MatchStatus.Unknown;
+            var arguments = GenericParameterNamer.GetEffectiveTypeArguments(current);
+            if (arguments.Length != arity) return MatchStatus.Unknown;
             if (arity == 0) return MatchStatus.Matched;
 
             var directElementCount = arity == 8 ? 7 : arity;
             for (var index = 0; index < directElementCount; index++)
             {
-                elements.Add(current.TypeArguments[index]);
+                elements.Add(arguments[index]);
             }
 
             if (arity != 8) return MatchStatus.Matched;
             // 具体非元组 TRest 是已知形状错误；缺失类型或未实例化形参才是 Unknown。
-            var rest = current.TypeArguments[7];
+            var rest = arguments[7];
             if (rest is UnsupportedTypeSignature or GenericParameterTypeSignature) return MatchStatus.Unknown;
             if (rest is not NamedTypeSignature restTuple || !IsTupleDefinition(restTuple.Identity))
                 return MatchStatus.NotMatched;

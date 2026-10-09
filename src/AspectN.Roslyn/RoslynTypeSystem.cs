@@ -61,12 +61,13 @@ public sealed class RoslynTypeSystem : ITypeSystem
         var arrayRelation = ArrayRelations.Compare(candidate, target, CompareUnqualified);
         if (arrayRelation is not null) return arrayRelation;
         var structural = CompareUnqualified(candidate, target);
-        if (structural.Status != MatchStatus.NotMatched) return structural;
+        if (structural.Status == MatchStatus.Matched) return structural;
+        TypeRelationResult? unresolved = structural.Status == MatchStatus.Unknown ? structural : null;
 
         if (!Mapper.TryGetTypeSymbol(candidate, out var candidateSymbol) ||
             candidateSymbol is null)
         {
-            return MissingNativeSymbol(candidate);
+            return unresolved ?? MissingNativeSymbol(candidate);
         }
 
         try
@@ -85,15 +86,14 @@ public sealed class RoslynTypeSystem : ITypeSystem
                 var relation = CompareUnqualified(
                     Mapper.MapType(current),
                     target);
-                if (relation.Status != MatchStatus.NotMatched)
-                {
-                    return relation;
-                }
+                if (relation.Status == MatchStatus.Matched) return relation;
+                // 不可读的祖先只影响该分支；后续已知接口仍能给出确定匹配。
+                if (relation.Status == MatchStatus.Unknown) unresolved ??= relation;
 
                 EnqueueNominalAncestors(current, pending);
             }
 
-            return TypeRelationResult.NotMatched;
+            return unresolved ?? TypeRelationResult.NotMatched;
         }
         catch (Exception exception) when (IsSymbolFailure(exception))
         {
