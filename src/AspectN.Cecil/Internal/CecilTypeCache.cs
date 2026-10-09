@@ -264,7 +264,7 @@ internal readonly struct CecilTypeCacheKey : IEquatable<CecilTypeCacheKey>
                     builder.Append(':');
                     builder.Append(GetScopeIdentity(typeReference));
                     builder.Append(':');
-                    builder.Append(NamedFullName(typeReference));
+                    builder.Append(CecilNativeTypeMetadata.FullName(typeReference));
                     builder.Append(':');
                     builder.Append(typeReference.IsValueType);
                     break;
@@ -272,39 +272,26 @@ internal readonly struct CecilTypeCacheKey : IEquatable<CecilTypeCacheKey>
         }
     }
 
-    private static string NamedFullName(TypeReference type)
-    {
-        var names = new Stack<string>();
-        var outer = type;
-        for (var current = type; current is not null; current = current.DeclaringType)
-        {
-            names.Push(current.Name);
-            outer = current;
-        }
-        var name = string.Join("/", names);
-        return string.IsNullOrEmpty(outer.Namespace) ? name : outer.Namespace + "." + name;
-    }
-
     private static string GetScopeIdentity(TypeReference typeReference)
     {
-        while (typeReference is TypeSpecification { ElementType: not null } specification)
-            typeReference = specification.ElementType;
-        if (typeReference.Scope is AssemblyNameReference assembly)
+        var scope = CecilNativeTypeMetadata.GetScope(typeReference);
+        if (scope is AssemblyNameReference assembly)
         {
             return assembly.FullName;
         }
 
-        if (typeReference.Scope is ModuleDefinition module)
+        if (scope is ModuleDefinition module)
         {
             return module.Assembly?.Name.FullName ?? module.Name;
         }
 
-        if (typeReference.Module?.Assembly is not null)
+        var referenceModule = CecilNativeTypeMetadata.GetModule(typeReference);
+        if (referenceModule?.Assembly is not null)
         {
-            return typeReference.Module.Assembly.Name.FullName;
+            return referenceModule.Assembly.Name.FullName;
         }
 
-        return typeReference.Scope?.Name ?? string.Empty;
+        return scope?.Name ?? string.Empty;
     }
 
     private static string GetOwnerIdentity(GenericParameter parameter)

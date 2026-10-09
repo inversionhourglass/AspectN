@@ -95,13 +95,13 @@ internal static partial class CecilTypeMapper
                 GetOwnArityFallback(level)).GenericArity;
             if (position < arity)
             {
-                return level.FullName;
+                return CecilNativeTypeMetadata.FullName(level);
             }
 
             position -= arity;
         }
 
-        return owner.FullName;
+        return CecilNativeTypeMetadata.FullName(owner);
     }
 
     // 元数据名称不含元数后缀时，TypeDefinition 的 GenericParameters 是包含链扁平总数，
@@ -238,28 +238,31 @@ internal static partial class CecilTypeMapper
         TypeReference typeReference)
     {
         var definition = TryResolve(typeReference);
-        if (definition?.Module.Assembly is not null)
+        var definitionModule = definition is null ? null : CecilNativeTypeMetadata.GetModule(definition);
+        if (definitionModule?.Assembly is not null)
         {
-            return MapAssemblyIdentity(definition.Module.Assembly.Name);
+            return MapAssemblyIdentity(definitionModule.Assembly.Name);
         }
 
-        if (typeReference.Scope is AssemblyNameReference assembly)
+        var scope = CecilNativeTypeMetadata.GetScope(typeReference);
+        if (scope is AssemblyNameReference assembly)
         {
             return MapAssemblyIdentity(assembly);
         }
 
-        if (typeReference.Scope is ModuleDefinition module &&
+        if (scope is ModuleDefinition module &&
             module.Assembly is not null)
         {
             return MapAssemblyIdentity(module.Assembly.Name);
         }
 
-        if (typeReference.Module?.Assembly is not null)
+        var referenceModule = CecilNativeTypeMetadata.GetModule(typeReference);
+        if (referenceModule?.Assembly is not null)
         {
-            return MapAssemblyIdentity(typeReference.Module.Assembly.Name);
+            return MapAssemblyIdentity(referenceModule.Assembly.Name);
         }
 
-        return new AssemblyIdentity(typeReference.Scope?.Name ?? string.Empty);
+        return new AssemblyIdentity(scope?.Name ?? string.Empty);
     }
 
     private static AssemblyIdentity MapAssemblyIdentity(

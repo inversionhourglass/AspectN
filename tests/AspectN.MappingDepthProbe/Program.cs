@@ -29,8 +29,16 @@ ITypeSymbol symbol = compilation.GetSpecialType(SpecialType.System_Int32);
 TypeDefinition? containing = null;
 for (var index = 0; index < depth; index++)
 {
-    if (shape == "containing")
+    if (shape is "containing" or "owner" or "owner-reference")
     {
+        if (shape == "owner-reference")
+        {
+            cecilType = new TypeReference(index == 0 ? "Example" : string.Empty, "Level" + index, module, module)
+            {
+                DeclaringType = index == 0 ? null : cecilType
+            };
+            continue;
+        }
         var nested = new TypeDefinition(containing is null ? "Example" : string.Empty, "Level" + index,
             containing is null ? Mono.Cecil.TypeAttributes.Public : Mono.Cecil.TypeAttributes.NestedPublic, module.TypeSystem.Object);
         if (containing is null) module.Types.Add(nested);
@@ -53,6 +61,13 @@ for (var index = 0; index < depth; index++)
     if (backend == "Reflection") runtimeType = shape is "array" or "pointer" or "hidden-pointer" ? runtimeType.MakeArrayType() : typeof(List<>).MakeGenericType(runtimeType);
     if (backend == "Roslyn") symbol = shape is "array" or "pointer" ? compilation.CreateArrayTypeSymbol(symbol) :
         compilation.GetTypeByMetadataName("System.Collections.Generic.List`1")!.Construct(symbol);
+}
+if (shape is "owner" or "owner-reference")
+{
+    cecilType.Name += "`1";
+    var parameter = new GenericParameter("T", cecilType);
+    cecilType.GenericParameters.Add(parameter);
+    cecilType = parameter;
 }
 if (shape == "containing" && backend == "Roslyn")
 {
@@ -90,6 +105,13 @@ var thread = new Thread(() =>
             _ => roslyn.Mapper.MapType(symbol)
         };
         var current = mapped;
+        if (shape is "owner" or "owner-reference")
+        {
+            var expected = "Example." + string.Join("/", Enumerable.Range(0, depth).Select(index => "Level" + index)) + "`1";
+            if (mapped is not GenericParameterTypeSignature parameter || parameter.Parameter.OwnerId != expected || parameter.Parameter.Position != 0)
+                throw new InvalidOperationException("Wrong deep declaration owner.");
+            return;
+        }
         if (shape == "containing")
         {
             if (mapped is not NamedTypeSignature named) throw new InvalidOperationException("Missing named type.");

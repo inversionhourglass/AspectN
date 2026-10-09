@@ -20,6 +20,8 @@ public sealed class MappingDepthTests
     [InlineData("Reflection", "containing", 512)]
     [InlineData("Roslyn", "containing", 512)]
     [InlineData("Reflection", "hidden-pointer", 1024)]
+    [InlineData("Cecil", "owner", 1024)]
+    [InlineData("Cecil", "owner-reference", 8192)]
     public async Task MapType_DeepNativeShapeOnSmallStack_CompletesInIsolatedProcess(string backend, string shape, int depth)
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
