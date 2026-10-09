@@ -78,6 +78,25 @@ powershell -NoProfile -File eng/verify-packages.ps1
 The repository treats warnings as errors and verifies package dependency
 boundaries with temporary consumers.
 
+The complete solution test matrix and package-consumer script require Windows
+with a .NET Framework 4.7.2-compatible runtime, as well as the .NET 10 SDK.
+Reference assemblies allow compilation elsewhere; they do not supply the
+.NET Framework runtime needed to execute the `net472` tests and consumers.
+
+On non-Windows hosts, restore the solution and build/test the six .NET 10 test
+projects (`AspectN.Tests`, `AspectN.Cecil.Tests`, `AspectN.Cecil.Fody.Tests`,
+`AspectN.Reflection.Tests`, `AspectN.Roslyn.Tests`, and
+`AspectN.Conformance.Tests`) individually under `tests/`. Also run the modern
+host against the `netstandard2.0` assets:
+
+```sh
+dotnet test tests/AspectN.NetFramework.Tests/AspectN.NetFramework.Tests.csproj -c Release -f net10.0
+```
+
+CI's Linux lane uses this subset; its Windows lane covers `net472` and package
+consumers. Default CI dependency versions come from `Directory.Packages.props`;
+explicit version overrides are reserved for compatibility lanes.
+
 ## License
 
 AspectN is licensed under the MIT License.

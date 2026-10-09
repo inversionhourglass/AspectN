@@ -33,9 +33,9 @@ public sealed partial class RoslynSignatureMapper
 
     internal Compilation Compilation => _compilation;
 
-    /// <summary>Maps type metadata to an AspectN signature.</summary>
-    /// <param name="typeSymbol">Specifies the type symbol.</param>
-    /// <returns>Returns the result of the operation.</returns>
+    /// <summary>Maps a Roslyn type graph, normalizing tuples and dynamic to their metadata forms.</summary>
+    /// <param name="typeSymbol">The symbol whose shape and flattened containing-type arguments are mapped.</param>
+    /// <returns>A neutral signature; unsupported shapes retain canonical text and a reason.</returns>
     public TypeSignature MapType(ITypeSymbol typeSymbol)
     {
 #if NET10_0_OR_GREATER
@@ -69,10 +69,11 @@ public sealed partial class RoslynSignatureMapper
         foreach (var argument in FlattenTypeArguments(named)) yield return NormalizeType(argument);
     }
 
-    /// <summary>Maps type use metadata to an AspectN signature.</summary>
-    /// <param name="typeSymbol">Specifies the type symbol.</param>
-    /// <param name="useKind">Specifies the use kind.</param>
-    /// <returns>Returns the result of the operation.</returns>
+    /// <summary>Maps a type symbol as a value use.</summary>
+    /// <param name="typeSymbol">The type symbol, which does not carry parameter or return ref classification.</param>
+    /// <param name="useKind">The position in which the type occurs.</param>
+    /// <returns>A neutral type use with RefKind.None.</returns>
+    /// <remarks>Use member mapping to read ref classification from parameter, method or property symbols.</remarks>
     public TypeUseSignature MapTypeUse(
         ITypeSymbol typeSymbol,
         TypeUseKind useKind)

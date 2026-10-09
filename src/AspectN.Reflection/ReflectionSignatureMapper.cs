@@ -35,9 +35,9 @@ public sealed partial class ReflectionSignatureMapper
     {
     }
 
-    /// <summary>Maps type metadata to an AspectN signature.</summary>
-    /// <param name="type">Specifies the type.</param>
-    /// <returns>Returns the result of the operation.</returns>
+    /// <summary>Maps a Reflection type graph while preserving weak native associations.</summary>
+    /// <param name="type">The native type whose shape and generic arguments are mapped.</param>
+    /// <returns>A neutral signature; pointers and function pointers retain unsupported canonical text.</returns>
     public TypeSignature MapType(Type type)
     {
 #if NET10_0_OR_GREATER
@@ -61,10 +61,11 @@ public sealed partial class ReflectionSignatureMapper
         foreach (var argument in type.GetGenericArguments()) yield return argument;
     }
 
-    /// <summary>Maps type use metadata to an AspectN signature.</summary>
-    /// <param name="type">Specifies the type.</param>
-    /// <param name="useKind">Specifies the use kind.</param>
-    /// <returns>Returns the result of the operation.</returns>
+    /// <summary>Maps a bare type use without parameter or return metadata.</summary>
+    /// <param name="type">The native type, including any by-reference marker.</param>
+    /// <param name="useKind">The position in which the type occurs.</param>
+    /// <returns>A known by-reference shape with unavailable exact ref classification for by-ref types.</returns>
+    /// <remarks>Use member mapping to distinguish ref, out, in and ref readonly.</remarks>
     public TypeUseSignature MapTypeUse(Type type, TypeUseKind useKind)
     {
 #if NET10_0_OR_GREATER

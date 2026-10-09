@@ -65,6 +65,16 @@ Adapter declaration identity and closed query contexts are described in
 Variables introduced under negation are invalid, and variables introduced in
 isolated OR branches cannot escape. Bare `T` never becomes a variable.
 
+Equivalent binding environments are coalesced only when variable keys, bound
+signature instances and certainty agree. Distinct keys remain separate even
+when they refer to the same type: a conjunction of `n` groups such as
+`(List<$L_i> || List<$R_i>)` can retain up to `2^n` alternatives. Allocation and
+matching work can therefore grow exponentially. Binding count, allocation and
+time budgets remain deferred; existing parser and candidate-depth limits do
+not bound this growth. Regression tests cover equivalent alternatives and a
+bounded eight-group distinct-binding case; their allocation ceiling is a test
+threshold, not a runtime resource guarantee.
+
 Namespace segments and property-name atoms cannot have generic clauses
 (AN2011); declaring types and method names retain them. `<!>` denotes zero
 arity only when `!` is the entire clause. `Box<!int>` uses a negated first
@@ -112,6 +122,12 @@ or contravariance. A target that cannot be concretized uses a pattern walk
 over the inheritance closure, preserving missing-metadata diagnostics.
 
 ## Modifiers, ref kinds and parameters
+
+`async` is not a signature modifier in Standard, including property, getter and
+setter signatures. In the initial modifier position, a separate `async` token
+is diagnosed. Adjacent type-name continuations such as `async.Result`,
+`async*`, `async<>`, `async[]` and `async?`, and ordinary member names such as
+`method(int async())`, retain their normal identifier/pattern meanings.
 
 Unmentioned dimensions do not constrain matching. Accessibility uses the C#
 phrases `private protected` and `protected internal`; alternatives use `|`.

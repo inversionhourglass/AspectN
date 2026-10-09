@@ -266,27 +266,39 @@ internal sealed partial class SelectorParser(Parser parser)
     {
         var parts = new List<SyntaxNode>();
         parts.AddRange(ParseModifiers());
-        // 识别不支持的 async 修饰符，避免静默当作返回类型名。
-        if (Current.Kind == SyntaxKind.IdentifierToken &&
-            Current.Text == "async")
-        {
-            ReportUnexpected(
-                Current,
-                "return type ('async' is not supported in Standard)");
-
-            parts.Add(NextToken());
-        }
-
+        ParseUnsupportedAsyncModifier(parts);
         parts.Add(ParseTypeUse());
         parts.Add(ParseMemberPath());
         parts.AddRange(ParseParameterPatternList());
         return new MethodSignatureSyntax(parts);
     }
 
+    private void ParseUnsupportedAsyncModifier(List<SyntaxNode> parts)
+    {
+        // 识别不支持的 async 修饰符，避免静默当作返回类型名。
+        if (Current.Kind == SyntaxKind.IdentifierToken &&
+            Current.Text == "async")
+        {
+            var following = _parser.PeekSelectorTokens(2)[1];
+            if (following.Span.Start == Current.Span.End &&
+                (TypePatternSyntaxFacts.IsNamePart(following) || following.Kind is
+                    SyntaxKind.DotToken or SyntaxKind.DotDotToken or SyntaxKind.SlashToken or
+                    SyntaxKind.LessThanToken or SyntaxKind.OpenBracketToken or SyntaxKind.QuestionToken or SyntaxKind.PlusToken))
+                return;
+            ReportUnexpected(
+                Current,
+                "type ('async' is not supported in Standard)");
+
+            parts.Add(NextToken());
+        }
+
+    }
+
     private PropertySignatureSyntax ParsePropertySignature()
     {
         var parts = new List<SyntaxNode>();
         parts.AddRange(ParseModifiers());
+        ParseUnsupportedAsyncModifier(parts);
         parts.Add(ParseTypeUse());
         parts.Add(ParseMemberPath());
         return new PropertySignatureSyntax(parts);
@@ -692,7 +704,13 @@ internal sealed partial class SelectorParser(Parser parser)
                 ReportUnexpected(Current, "'<' (must be adjacent to 'tasklike')");
             }
             var lessThan = NextToken();
-            var result = ParseTypePattern();
+            TypePatternSyntax result;
+            if (Current.Kind == SyntaxKind.GreaterThanToken)
+            {
+                ReportUnexpected(Current, "task-like result type");
+                result = CreateMissingType(Current.Span.Start);
+            }
+            else result = ParseTypePattern();
             return new TaskLikeTypePatternSyntax(
                 first,
                 lessThan,

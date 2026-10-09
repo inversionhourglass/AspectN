@@ -48,4 +48,27 @@ public sealed class AttributeMetadataConformanceTests
             Assert.True(pattern!.Match(method, system).Status == expected, backend + ": " + expression);
         }
     }
+
+    [Fact]
+    public void Callable_ReviewAttributeRecords_ContainsAllTargetsAndSlots()
+    {
+        using var fixture = new ReviewFixture(SOURCE);
+        foreach (var (_, _, method) in fixture.Methods("M"))
+        {
+            var snapshot = SignatureSnapshot.Callable(method);
+            Assert.Contains("Review.TypeMarkAttribute", snapshot);
+            Assert.Contains("Review.CallMarkAttribute", snapshot);
+            Assert.Contains("Review.ReturnMarkAttribute", snapshot);
+            Assert.Contains("Review.ParameterMarkAttribute", snapshot);
+            var call = Assert.Single(method.Attributes);
+            Assert.Equal(AttributeTargetKind.Method, call.Target);
+            Assert.Null(call.ParameterIndex);
+            var result = Assert.Single(method.ReturnAttributes);
+            Assert.Equal(AttributeTargetKind.Return, result.Target);
+            Assert.Null(result.ParameterIndex);
+            var parameter = Assert.Single(method.Parameters[0].Attributes);
+            Assert.Equal(AttributeTargetKind.Parameter, parameter.Target);
+            Assert.Equal(0, parameter.ParameterIndex);
+        }
+    }
 }

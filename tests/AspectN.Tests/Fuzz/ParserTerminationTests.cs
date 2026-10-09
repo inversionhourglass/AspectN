@@ -42,15 +42,7 @@ public sealed class ParserTerminationTests
         Func<string, AspectNSyntaxTree> parse)
     {
         var stopwatch = Stopwatch.StartNew();
-        AspectNSyntaxTree tree;
-        try
-        {
-            tree = parse(source);
-        }
-        catch (OperationCanceledException)
-        {
-            return;
-        }
+        var tree = parse(source);
 
         stopwatch.Stop();
         Assert.True(

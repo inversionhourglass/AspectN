@@ -6,7 +6,7 @@ using AspectN.TypeSystem;
 
 namespace AspectN.Tests.Metadata;
 
-public sealed class ReviewContractTests
+public sealed class MetadataContractTests
 {
     private static NamedTypeSignature Type() => new(
         new TypeIdentity(new AssemblyIdentity("Example"), "Example", "Item", 0, TypeKind.Class));

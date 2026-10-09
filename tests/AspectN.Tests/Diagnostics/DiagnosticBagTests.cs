@@ -6,7 +6,7 @@ namespace AspectN.Tests.Diagnostics;
 public sealed class DiagnosticBagTests
 {
     [Fact]
-    public void ToArray_AfterAdditionalDiagnostic_Returns_OriginalSnapshot()
+    public void ToArray_AfterAdditionalDiagnostic_ReturnsOriginalSnapshot()
     {
         var bag = new DiagnosticBag();
         bag.Add(

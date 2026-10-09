@@ -423,7 +423,7 @@ public sealed class ReflectionMappingTests
     }
 
     [Fact]
-    public void IsAssignableTo_MetadataFailure_ReturnsCapabilityDiagnostic()
+    public void IsAssignableTo_MetadataFailure_ReturnsResolutionFailureDiagnostic()
     {
         var typeSystem = new ReflectionTypeSystem();
         var nativeType = new FailingMetadataType(

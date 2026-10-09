@@ -64,4 +64,30 @@ public sealed class ParserRecoveryTests
             diagnostic.Severity == DiagnosticSeverity.Error && diagnostic.Span is not null);
         Assert.False(compilation.TryGetMemberPattern(out _));
     }
+
+    [Fact]
+    public void ParseMemberExpression_EmptyTaskLike_PreservesBoundaryAndDiagnostic()
+    {
+        var standalone = Assert.Single(AspectNParser.ParseTypePattern("tasklike<>").Diagnostics);
+        var tree = AspectNParser.ParseMemberExpression("method(tasklike<> M()) || method(* N())");
+        var embedded = Assert.Single(tree.Diagnostics);
+        Assert.Equal(standalone.Code, embedded.Code);
+        Assert.Equal(standalone.Message, embedded.Message);
+        Assert.Equal(standalone.Span!.Value.Start + 7, embedded.Span!.Value.Start);
+        var root = Assert.IsType<BinaryExpressionSyntax>(tree.Root);
+        Assert.IsType<MethodSelectorSyntax>(root.Right);
+    }
+
+    [Theory]
+    [InlineData("method(* System..*(..)) || method(* N())")]
+    [InlineData("getter(* System..*) || method(* N())")]
+    public void ParseMemberExpression_NamespaceEllipsisWithoutMemberSeparator_ReportsOneError(string source)
+    {
+        var tree = AspectNParser.ParseMemberExpression(source);
+        var diagnostic = Assert.Single(tree.Diagnostics);
+        Assert.Equal(DiagnosticCodes.UnexpectedToken, diagnostic.Code);
+        Assert.Contains("member", diagnostic.Message);
+        var root = Assert.IsType<BinaryExpressionSyntax>(tree.Root);
+        Assert.IsType<MethodSelectorSyntax>(root.Right);
+    }
 }

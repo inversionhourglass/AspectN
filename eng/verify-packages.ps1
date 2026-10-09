@@ -128,21 +128,32 @@ function Get-ConsumerSource {
 
     switch ($PackageId) {
         "AspectN" {
-            return @"
+            return @'
 using AspectN;
 using AspectN.Metadata;
 
 var compilation = new AspectNEngine().CompileMemberExpression(
     "method(* Example.Service.Run(..))");
-if (!compilation.TryGetMemberPattern(out _))
+if (!compilation.TryGetMemberPattern(out var memberPattern))
 {
     throw new InvalidOperationException("AspectN compilation failed.");
 }
+_ = memberPattern.Options;
+var typeCompilation = new AspectNEngine().CompileTypePattern("Example.Container<>");
+if (!typeCompilation.TryGetTypePattern(out var typePattern))
+{
+    throw new InvalidOperationException("AspectN type compilation failed.");
+}
+_ = typePattern.Options;
 var parameter = new GenericParameterSignature(
     "T", GenericParameterOwnerKind.Type, "Example.Container`1",
     new AssemblyIdentity("Example.Assembly"), position: 0);
 _ = new GenericParameterTypeSignature(parameter);
-"@
+if (parameter.OwnerId != "Example.Container" + (char)96 + "1")
+{
+    throw new InvalidOperationException("The generic owner metadata arity was lost.");
+}
+'@
         }
         "AspectN.Cecil" {
             return @"

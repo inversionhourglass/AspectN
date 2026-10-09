@@ -23,9 +23,9 @@ public sealed class CecilSignatureMapper
         _typeSystem = typeSystem;
     }
 
-    /// <summary>Maps type metadata to an AspectN signature.</summary>
-    /// <param name="typeReference">Specifies the type reference.</param>
-    /// <returns>Returns the result of the operation.</returns>
+    /// <summary>Maps a Cecil type graph, resolving definition identities where possible.</summary>
+    /// <param name="typeReference">The native reference whose shape and generic arguments are mapped.</param>
+    /// <returns>A neutral signature; unsupported shapes retain canonical text and a reason.</returns>
     public TypeSignature MapType(TypeReference typeReference)
     {
 #if NET10_0_OR_GREATER
@@ -52,10 +52,11 @@ public sealed class CecilSignatureMapper
             yield return ((TypeSpecification)type).ElementType;
     }
 
-    /// <summary>Maps type use metadata to an AspectN signature.</summary>
-    /// <param name="typeReference">Specifies the type reference.</param>
-    /// <param name="useKind">Specifies the use kind.</param>
-    /// <returns>Returns the result of the operation.</returns>
+    /// <summary>Maps a type use without reading parameter or return definition metadata.</summary>
+    /// <param name="typeReference">The native reference, including any by-reference marker.</param>
+    /// <param name="useKind">The position in which the type occurs.</param>
+    /// <returns>A known by-reference shape with unavailable exact ref classification when necessary.</returns>
+    /// <remarks>Use member mapping to distinguish ref, out, in and ref readonly from definition metadata.</remarks>
     public TypeUseSignature MapTypeUse(
         TypeReference typeReference,
         TypeUseKind useKind)

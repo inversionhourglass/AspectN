@@ -51,6 +51,35 @@ public sealed class BindingAlternativesTests
         Assert.True(allocated < 5 * 1024 * 1024, $"Allocated {allocated:N0} bytes for an equivalent OR chain.");
     }
 
+    [Fact]
+    public void ReplaceWithAlternativesFrom_DifferentVariableKeys_PreservesBindings()
+    {
+        var left = new BindingEnvironment();
+        var right = new BindingEnvironment();
+        var type = Named("Int32");
+        var system = new StubTypeSystem();
+        left.Bind(new VariableSymbol("L"), type, system, new List<AspectNDiagnostic>());
+        right.Bind(new VariableSymbol("R"), type, system, new List<AspectNDiagnostic>());
+        left.ReplaceWithAlternativesFrom([left, right]);
+        Assert.Equal(2, left.CloneAlternatives().Count());
+    }
+
+    [Fact]
+    public void Match_EightDistinctVariableOrGroups_PreservesResultWithinRegressionBudget()
+    {
+        var source = string.Join(" && ", Enumerable.Range(0, 8).Select(index => $"(List<$L{index}> || List<$R{index}>)")) + " && List<int>";
+        var pattern = Compile(source);
+        var candidate = Construct("List", Named("Int32"));
+        var system = new StubTypeSystem();
+        pattern.Match(candidate, system);
+        var before = GC.GetAllocatedBytesForCurrentThread();
+        var result = pattern.Match(candidate, system);
+        var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+        Assert.Equal(MatchStatus.Matched, result.Status);
+        Assert.True(allocated < 5 * 1024 * 1024, $"Allocated {allocated:N0} bytes for eight distinct-binding OR groups.");
+        Assert.Equal(MatchStatus.NotMatched, pattern.Match(Construct("List", Named("String")), system).Status);
+    }
+
     [Theory]
     [InlineData("IValue<$T>+ && ((Carrier<$T, *> && IMissing<$T>+) || Carrier<*, $T>) && Carrier<$T, *>")]
     [InlineData("IValue<$T>+ && ((Carrier<$T, *> && IMissing<$T>+ && Carrier<$T, *>) || (Carrier<*, $T> && Carrier<$T, *>))")]

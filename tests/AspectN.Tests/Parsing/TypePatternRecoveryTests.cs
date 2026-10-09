@@ -3,7 +3,7 @@ using AspectN.Syntax;
 
 namespace AspectN.Tests.Parsing;
 
-public sealed class ReviewParserRecoveryTests
+public sealed class TypePatternRecoveryTests
 {
     [Theory]
     [InlineData("()", 1, 1)]

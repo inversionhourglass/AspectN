@@ -78,7 +78,7 @@ public sealed class CrossAdapterConformanceTests :
     }
 
     [Fact]
-    public void UnresolvedExternalBase_MissingBackends_ReturnUnknown()
+    public void Match_UnresolvedExternalBase_CecilReturnsUnknown()
     {
         using var fixture = FixtureCompiler.CreateUnresolved();
         var compilation = AspectNCompilation.Create(
@@ -103,18 +103,9 @@ public sealed class CrossAdapterConformanceTests :
             Assert.Single(cecilMethod.Parameters).ParameterType);
         var cecilResult = pattern.Match(cecilCandidate, fixture.Cecil);
 
-        var reflectionCandidate = TryMapMissingReflectionParameter(
-            fixture,
-            cecilCandidate);
-        var reflectionResult = pattern.Match(
-            reflectionCandidate,
-            fixture.Reflection);
-
         Assert.Equal(MatchStatus.Matched, roslynResult.Status);
         Assert.Equal(MatchStatus.Unknown, cecilResult.Status);
         Assert.NotEmpty(cecilResult.Diagnostics);
-        Assert.Equal(MatchStatus.Unknown, reflectionResult.Status);
-        Assert.NotEmpty(reflectionResult.Diagnostics);
     }
 
     [Theory]
@@ -178,34 +169,26 @@ public sealed class CrossAdapterConformanceTests :
         });
     }
 
-    private static TypeSignature TryMapMissingReflectionParameter(
-        UnresolvedFixture fixture,
-        TypeSignature fallback)
+    [Fact]
+    public void GetParameters_MissingRuntimeDependency_CannotMaterializeReflectionCandidate()
     {
-        try
-        {
-            var type = fixture.ReflectionAssembly.GetType(
-                FIXTURE_TYPE,
-                throwOnError: true)!;
-            var method = Assert.IsAssignableFrom<MethodInfo>(
-                type.GetMethod("Missing"));
-            return fixture.Reflection.Mapper.MapMethod(method)
-                .Parameters[0]
-                .Type
-                .Type;
-        }
-        catch (FileNotFoundException)
-        {
-            return fallback;
-        }
-        catch (FileLoadException)
-        {
-            return fallback;
-        }
-        catch (TypeLoadException)
-        {
-            return fallback;
-        }
+        using var fixture = FixtureCompiler.CreateUnresolved();
+        var nativeType = fixture.ReflectionAssembly.GetType(FIXTURE_TYPE, throwOnError: true)!;
+        var method = nativeType.GetMethod("Missing")!;
+        Assert.Throws<FileNotFoundException>(() => method.GetParameters());
+    }
+
+    [Fact]
+    public void Match_CecilSignatureWithoutNativeReflectionMapping_ReportsMissingCapability()
+    {
+        using var fixture = FixtureCompiler.CreateUnresolved();
+        var method = Assert.Single(fixture.Cecil.Module.GetType(FIXTURE_TYPE).Methods, method => method.Name == "Missing");
+        var candidate = fixture.Cecil.Mapper.MapType(method.Parameters[0].ParameterType);
+        var compilation = new AspectNEngine().CompileTypePattern("External.Base+");
+        Assert.True(compilation.TryGetTypePattern(out var pattern));
+        var result = pattern.Match(candidate, fixture.Reflection);
+        Assert.Equal(MatchStatus.Unknown, result.Status);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == AspectN.Diagnostics.DiagnosticCodes.MissingBackendCapability);
     }
 
     private void AssertCallableCase(ConformanceCase @case)
@@ -591,9 +574,10 @@ internal static class SignatureSnapshot
             attributes
                 .Where(attribute => attribute.AttributeType is
                     NamedTypeSignature named &&
-                    named.Identity.FullMetadataName.StartsWith(
+                    (named.Identity.FullMetadataName.StartsWith(
                         "AspectN.TestAssembly.Conformance.",
-                        StringComparison.Ordinal))
+                        StringComparison.Ordinal) ||
+                     named.Identity.FullMetadataName.StartsWith("Review.", StringComparison.Ordinal)))
                 .Select(attribute =>
                     $"{attribute.Target}:{attribute.ParameterIndex}:" +
                     Type(attribute.AttributeType)));

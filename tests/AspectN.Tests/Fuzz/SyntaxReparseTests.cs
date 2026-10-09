@@ -3,7 +3,7 @@ using AspectN.Syntax;
 
 namespace AspectN.Tests.Fuzz;
 
-public sealed class SyntaxRoundTripTests
+public sealed class SyntaxReparseTests
 {
     public static TheoryData<AspectNParseKind, string> CanonicalSources => new()
     {

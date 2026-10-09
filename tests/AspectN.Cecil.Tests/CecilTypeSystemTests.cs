@@ -574,7 +574,7 @@ public sealed class CecilTypeSystemTests
     }
 
     [Fact]
-    public void IsAssignableTo_MultidimensionalReferenceArray_MatchesCovariance()
+    public void IsAssignableTo_MultidimensionalReferenceArray_RejectsCovariance()
     {
         var module = TestModuleFactory.Create();
         using var typeSystem = new CecilTypeSystem(module);

@@ -1,5 +1,7 @@
 using AspectN.Evaluation;
+using AspectN.Metadata;
 using AspectN.Roslyn;
+using AspectN.TypeSystem;
 using Microsoft.CodeAnalysis;
 using Mono.Cecil;
 using Xunit;
@@ -17,10 +19,12 @@ public sealed class RelationshipBranchTests
         Assert.True(target.IsAssignableFrom(candidate));
         Assert.Equal(MatchStatus.Matched, fixture.Reflection.IsAssignableTo(
             fixture.Reflection.Mapper.MapType(candidate), fixture.Reflection.Mapper.MapType(target)).Status);
+        CheckPattern(fixture.Reflection.Mapper.MapType(candidate), fixture.Reflection);
         var cecilTarget = new GenericInstanceType(fixture.Cecil.Module.GetType("Example.I`1"));
         cecilTarget.GenericArguments.Add(new ArrayType(fixture.Cecil.Module.TypeSystem.Int32));
         Assert.Equal(MatchStatus.Matched, fixture.Cecil.IsAssignableTo(
             fixture.Cecil.Mapper.MapType(fixture.Cecil.Module.GetType("Example.C")), fixture.Cecil.Mapper.MapType(cecilTarget)).Status);
+        CheckPattern(fixture.Cecil.Mapper.MapType(fixture.Cecil.Module.GetType("Example.C")), fixture.Cecil);
         CheckRoslyn(fixture.Roslyn);
         CheckRoslyn(fixture.RoslynMetadata);
     }
@@ -31,5 +35,13 @@ public sealed class RelationshipBranchTests
             system.Compilation.CreateArrayTypeSymbol(system.Compilation.GetSpecialType(SpecialType.System_Int32)));
         Assert.Equal(MatchStatus.Matched, system.IsAssignableTo(
             system.Mapper.MapType(system.Compilation.GetTypeByMetadataName("Example.C")!), system.Mapper.MapType(target)).Status);
+        CheckPattern(system.Mapper.MapType(system.Compilation.GetTypeByMetadataName("Example.C")!), system);
+    }
+
+    private static void CheckPattern(TypeSignature candidate, ITypeSystem system)
+    {
+        var compilation = new AspectNEngine().CompileTypePattern("Example.I<int[]>+");
+        Assert.True(compilation.TryGetTypePattern(out var pattern));
+        Assert.Equal(MatchStatus.Matched, pattern.Match(candidate, system).Status);
     }
 }

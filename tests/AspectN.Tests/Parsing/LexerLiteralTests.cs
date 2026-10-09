@@ -5,7 +5,7 @@ using AspectN.Text;
 
 namespace AspectN.Tests.Parsing;
 
-public sealed class ReviewLexerTests
+public sealed class LexerLiteralTests
 {
     [Theory]
     [InlineData("\"\\u0041\"", "A")]

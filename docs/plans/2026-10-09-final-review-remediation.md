@@ -80,7 +80,8 @@ dotnet test AspectN.sln -c Release --no-build --no-restore
 dotnet format AspectN.sln --verify-no-changes --no-restore
 dotnet test tests/AspectN.Cecil.Tests/AspectN.Cecil.Tests.csproj -c Release -p:CecilVersion=0.11.6
 dotnet test tests/AspectN.Roslyn.Tests/AspectN.Roslyn.Tests.csproj -c Release -p:RoslynVersion=5.6.0
-eng/verify-packages.ps1 -PackageDirectory artifacts/final-review-remediation/packages
+dotnet test tests/AspectN.Conformance.Tests/AspectN.Conformance.Tests.csproj -c Release -p:CecilVersion=0.11.6 -p:RoslynVersion=5.6.0
+eng/verify-packages.ps1 -PackageDirectory artifacts/final-review-remediation/packages-after-owner
 ```
 
 Restore/build the default solution after alternative-version lanes before package validation, so their shared bin/obj outputs cannot create misleading version conflicts.
@@ -91,4 +92,4 @@ Restore/build the default solution after alternative-version lanes before packag
 - [x] Batch 2: identities / metadata / relations — five intended regressions reproduced; added unresolved-scope fallback coverage. Full solution 1,312 tests passed, Release build 0 warnings/errors; independent read-only review passed.
 - [x] Batch 3: attributes / Reflection metadata — initial six failures reproduced; eight CA/pointer conformance cases cover true blobs alongside flags and embedded old-framework markers. Full solution 1,322 tests passed; Release build and format passed. Independent review's two P2 findings were fixed and re-reviewed successfully.
 - [x] Batch 4: iterative mapping — five deep-shape failures and two deep-pointer failures reproduced in isolated small-stack processes. Thirteen initial deep mapping / legacy ambiguity cases plus no-suffix generic pointer regression pass; full solution 1,337 tests passed. Independent review's two P2 findings and weak-cache keep-alive suggestion were resolved and re-reviewed successfully. Follow-up review reproduced native Scope/FullName recursion at 8,192 reference-owner levels (1,024/2,048 passed): iterative metadata scope and native-format owner text remove those paths while preserving reference-local module fallback. Fifteen depth probes and byte-for-byte owner text/context checks cover the supplement.
-- [ ] Batch 5: coverage / engineering / final gates
+- [x] Batch 5: coverage / engineering / final gates — parser/attribute snapshot regressions reproduced before repair; missing-dependency Reflection coverage now identifies native materialization failure separately from detached capability loss. Final default full solution: 1,379 passed, 0 failed/skipped (automatically summed across eight test legs); Release build 0 warnings/errors; format passed with workspace-load warning only. Supported Cecil 0.11.6 / Roslyn 5.6.0 lanes passed 130 / 22 tests, combined conformance 179 including all fifteen small-stack probes. Final source packages validated five packages, two dependency groups and ten net472/net10.0 consumer builds/runs. Independent read-only review and the owner-module supplement re-review passed. Issue 8 remains deferred; release workflow unchanged.

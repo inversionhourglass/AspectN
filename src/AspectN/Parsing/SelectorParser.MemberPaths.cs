@@ -109,6 +109,13 @@ internal sealed partial class SelectorParser
         else
         {
             left = new NamedMemberPatternSyntax(ParseNameSegment());
+            if (Current.Kind is SyntaxKind.DotDotToken or SyntaxKind.SlashToken)
+            {
+                ReportUnexpected(Current, "member name (use '.' between the declaring type and member)");
+                // 无成员分隔符时消费路径残段，保留参数列表或后续选择器边界。
+                while (Current.Kind is SyntaxKind.DotDotToken or SyntaxKind.SlashToken or SyntaxKind.DotToken ||
+                    TypePatternSyntaxFacts.IsNamePart(Current)) NextToken();
+            }
         }
 
         while (true)
