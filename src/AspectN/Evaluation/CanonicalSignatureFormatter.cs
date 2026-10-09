@@ -10,10 +10,9 @@ internal static class CanonicalSignatureFormatter
     public static string Format(MethodSignature candidate, CancellationToken cancellationToken = default)
     {
         var builder = new BoundedSignatureBuilder(cancellationToken);
-        if (candidate.DeclaringType is NamedTypeSignature declaring) builder.ValidateEffectiveArity(declaring);
         builder.ValidateArity(candidate.GenericParameters.Count);
         var genericNames = GenericParameterNamer.CreatePositionalNames(
-            candidate);
+            candidate, builder.ValidateEffectiveArity, cancellationToken);
         builder.Append(
             FormatAccessibility(candidate.Accessibility));
         if (candidate.IsStatic) builder.Append(" static");

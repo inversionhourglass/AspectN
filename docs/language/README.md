@@ -48,6 +48,15 @@ int[,][]
 
 ## Results and missing metadata
 
+`regex(...)` searches the canonical member signature using a restricted regex
+subset: character escapes/classes, ordinary and noncapturing groups,
+alternation, anchors and greedy/lazy quantifiers. Comments, inline options,
+lookarounds, backreferences and other special groups, and nested/subtracted
+classes are rejected with AN2012. Escape literal brackets inside classes.
+Invalid regex syntax produces a compile-time AN3002 error. Regex matching has
+a finite timeout; timing out produces `Unknown` with AN3003. See section 15 of
+the specification for the complete rules.
+
 Matching is three-valued:
 
 - `Matched` means the candidate satisfies the expression.

@@ -117,6 +117,11 @@ public sealed class MethodGenericOwnerIdentityTests
                 Assert.Equal(MatchStatus.Matched, cecil.IsAssignableTo(cecilMethod.ReturnType.Type, target).Status);
                 var other = cecil.Mapper.MapType(cecil.Module.ImportReference(runtimeType == typeof(string) ? typeof(int) : typeof(string)));
                 Assert.Equal(MatchStatus.NotMatched, cecil.IsAssignableTo(cecilMethod.ReturnType.Type, other).Status);
+                Assert.Equal(MatchStatus.Matched, reflection.IsAssignableTo(reflectionMethod.ReturnType.Type, target).Status);
+                Assert.Equal(MatchStatus.NotMatched, reflection.IsAssignableTo(reflectionMethod.ReturnType.Type, other).Status);
+                Assert.Equal(MatchStatus.Matched, reflection.AreEqual(previous, reflectionMethod.ReturnType.Type).Status);
+                var pattern = CompilePattern($"method({(runtimeType == typeof(string) ? "string" : "int")}+ M<>(..))");
+                Assert.Equal(MatchStatus.Matched, pattern.Match(reflectionMethod, reflection).Status);
                 previous = cecilMethod.ReturnType.Type;
             }
         }

@@ -326,6 +326,7 @@ Regex matching:
 
 - Uses one canonical member signature, never an arbitrary `ToString()`.
 - Is culture-invariant.
+- Accepts only the regex subset defined in language-spec section 15; unsupported features are compile-time AN2012 errors, and invalid regex syntax is a compile-time AN3002 error.
 - Has a mandatory finite timeout.
 - Returns `Unknown` with a diagnostic on timeout.
 - Is documented as an escape hatch rather than the primary matching mechanism.

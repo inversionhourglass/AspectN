@@ -130,6 +130,16 @@ Review regex expressions against the current canonical signature: ref prefixes,
 spaced compound permissions, comma-space separators, `/` nesting and positional
 generic names. The compiler async flag is omitted.
 
+Regex expressions must also conform to the restricted subset in specification
+section 15. Remove comments and all inline options, including `(?x)` and
+`(?i)`; spaces and `#` are literal. Rewrite lookarounds, backreferences,
+named/balancing/conditional/atomic groups and nested/subtracted classes using
+ordinary regex forms or structured selectors combined with Boolean operators.
+Escape literal `[` and `]` inside classes, replacing forms such as `[[]` and
+`[]abc]`. Unsupported features produce AN2012 and invalid .NET regex syntax
+produces AN3002 during compilation; no pattern is returned. Finite matching
+timeouts still produce Unknown/AN3003.
+
 With structured declaring-type patterns, `*.Run` includes array and nested
 declaring types. Write `*<?>.Run` to retain a non-nested named-type constraint.
 Generic clauses within member-name Boolean branches retain their constraints;

@@ -647,7 +647,15 @@ Attribute matching does not instantiate attribute objects. Inherited-attribute s
 regex-selector = "regex", "(", regex-body, ")" ;
 ```
 
-`regex-body` preserves its original characters. The closing delimiter is the unmatched outer `)` after honoring escapes, character classes, nested regex groups, and `(?#...)` comments. Comment content is opaque — escapes, character classes, and groups are not recognized inside it — and the comment ends at the first `)`. `(?#` opens a comment only outside an escape and outside a character class, so `\(` and `[(` never start one.
+`regex-body` preserves its original characters. The closing delimiter is the unmatched outer `)` after honoring escape atoms, ordinary character classes and nested groups. The supported regex subset is:
+
+- Literals, character escapes, `.`, character categories such as `\d`, `\w`, `\s` and `\p{L}`, and their complements.
+- Ordinary character classes, ranges and negation, such as `[a-z]` and `[^\s]`. Literal `[` and `]` inside a class must be escaped as `\[` and `\]`.
+- Ordinary groups `(...)`, noncapturing groups `(?:...)`, alternation `|`, anchors, greedy and lazy quantifiers `*`, `+`, `?`, `{m}`, `{m,}`, `{m,n}`.
+
+All other `(?...)` group forms are rejected: comments, inline or scoped options (including `(?x)` and `(?i)`), named or balancing groups, conditionals, lookarounds and atomic groups. Backreferences (`\1` through `\9` and longer numeric forms, or `\k<name>` / `\k'name'`) and nested or subtracted character classes are also rejected. Numeric escapes beginning with `1` through `9` outside a class are always rejected, including ambiguous octal forms; use `\xNN` or `\uNNNN` for literal character codes. Initial unescaped `]` in a class and the `[[]` literal-bracket convention are not supported. Whitespace and `#` always remain literal characters.
+
+Unsupported constructs produce a compile-time `AN2012` error (`UnsupportedRegexFeature`); escaped or class-contained literal text resembling a construct is accepted. For example, `regex(\(\?x\))` matches the literal text `(?x)`. After subset validation, .NET validates regex syntax: an invalid pattern produces a compile-time `AN3002` error (`InvalidRegex`). Neither error produces a compiled member pattern. Authors should express complex selection logic with structured selectors and `&&`, `||`, `!`.
 
 Regex uses culture-invariant `Regex.IsMatch` substring search on one canonical member signature. Use `^...$` for a full-signature match:
 
@@ -657,9 +665,11 @@ Regex uses culture-invariant `Regex.IsMatch` substring search on one canonical m
 
 The compiler `async` flag is not part of the canonical signature; return shapes are matched with `tasklike`. Ref kinds are rendered before affected parameter or return types. Nested types use `/`. Type names are fully qualified except generic formal parameters in definition signatures, which are renamed positionally to `T1..TN`: declaring-type parameters first (outermost type, left to right, then nested levels), followed by method parameters. Every occurrence of one parameter renders the same name, in the declaring-type clause, the method generic clause, and use positions alike. Constructed signatures render the actual type arguments.
 
+For an open constructed declaring type, recursively visit its actual arguments from left to right, including named generic arguments and array elements. Assign one position to each distinct type-parameter declaration in first-occurrence order, then append method parameters. For example, `Container<List<T>>` retains `T` inside `List<T>`, while `Pair<T,T>` uses the same name for both occurrences. With an additional method parameter the names become `T1` and `T2`. Closed arguments do not consume parameter positions.
+
 Positional numbering is deliberate: patterns stay valid when source renames a generic parameter, and authors only need the arity of each type and the method. When the total parameter count (type plus method) is exactly one, the sole parameter renders as bare `T`; otherwise parameters are numbered `T1..TN`. Bare `T` and `T` followed by digits are reserved for this encoding — a concrete type whose fully qualified name is exactly such a token (only possible in the global namespace) is not distinguishable from a positional parameter by regex; use a structured selector for such members.
 
-Regex evaluation has a mandatory finite timeout. Timeout produces `Unknown` with a diagnostic.
+Regex evaluation has a mandatory finite timeout. Timeout produces `Unknown` with `AN3003`. Ordinary quantifiers can still cause expensive backtracking; restricting syntax does not remove the timeout requirement.
 
 ## 16. Closed Semantic Contract
 
@@ -682,6 +692,7 @@ Standard diagnostics include stable categories for:
 - Invalid parameter index outside the Int32 range.
 - Missing backend capability.
 - Resolution failure.
+- Unsupported regex features (AN2012) and invalid regex syntax (AN3002), both compile-time errors.
 - Regex timeout.
 
 Migration diagnostics include an actionable replacement where one exists:

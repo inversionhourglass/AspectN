@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Text;
+using System.Text.RegularExpressions;
 using AspectN.Diagnostics;
 using AspectN.Metadata;
 using AspectN.Parsing;
@@ -220,12 +221,30 @@ internal sealed partial class Binder(
                 regex.FullSpan,
                 BoundSelectorKind.Regex,
                 SelectorTargetDomain.All,
-                new BoundRegexPattern(
-                    regex.RegexBodyToken.Span,
-                    regex.RegexBodyToken.Text)),
+                BindRegexPattern(regex)),
             _ => throw new InvalidOperationException(
                 $"Unsupported selector syntax '{syntax.Kind}'.")
         };
+    }
+
+    private BoundRegexPattern BindRegexPattern(RegexSelectorSyntax syntax)
+    {
+        var body = syntax.RegexBodyToken;
+        try
+        {
+            // 只验证语法；实际匹配使用编译选项中的有限超时。
+            _ = new Regex(body.Text, RegexOptions.CultureInvariant);
+        }
+        catch (ArgumentException exception)
+        {
+            _diagnostics.Add(
+                DiagnosticCodes.InvalidRegex,
+                DiagnosticSeverity.Error,
+                $"Invalid regular expression: {exception.Message}",
+                body.Span);
+        }
+
+        return new BoundRegexPattern(body.Span, body.Text);
     }
 
     private BoundSelector BindAttributeSelector(

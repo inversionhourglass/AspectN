@@ -465,6 +465,7 @@ static AspectN.Diagnostics.DiagnosticCodes.TaskLikeVoidMigration.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.UnexpectedToken.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.UnknownSelector.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.UnterminatedRegex.get -> string!
+static AspectN.Diagnostics.DiagnosticCodes.UnsupportedRegexFeature.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.UnterminatedString.get -> string!
 static AspectN.Evaluation.MatchLogic.And(AspectN.Evaluation.MatchResult! left, AspectN.Evaluation.MatchResult! right) -> AspectN.Evaluation.MatchResult!
 static AspectN.Evaluation.MatchLogic.And(AspectN.Evaluation.MatchStatus left, AspectN.Evaluation.MatchStatus right) -> AspectN.Evaluation.MatchStatus

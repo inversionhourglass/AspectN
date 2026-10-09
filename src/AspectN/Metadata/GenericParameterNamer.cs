@@ -59,27 +59,65 @@ internal static class GenericParameterNamer
     // 方法形参接续 T{m+1}..T{m+n}；总数（类型+方法合并计数）为 1 时渲染为
     // 裸 T。规范签名格式化器使用此规则（§15）。
     public static Dictionary<GenericParameterKey, string> CreatePositionalNames(
-        MethodSignature candidate)
+        MethodSignature candidate,
+        Action<NamedTypeSignature> validateEffectiveArity,
+        CancellationToken cancellationToken)
     {
         var declaring = candidate.DeclaringType as NamedTypeSignature;
-        var typeParameters = (declaring is null
-                ? Array.Empty<TypeSignature>()
-                : GetEffectiveTypeArguments(declaring))
-            .OfType<GenericParameterTypeSignature>()
-            .Select(parameter => parameter.Parameter)
-            .Where(parameter =>
-                parameter.OwnerKind == GenericParameterOwnerKind.Type)
-            .ToArray();
+        var typeParameters = GetDeclaringTypeParameters(declaring, validateEffectiveArity, cancellationToken);
         var methodParameters = candidate.GenericParameters.ToArray();
         var names = new Dictionary<GenericParameterKey, string>();
         foreach (var (parameter, name) in EnumeratePositionalNames(
                      typeParameters,
                      methodParameters))
         {
+            cancellationToken.ThrowIfCancellationRequested();
             names[new GenericParameterKey(parameter)] = name;
         }
 
         return names;
+    }
+
+    private static GenericParameterSignature[] GetDeclaringTypeParameters(
+        NamedTypeSignature? declaring,
+        Action<NamedTypeSignature> validateEffectiveArity,
+        CancellationToken cancellationToken)
+    {
+        if (declaring is null) return Array.Empty<GenericParameterSignature>();
+
+        // 开放构造类型的形参可能藏在 List<T> 或 T[] 中；按实参从左到右首次出现
+        // 的顺序编号，并按声明身份去重，避免同一个 T 占据多个位置名。
+        var parameters = new List<GenericParameterSignature>();
+        var seen = new HashSet<GenericParameterKey>();
+        var visited = new HashSet<TypeSignature>();
+        var pending = new Stack<TypeSignature>();
+        pending.Push(declaring);
+        while (pending.Count > 0)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var current = pending.Pop();
+            if (!visited.Add(current)) continue;
+
+            switch (current)
+            {
+                case GenericParameterTypeSignature parameter
+                    when parameter.Parameter.OwnerKind == GenericParameterOwnerKind.Type:
+                    if (seen.Add(new GenericParameterKey(parameter.Parameter)))
+                        parameters.Add(parameter.Parameter);
+                    break;
+                case NamedTypeSignature named:
+                    validateEffectiveArity(named);
+                    var arguments = GetEffectiveTypeArguments(named);
+                    for (var index = arguments.Length - 1; index >= 0; index--)
+                        pending.Push(arguments[index]);
+                    break;
+                case ArrayTypeSignature array:
+                    pending.Push(array.ElementType);
+                    break;
+            }
+        }
+
+        return parameters.ToArray();
     }
 
     internal static IEnumerable<(GenericParameterSignature Parameter, string Name)>

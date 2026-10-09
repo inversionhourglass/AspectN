@@ -1,15 +1,19 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Loader;
+using AspectN.Diagnostics;
 using AspectN.Evaluation;
+using AspectN.Metadata;
 using Xunit;
 
 namespace AspectN.Reflection.Tests;
 
 public sealed class CollectibleAssemblyTests
 {
-    [Fact]
-    public void MapAndMatch_CollectibleAssembly_DoesNotPreventUnload()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void MapAndMatch_CollectibleAssembly_DoesNotPreventUnload(bool openMethod)
     {
         var assemblyPath = Path.Combine(
             AppContext.BaseDirectory,
@@ -19,7 +23,9 @@ public sealed class CollectibleAssemblyTests
 
         var contextReference = LoadMapMatchAndUnload(
             assemblyPath,
-            typeSystem);
+            typeSystem,
+            openMethod,
+            out var signature);
 
         for (var attempt = 0;
              attempt < 10 && contextReference.IsAlive;
@@ -31,13 +37,23 @@ public sealed class CollectibleAssemblyTests
         }
 
         Assert.False(contextReference.IsAlive);
+        if (openMethod)
+        {
+            var relation = typeSystem.IsAssignableTo(signature.ReturnType.Type, typeSystem.Mapper.MapType(typeof(object)));
+            Assert.Equal(MatchStatus.Unknown, relation.Status);
+            Assert.Contains(relation.Diagnostics, diagnostic => diagnostic.Code == DiagnosticCodes.MissingBackendCapability);
+        }
+
+        GC.KeepAlive(signature);
         GC.KeepAlive(typeSystem);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static WeakReference LoadMapMatchAndUnload(
         string assemblyPath,
-        ReflectionTypeSystem typeSystem)
+        ReflectionTypeSystem typeSystem,
+        bool openMethod,
+        out MethodSignature signature)
     {
         var loadContext = new AssemblyLoadContext(
             $"AspectN.Reflection.Tests.{Guid.NewGuid():N}",
@@ -53,12 +69,12 @@ public sealed class CollectibleAssemblyTests
             typeof(int));
         var method = Assert.IsAssignableFrom<MethodInfo>(
             constructedType.GetMethod("GenericMethod"));
-        var constructedMethod = method.MakeGenericMethod(
-            typeof(double),
-            typeof(bool));
-        var candidate = typeSystem.Mapper.MapMethod(constructedMethod);
+        var nativeMethod = openMethod ? method : method.MakeGenericMethod(typeof(double), typeof(bool));
+        var candidate = typeSystem.Mapper.MapMethod(nativeMethod);
+        signature = candidate;
         var compilation = AspectNCompilation.Create(
             AspectNParser.ParseMemberExpression(
+                openMethod ? "method(* AspectN.TestAssembly.MatchingFixture<string,int>.GenericMethod<,>(..))" :
                 "method(bool AspectN.TestAssembly.MatchingFixture" +
                 "<string,int>.GenericMethod<double,bool>" +
                 "(string,int,double,bool))"));
@@ -67,6 +83,9 @@ public sealed class CollectibleAssemblyTests
         var result = pattern!.Match(candidate, typeSystem);
 
         Assert.Equal(MatchStatus.Matched, result.Status);
+        if (openMethod)
+            Assert.Equal(MatchStatus.Matched,
+                typeSystem.IsAssignableTo(candidate.ReturnType.Type, typeSystem.Mapper.MapType(typeof(object))).Status);
         loadContext.Unload();
         return contextReference;
     }

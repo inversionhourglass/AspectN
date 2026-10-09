@@ -9,6 +9,27 @@ namespace AspectN.Tests.Evaluation;
 public sealed class RegexPatternTests
 {
     [Theory]
+    [InlineData(65_537, 0)]
+    [InlineData(int.MaxValue, 1)]
+    public void Match_NestedOpenArgumentExceedsFormattingBudget_ReturnsUnknown(int arity, int nestedArity)
+    {
+        var assembly = new AssemblyIdentity("Example");
+        var identity = new TypeIdentity(assembly, "Example", "Huge", arity, TypeKind.Class);
+        if (nestedArity > 0)
+            identity = new TypeIdentity(assembly, "", "Nested", nestedArity, TypeKind.Class, identity);
+        var declaring = new NamedTypeSignature(
+            new TypeIdentity(assembly, "Example", "Owner", 1, TypeKind.Class), [new NamedTypeSignature(identity)]);
+        var candidate = new MethodSignature("M", MethodKind.OrdinaryMethod, Accessibility.Public, false, false,
+            declaring, new TypeUseSignature(Named("System", "Void", TypeKind.Struct), RefKind.None, TypeUseKind.Return),
+            [], [], [], [], []);
+
+        var result = Match("regex(.*)", candidate);
+
+        Assert.Equal(MatchStatus.Unknown, result.Status);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == DiagnosticCodes.MissingBackendCapability);
+    }
+
+    [Theory]
     [InlineData(true)]
     [InlineData(false)]
     public void Match_OpenGenericArityExceedsFormattingBudget_ReturnsUnknown(bool declaringType)
@@ -245,42 +266,9 @@ public sealed class RegexPatternTests
     }
 
     [Fact]
-    public void Match_RegexCharacterClassLeadingBracket_IsLiteral()
+    public void Match_RegexCharacterClassEscapedBracket_IsLiteral()
     {
-        // .NET 语义：字符类起始位置的 ] 是字面量（Regex.IsMatch(")", "[])]") 为 true），
-        // 不能把它当作字符类结束符而吞掉选择器的右括号。
-        var result = Match("regex([])])", Callable("Run"));
-
-        Assert.Equal(MatchStatus.Matched, result.Status);
-    }
-
-    [Theory]
-    [InlineData("[a-[])]]", MatchStatus.Matched)]
-    [InlineData("[a-[b-[])]]]", MatchStatus.Matched)]
-    [InlineData("[a-[^])]]", MatchStatus.NotMatched)]
-    public void Match_RegexSubtractionWithLeadingBracket_PreservesNestedClass(
-        string body,
-        MatchStatus expected)
-    {
-        var result = Match($"regex({body})", Callable("Load"));
-
-        Assert.Equal(expected, result.Status);
-    }
-
-    [Fact]
-    public void Match_RegexCommentWithOpenParen_CompilesAndMatches()
-    {
-        // .NET 的 (?#...) 注释由第一个 ) 结束，注释内容里的 ( 不开启分组；
-        // Regex.IsMatch("Load", "(?#()Load") 为 true。
-        var result = Match("regex((?#()Load)", Callable("Load"));
-
-        Assert.Equal(MatchStatus.Matched, result.Status);
-    }
-
-    [Fact]
-    public void Match_RegexCommentWithoutParen_StillMatches()
-    {
-        var result = Match("regex((?#explanation)Load)", Callable("Load"));
+        var result = Match(@"regex([\])])", Callable("Run"));
 
         Assert.Equal(MatchStatus.Matched, result.Status);
     }
@@ -289,46 +277,6 @@ public sealed class RegexPatternTests
     public void Match_RegexNestedGroups_StillMatch()
     {
         var result = Match("regex((Lo)(ad))", Callable("Load"));
-
-        Assert.Equal(MatchStatus.Matched, result.Status);
-    }
-
-    [Fact]
-    public void Match_RegexCommentFollowedByConjunction_CompilesAndMatches()
-    {
-        var result = Match(
-            "regex((?#()Load) && method(public void Example.Service.Load())",
-            Callable("Load"));
-
-        Assert.Equal(MatchStatus.Matched, result.Status);
-    }
-
-    [Fact]
-    public void Match_RegexCommentWithEscapedParen_CompilesAndMatches()
-    {
-        // .NET 语义：注释内容对转义不透明，(?#a\) 的 ) 结束注释；
-        // Regex.IsMatch("Load", "(?#a\\)Load") 为 true。
-        var result = Match("regex((?#a\\)Load)", Callable("Load"));
-
-        Assert.Equal(MatchStatus.Matched, result.Status);
-    }
-
-    [Fact]
-    public void Match_RegexCommentWithWindowsPath_CompilesAndMatches()
-    {
-        // 注释内容里的反斜杠不被转义分支吞掉注释终止符：
-        // Regex.IsMatch("Load", "(?#C:\\path\\)Load") 为 true。
-        var result = Match("regex((?#C:\\path\\)Load)", Callable("Load"));
-
-        Assert.Equal(MatchStatus.Matched, result.Status);
-    }
-
-    [Fact]
-    public void Match_RegexCommentWithBracketAndParen_CompilesAndMatches()
-    {
-        // 注释内容里的 [ 不开启字符类，注释由第一个 ) 结束；
-        // 剩余的 a 命中规范签名中的字母（Regex.IsMatch(签名, "(?# [ )a") 为 true）。
-        var result = Match("regex((?# [ )a)", Callable("Load"));
 
         Assert.Equal(MatchStatus.Matched, result.Status);
     }

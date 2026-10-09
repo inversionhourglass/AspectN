@@ -111,75 +111,63 @@ internal sealed class Lexer
     {
         var start = _position;
         var groupDepth = 0;
-        var inComment = false;
-        var escaped = false;
+        var inClass = false;
+        var classContentStart = -1;
         var foundDelimiter = false;
 
+        // 子集的边界只取决于转义、普通字符类和分组深度；禁止改变词法规则的扩展。
         while (!IsAtEnd)
         {
             var character = Current;
-
-            // .NET 语义：(?# 注释由第一个 ) 结束；注释内容对转义、字符类、
-            // 分组全部不透明，因此内容消费必须先于其他一切分支检查。
-            if (inComment)
+            if (character == '\\')
             {
-                if (character == ')')
+                if (!inClass && (Peek(1) is >= '1' and <= '9' || Peek(1) == 'k'))
+                    ReportUnsupportedRegexFeature("Backreferences are not supported.", 2);
+                var escapeLength = Peek(1) == 'c' ? 3 : 2;
+                _position += Math.Min(escapeLength, _source.Length - _position);
+                continue;
+            }
+
+            if (inClass)
+            {
+                if (character == '[')
+                    ReportUnsupportedRegexFeature("Nested and subtracted character classes are not supported; escape literal '['.", 1);
+                if (character == ']')
                 {
-                    inComment = false;
+                    if (_position == classContentStart)
+                        ReportUnsupportedRegexFeature("A literal ']' in a character class must be escaped.", 1);
+                    inClass = false;
                 }
 
                 _position++;
                 continue;
             }
 
-            if (escaped)
-            {
-                escaped = false;
-                _position++;
-                continue;
-            }
-
-            if (character == '\\')
-            {
-                escaped = true;
-                _position++;
-                continue;
-            }
-
             if (character == '[')
             {
-                SkipRegexCharacterClass();
-                continue;
-            }
-
-            // (?# 的识别必须保持在转义与字符类检查之后：\( 与 [( 不能开启注释。
-            if (character == '(' && Peek(1) == '?' && Peek(2) == '#')
-            {
-                inComment = true;
-                _position += 3;
+                inClass = true;
+                classContentStart = _position + (Peek(1) == '^' ? 2 : 1);
+                _position++;
                 continue;
             }
 
             if (character == '(')
             {
+                if (Peek(1) == '?' && Peek(2) != ':')
+                    ReportUnsupportedRegexFeature("Only ordinary groups and '(?:...)' groups are supported.", 2);
                 groupDepth++;
-                _position++;
-                continue;
             }
-
-            if (character != ')')
+            else if (character == ')')
             {
-                _position++;
-                continue;
+                if (groupDepth == 0)
+                {
+                    foundDelimiter = true;
+                    break;
+                }
+
+                groupDepth--;
             }
 
-            if (groupDepth == 0)
-            {
-                foundDelimiter = true;
-                break;
-            }
-
-            groupDepth--;
             _position++;
         }
 
@@ -195,117 +183,13 @@ internal sealed class Lexer
         return CreateToken(SyntaxKind.RegexBodyToken, start);
     }
 
-    // 按 .NET 字符类的原子、范围、减法层级扫描；每层首位 ]（含 ^ 后）是字面量。
-    private void SkipRegexCharacterClass()
+    private void ReportUnsupportedRegexFeature(string message, int length)
     {
-        _position++;
-        var depth = 1;
-        var atStart = true;
-        var negationSeen = false;
-        var inRange = false;
-        while (!IsAtEnd)
-        {
-            var character = Current;
-            if (atStart && character == '^' && !negationSeen)
-            {
-                negationSeen = true;
-                _position++;
-                continue;
-            }
-
-            if (character == ']' && !atStart)
-            {
-                _position++;
-                depth--;
-                if (depth == 0) return;
-                // 减法必须位于外层末尾，外层已消费元素，无需恢复首位或范围状态。
-                inRange = false;
-                continue;
-            }
-
-            var translated = character == '\\';
-            var canStartRange = true;
-            if (translated)
-            {
-                canStartRange = SkipRegexClassEscape();
-            }
-            else
-            {
-                _position++;
-            }
-
-            if (inRange)
-            {
-                inRange = false;
-                if (character == '[' && !translated)
-                {
-                    depth++;
-                    atStart = true;
-                    negationSeen = false;
-                    continue;
-                }
-                // 范围端点已被消费；即使端点是 '-' 也不能再次解释为减法开头。
-            }
-            else if (canStartRange && Current == '-' &&
-                     _position + 1 < _source.Length && Peek(1) != ']')
-            {
-                inRange = true;
-                _position++;
-            }
-            else if (character == '-' && !translated && Current == '[' && !atStart)
-            {
-                _position++;
-                depth++;
-                atStart = true;
-                negationSeen = false;
-                continue;
-            }
-
-            atStart = false;
-        }
-    }
-
-    // 转义必须作为完整原子消费，避免把 \xNN、\uNNNN 或 \p{...} 的尾部当作范围起点。
-    private bool SkipRegexClassEscape()
-    {
-        _position++;
-        if (IsAtEnd) return false;
-        var escape = Current;
-        _position++;
-        switch (escape)
-        {
-            case 'd' or 'D' or 's' or 'S' or 'w' or 'W' or '-':
-                return false;
-            case 'p' or 'P':
-                if (Current == '{')
-                {
-                    _position++;
-                    while (!IsAtEnd && Current != '}') _position++;
-                    if (!IsAtEnd) _position++;
-                }
-
-                return false;
-            case 'x' or 'u':
-                for (var index = 0; index < 4 && Current is
-                         >= '0' and <= '9' or >= 'a' and <= 'f' or >= 'A' and <= 'F'; index++)
-                {
-                    _position++;
-                }
-
-                break;
-            case 'c':
-                if (!IsAtEnd) _position++;
-                break;
-            case >= '0' and <= '7':
-                for (var index = 0; index < 2 && Current is >= '0' and <= '7'; index++)
-                {
-                    _position++;
-                }
-
-                break;
-        }
-
-        return true;
+        _diagnostics.Add(
+            DiagnosticCodes.UnsupportedRegexFeature,
+            DiagnosticSeverity.Error,
+            message,
+            new TextSpan(_position, length));
     }
 
     private bool IsAtEnd => _position >= _source.Length;

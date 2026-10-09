@@ -170,6 +170,21 @@ generic names. A sole formal parameter is `T`; multiple parameters are
 `T1..TN`, outer type slots first, then nested type and method slots. The async
 flag is omitted. A finite timeout is mandatory and yields `Unknown` on timeout.
 
+Regex is a small language subset for signature matching. It retains character
+escapes/classes, ordinary and noncapturing groups, alternation, anchors and
+greedy/lazy quantifiers. Comments, all inline options, other special groups,
+backreferences and nested/subtracted classes are rejected during compilation
+with AN2012. Literal brackets inside classes require escapes. .NET syntax
+errors are compile-time AN3002 errors. This keeps delimiter scanning dependent
+only on escapes, ordinary classes and group depth; the finite timeout remains
+necessary for ordinary backtracking patterns. See the normative specification
+section 15 for the full subset.
+
+Open constructed declaring types name distinct remaining type parameters by
+first occurrence inside their actual arguments, including nested generic and
+array arguments, before numbering method parameters. Repeated uses share one
+name; closed arguments consume no positions.
+
 Migration diagnostics AN4003 (compound accessibility), AN4004 (`tasklike<void>`)
 and AN4005 (long attribute target names) remain. AN2002's retired selector-mode
 entry point is removed; other diagnostic codes keep their numbers.

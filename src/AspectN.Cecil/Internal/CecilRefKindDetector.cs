@@ -17,7 +17,8 @@ internal static class CecilRefKindDetector
             return RefKind.None;
         }
 
-        if (parameter.IsOut) return RefKind.Out;
+        // In/Out 同时出现表示互操作方向，不改变 ref 的语言分类。
+        if (parameter.IsOut && !parameter.IsIn) return RefKind.Out;
         if (ContainsModifier(
                 parameter.ParameterType,
                 REQUIRES_LOCATION_ATTRIBUTE) ||
@@ -26,7 +27,7 @@ internal static class CecilRefKindDetector
             return RefKind.RefReadOnly;
         }
 
-        if (parameter.IsIn ||
+        if (ContainsModifier(parameter.ParameterType, IS_READ_ONLY_ATTRIBUTE) ||
             HasAttribute(parameter, IS_READ_ONLY_ATTRIBUTE))
         {
             return RefKind.In;

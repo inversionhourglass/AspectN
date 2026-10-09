@@ -30,6 +30,7 @@ public sealed partial class ReflectionSignatureMapper
     private readonly ConditionalWeakTable<PropertyInfo, PropertySignature>
         _properties = new();
     private readonly ReflectionTypeCache _types = new();
+    private readonly ConditionalWeakTable<Type, ReflectionTypeCache> _contextTypes = new();
 
     internal ReflectionSignatureMapper()
     {
@@ -46,7 +47,19 @@ public sealed partial class ReflectionSignatureMapper
         if (type is null) throw new ArgumentNullException(nameof(type));
 #endif
 
-        return IterativeTypeMapping.Map(type, _types.Find, TypeDependencies, MapTypeCore, _types.GetOrAdd);
+        return MapType(type, null);
+    }
+
+    internal TypeSignature MapType(Type type, Type? context)
+    {
+        // CLR 的方法形参 Type 只标识开放声明；不同封闭 owner 必须分别缓存查询上下文。
+        var cache = context is { IsConstructedGenericType: true }
+            ? _contextTypes.GetValue(context, _types.CreateContextCache)
+            : _types;
+        ReflectionTypeCache SelectCache(Type native) => native.IsGenericParameter &&
+            !ReflectionGenericContext.AppliesTo(native, context) ? _types : cache;
+        return IterativeTypeMapping.Map(type, native => SelectCache(native).Find(native), TypeDependencies,
+            native => MapTypeCore(native, context), (native, factory) => SelectCache(native).GetOrAdd(native, factory));
     }
 
     private static IEnumerable<Type> TypeDependencies(Type type)
@@ -119,17 +132,20 @@ public sealed partial class ReflectionSignatureMapper
         return _types.TryGetType(signature, out type);
     }
 
-    private TypeSignature MapTypeCore(Type type)
+    internal bool TryGetType(TypeSignature signature, out Type? type, out Type? context)
+        => _types.TryGetType(signature, out type, out context);
+
+    private TypeSignature MapTypeCore(Type type, Type? context)
     {
         if (type.IsByRef)
         {
-            return MapType(RequiredElementType(type));
+            return MapType(RequiredElementType(type), context);
         }
 
         if (type.IsArray)
         {
             return new ArrayTypeSignature(
-                MapType(RequiredElementType(type)),
+                MapType(RequiredElementType(type), context),
                 type.GetArrayRank(), RuntimeTypeFacts.IsVector(type) ? ArrayShape.Vector : ArrayShape.General);
         }
 
@@ -155,10 +171,10 @@ public sealed partial class ReflectionSignatureMapper
         if (type.IsGenericType && !type.IsGenericTypeDefinition)
         {
             var definitionType = type.GetGenericTypeDefinition();
-            var definition = RequireNamed(MapType(definitionType));
+            var definition = RequireNamed(MapType(definitionType, context));
             return new NamedTypeSignature(
                 definition.Identity,
-                type.GetGenericArguments().Select(MapType),
+                type.GetGenericArguments().Select(argument => MapType(argument, context)),
                 definition);
         }
 
@@ -167,12 +183,13 @@ public sealed partial class ReflectionSignatureMapper
 
     private MethodSignature MapMethodCore(MethodBase method)
     {
+        var context = RequiredDeclaringType(method);
         var methodInfo = method as MethodInfo;
         var constructedGeneric = methodInfo is not null &&
             methodInfo.IsGenericMethod &&
             !methodInfo.IsGenericMethodDefinition;
         var genericArguments = constructedGeneric
-            ? methodInfo!.GetGenericArguments().Select(MapType).ToArray()
+            ? methodInfo!.GetGenericArguments().Select(argument => MapType(argument, context)).ToArray()
             : Array.Empty<TypeSignature>();
         var methodGenericArguments = methodInfo?.GetGenericArguments() ??
             Type.EmptyTypes;
@@ -195,12 +212,12 @@ public sealed partial class ReflectionSignatureMapper
             GetMethodAccessibility(method),
             method.IsStatic,
             HasAttribute(method, ASYNC_STATE_MACHINE_ATTRIBUTE) || HasAttribute(method, ASYNC_ITERATOR_STATE_MACHINE_ATTRIBUTE),
-            MapType(RequiredDeclaringType(method)),
+            MapType(context, context),
             new TypeUseSignature(
-                MapType(UnwrapByReference(returnType)),
+                MapType(UnwrapByReference(returnType), context),
                 GetReturnRefKind(returnParameter, returnType),
                 TypeUseKind.Return),
-            method.GetParameters().Select(MapParameter),
+            method.GetParameters().Select(parameter => MapParameter(parameter, context)),
             genericParameters,
             genericArguments,
             MapAttributes(
@@ -235,19 +252,19 @@ public sealed partial class ReflectionSignatureMapper
                     ? RefKind.None
                     : GetReturnRefKind(getter.ReturnParameter, getter.ReturnType),
                 TypeUseKind.Property),
-            property.GetIndexParameters().Select(MapParameter),
+            property.GetIndexParameters().Select(parameter => MapParameter(parameter, RequiredDeclaringType(property))),
             MapAttributes(
                 CustomAttributeData.GetCustomAttributes(property),
                 AttributeTargetKind.Property));
     }
 
-    private ParameterSignature MapParameter(ParameterInfo parameter)
+    private ParameterSignature MapParameter(ParameterInfo parameter, Type? context)
     {
         return new ParameterSignature(
             parameter.Name ?? string.Empty,
             parameter.Position,
             new TypeUseSignature(
-                MapType(UnwrapByReference(parameter.ParameterType)),
+                MapType(UnwrapByReference(parameter.ParameterType), context),
                 GetParameterRefKind(parameter),
                 TypeUseKind.Parameter),
             MapAttributes(
@@ -594,14 +611,15 @@ public sealed partial class ReflectionSignatureMapper
     private static RefKind GetParameterRefKind(ParameterInfo parameter)
     {
         if (!parameter.ParameterType.IsByRef) return RefKind.None;
-        if (parameter.IsOut) return RefKind.Out;
+        // In/Out 同时出现表示互操作方向，不改变 ref 的语言分类。
+        if (parameter.IsOut && !parameter.IsIn) return RefKind.Out;
         if (HasModifier(parameter, REQUIRES_LOCATION_ATTRIBUTE) ||
             HasAttribute(parameter, REQUIRES_LOCATION_ATTRIBUTE))
         {
             return RefKind.RefReadOnly;
         }
 
-        if (parameter.IsIn || HasAttribute(parameter, IS_READ_ONLY_ATTRIBUTE))
+        if (HasModifier(parameter, IS_READ_ONLY_ATTRIBUTE) || HasAttribute(parameter, IS_READ_ONLY_ATTRIBUTE))
         {
             return RefKind.In;
         }

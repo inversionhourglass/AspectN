@@ -74,4 +74,7 @@ public static class DiagnosticCodes
 
     /// <summary>Gets the invalid generic clause.</summary>
     public static string InvalidGenericClause => "AN2011";
+
+    /// <summary>Identifies regex syntax outside the supported language subset.</summary>
+    public static string UnsupportedRegexFeature => "AN2012";
 }

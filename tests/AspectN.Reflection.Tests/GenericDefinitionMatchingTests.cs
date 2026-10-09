@@ -58,6 +58,54 @@ public sealed class GenericDefinitionMatchingTests
                 nameof(GenericRepo<int>.Find)));
     }
 
+    [Theory]
+    [InlineData(false, "regex(GenericRepo<.*List<T>>\\.Find\\(.*List<T>\\))")]
+    [InlineData(true, "regex(GenericRepo<T\\[\\]>\\.Find\\(T\\[\\]\\))")]
+    public void Regex_OpenConstructedDeclaringType_NamesNestedTypeParameter(
+        bool arrayArgument,
+        string expression)
+    {
+        var parameter = typeof(GenericRepo<>).GetGenericArguments()[0];
+        var argument = arrayArgument
+            ? parameter.MakeArrayType()
+            : typeof(List<>).MakeGenericType(parameter);
+        var declaringType = typeof(GenericRepo<>).MakeGenericType(argument);
+
+        Assert.Equal(MatchStatus.Matched, MatchOpenConstructed(declaringType, "Find", expression));
+    }
+
+    [Fact]
+    public void Regex_OpenConstructedDeclaringType_DeduplicatesRepeatedParameter()
+    {
+        var parameter = typeof(GenericRepo<>).GetGenericArguments()[0];
+        var declaringType = typeof(GenericPair<,>).MakeGenericType(parameter, parameter);
+
+        Assert.Equal(
+            MatchStatus.Matched,
+            MatchOpenConstructed(declaringType, "Find", "regex(GenericPair<T, T>\\.Find\\(T\\))"));
+    }
+
+    [Fact]
+    public void Regex_OpenConstructedDeclaringType_NumbersTypeBeforeMethodParameters()
+    {
+        var parameter = typeof(GenericRepo<>).GetGenericArguments()[0];
+        var argument = typeof(List<>).MakeGenericType(parameter);
+        var declaringType = typeof(GenericRepo<>).MakeGenericType(argument);
+
+        Assert.Equal(
+            MatchStatus.Matched,
+            MatchOpenConstructed(declaringType, "Echo", "regex(GenericRepo<.*List<T1>>\\.Echo<T2>\\(.*List<T1>, T2\\))"));
+    }
+
+    private static MatchStatus MatchOpenConstructed(Type declaringType, string methodName, string expression)
+    {
+        var typeSystem = new ReflectionTypeSystem();
+        var candidate = typeSystem.Mapper.MapMethod(declaringType.GetMethod(methodName)!);
+        var compilation = AspectNCompilation.Create(AspectNParser.ParseMemberExpression(expression));
+        Assert.True(compilation.TryGetMemberPattern(out var pattern));
+        return pattern!.Match(candidate, typeSystem).Status;
+    }
+
     private static MatchStatus Match(
         string expression,
         string methodName)
@@ -109,4 +157,11 @@ internal sealed class GenericRepo<T>
     {
         return key;
     }
+
+    public static TMethod Echo<TMethod>(T key, TMethod value) => value;
+}
+
+internal sealed class GenericPair<T, U>
+{
+    public static T Find(T key) => key;
 }

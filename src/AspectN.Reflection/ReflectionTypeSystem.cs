@@ -51,7 +51,7 @@ public sealed class ReflectionTypeSystem : ITypeSystem
         if (structural.Status == MatchStatus.Matched) return structural;
         TypeRelationResult? unresolved = structural.Status == MatchStatus.Unknown ? structural : null;
 
-        if (!Mapper.TryGetType(candidate, out var candidateType) ||
+        if (!Mapper.TryGetType(candidate, out var candidateType, out var candidateContext) ||
             candidateType is null)
         {
             return MissingNativeReference(candidate);
@@ -63,7 +63,7 @@ public sealed class ReflectionTypeSystem : ITypeSystem
             // 与模式路径的合成目标语义不一致，统一按名义闭包遍历（GetInterfaces 含运行时合成的数组接口）。
             var pending = new Queue<(Type Type, Type? Context)>();
             var visited = new HashSet<(Type Type, Type? Context)>();
-            pending.Enqueue((candidateType, null));
+            pending.Enqueue((candidateType, candidateContext));
             while (pending.Count > 0)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -72,7 +72,7 @@ public sealed class ReflectionTypeSystem : ITypeSystem
                 {
                     if (!visited.Add((current, context))) continue;
                     var relation = CompareUnqualified(
-                        Mapper.MapType(current),
+                        Mapper.MapType(current, context),
                         target);
                     if (relation.Status == MatchStatus.Matched) return relation;
                     if (relation.Status == MatchStatus.Unknown) unresolved ??= relation;
@@ -101,7 +101,8 @@ public sealed class ReflectionTypeSystem : ITypeSystem
         TypeSignature candidate,
         CancellationToken cancellationToken = default)
     {
-        if (!Mapper.TryGetType(candidate, out var candidateType) ||
+        cancellationToken.ThrowIfCancellationRequested();
+        if (!Mapper.TryGetType(candidate, out var candidateType, out var candidateContext) ||
             candidateType is null)
         {
             return new InheritanceClosure(
@@ -110,31 +111,27 @@ public sealed class ReflectionTypeSystem : ITypeSystem
         }
 
         var closure = new List<TypeSignature>();
-        try
+        var pending = new Queue<(Type Type, Type? Context)>();
+        pending.Enqueue((candidateType, candidateContext));
+        var visited = new HashSet<(Type Type, Type? Context)>();
+        TypeRelationResult? failure = null;
+        while (pending.Count > 0)
         {
-            var pending = new Queue<(Type Type, Type? Context)>();
-            EnqueueNominalAncestors(candidateType, pending, null);
-
-            var visited = new HashSet<(Type Type, Type? Context)> { (candidateType, null) };
-            while (pending.Count > 0)
+            cancellationToken.ThrowIfCancellationRequested();
+            var (current, context) = pending.Dequeue();
+            if (!visited.Add((current, context))) continue;
+            try
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                var (current, context) = pending.Dequeue();
-                if (!visited.Add((current, context))) continue;
-                if (current == candidateType) continue;
-                closure.Add(Mapper.MapType(current));
+                if (current != candidateType) closure.Add(Mapper.MapType(current, context));
                 EnqueueNominalAncestors(current, pending, context);
             }
+            catch (Exception exception) when (IsMetadataFailure(exception))
+            {
+                // 已排入队列的已知分支仍须继续；单个读取失败只标记闭包不完整。
+                failure ??= ReflectionFailure(current, exception);
+            }
         }
-        catch (Exception exception) when (IsMetadataFailure(exception))
-        {
-            // 元数据读取失败：已产出的祖先仍有效，闭包标记为部分并携带失败诊断。
-            return new InheritanceClosure(
-                closure,
-                ReflectionFailure(candidateType, exception));
-        }
-
-        return new InheritanceClosure(closure, null);
+        return new InheritanceClosure(closure, failure);
     }
 
     /// <summary>Determines whether has direct attribute.</summary>
@@ -234,7 +231,7 @@ public sealed class ReflectionTypeSystem : ITypeSystem
     private static Type SubstituteConstraint(Type type, Type? context)
     {
         if (context is null || !context.IsConstructedGenericType) return type;
-        if (type.IsGenericParameter && type.DeclaringMethod is null)
+        if (type.IsGenericParameter && type.DeclaringMethod is null && ReflectionGenericContext.AppliesTo(type, context))
             return context.GetGenericArguments()[type.GenericParameterPosition];
         if (type.IsArray)
         {

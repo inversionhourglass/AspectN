@@ -19,6 +19,8 @@ Evaluation asks for only the facts consumed by a selector.
 
 `ReflectionSignatureMapper.MapTypeUse` on a bare by-ref `Type` also preserves a known `ByReference` fact and marks `RefKind` unavailable, because the type alone cannot distinguish the four ref classifications. Mapping a member parameter/return retains its exact classification. Reflection metadata reading failures use AN3004; missing native associations continue to use AN3001.
 
+Interop direction flags do not imply readonly classification: `[In] ref` and `[In, Out] ref` remain `ref` in Cecil and Reflection. `out` uses out-only metadata; `in` and `ref readonly` require their respective readonly/location markers. Reflection method generic parameter uses retain their closed declaring-type query context separately from neutral declaration identity, with weak native associations. An external generic argument keeps its own declaration context.
+
 The runtime loader may reject a method's signature before Reflection can materialize a parameter `Type` when its assembly dependency is absent. This is a native-input loading failure, not an adapter relationship result. Passing a Cecil-mapped neutral signature to Reflection instead exercises detached-input capability handling (AN3001); it cannot substitute for testing a Reflection metadata reading failure on an available native object.
 
 For an unresolved `External.Widget.Run` reference:

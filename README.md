@@ -61,6 +61,12 @@ Member paths support negation and Boolean combinations, such as
 namespace segments, consecutive `!` tokens and whitespace before the
 `tasklike<int>` result clause are diagnosed.
 
+`regex(...)` supports a restricted subset of .NET regex syntax. Comments,
+inline options, lookarounds, backreferences and other special groups, and
+nested/subtracted character classes are compile-time errors. Ordinary groups,
+`(?:...)`, character classes, alternation, anchors and quantifiers remain
+available; matching retains a finite timeout.
+
 See the [language guide](docs/language/README.md), the
 [normative language specification](docs/superpowers/specs/2026-07-31-aspectn-language-spec.md),
 and the [Shared.Cecil.AspectN migration guide](docs/migration/shared-cecil-to-aspectn.md).

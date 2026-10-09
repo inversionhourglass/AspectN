@@ -205,17 +205,13 @@ public sealed class LexerTests
     [InlineData(@"[\d-[])]]")]
     [InlineData(@"[\p{L}-[])]]")]
     [InlineData("[a-z-[])]]")]
-    public void LexRegexBody_CharacterClassSubtraction_LeavesSelectorDelimiter(string source)
+    public void LexRegexBody_NestedCharacterClass_ReportsUnsupportedFeature(string source)
     {
-        _ = new System.Text.RegularExpressions.Regex(source);
         var lexer = CreateLexer(source + ")tail");
 
-        var body = lexer.LexRegexBody();
+        _ = lexer.LexRegexBody();
 
-        Assert.Equal(source, body.Text);
-        Assert.Equal(SyntaxKind.CloseParenToken, lexer.Lex().Kind);
-        Assert.Equal("tail", lexer.Lex().Text);
-        Assert.Empty(lexer.Diagnostics);
+        Assert.Contains(lexer.Diagnostics, diagnostic => diagnostic.Code == DiagnosticCodes.UnsupportedRegexFeature);
     }
 
     private static Lexer CreateLexer(string source)
