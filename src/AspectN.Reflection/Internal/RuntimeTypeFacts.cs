@@ -10,12 +10,25 @@ internal static class RuntimeTypeFacts
     {
 #if NETSTANDARD2_0
         if (_IsFunctionPointerProperty is not null) return false;
-        if (type == typeof(IntPtr)) return true;
-        if (type.HasElementType) return MayHideFunctionPointer(type.GetElementType()!);
-        return type.IsGenericType && type.GetGenericArguments().Any(MayHideFunctionPointer);
+        return ContainsIntPtr(type);
 #else
         return false;
 #endif
+    }
+
+    internal static bool ContainsIntPtr(Type type)
+    {
+        var pending = new Stack<Type>();
+        pending.Push(type);
+        while (pending.Count > 0)
+        {
+            var current = pending.Pop();
+            if (current == typeof(IntPtr)) return true;
+            if (current.HasElementType) pending.Push(current.GetElementType()!);
+            else if (current.IsGenericType)
+                foreach (var argument in current.GetGenericArguments()) pending.Push(argument);
+        }
+        return false;
     }
 #if NETSTANDARD2_0
     private static readonly PropertyInfo? _IsFunctionPointerProperty =

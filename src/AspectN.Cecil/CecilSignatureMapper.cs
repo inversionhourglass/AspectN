@@ -36,9 +36,20 @@ public sealed class CecilSignatureMapper
 #endif
 
         _typeSystem.ThrowIfDisposed();
-        return _cache.GetOrAdd(
-            typeReference,
-            () => CecilTypeMapper.Map(typeReference, MapType));
+        return IterativeTypeMapping.Map(typeReference, _cache.Find, TypeDependencies,
+            type => CecilTypeMapper.Map(type, MapType), _cache.GetOrAdd);
+    }
+
+    private static IEnumerable<TypeReference> TypeDependencies(TypeReference type)
+    {
+        if (type is GenericInstanceType generic)
+        {
+            yield return generic.ElementType;
+            foreach (var argument in generic.GenericArguments) yield return argument;
+            yield break;
+        }
+        if (type is ArrayType or ByReferenceType or OptionalModifierType or RequiredModifierType)
+            yield return ((TypeSpecification)type).ElementType;
     }
 
     /// <summary>Maps type use metadata to an AspectN signature.</summary>

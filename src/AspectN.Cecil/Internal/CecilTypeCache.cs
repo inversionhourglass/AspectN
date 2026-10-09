@@ -15,6 +15,18 @@ internal sealed class CecilTypeCache
         new(TypeSignatureIdentityComparer.Instance);
     private readonly object _gate = new();
 
+    public TypeSignature? Find(TypeReference type)
+    {
+        lock (_gate)
+        {
+            if (_byReference.TryGetValue(type, out var mapped)) return mapped;
+            var key = CecilTypeCacheKey.Create(type);
+            if (!_byStableIdentity.TryGetValue(key, out mapped)) return null;
+            _byReference.Add(type, mapped);
+            return mapped;
+        }
+    }
+
     public TypeSignature GetOrAdd(
         TypeReference typeReference,
         Func<TypeSignature> factory)
@@ -181,79 +193,102 @@ internal readonly struct CecilTypeCacheKey : IEquatable<CecilTypeCacheKey>
         StringBuilder builder,
         TypeReference typeReference)
     {
-        switch (typeReference)
+        var pending = new Stack<(TypeReference? Type, string? Text)>();
+        pending.Push((typeReference, null));
+        while (pending.Count > 0)
         {
-            case GenericInstanceType generic:
-                builder.Append("generic(");
-                AppendShape(builder, generic.ElementType);
-                builder.Append('<');
-                for (var index = 0;
-                     index < generic.GenericArguments.Count;
-                     index++)
-                {
-                    if (index > 0) builder.Append(',');
-                    AppendShape(builder, generic.GenericArguments[index]);
-                }
-
-                builder.Append(">)");
-                return;
-            case ArrayType array:
-                // 向量数组与非零下界的一维数组是不同形状，不能共用缓存身份。
-                builder.Append("array:");
-                builder.Append(array.Rank);
-                builder.Append(':');
-                builder.Append(array.IsVector);
-                builder.Append('(');
-                AppendShape(builder, array.ElementType);
-                builder.Append(')');
-                return;
-            case GenericParameter parameter:
-                builder.Append("parameter:");
-                builder.Append(parameter.Type);
-                builder.Append(':');
-                builder.Append(GetOwnerIdentity(parameter));
-                builder.Append(':');
-                builder.Append(parameter.Position);
-                return;
-            case FunctionPointerType functionPointer:
-                // 函数指针派生自 TypeSpecification 但 ElementType 恒为 null，不能递归；
-                // FullName 携带返回类型与参数签名，但不含调用约定，需一并进入键。
-                builder.Append("function-pointer:");
-                builder.Append((int)functionPointer.CallingConvention);
-                builder.Append(':');
-                builder.Append(functionPointer.FullName);
-                return;
-            case TypeSpecification specification:
-                builder.Append(typeReference.GetType().FullName);
-                builder.Append('(');
-                if (specification.ElementType is null)
-                {
-                    // 其他无元素类型的规格类型同样短路为字面量标记，
-                    // 映射阶段统一产出 UnsupportedTypeSignature。
-                    builder.Append("null-element");
-                }
-                else
-                {
-                    AppendShape(builder, specification.ElementType);
-                }
-
-                builder.Append(')');
-                return;
-            default:
-                builder.Append("named:");
-                builder.Append(typeReference.GetType().FullName);
-                builder.Append(':');
-                builder.Append(GetScopeIdentity(typeReference));
-                builder.Append(':');
-                builder.Append(typeReference.FullName);
-                builder.Append(':');
-                builder.Append(typeReference.IsValueType);
-                return;
+            var item = pending.Pop();
+            if (item.Text is not null)
+            {
+                builder.Append(item.Text);
+                continue;
+            }
+            typeReference = item.Type!;
+            switch (typeReference)
+            {
+                case GenericInstanceType generic:
+                    builder.Append("generic(");
+                    pending.Push((null, ">)"));
+                    for (var index = generic.GenericArguments.Count - 1; index >= 0; index--)
+                    {
+                        pending.Push((generic.GenericArguments[index], null));
+                        if (index > 0) pending.Push((null, ","));
+                    }
+                    pending.Push((null, "<"));
+                    pending.Push((generic.ElementType, null));
+                    break;
+                case ArrayType array:
+                    // 向量数组与非零下界的一维数组是不同形状，不能共用缓存身份。
+                    builder.Append("array:");
+                    builder.Append(array.Rank);
+                    builder.Append(':');
+                    builder.Append(array.IsVector);
+                    builder.Append('(');
+                    pending.Push((null, ")"));
+                    pending.Push((array.ElementType, null));
+                    break;
+                case GenericParameter parameter:
+                    builder.Append("parameter:");
+                    builder.Append(parameter.Type);
+                    builder.Append(':');
+                    builder.Append(GetOwnerIdentity(parameter));
+                    builder.Append(':');
+                    builder.Append(parameter.Position);
+                    break;
+                case FunctionPointerType functionPointer:
+                    // 函数指针派生自 TypeSpecification 但 ElementType 恒为 null，不能递归；
+                    // FullName 携带返回类型与参数签名，但不含调用约定，需一并进入键。
+                    builder.Append("function-pointer:");
+                    builder.Append((int)functionPointer.CallingConvention);
+                    builder.Append(':');
+                    builder.Append(CecilTypeMapper.CanonicalTypeText(functionPointer));
+                    break;
+                case TypeSpecification specification:
+                    builder.Append(typeReference.GetType().FullName);
+                    builder.Append('(');
+                    pending.Push((null, ")"));
+                    if (specification.ElementType is null)
+                    {
+                        // 其他无元素类型的规格类型同样短路为字面量标记，
+                        // 映射阶段统一产出 UnsupportedTypeSignature。
+                        builder.Append("null-element");
+                    }
+                    else
+                    {
+                        pending.Push((specification.ElementType, null));
+                    }
+                    break;
+                default:
+                    builder.Append("named:");
+                    builder.Append(typeReference.GetType().FullName);
+                    builder.Append(':');
+                    builder.Append(GetScopeIdentity(typeReference));
+                    builder.Append(':');
+                    builder.Append(NamedFullName(typeReference));
+                    builder.Append(':');
+                    builder.Append(typeReference.IsValueType);
+                    break;
+            }
         }
+    }
+
+    private static string NamedFullName(TypeReference type)
+    {
+        var names = new Stack<string>();
+        var outer = type;
+        for (var current = type; current is not null; current = current.DeclaringType)
+        {
+            names.Push(current.Name);
+            outer = current;
+        }
+        var name = string.Join("/", names);
+        return string.IsNullOrEmpty(outer.Namespace) ? name : outer.Namespace + "." + name;
     }
 
     private static string GetScopeIdentity(TypeReference typeReference)
     {
+        while (typeReference is TypeSpecification { ElementType: not null } specification)
+            typeReference = specification.ElementType;
         if (typeReference.Scope is AssemblyNameReference assembly)
         {
             return assembly.FullName;

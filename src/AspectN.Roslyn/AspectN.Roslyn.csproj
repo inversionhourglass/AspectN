@@ -13,6 +13,8 @@
     <ProjectReference Include="..\AspectN\AspectN.csproj" />
     <Compile Include="..\Shared\OperatorMetadata.cs" Link="Internal\OperatorMetadata.cs" />
     <Compile Include="..\Shared\AttributeAvailability.cs" Link="Internal\AttributeAvailability.cs" />
+    <Compile Include="..\Shared\IterativeTypeMapping.cs" Link="Internal\IterativeTypeMapping.cs" />
+    <Compile Include="..\Shared\IterativeTypeText.cs" Link="Internal\IterativeTypeText.cs" />
     <Compile Include="..\Shared\MetadataEncodedAttributes.cs" Link="Internal\MetadataEncodedAttributes.cs" />
     <Compile Include="..\Shared\ArrayRelations.cs" Link="Internal\ArrayRelations.cs" />
     <Compile Include="..\Shared\FunctionPointerConventions.cs" Link="Internal\FunctionPointerConventions.cs" />

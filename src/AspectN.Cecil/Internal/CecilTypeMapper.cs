@@ -4,7 +4,7 @@ using Mono.Cecil;
 
 namespace AspectN.Cecil.Internal;
 
-internal static class CecilTypeMapper
+internal static partial class CecilTypeMapper
 {
     private const string HEX_DIGITS = "0123456789abcdef";
 
@@ -42,7 +42,7 @@ internal static class CecilTypeMapper
         if (mapType(generic.ElementType) is not NamedTypeSignature definition)
         {
             return new UnsupportedTypeSignature(
-                generic.FullName,
+                CanonicalParameterForm(generic, qualifyAssembly: false),
                 "The generic instance does not have a named type definition.");
         }
 
@@ -136,25 +136,30 @@ internal static class CecilTypeMapper
         TypeReference typeReference)
     {
         return new UnsupportedTypeSignature(
-            typeReference.FullName,
+            CanonicalParameterForm(typeReference, qualifyAssembly: false),
             $"Cecil type shape '{typeReference.GetType().Name}' is unsupported.");
     }
 
     private static TypeIdentity MapIdentity(TypeReference typeReference)
     {
-        var containingType = typeReference.DeclaringType is null
-            ? null
-            : MapIdentity(typeReference.DeclaringType);
-        var (metadataName, genericArity) = SplitMetadataName(
-            typeReference.Name,
-            GetOwnArityFallback(typeReference));
-        return new TypeIdentity(
-            MapAssemblyIdentity(typeReference),
-            typeReference.Namespace ?? string.Empty,
-            metadataName,
-            genericArity,
-            GetTypeKind(typeReference),
-            containingType);
+        var chain = new Stack<TypeReference>();
+        for (var current = typeReference; current is not null; current = current.DeclaringType) chain.Push(current);
+        TypeIdentity? containingType = null;
+        while (chain.Count > 0)
+        {
+            typeReference = chain.Pop();
+            var (metadataName, genericArity) = SplitMetadataName(
+                typeReference.Name,
+                GetOwnArityFallback(typeReference));
+            containingType = new TypeIdentity(
+                MapAssemblyIdentity(typeReference),
+                typeReference.Namespace ?? string.Empty,
+                metadataName,
+                genericArity,
+                GetTypeKind(typeReference),
+                containingType);
+        }
+        return containingType!;
     }
 
     private static TypeKind GetTypeKind(TypeReference typeReference)
@@ -205,7 +210,23 @@ internal static class CecilTypeMapper
     {
         try
         {
-            return typeReference as TypeDefinition ?? typeReference.Resolve();
+            while (typeReference is TypeSpecification { ElementType: not null } specification)
+                typeReference = specification.ElementType;
+            if (typeReference is TypeDefinition definition) return definition;
+            var chain = new Stack<TypeReference>();
+            while (typeReference.DeclaringType is not null)
+            {
+                chain.Push(typeReference);
+                typeReference = typeReference.DeclaringType;
+                if (typeReference is GenericInstanceType generic) typeReference = generic.ElementType;
+            }
+            TypeDefinition? resolved = typeReference as TypeDefinition ?? typeReference.Resolve();
+            while (resolved is not null && chain.Count > 0)
+            {
+                var nested = chain.Pop();
+                resolved = resolved.NestedTypes.FirstOrDefault(candidate => candidate.Name == nested.Name);
+            }
+            return resolved;
         }
         catch (Exception exception) when (CecilMetadataReader.IsRecoverable(exception))
         {
@@ -359,36 +380,7 @@ internal static class CecilTypeMapper
 
     private static string CanonicalParameterForm(TypeReference type, bool qualifyAssembly = true)
     {
-        switch (type)
-        {
-            case GenericParameter parameter:
-                return (parameter.Type == GenericParameterType.Type
-                    ? "!"
-                    : "!!") + parameter.Position;
-            case ByReferenceType byReference:
-                return CanonicalParameterForm(byReference.ElementType, qualifyAssembly) + "&";
-            case PointerType pointer:
-                return CanonicalParameterForm(pointer.ElementType, qualifyAssembly) + "*";
-            case ArrayType array:
-                return CanonicalParameterForm(array.ElementType, qualifyAssembly) +
-                       (array.Rank == 1 && !array.IsVector ? "[*]" : ArraySuffix(array.Rank));
-            case GenericInstanceType:
-                return ConstructedNamedForm((GenericInstanceType)type, qualifyAssembly);
-            case FunctionPointerType functionPointer:
-                return FunctionPointerForm(functionPointer, qualifyAssembly);
-            case RequiredModifierType required:
-                // 函数指针签名内的 in/ref readonly 以 modreq 包裹元素；修饰符不参与
-                // 身份形状，按元素递归，否则泛型参数会按名字而非 !!n 槽位编码。
-                return CanonicalParameterForm(required.ElementType, qualifyAssembly);
-            case OptionalModifierType optional:
-                return CanonicalParameterForm(optional.ElementType, qualifyAssembly);
-            case TypeSpecification specification:
-                return specification.ElementType is null
-                    ? specification.GetType().Name
-                    : ConstructedNamedForm(specification.ElementType, qualifyAssembly);
-            default:
-                return ConstructedNamedForm(type, qualifyAssembly);
-        }
+        return AspectN.AdapterInternals.IterativeTypeText.Format(type, qualifyAssembly, false, TypeFormParts);
     }
 
     // 函数指针的规范形式：delegate*[调用约定]<参数...,返回类型>，与 Reflection、Roslyn
@@ -435,76 +427,6 @@ internal static class CecilTypeMapper
         };
     }
 
-    // 嵌套构造类型的规范形式按包含链逐层携带各自的构造实参；与 Reflection、Roslyn 逐字节一致。
-    // ECMA 编码把包含链的实参扁平挂在内层实例上，需要按各层元数自外向内分发。
-    private static string ConstructedNamedForm(TypeReference typeReference, bool qualifyAssembly = true)
-    {
-        var chain = new List<TypeReference>();
-        var collected = new List<TypeReference>();
-        for (var current = typeReference;
-             current is not null;
-             current = current.DeclaringType)
-        {
-            chain.Add(current);
-            if (current is GenericInstanceType instance)
-            {
-                collected.InsertRange(0, instance.GenericArguments);
-            }
-        }
-
-        chain.Reverse();
-
-        var parts = new List<string>();
-        var offset = 0;
-        foreach (var level in chain)
-        {
-            var definition = level is GenericInstanceType instance
-                ? instance.ElementType
-                : level;
-            var form = definition.Name;
-            var ownArity = MetadataArity(definition);
-            if (ownArity > 0 && offset + ownArity <= collected.Count)
-            {
-                var slice = collected.GetRange(offset, ownArity);
-                form += $"<{string.Join(",", slice.Select(argument => CanonicalParameterForm(argument, qualifyAssembly)))}>";
-                offset += ownArity;
-            }
-
-            parts.Add(form);
-        }
-
-        var outermost = chain[0] is GenericInstanceType outer
-            ? outer.ElementType
-            : chain[0];
-        var namespaceName = outermost.Namespace ?? string.Empty;
-        var joined = string.Join("/", parts);
-        var name = string.IsNullOrEmpty(namespaceName)
-            ? joined
-            : $"{namespaceName}.{joined}";
-        var definitionType = typeReference is GenericInstanceType generic
-            ? generic.ElementType
-            : typeReference;
-        return qualifyAssembly
-            ? AspectN.AdapterInternals.GenericOwnerIdentity.Qualify(
-                name, MapAssemblyIdentity(TryResolve(definitionType) ?? definitionType))
-            : name;
-    }
-
-    private static int MetadataArity(TypeReference definition)
-    {
-        var name = definition.Name;
-        var marker = name.LastIndexOf('`');
-        if (marker < 0) return 0;
-#if NET10_0_OR_GREATER
-        return int.TryParse(name.AsSpan(marker + 1), out var arity)
-            ? arity
-            : 0;
-#else
-        return int.TryParse(name.Substring(marker + 1), out var arity)
-            ? arity
-            : 0;
-#endif
-    }
 
     private static string ArraySuffix(int rank)
     {

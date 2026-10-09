@@ -736,9 +736,11 @@ method(* Service.*(..)) && !attr(call ObsoleteAttribute)
 
 The [design decisions](../../language/standard-design-decisions.md) explain the name model, generic arity, wildcard family, ref kinds and structural suffix rules. The [migration guide](../../migration/shared-cecil-to-aspectn.md) describes the breaking transition from Shared.Cecil.AspectN and the removed public APIs.
 
-## 18. Implementation limits and diagnostic presentation
+## 21. Implementation limits and diagnostic presentation
 
 Parsing limits recursive nesting to 128 entries and resulting syntax-tree depth to 256 nodes. Exceeding either limit reports AN1002 and prevents binding. Candidate type structures deeper than 256 nodes produce Unknown/AN3005 before evaluation. These are robustness limits, not an alternate grammar.
+
+Adapters map native array, constructed-generic and containing-type graphs with explicit work stacks. Mapping itself adds no type-depth budget; the AN3005 limit applies when matching the resulting neutral signature. Canonical native type text and legacy Reflection function-pointer ambiguity checks also traverse shapes iteratively. Reflection caches keep native dependencies alive during one mapping operation without retaining them permanently.
 
 Public diagnostic collections are immutable snapshots. Exact duplicates with the same code, severity, span and message are removed. Ordering is by span start (unlocated diagnostics last), ordinal code, severity, span length, then ordinal message. Distinct messages at the same code/span remain distinct.
 

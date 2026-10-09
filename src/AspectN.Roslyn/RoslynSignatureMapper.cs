@@ -12,7 +12,7 @@ using RoslynMethodKind = Microsoft.CodeAnalysis.MethodKind;
 namespace AspectN.Roslyn;
 
 /// <summary>Maps Roslyn symbols to backend-neutral AspectN signatures.</summary>
-public sealed class RoslynSignatureMapper
+public sealed partial class RoslynSignatureMapper
 {
     private const string HEX_DIGITS = "0123456789abcdef";
 
@@ -48,16 +48,25 @@ public sealed class RoslynSignatureMapper
         typeSymbol = NormalizeType(typeSymbol);
         lock (_gate)
         {
-            if (_types.TryGetValue(typeSymbol, out var cached))
-            {
-                return cached;
-            }
-
-            var created = MapTypeCore(typeSymbol);
-            _types.Add(typeSymbol, created);
-            _typeSymbols[created] = typeSymbol;
-            return created;
+            return IterativeTypeMapping.Map(typeSymbol,
+                type => _types.TryGetValue(type, out var cached) ? cached : null,
+                TypeDependencies, MapTypeCore, (type, factory) =>
+                {
+                    var created = factory();
+                    _types.Add(type, created);
+                    _typeSymbols[created] = type;
+                    return created;
+                });
         }
+    }
+
+    private IEnumerable<ITypeSymbol> TypeDependencies(ITypeSymbol type)
+    {
+        if (type is IArrayTypeSymbol array) yield return NormalizeType(array.ElementType);
+        if (type is not INamedTypeSymbol named || type is IErrorTypeSymbol ||
+            SymbolEqualityComparer.Default.Equals(named, named.OriginalDefinition)) yield break;
+        yield return named.OriginalDefinition;
+        foreach (var argument in FlattenTypeArguments(named)) yield return NormalizeType(argument);
     }
 
     /// <summary>Maps type use metadata to an AspectN signature.</summary>
@@ -371,19 +380,24 @@ public sealed class RoslynSignatureMapper
 
     private static TypeIdentity MapIdentity(INamedTypeSymbol typeSymbol)
     {
-        var definition = typeSymbol.OriginalDefinition;
-        var containing = definition.ContainingType is null
-            ? null
-            : MapIdentity(definition.ContainingType);
-        return new TypeIdentity(
-            MapAssemblyIdentity(definition.ContainingAssembly.Identity),
-            containing is null
-                ? MapNamespaceName(definition.ContainingNamespace)
-                : string.Empty,
-            definition.Name,
-            definition.Arity,
-            MapTypeKind(definition.TypeKind),
-            containing);
+        var chain = new Stack<INamedTypeSymbol>();
+        for (var current = typeSymbol.OriginalDefinition; current is not null; current = current.ContainingType)
+            chain.Push(current);
+        TypeIdentity? containing = null;
+        while (chain.Count > 0)
+        {
+            var definition = chain.Pop();
+            containing = new TypeIdentity(
+                MapAssemblyIdentity(definition.ContainingAssembly.Identity),
+                containing is null
+                    ? MapNamespaceName(definition.ContainingNamespace)
+                    : string.Empty,
+                definition.Name,
+                definition.Arity,
+                MapTypeKind(definition.TypeKind),
+                containing);
+        }
+        return containing!;
     }
 
     // 全局命名空间的 ToDisplayString() 返回 "<global namespace>"，必须归一化为空字符串。
@@ -540,29 +554,7 @@ public sealed class RoslynSignatureMapper
 
     private string CanonicalParameterForm(ITypeSymbol type, bool qualifyAssembly = true)
     {
-        switch (type)
-        {
-            case IDynamicTypeSymbol:
-                return ConstructedNamedForm(_compilation.GetSpecialType(SpecialType.System_Object), qualifyAssembly);
-            case ITypeParameterSymbol parameter:
-                return parameter.TypeParameterKind ==
-                    TypeParameterKind.Method
-                    ? "!!" + parameter.Ordinal
-                    : "!" + FlattenedOrdinal(parameter);
-            case IPointerTypeSymbol pointer:
-                return CanonicalParameterForm(pointer.PointedAtType, qualifyAssembly) + "*";
-            case IArrayTypeSymbol array:
-                return CanonicalParameterForm(array.ElementType, qualifyAssembly) +
-                       "[" + (array.Rank == 1
-                           ? array.IsSZArray ? string.Empty : "*"
-                           : new string(',', array.Rank - 1)) + "]";
-            case IFunctionPointerTypeSymbol functionPointer:
-                return FunctionPointerForm(functionPointer, qualifyAssembly);
-            case INamedTypeSymbol:
-                return ConstructedNamedForm((INamedTypeSymbol)type, qualifyAssembly);
-            default:
-                return type.ToDisplayString();
-        }
+        return IterativeTypeText.Format(type, qualifyAssembly, false, TypeFormParts);
     }
 
     // 函数指针的规范形式：delegate*[调用约定]<参数...,返回类型>，与 Cecil、Reflection
@@ -622,42 +614,4 @@ public sealed class RoslynSignatureMapper
         return offset + parameter.Ordinal;
     }
 
-    // 嵌套构造类型的规范形式按包含链逐层携带各自的构造实参；与 Reflection、Cecil 逐字节一致。
-    private string ConstructedNamedForm(INamedTypeSymbol named, bool qualifyAssembly = true)
-    {
-        var levels = new Stack<string>();
-        for (var current = named;
-             current is not null;
-             current = current.ContainingType)
-        {
-            var level = current.MetadataName;
-            if (current.IsGenericType && !current.IsDefinition)
-            {
-                var arguments = current.TypeArguments
-                    .Select(argument => CanonicalParameterForm(argument, qualifyAssembly))
-                    .ToArray();
-                if (arguments.Length > 0)
-                {
-                    level += $"<{string.Join(",", arguments)}>";
-                }
-            }
-
-            levels.Push(level);
-        }
-
-        var namespaces = new Stack<string>();
-        for (var current = named.ContainingNamespace;
-             current is not null && !current.IsGlobalNamespace;
-             current = current.ContainingNamespace)
-        {
-            namespaces.Push(current.Name);
-        }
-
-        var joined = string.Join("/", levels.ToArray());
-        var prefix = string.Join(".", namespaces.ToArray());
-        var name = string.IsNullOrEmpty(prefix) ? joined : $"{prefix}.{joined}";
-        return qualifyAssembly
-            ? GenericOwnerIdentity.Qualify(name, MapAssemblyIdentity(named.ContainingAssembly.Identity))
-            : name;
-    }
 }

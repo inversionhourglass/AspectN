@@ -20,6 +20,8 @@ internal sealed class ReflectionTypeCache
         return signature;
     }
 
+    public TypeSignature? Find(Type type) => _forward.TryGetValue(type, out var signature) ? signature : null;
+
     public bool TryGetType(TypeSignature signature, out Type? type)
     {
         type = null;

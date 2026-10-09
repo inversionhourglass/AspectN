@@ -9,6 +9,7 @@
     <ProjectReference Include="..\..\src\AspectN.Reflection\AspectN.Reflection.csproj" />
     <ProjectReference Include="..\..\src\AspectN.Roslyn\AspectN.Roslyn.csproj" />
     <ProjectReference Include="..\AspectN.TestAssembly\AspectN.TestAssembly.csproj" />
+    <ProjectReference Include="..\AspectN.MappingDepthProbe\AspectN.MappingDepthProbe.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />

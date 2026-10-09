@@ -8,7 +8,7 @@ using AspectN.Reflection.Internal;
 namespace AspectN.Reflection;
 
 /// <summary>Maps reflection metadata to backend-neutral AspectN signatures.</summary>
-public sealed class ReflectionSignatureMapper
+public sealed partial class ReflectionSignatureMapper
 {
     private const string ASYNC_STATE_MACHINE_ATTRIBUTE =
         "System.Runtime.CompilerServices.AsyncStateMachineAttribute";
@@ -46,7 +46,19 @@ public sealed class ReflectionSignatureMapper
         if (type is null) throw new ArgumentNullException(nameof(type));
 #endif
 
-        return _types.GetOrAdd(type, () => MapTypeCore(type));
+        return IterativeTypeMapping.Map(type, _types.Find, TypeDependencies, MapTypeCore, _types.GetOrAdd);
+    }
+
+    private static IEnumerable<Type> TypeDependencies(Type type)
+    {
+        if (type.IsByRef || type.IsArray)
+        {
+            yield return RequiredElementType(type);
+            yield break;
+        }
+        if (!type.IsGenericType || type.IsGenericTypeDefinition) yield break;
+        yield return type.GetGenericTypeDefinition();
+        foreach (var argument in type.GetGenericArguments()) yield return argument;
     }
 
     /// <summary>Maps type use metadata to an AspectN signature.</summary>
@@ -352,22 +364,25 @@ public sealed class ReflectionSignatureMapper
 
     private static TypeIdentity MapIdentity(Type type)
     {
-        var definition = type.IsGenericType && !type.IsGenericTypeDefinition
-            ? type.GetGenericTypeDefinition()
-            : type;
-        var containing = definition.DeclaringType is null
-            ? null
-            : MapIdentity(definition.DeclaringType);
-        var (metadataName, genericArity) = SplitMetadataName(definition.Name, OwnGenericArity(definition));
-        return new TypeIdentity(
-            MapAssemblyIdentity(definition.Assembly.GetName()),
-            containing is null
-                ? definition.Namespace ?? string.Empty
-                : string.Empty,
-            metadataName,
-            genericArity,
-            GetTypeKind(definition),
-            containing);
+        var chain = new Stack<Type>();
+        for (var current = type; current is not null; current = current.DeclaringType)
+            chain.Push(current.IsGenericType && !current.IsGenericTypeDefinition ? current.GetGenericTypeDefinition() : current);
+        TypeIdentity? containing = null;
+        while (chain.Count > 0)
+        {
+            var definition = chain.Pop();
+            var (metadataName, genericArity) = SplitMetadataName(definition.Name, OwnGenericArity(definition));
+            containing = new TypeIdentity(
+                MapAssemblyIdentity(definition.Assembly.GetName()),
+                containing is null
+                    ? definition.Namespace ?? string.Empty
+                    : string.Empty,
+                metadataName,
+                genericArity,
+                GetTypeKind(definition),
+                containing);
+        }
+        return containing!;
     }
 
     private static AssemblyIdentity MapAssemblyIdentity(AssemblyName assembly)
@@ -689,89 +704,9 @@ public sealed class ReflectionSignatureMapper
 
     private static string CanonicalParameterForm(Type type, bool isModified, bool qualifyAssembly = true)
     {
-        if (type.IsGenericParameter)
-        {
-            var parameter = type.UnderlyingSystemType;
-            return (parameter.DeclaringMethod is null ? "!" : "!!") +
-                   parameter.GenericParameterPosition;
-        }
-
-        if (type.IsByRef)
-        {
-            return CanonicalParameterForm(RequiredElementType(type), isModified, qualifyAssembly) + "&";
-        }
-
-        if (type.IsPointer)
-        {
-            return CanonicalParameterForm(RequiredElementType(type), isModified, qualifyAssembly) + "*";
-        }
-
-        // 函数指针的 Name/Namespace 为空，落入命名形式会把 owner ID 折叠成空参形状；
-        // 形状由参数与返回类型的规范形式递归构造，与 Cecil、Roslyn 的
-        // delegate*[约定]<参数...,返回> 逐字节一致。必须保留 ParameterInfo 的
-        // modified Type 才能读取调用约定；原始 Type 的空列表不代表 managed。
-        if (RuntimeTypeFacts.IsFunctionPointer(type))
-        {
-            var parameterForms = RuntimeTypeFacts
-                .GetFunctionPointerParameterTypes(type)
-                .Select(parameter => CanonicalParameterForm(parameter, isModified, qualifyAssembly))
-                .Append(CanonicalParameterForm(
-                    RuntimeTypeFacts.GetFunctionPointerReturnType(type), isModified, qualifyAssembly));
-            var convention = RuntimeTypeFacts.CallingConvention(type, isModified);
-            return $"delegate*[{convention}]<{string.Join(",", parameterForms)}>";
-        }
-
-        if (type.IsArray)
-        {
-            return CanonicalParameterForm(RequiredElementType(type), isModified, qualifyAssembly) +
-                   (type.GetArrayRank() == 1 && !RuntimeTypeFacts.IsVector(type) ? "[*]" : ArraySuffix(type.GetArrayRank()));
-        }
-
-        return ConstructedNamedForm(type.UnderlyingSystemType, qualifyAssembly);
+        return IterativeTypeText.Format(type, qualifyAssembly, isModified, TypeFormParts);
     }
 
-    // 嵌套构造类型的规范形式按包含链逐层携带各自的构造实参；与 Cecil、Roslyn 逐字节一致。
-    // .NET 中构造嵌套类型的 DeclaringType 链是开放定义，构造实参只在封闭类型上扁平可见，需按层分发。
-    private static string ConstructedNamedForm(Type type, bool qualifyAssembly = true)
-    {
-        var chain = new List<Type>();
-        for (var current = type;
-             current is not null;
-             current = current.DeclaringType)
-        {
-            chain.Add(current);
-        }
-
-        chain.Reverse();
-
-        var flattened =
-            type.IsGenericType && !type.IsGenericTypeDefinition
-                ? type.GetGenericArguments()
-                : Type.EmptyTypes;
-        var parts = new List<string>();
-        var offset = 0;
-        foreach (var level in chain)
-        {
-            var declaringCount =
-                level.DeclaringType?.GetGenericArguments().Length ?? 0;
-            var ownArity = level.GetGenericArguments().Length - declaringCount;
-            var form = level.Name;
-            if (ownArity > 0 && offset + ownArity <= flattened.Length)
-            {
-                var slice = new Type[ownArity];
-                Array.Copy(flattened, offset, slice, 0, ownArity);
-                form += $"<{string.Join(",", slice.Select(argument => CanonicalParameterForm(argument, false, qualifyAssembly)))}>";
-                offset += ownArity;
-            }
-
-            parts.Add(form);
-        }
-
-        var prefix = type.Namespace;
-        var joined = string.Join("/", parts);
-        var name = string.IsNullOrEmpty(prefix) ? joined : $"{prefix}.{joined}";
-        return qualifyAssembly ? GenericOwnerIdentity.Qualify(name, MapAssemblyIdentity(type.Assembly.GetName())) : name;
-    }
 
     private static string ArraySuffix(int rank)
     {
