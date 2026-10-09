@@ -24,7 +24,7 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
         var arrayRelation = ArrayRelations.Compare(candidate, target, UnqualifiedTypeComparer.AreEqual);
         if (arrayRelation is not null) return arrayRelation;
         var structural = UnqualifiedTypeComparer.AreEqual(candidate, target);
-        if (structural.Status != MatchStatus.NotMatched) return structural;
+        if (structural.Status == MatchStatus.Matched) return structural;
 
         if (!_mapper.TryGetTypeReference(candidate, out var candidateReference) ||
             candidateReference is null)
@@ -35,57 +35,58 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
         var pending = new Queue<(TypeReference Type, GenericInstanceType? Context)>();
         var visited = new HashSet<(CecilTypeCacheKey Type, CecilTypeCacheKey? Context)>();
         pending.Enqueue((candidateReference, null));
-        TypeRelationResult? unresolved = null;
+        TypeRelationResult? unresolved = structural.Status == MatchStatus.Unknown ? structural : null;
 
         while (pending.Count > 0)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var (current, constraintContext) = pending.Dequeue();
-            if (!visited.Add((CecilTypeCacheKey.Create(current), constraintContext is null ? null : CecilTypeCacheKey.Create(constraintContext)))) continue;
-
-            var relation = UnqualifiedTypeComparer.AreEqual(
-                _mapper.MapType(current),
-                target);
-            if (relation.Status == MatchStatus.Matched) return relation;
-            if (relation.Status == MatchStatus.Unknown) return relation;
-
-            // 数组、引用与指针的 Resolve() 会退化为元素类型定义，关系必须按包装类型单独判断；
-            // 数组的合成关系以签名形式产出并走统一非限定比较（与非限定目标名兼容）。
-            if (current is ArrayType array)
+            try
             {
-                return CompareArrayRelations(array, target);
+                if (!visited.Add((CecilTypeCacheKey.Create(current), constraintContext is null ? null : CecilTypeCacheKey.Create(constraintContext)))) continue;
+
+                var relation = UnqualifiedTypeComparer.AreEqual(
+                    _mapper.MapType(current),
+                    target);
+                if (relation.Status == MatchStatus.Matched) return relation;
+                if (relation.Status == MatchStatus.Unknown) unresolved ??= relation;
+
+                // 数组、引用与指针的 Resolve() 会退化为元素类型定义，关系必须按包装类型单独判断；
+                // 数组的合成关系以签名形式产出并走统一非限定比较（与非限定目标名兼容）。
+                if (current is ArrayType array)
+                {
+                    var arrayComparison = CompareArrayRelations(array, target);
+                    if (arrayComparison.Status == MatchStatus.Matched) return arrayComparison;
+                    if (arrayComparison.Status == MatchStatus.Unknown) unresolved ??= arrayComparison;
+                    continue;
+                }
+
+                if (current is ByReferenceType or PointerType)
+                {
+                    continue;
+                }
+
+                if (current is GenericParameter parameter)
+                {
+                    var constraintFailure = EnqueueConstraints(parameter, pending, constraintContext);
+                    unresolved ??= constraintFailure;
+                    continue;
+                }
+
+                var definition = TryResolve(current, out var failure);
+                if (definition is null)
+                {
+                    // 解析失败只影响该节点的进一步展开：其余队列分支仍可能给出确定匹配。
+                    unresolved ??= failure;
+                    continue;
+                }
+
+                var expansionFailure = EnqueueAncestors(current, definition, pending);
+                unresolved ??= expansionFailure;
             }
-
-            if (current is ByReferenceType or PointerType)
+            catch (Exception exception) when (CecilMetadataReader.IsRecoverable(exception))
             {
-                return TypeRelationResult.NotMatched;
-            }
-
-            if (current is GenericParameter parameter)
-            {
-                var constraintFailure = EnqueueConstraints(parameter, pending, constraintContext);
-                unresolved ??= constraintFailure;
-                continue;
-            }
-
-            var definition = TryResolve(current, out var failure);
-            if (definition is null)
-            {
-                // 解析失败只影响该节点的进一步展开：其余队列分支仍可能给出确定匹配。
-                unresolved ??= failure;
-                continue;
-            }
-
-            var constructed = current as GenericInstanceType;
-            if (definition.BaseType is not null)
-            {
-                pending.Enqueue((Substitute(definition.BaseType, constructed), null));
-            }
-
-            foreach (var implementation in definition.Interfaces)
-            {
-                pending.Enqueue(
-                    (Substitute(implementation.InterfaceType, constructed), null));
+                unresolved ??= ResolutionFailure(current, exception);
             }
         }
 
@@ -117,50 +118,67 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var (current, constraintContext) = pending.Dequeue();
-            if (!visited.Add((CecilTypeCacheKey.Create(current), constraintContext is null ? null : CecilTypeCacheKey.Create(constraintContext)))) continue;
-
-            if (current is ArrayType array)
+            try
             {
-                ancestors.AddRange(EnumerateArrayRelations(array));
-                continue;
+                if (!visited.Add((CecilTypeCacheKey.Create(current), constraintContext is null ? null : CecilTypeCacheKey.Create(constraintContext)))) continue;
+
+                if (current is ArrayType array)
+                {
+                    ancestors.AddRange(EnumerateArrayRelations(array));
+                    continue;
+                }
+
+                if (current is ByReferenceType or PointerType) continue;
+
+                if (!ReferenceEquals(current, reference))
+                {
+                    ancestors.Add(_mapper.MapType(current));
+                }
+
+                if (current is GenericParameter parameter)
+                {
+                    var constraintFailure = EnqueueConstraints(parameter, pending, constraintContext);
+                    unresolved ??= constraintFailure;
+                    continue;
+                }
+
+                var definition = TryResolve(current, out var failure);
+                if (definition is null)
+                {
+                    // 解析失败只影响该节点的进一步展开：其余队列中的已知分支仍然保留。
+                    unresolved ??= failure;
+                    continue;
+                }
+
+                var expansionFailure = EnqueueAncestors(current, definition, pending);
+                unresolved ??= expansionFailure;
             }
-
-            if (current is ByReferenceType or PointerType) continue;
-
-            if (!ReferenceEquals(current, reference))
+            catch (Exception exception) when (CecilMetadataReader.IsRecoverable(exception))
             {
-                ancestors.Add(_mapper.MapType(current));
-            }
-
-            if (current is GenericParameter parameter)
-            {
-                var constraintFailure = EnqueueConstraints(parameter, pending, constraintContext);
-                unresolved ??= constraintFailure;
-                continue;
-            }
-
-            var definition = TryResolve(current, out var failure);
-            if (definition is null)
-            {
-                // 解析失败只影响该节点的进一步展开：其余队列中的已知分支仍然保留。
-                unresolved ??= failure;
-                continue;
-            }
-
-            var constructed = current as GenericInstanceType;
-            if (definition.BaseType is not null)
-            {
-                pending.Enqueue((Substitute(definition.BaseType, constructed), null));
-            }
-
-            foreach (var implementation in definition.Interfaces)
-            {
-                pending.Enqueue(
-                    (Substitute(implementation.InterfaceType, constructed), null));
+                unresolved ??= ResolutionFailure(current, exception);
             }
         }
 
         return new InheritanceClosure(ancestors, unresolved);
+    }
+
+    private static TypeRelationResult? EnqueueAncestors(TypeReference current, TypeDefinition definition,
+        Queue<(TypeReference Type, GenericInstanceType? Context)> pending)
+    {
+        try
+        {
+            var constructed = current as GenericInstanceType;
+            if (definition.BaseType is not null)
+                pending.Enqueue((Substitute(definition.BaseType, constructed), null));
+            foreach (var implementation in definition.Interfaces)
+                pending.Enqueue((Substitute(implementation.InterfaceType, constructed), null));
+            return null;
+        }
+        catch (Exception exception) when (CecilMetadataReader.IsRecoverable(exception))
+        {
+            // 延迟读取可能在 Resolve 成功后失败；保留已入队的基类和其他分支。
+            return ResolutionFailure(current, exception);
+        }
     }
 
     private static TypeRelationResult? EnqueueConstraints(GenericParameter parameter, Queue<(TypeReference Type, GenericInstanceType? Context)> pending, GenericInstanceType? constraintContext)
@@ -201,13 +219,15 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
         ArrayType candidate,
         TypeSignature target)
     {
+        TypeRelationResult? unknown = null;
         foreach (var relation in EnumerateArrayRelations(candidate))
         {
             var comparison = UnqualifiedTypeComparer.AreEqual(relation, target);
-            if (comparison.Status != MatchStatus.NotMatched) return comparison;
+            if (comparison.Status == MatchStatus.Matched) return comparison;
+            if (comparison.Status == MatchStatus.Unknown) unknown ??= comparison;
         }
 
-        return TypeRelationResult.NotMatched;
+        return unknown ?? TypeRelationResult.NotMatched;
     }
 
     // 数组自身的关系由运行时固定提供：System.Array/Object、非泛型集合接口（任意秩），
@@ -381,6 +401,6 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
             new AspectNDiagnostic(
                 DiagnosticCodes.ResolutionFailure,
                 DiagnosticSeverity.Warning,
-                $"Could not resolve '{typeReference.FullName}'. {detail}"));
+                $"Could not read Cecil {typeReference.GetType().Name} metadata. {detail}"));
     }
 }

@@ -17,6 +17,11 @@ uses length-prefixed assembly fields to avoid delimiter collisions. Cecil uses
 resolved declarations when available, including forwarded named types, and
 retains the available reference identity when resolution fails.
 
+This definition-assembly rule also applies to ordinary named type signatures,
+not only owner IDs. SDK facades such as `System.Runtime` and a resolved
+`System.Private.CoreLib` definition therefore produce the same named identity
+when resolution succeeds. Unresolved references retain their scope assembly.
+
 Cecil verifies the complete parameter identity of a resolved method before using
 its declaration. Declaration generic slots remain distinct even when closing a
 type makes two overloads' parameter types identical. References through derived

@@ -155,9 +155,10 @@ public sealed class CecilSignatureMapper
         MethodReference methodReference)
     {
         var definition = GetDefinition(methodReference, out var methodAvailability);
-        var typeDefinition = CecilMetadataReader.Read(
+        var typeAvailability = MetadataAvailability.Complete;
+        var typeDefinition = methodReference.DeclaringType is ArrayType ? null : CecilMetadataReader.Read(
             () => methodReference.DeclaringType.Resolve(), methodReference.DeclaringType.Name,
-            MetadataFacts.TypeAttributes, out var typeAvailability);
+            MetadataFacts.TypeAttributes, out typeAvailability);
         var genericInstance = methodReference as GenericInstanceMethod;
         var declaringInstance = methodReference.DeclaringType
             as GenericInstanceType;

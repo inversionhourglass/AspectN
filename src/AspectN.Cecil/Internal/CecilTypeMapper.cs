@@ -216,6 +216,12 @@ internal static class CecilTypeMapper
     private static AssemblyIdentity MapAssemblyIdentity(
         TypeReference typeReference)
     {
+        var definition = TryResolve(typeReference);
+        if (definition?.Module.Assembly is not null)
+        {
+            return MapAssemblyIdentity(definition.Module.Assembly.Name);
+        }
+
         if (typeReference.Scope is AssemblyNameReference assembly)
         {
             return MapAssemblyIdentity(assembly);

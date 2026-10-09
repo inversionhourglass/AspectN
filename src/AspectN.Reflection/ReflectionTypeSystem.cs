@@ -48,7 +48,8 @@ public sealed class ReflectionTypeSystem : ITypeSystem
         var arrayRelation = ArrayRelations.Compare(candidate, target, CompareUnqualified);
         if (arrayRelation is not null) return arrayRelation;
         var structural = CompareUnqualified(candidate, target);
-        if (structural.Status != MatchStatus.NotMatched) return structural;
+        if (structural.Status == MatchStatus.Matched) return structural;
+        TypeRelationResult? unresolved = structural.Status == MatchStatus.Unknown ? structural : null;
 
         if (!Mapper.TryGetType(candidate, out var candidateType) ||
             candidateType is null)
@@ -67,19 +68,24 @@ public sealed class ReflectionTypeSystem : ITypeSystem
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var (current, context) = pending.Dequeue();
-                if (!visited.Add((current, context))) continue;
-                var relation = CompareUnqualified(
-                    Mapper.MapType(current),
-                    target);
-                if (relation.Status != MatchStatus.NotMatched)
+                try
                 {
-                    return relation;
-                }
+                    if (!visited.Add((current, context))) continue;
+                    var relation = CompareUnqualified(
+                        Mapper.MapType(current),
+                        target);
+                    if (relation.Status == MatchStatus.Matched) return relation;
+                    if (relation.Status == MatchStatus.Unknown) unresolved ??= relation;
 
-                EnqueueNominalAncestors(current, pending, context);
+                    EnqueueNominalAncestors(current, pending, context);
+                }
+                catch (Exception exception) when (IsMetadataFailure(exception))
+                {
+                    unresolved ??= ReflectionFailure(current, exception);
+                }
             }
 
-            return TypeRelationResult.NotMatched;
+            return unresolved ?? TypeRelationResult.NotMatched;
         }
         catch (Exception exception) when (IsMetadataFailure(exception))
         {

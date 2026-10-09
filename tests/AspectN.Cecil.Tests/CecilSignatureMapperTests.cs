@@ -17,7 +17,7 @@ public sealed class CecilSignatureMapperTests
         Assert.Equal("System", signature.Identity.Namespace);
         Assert.Equal("Int32", signature.Identity.MetadataName);
         Assert.Equal(
-            module.TypeSystem.Int32.Scope.Name,
+            module.TypeSystem.Int32.Resolve().Module.Assembly.Name.Name,
             signature.Identity.Assembly.Name);
         Assert.Equal(0, signature.Identity.GenericArity);
     }

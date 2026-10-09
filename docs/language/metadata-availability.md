@@ -28,4 +28,6 @@ All adapters honor availability on detached signatures passed to direct attribut
 
 `Parameters` applies to property signatures: Cecil derives index parameters from accessor metadata, so damaged lazy method semantics can leave that collection unavailable, with an empty list as its placeholder. Standard property selectors do not consume that list. The property name, type and direct attributes remain usable. Diagnostic subjects use simple metadata names so formatting a message cannot itself trigger an unprotected lazy read. Resolved method references obtain parameter names from their definitions.
 
+Relationship queries retain unreadable branches as Unknown while continuing other branches. A known match wins over an earlier Unknown; when no branch matches, the reading failure remains visible. Cecil protects lazy node expansion and cache-key reads as well as `Resolve()`. Array owners have their own empty direct attribute collection and do not inherit element attributes.
+
 This contract, approved on 2026-10-05, supersedes the earlier unresolved-method limitation in the shared Standard comparison document. It does not change backend support for valid metadata forms that were already explicitly outside the adapter's classification coverage.
