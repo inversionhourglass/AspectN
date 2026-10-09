@@ -512,6 +512,11 @@ internal sealed partial class Binder(
             case ArrayTypePatternSyntax array:
                 return BindArrayTypePattern(array, scope, underNegation);
             case NullableTypePatternSyntax nullable:
+                if (UnwrapParenthesized(nullable.UnderlyingType) is NullableTypePatternSyntax)
+                {
+                    _diagnostics.Add(DiagnosticCodes.InvalidTypeSuffix, DiagnosticSeverity.Error,
+                        "The '?' suffix cannot be applied more than once consecutively.", nullable.QuestionToken.Span);
+                }
                 return new BoundNullableTypePattern(
                     nullable.FullSpan,
                     BindTypePattern(nullable.UnderlyingType, scope, underNegation));

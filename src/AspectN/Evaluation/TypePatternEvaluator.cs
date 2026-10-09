@@ -145,7 +145,8 @@ internal static class TypePatternEvaluator
 
         if (IsNamedDefinition(named.Identity, "System", "Nullable", 1))
         {
-            if (named.TypeArguments.Count != 1)
+            var arguments = GenericParameterNamer.GetEffectiveTypeArguments(named);
+            if (arguments.Length != 1)
             {
                 return Unknown(
                     pattern,
@@ -155,7 +156,7 @@ internal static class TypePatternEvaluator
 
             return Evaluate(
                 pattern.UnderlyingType,
-                named.TypeArguments[0],
+                arguments[0],
                 context);
         }
 

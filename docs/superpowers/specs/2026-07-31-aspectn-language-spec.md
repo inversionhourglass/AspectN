@@ -72,7 +72,9 @@ Comments are not part of AspectN 1.0 expression syntax.
 
 ### 3.4 Identifiers, name patterns, and literals
 
-`identifier` follows Unicode identifier start/part rules and is used for selector names and pattern variables. `name-pattern` is a non-empty metadata-name segment containing literal name characters and `*`; reserved punctuation and whitespace terminate the segment. Matching is ordinal.
+`identifier` follows the C# Unicode category profile and is used for selector names and pattern variables. Starts accept `_` and Lu, Ll, Lt, Lm, Lo, Nl; subsequent characters additionally accept Nd, Pc, Mn, Mc, Cf. This profile does not include UAX #31 Other_ID_Start/Other_ID_Continue additions or escaped identifier syntax. `name-pattern` is a non-empty metadata-name segment containing literal name characters and `*`; reserved punctuation and whitespace terminate the segment. Matching is ordinal.
+
+Consecutive nullable suffixes, such as `int??` and `List<int??>`, produce AN2010. Nested or separated nullable uses remain valid, for example `List<int?>` and `int?[]?`. Ref-kind annotations, including adjacent `!ref`, require member parameter or return type slots and produce AN2005 at the standalone type-pattern entry point, including inside generic and Boolean type patterns.
 
 ```ebnf
 name-pattern             = ( name-character | "*" ), { name-character | "*" } ;

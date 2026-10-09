@@ -8,7 +8,7 @@ public sealed class GenericParameterSignature
     /// <param name="ownerKind">Specifies the owner kind.</param>
     /// <param name="ownerId">Canonical declaration identity, including method overload parameter shapes.</param>
     /// <param name="ownerAssembly">Specifies the assembly identity of the owner declaration.</param>
-    /// <param name="position">Zero-based slot in the declaring type or method.</param>
+    /// <param name="position">Zero-based method slot, or type slot flattened across the containing type chain. OwnerId identifies the actual declaring level.</param>
     public GenericParameterSignature(
         string name,
         GenericParameterOwnerKind ownerKind,
@@ -37,7 +37,7 @@ public sealed class GenericParameterSignature
     /// <summary>Gets the assembly identity of the owner declaration.</summary>
     public AssemblyIdentity OwnerAssembly { get; }
 
-    /// <summary>Gets the zero-based declaration slot.</summary>
+    /// <summary>Gets the zero-based method slot or the type slot flattened across the containing type chain.</summary>
     public int Position { get; }
 
     private static void GuardNonNegative(int value, string parameterName)

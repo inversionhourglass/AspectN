@@ -10,7 +10,7 @@ namespace AspectN.Metadata;
 /// <param name="isAsync">Specifies the is async.</param>
 /// <param name="declaringType">Specifies the declaring type.</param>
 /// <param name="returnType">Specifies the return type.</param>
-/// <param name="parameters">Specifies the parameters.</param>
+/// <param name="parameters">Specifies parameters in declaration order; each position must equal its list index.</param>
 /// <param name="genericParameters">Specifies the generic parameters.</param>
 /// <param name="genericArguments">Specifies the generic arguments.</param>
 /// <param name="attributes">Specifies the attributes.</param>
@@ -19,6 +19,7 @@ namespace AspectN.Metadata;
 /// <param name="originalDefinition">Specifies the original definition.</param>
 /// <param name="associatedProperty">Specifies the associated property.</param>
 /// <param name="availability">Identifies facts whose values could not be read.</param>
+/// <exception cref="ArgumentException">A parameter is null or its position does not equal its list index.</exception>
 public sealed class MethodSignature(
     string name,
     MethodKind kind,
@@ -44,7 +45,7 @@ public sealed class MethodSignature(
     private readonly IReadOnlyList<GenericParameterSignature> _genericParameters = new ReadOnlyCollection<GenericParameterSignature>(
             CollectionSnapshot.Copy(genericParameters, nameof(genericParameters)));
     private readonly IReadOnlyList<ParameterSignature> _parameters = new ReadOnlyCollection<ParameterSignature>(
-            CollectionSnapshot.Copy(parameters, nameof(parameters)));
+            CollectionSnapshot.CopyParameters(parameters, nameof(parameters)));
     private readonly IReadOnlyList<AttributeSignature> _returnAttributes = new ReadOnlyCollection<AttributeSignature>(
             CollectionSnapshot.Copy(returnAttributes, nameof(returnAttributes)));
     private readonly IReadOnlyList<AttributeSignature> _typeAttributes = new ReadOnlyCollection<AttributeSignature>(
@@ -73,7 +74,7 @@ public sealed class MethodSignature(
     public TypeUseSignature ReturnType { get; } = returnType ??
             throw new ArgumentNullException(nameof(returnType));
 
-    /// <summary>Gets the parameters.</summary>
+    /// <summary>Gets the parameters in declaration order, with each position equal to its list index.</summary>
     public IReadOnlyList<ParameterSignature> Parameters => _parameters;
 
     /// <summary>Gets the generic parameters.</summary>

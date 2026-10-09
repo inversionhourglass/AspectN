@@ -7,6 +7,20 @@ namespace AspectN.Tests.Parsing;
 
 public sealed class LexerTests
 {
+    [Theory]
+    [InlineData("ⅠService")]
+    [InlineData("ServiceⅠ")]
+    public void Lex_LetterNumberIdentifier_PreservesSingleToken(string source)
+    {
+        var lexer = CreateLexer(source);
+        var token = lexer.Lex();
+
+        Assert.Equal(SyntaxKind.IdentifierToken, token.Kind);
+        Assert.Equal(source, token.Text);
+        Assert.Equal(SyntaxKind.EndOfFileToken, lexer.Lex().Kind);
+        Assert.Empty(lexer.Diagnostics);
+    }
+
     public static TheoryData<string, SyntaxKind[]> CoreTokenCases => new()
     {
         { "!", new[] { SyntaxKind.BangToken } },

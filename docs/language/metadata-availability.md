@@ -2,6 +2,8 @@
 
 The neutral signatures expose immutable `MetadataAvailability`. `UnavailableFacts` identifies fields whose stored values are placeholders; `Diagnostics` explains reading failures. A manually constructed signature defaults to `MetadataAvailability.Complete`, meaning its supplied values and empty collections are known. Explicit `Accessibility.Unknown` remains unknown even with that default.
 
+Method and property parameter collections are snapshots in declaration order. Each `ParameterSignature.Position` must equal its zero-based list index. Constructors reject null entries, reordered positions, duplicates and gaps with `ArgumentException`; they do not reorder supplied metadata.
+
 | Signature | Applicable facts |
 | --- | --- |
 | MethodSignature | Name, Kind, Accessibility, IsStatic, IsAsync, Attributes, ReturnAttributes, TypeAttributes, AssociatedProperty |

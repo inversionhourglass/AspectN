@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 using AspectN.Binding;
 using AspectN.Diagnostics;
 using AspectN.Syntax;
@@ -49,7 +50,7 @@ public sealed class AspectNCompilation
     /// <summary>Attempts to get member pattern.</summary>
     /// <param name="pattern">Specifies the pattern.</param>
     /// <returns>Returns the result of the operation.</returns>
-    public bool TryGetMemberPattern(out CompiledMemberPattern? pattern)
+    public bool TryGetMemberPattern([NotNullWhen(true)] out CompiledMemberPattern? pattern)
     {
         pattern = _memberPattern;
         return pattern is not null;
@@ -58,7 +59,7 @@ public sealed class AspectNCompilation
     /// <summary>Attempts to get type pattern.</summary>
     /// <param name="pattern">Specifies the pattern.</param>
     /// <returns>Returns the result of the operation.</returns>
-    public bool TryGetTypePattern(out CompiledTypePattern? pattern)
+    public bool TryGetTypePattern([NotNullWhen(true)] out CompiledTypePattern? pattern)
     {
         pattern = _typePattern;
         return pattern is not null;

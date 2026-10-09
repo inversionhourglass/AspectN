@@ -509,12 +509,13 @@ internal sealed class Lexer
 
     private static bool IsIdentifierStart(char character)
     {
-        return character == '_' || char.IsLetter(character);
+        return character == '_' || char.IsLetter(character) ||
+               char.GetUnicodeCategory(character) == UnicodeCategory.LetterNumber;
     }
 
     private static bool IsIdentifierPart(char character)
     {
-        if (character == '_' || char.IsLetterOrDigit(character)) return true;
+        if (IsIdentifierStart(character) || char.IsDigit(character)) return true;
 
         return char.GetUnicodeCategory(character) is
             UnicodeCategory.ConnectorPunctuation or

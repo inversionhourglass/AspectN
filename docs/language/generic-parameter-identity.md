@@ -4,6 +4,11 @@ A generic parameter's neutral identity is its owner kind, declaration owner ID,
 owner assembly and position. Closing a declaring type does not change the
 declaration identity of a method's generic parameter.
 
+For type parameters, position is the flattened CLI slot across the containing
+type chain, while owner ID identifies the level that declares the parameter.
+For `Outer<T1,T2>.Inner<U>`, `U` belongs to `Inner` and has position 2.
+Method parameter positions are local to the method and start at zero.
+
 Method owner IDs include the declaration type, method name, generic arity and
 recursive CLI parameter shapes. Each named parameter type includes its assembly
 name, version, culture and public key token, including names inside arrays,

@@ -8,6 +8,17 @@ namespace AspectN.Tests.Evaluation;
 public sealed class NullableTupleTasklikeTests
 {
     [Theory]
+    [InlineData("*?", MatchStatus.Matched)]
+    [InlineData("int?", MatchStatus.NotMatched)]
+    public void Match_OpenNullableDefinition_UsesFormalTypeArgument(string source, MatchStatus expected)
+    {
+        var candidate = new NamedTypeSignature(new TypeIdentity(
+            new AssemblyIdentity("Example"), "System", "Nullable", 1, TypeKind.Struct));
+
+        Assert.Equal(expected, Match(source, candidate).Status);
+    }
+
+    [Theory]
     [InlineData("System.Threading.Tasks", "Task", TypeKind.Class, 1, "tasklike<*>", MatchStatus.Matched)]
     [InlineData("System.Threading.Tasks", "ValueTask", TypeKind.Struct, 1, "tasklike<*>", MatchStatus.Matched)]
     [InlineData("System", "ValueTuple", TypeKind.Struct, 2, "(*,*)", MatchStatus.Matched)]

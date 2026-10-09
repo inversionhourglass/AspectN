@@ -50,14 +50,17 @@ internal sealed class TypePatternParser
 
     private SyntaxNode ParseTypeUseOrPattern()
     {
-        if (!IsIdentifier("ref") &&
+        var negatedRef = IsNegatedRefPrefix();
+        if (!negatedRef && !IsIdentifier("ref") &&
             !IsIdentifier("out") &&
             !IsIdentifier("in"))
         {
             return ParseTypeExpression();
         }
 
-        var refKindTokens = new List<SyntaxToken> { NextToken() };
+        var refKindTokens = new List<SyntaxToken>();
+        if (negatedRef) refKindTokens.Add(NextToken());
+        refKindTokens.Add(NextToken());
         if (refKindTokens[0].Text == "ref" && IsIdentifier("readonly"))
         {
             refKindTokens.Add(NextToken());
@@ -71,6 +74,13 @@ internal sealed class TypePatternParser
         return new TypeUseSyntax(refKindTokens, ParseTypeExpression());
     }
 
+    private bool IsNegatedRefPrefix()
+    {
+        if (Current.Kind != SyntaxKind.BangToken) return false;
+        var next = PeekNextToken();
+        return next.Kind == SyntaxKind.IdentifierToken && next.Text == "ref" && next.Span.Start == Current.Span.End;
+    }
+
     private TypePatternSyntax ParseTypeExpression(int parentPrecedence = 0)
     {
         using var nesting = _depthGuard.Enter(Current.Span);
@@ -78,6 +88,11 @@ internal sealed class TypePatternParser
         var unaryPrecedence = GetUnaryPrecedence(Current.Kind);
         if (unaryPrecedence != 0 && unaryPrecedence >= parentPrecedence)
         {
+            if (IsNegatedRefPrefix())
+            {
+                _diagnostics.Add(DiagnosticCodes.InvalidRefKind, DiagnosticSeverity.Error,
+                    "Ref-kind annotations require a member parameter or return type use.", Current.Span);
+            }
             var operatorToken = NextToken();
             if (Current.Kind == SyntaxKind.BangToken)
             {

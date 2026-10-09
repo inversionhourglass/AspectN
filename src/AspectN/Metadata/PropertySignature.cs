@@ -8,9 +8,10 @@ namespace AspectN.Metadata;
 /// <param name="isStatic">Specifies the is static.</param>
 /// <param name="declaringType">Specifies the declaring type.</param>
 /// <param name="propertyType">Specifies the property type.</param>
-/// <param name="parameters">Specifies the parameters.</param>
+/// <param name="parameters">Index parameters in declaration order; each position must equal its list index.</param>
 /// <param name="attributes">Specifies the attributes.</param>
 /// <param name="availability">Identifies facts whose values could not be read.</param>
+/// <exception cref="ArgumentException">A parameter is null or its position does not equal its list index.</exception>
 public sealed class PropertySignature(
     string name,
     Accessibility accessibility,
@@ -24,7 +25,7 @@ public sealed class PropertySignature(
     private readonly IReadOnlyList<AttributeSignature> _attributes = new ReadOnlyCollection<AttributeSignature>(
             CollectionSnapshot.Copy(attributes, nameof(attributes)));
     private readonly IReadOnlyList<ParameterSignature> _parameters = new ReadOnlyCollection<ParameterSignature>(
-            CollectionSnapshot.Copy(parameters, nameof(parameters)));
+            CollectionSnapshot.CopyParameters(parameters, nameof(parameters)));
 
     /// <summary>Gets the property name.</summary>
     public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
@@ -43,7 +44,7 @@ public sealed class PropertySignature(
     public TypeUseSignature PropertyType { get; } = propertyType ??
             throw new ArgumentNullException(nameof(propertyType));
 
-    /// <summary>Gets the parameters.</summary>
+    /// <summary>Gets the index parameters in declaration order, with each position equal to its list index.</summary>
     public IReadOnlyList<ParameterSignature> Parameters => _parameters;
 
     /// <summary>Gets the attributes.</summary>

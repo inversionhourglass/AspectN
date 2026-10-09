@@ -1,3 +1,5 @@
+using AspectN.Metadata;
+
 namespace AspectN;
 
 internal static class CollectionSnapshot
@@ -10,5 +12,17 @@ internal static class CollectionSnapshot
         if (values is null) throw new ArgumentNullException(parameterName);
 #endif
         return values.ToArray();
+    }
+
+    internal static ParameterSignature[] CopyParameters(IEnumerable<ParameterSignature> values, string parameterName)
+    {
+        var parameters = Copy(values, parameterName);
+        for (var index = 0; index < parameters.Length; index++)
+        {
+            if (parameters[index] is null || parameters[index].Position != index)
+                throw new ArgumentException("Parameter positions must be consecutive and match their list indices.", parameterName);
+        }
+
+        return parameters;
     }
 }
