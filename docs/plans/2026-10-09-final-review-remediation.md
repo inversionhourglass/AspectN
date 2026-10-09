@@ -89,6 +89,6 @@ Restore/build the default solution after alternative-version lanes before packag
 
 - [x] Batch 1: core contracts — 21 initial failures plus 3 nested `!ref` failures confirmed; full solution 1,321 tests passed, Release build 0 warnings/errors, format passed (workspace-load warning only). Independent read-only review passed, including netstandard nullable consumer compilation.
 - [x] Batch 2: identities / metadata / relations — five intended regressions reproduced; added unresolved-scope fallback coverage. Full solution 1,332 tests passed, Release build 0 warnings/errors; independent read-only review passed.
-- [ ] Batch 3: attributes / Reflection metadata
+- [x] Batch 3: attributes / Reflection metadata — initial six failures reproduced; eight CA/pointer conformance cases cover true blobs alongside flags and embedded old-framework markers. Full solution 1,342 tests passed; Release build and format passed. Independent review's two P2 findings were fixed and re-reviewed successfully.
 - [ ] Batch 4: iterative mapping
 - [ ] Batch 5: coverage / engineering / final gates

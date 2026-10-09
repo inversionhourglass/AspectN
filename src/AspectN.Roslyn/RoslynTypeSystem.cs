@@ -211,12 +211,7 @@ public sealed class RoslynTypeSystem : ITypeSystem
                     return null;
                 }
 
-                return typeSymbol.GetAttributes()
-                    .Where(attribute => attribute.AttributeClass is not null)
-                    .Select(attribute => new AttributeSignature(
-                        Mapper.MapType(attribute.AttributeClass!),
-                        AttributeTargetKind.Type))
-                    .ToArray();
+                return Mapper.MapTypeAttributes(typeSymbol);
             case AttributeTargetKind.Method:
                 return target.Method!.Attributes;
             case AttributeTargetKind.Property:

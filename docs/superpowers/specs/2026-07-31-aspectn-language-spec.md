@@ -639,6 +639,8 @@ The earlier long position names `callable`, `property`, `parameter`, and `return
 
 Attribute matching does not instantiate attribute objects. Inherited-attribute semantics are outside Standard 1.0.
 
+`attr` uses CustomAttribute records. Metadata flags and other metadata table encodings are not attribute records, even when Reflection exposes them as pseudo attributes or source uses attribute notation. This excludes `Serializable`, `ComImport`, `StructLayout`, `DllImport`, `PreserveSig`, `MethodImpl`, `In`, `Out`, `Optional`, `MarshalAs` and `DefaultParameterValue` encodings. A real PE CustomAttribute blob of one of these types remains visible, including when the same metadata also causes a pseudo attribute to be synthesized. Ordinary marker attributes and real readonly marker records remain visible. Array declaring types do not inherit attributes from their element type.
+
 ## 15. Regex
 
 ```ebnf

@@ -443,7 +443,7 @@ public sealed class ReflectionMappingTests
         Assert.Contains(
             result.Diagnostics,
             diagnostic => diagnostic.Code ==
-                DiagnosticCodes.MissingBackendCapability);
+                DiagnosticCodes.ResolutionFailure);
     }
 
     [Fact]

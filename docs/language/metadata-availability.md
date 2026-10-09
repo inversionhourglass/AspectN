@@ -15,7 +15,11 @@ Type shape, names and parameter/generic arity present in a Cecil reference remai
 
 By-reference shape is independent of ref classification: a Cecil signature can retain a known by-reference marker while the distinction between `ref`, `out`, `in` and `ref readonly` is unknown. `TypeUseSignature.IsByReference` is usable when `ByReference` is known. `!ref` uses this marker; exact ref modifiers require the classification as well. `CecilSignatureMapper.MapTypeUse` without member definition metadata preserves the marker but does not guess exact classification.
 
-Evaluation asks for only the facts consumed by a selector. For an unresolved `External.Widget.Run` reference:
+Evaluation asks for only the facts consumed by a selector.
+
+`ReflectionSignatureMapper.MapTypeUse` on a bare by-ref `Type` also preserves a known `ByReference` fact and marks `RefKind` unavailable, because the type alone cannot distinguish the four ref classifications. Mapping a member parameter/return retains its exact classification. Reflection metadata reading failures use AN3004; missing native associations continue to use AN3001.
+
+For an unresolved `External.Widget.Run` reference:
 
 - `execution(* External.Widget.Run(..))` can match because the selector accepts every member kind.
 - `method(* External.Widget.Run(..))` is unknown because the ordinary-method domain cannot be established.

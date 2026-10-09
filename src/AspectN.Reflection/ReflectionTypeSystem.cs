@@ -201,11 +201,7 @@ public sealed class ReflectionTypeSystem : ITypeSystem
                     return null;
                 }
 
-                return CustomAttributeData.GetCustomAttributes(type)
-                    .Select(attribute => new AttributeSignature(
-                        Mapper.MapType(attribute.AttributeType),
-                        AttributeTargetKind.Type))
-                    .ToArray();
+                return Mapper.MapTypeAttributes(type);
             case AttributeTargetKind.Method:
                 return target.Method!.Attributes;
             case AttributeTargetKind.Property:
@@ -290,7 +286,7 @@ public sealed class ReflectionTypeSystem : ITypeSystem
     {
         return TypeRelationResult.Unknown(
             new AspectNDiagnostic(
-                DiagnosticCodes.MissingBackendCapability,
+                DiagnosticCodes.ResolutionFailure,
                 DiagnosticSeverity.Warning,
                 $"Reflection metadata for '{source}' could not be read. " +
                 $"{exception.GetType().Name}: {exception.Message}"));

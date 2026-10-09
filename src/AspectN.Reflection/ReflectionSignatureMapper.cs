@@ -66,7 +66,8 @@ public sealed class ReflectionSignatureMapper
             return new TypeUseSignature(
                 MapType(RequiredElementType(type)),
                 RefKind.Ref,
-                useKind);
+                useKind,
+                new MetadataAvailability(MetadataFacts.RefKind));
         }
 
         return new TypeUseSignature(MapType(type), RefKind.None, useKind);
@@ -127,7 +128,7 @@ public sealed class ReflectionSignatureMapper
         if (type.IsPointer)
         {
             return new UnsupportedTypeSignature(
-                type.ToString(),
+                CanonicalParameterForm(type, isModified: false, qualifyAssembly: false),
                 "Reflection pointer types are unsupported.");
         }
 
@@ -191,17 +192,14 @@ public sealed class ReflectionSignatureMapper
             genericArguments,
             MapAttributes(
                 CustomAttributeData.GetCustomAttributes(method),
-                AttributeTargetKind.Method),
+                AttributeTargetKind.Method, source: method),
             returnParameter is null
                 ? Array.Empty<AttributeSignature>()
                 : MapAttributes(
                     CustomAttributeData.GetCustomAttributes(returnParameter),
-                    AttributeTargetKind.Return),
+                    AttributeTargetKind.Return, source: returnParameter),
             // 声明类型特性：attr(type ...) 通配/复合查询需要（对应旧 Shared 的 AttributeSignatures.Types）。
-            MapAttributes(
-                CustomAttributeData.GetCustomAttributes(
-                    RequiredDeclaringType(method)),
-                AttributeTargetKind.Type),
+            MapTypeAttributes(RequiredDeclaringType(method)),
             originalDefinition,
             associatedProperty is null
                 ? null
@@ -242,22 +240,57 @@ public sealed class ReflectionSignatureMapper
             MapAttributes(
                 CustomAttributeData.GetCustomAttributes(parameter),
                 AttributeTargetKind.Parameter,
-                parameter.Position),
+                parameter.Position, parameter),
             parameter.IsOptional);
     }
 
     private AttributeSignature[] MapAttributes(
         IList<CustomAttributeData> attributes,
         AttributeTargetKind target,
-        int? parameterIndex = null)
+        int? parameterIndex = null,
+        object? source = null)
     {
-        return attributes.Count == 0
-            ? Array.Empty<AttributeSignature>()
-            : attributes.Select(attribute => new AttributeSignature(
-                    MapType(attribute.AttributeType),
-                    target,
-                    parameterIndex))
-                .ToArray();
+        if (attributes.Count == 0) return Array.Empty<AttributeSignature>();
+        var synthesized = GetPseudoAttributeTypes(source);
+        var records = new List<AttributeSignature>();
+        foreach (var attribute in attributes)
+        {
+            // 每项元数据事实只合成一个伪特性。只移除一次，保留同类型的真实 CA 记录。
+            if (synthesized.Remove(attribute.AttributeType)) continue;
+            records.Add(new AttributeSignature(MapType(attribute.AttributeType), target, parameterIndex));
+        }
+        return records.ToArray();
+    }
+
+    internal AttributeSignature[] MapTypeAttributes(Type type) => type.IsArray
+        ? Array.Empty<AttributeSignature>()
+        : MapAttributes(CustomAttributeData.GetCustomAttributes(type), AttributeTargetKind.Type, source: type);
+
+    private static HashSet<Type> GetPseudoAttributeTypes(object? source)
+    {
+        var types = new HashSet<Type>();
+        switch (source)
+        {
+            case Type type:
+#pragma warning disable SYSLIB0050 // Reading metadata flags does not use serialization infrastructure.
+                if ((type.Attributes & TypeAttributes.Serializable) != 0) types.Add(typeof(SerializableAttribute));
+#pragma warning restore SYSLIB0050
+                if ((type.Attributes & TypeAttributes.Import) != 0) types.Add(typeof(System.Runtime.InteropServices.ComImportAttribute));
+                break;
+            case MethodInfo method:
+                if ((method.Attributes & MethodAttributes.PinvokeImpl) != 0) types.Add(typeof(System.Runtime.InteropServices.DllImportAttribute));
+                if ((method.GetMethodImplementationFlags() & MethodImplAttributes.PreserveSig) != 0)
+                    types.Add(typeof(System.Runtime.InteropServices.PreserveSigAttribute));
+                break;
+            case ParameterInfo parameter:
+                if (parameter.IsIn) types.Add(typeof(System.Runtime.InteropServices.InAttribute));
+                if (parameter.IsOut) types.Add(typeof(System.Runtime.InteropServices.OutAttribute));
+                if (parameter.IsOptional) types.Add(typeof(System.Runtime.InteropServices.OptionalAttribute));
+                if ((parameter.Attributes & ParameterAttributes.HasFieldMarshal) != 0)
+                    types.Add(typeof(System.Runtime.InteropServices.MarshalAsAttribute));
+                break;
+        }
+        return types;
     }
 
     private GenericParameterTypeSignature MapGenericParameter(Type parameter)
@@ -305,7 +338,7 @@ public sealed class ReflectionSignatureMapper
         var position = parameter.GenericParameterPosition;
         foreach (var level in chain)
         {
-            var arity = SplitMetadataName(level.Name).GenericArity;
+            var arity = SplitMetadataName(level.Name, OwnGenericArity(level)).GenericArity;
             if (position < arity)
             {
                 return level;
@@ -325,7 +358,7 @@ public sealed class ReflectionSignatureMapper
         var containing = definition.DeclaringType is null
             ? null
             : MapIdentity(definition.DeclaringType);
-        var (metadataName, genericArity) = SplitMetadataName(definition.Name);
+        var (metadataName, genericArity) = SplitMetadataName(definition.Name, OwnGenericArity(definition));
         return new TypeIdentity(
             MapAssemblyIdentity(definition.Assembly.GetName()),
             containing is null
@@ -361,10 +394,10 @@ public sealed class ReflectionSignatureMapper
     }
 
     private static (string MetadataName, int GenericArity)
-        SplitMetadataName(string name)
+        SplitMetadataName(string name, int fallbackArity)
     {
         var marker = name.LastIndexOf('`');
-        if (marker < 0) return (name, 0);
+        if (marker < 0) return (name, fallbackArity);
         var arityText = name.Substring(marker + 1);
         return int.TryParse(
             arityText,
@@ -372,8 +405,11 @@ public sealed class ReflectionSignatureMapper
             CultureInfo.InvariantCulture,
             out var arity)
             ? (name.Substring(0, marker), arity)
-            : (name, 0);
+            : (name, fallbackArity);
     }
+
+    private static int OwnGenericArity(Type type) => !type.IsGenericType ? 0 : type.GetGenericArguments().Length -
+        (type.DeclaringType is { IsGenericType: true } declaring ? declaring.GetGenericArguments().Length : 0);
 
     private static string FormatPublicKeyToken(byte[]? publicKeyToken)
     {

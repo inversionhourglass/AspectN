@@ -210,9 +210,7 @@ public sealed class RoslynSignatureMapper
             MapAttributes(
                 methodSymbol.GetAttributes(),
                 AttributeTargetKind.Method),
-            MapAttributes(
-                methodSymbol.GetReturnTypeAttributes(),
-                AttributeTargetKind.Return),
+            MapReturnAttributes(methodSymbol),
             // 声明类型特性：attr(type ...) 通配/复合查询需要（对应旧 Shared 的 AttributeSignatures.Types）。
             MapAttributes(
                 methodSymbol.ContainingType.GetAttributes(),
@@ -251,11 +249,42 @@ public sealed class RoslynSignatureMapper
                 MapType(parameter.Type),
                 MapRefKind(parameter.RefKind),
                 TypeUseKind.Parameter),
-            MapAttributes(
-                parameter.GetAttributes(),
-                AttributeTargetKind.Parameter,
-                parameter.Ordinal),
+            MapParameterAttributes(parameter),
             parameter.IsOptional);
+    }
+
+    private AttributeSignature[] MapParameterAttributes(IParameterSymbol parameter)
+    {
+        var attributes = MapAttributes(parameter.GetAttributes(), AttributeTargetKind.Parameter, parameter.Ordinal);
+        var marker = parameter.RefKind switch
+        {
+            Microsoft.CodeAnalysis.RefKind.In => "System.Runtime.CompilerServices.IsReadOnlyAttribute",
+            Microsoft.CodeAnalysis.RefKind.RefReadOnlyParameter => "System.Runtime.CompilerServices.RequiresLocationAttribute",
+            _ => null
+        };
+        return AddCompilerAttribute(attributes, marker, AttributeTargetKind.Parameter, parameter.Ordinal);
+    }
+
+    private AttributeSignature[] MapReturnAttributes(IMethodSymbol method)
+    {
+        var attributes = MapAttributes(method.GetReturnTypeAttributes(), AttributeTargetKind.Return);
+        return method.ReturnsByRefReadonly && method.DeclaringSyntaxReferences.Length > 0
+            ? AddCompilerAttribute(attributes, "System.Runtime.CompilerServices.IsReadOnlyAttribute", AttributeTargetKind.Return)
+            : attributes;
+    }
+
+    private AttributeSignature[] AddCompilerAttribute(AttributeSignature[] attributes, string? name,
+        AttributeTargetKind target, int? parameterIndex = null)
+    {
+        // in/ref readonly 的标记是编译器生成的真实 CA 记录，不是参数标志合成的伪特性。
+        if (name is null || attributes.Any(attribute => attribute.AttributeType is NamedTypeSignature named &&
+                named.Identity.FullMetadataName == name)) return attributes;
+        var marker = _compilation.GetTypeByMetadataName(name);
+        var separator = name.LastIndexOf('.');
+        var type = marker is not null ? MapType(marker) : new NamedTypeSignature(new TypeIdentity(
+            MapAssemblyIdentity(_compilation.Assembly.Identity), name.Substring(0, separator), name.Substring(separator + 1),
+            0, AspectN.Metadata.TypeKind.Class));
+        return attributes.Append(new AttributeSignature(type, target, parameterIndex)).ToArray();
     }
 
     private AttributeSignature[] MapAttributes(
@@ -265,12 +294,23 @@ public sealed class RoslynSignatureMapper
     {
         return attributes
             .Where(attribute => attribute.AttributeClass is not null)
+            .Where(attribute => IsCustomAttributeRecord(attribute, targetKind))
             .Select(attribute => new AttributeSignature(
                 MapType(attribute.AttributeClass!),
                 targetKind,
                 parameterIndex))
             .ToArray();
     }
+
+    private bool IsCustomAttributeRecord(AttributeData attribute, AttributeTargetKind target)
+    {
+        if (attribute.ApplicationSyntaxReference is null) return true;
+        var name = attribute.AttributeClass!.ToDisplayString();
+        return !MetadataEncodedAttributes.Contains(name, target) ||
+            !SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, _compilation.GetTypeByMetadataName(name));
+    }
+
+    internal AttributeSignature[] MapTypeAttributes(ITypeSymbol type) => MapAttributes(type.GetAttributes(), AttributeTargetKind.Type);
 
     private GenericParameterSignature MapGenericParameter(
         ITypeParameterSymbol parameter)
