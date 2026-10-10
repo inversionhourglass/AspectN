@@ -117,6 +117,8 @@ internal static partial class CecilTypeMapper
         return type.GenericParameters.Count;
     }
 
+    internal static int OwnGenericArity(TypeReference type) => SplitMetadataName(type.Name, GetOwnArityFallback(type)).GenericArity;
+
     private static GenericParameterTypeSignature MapGenericParameter(
         GenericParameter parameter)
     {
@@ -330,6 +332,7 @@ internal static partial class CecilTypeMapper
             // 未解析引用仍有声明名称与参数形状；保留这些可用的身份信息。
         }
 
+        CecilNativeTypeLimitGuard.ValidateMethod(method);
         // 参数形状参与 owner ID 以区分同名同元数的重载；构造规则与 Reflection、Roslyn 适配器一致。
         var parameters = method.Parameters
             .Select(parameter => CanonicalParameterForm(parameter.ParameterType))
@@ -349,6 +352,7 @@ internal static partial class CecilTypeMapper
     internal static MethodDefinition? ResolveMethodDeclaration(MethodReference method)
     {
         if (method is GenericInstanceMethod instance) method = instance.ElementMethod;
+        CecilNativeTypeLimitGuard.ValidateMethod(method);
         if (method is MethodDefinition definition) return definition;
         // 先保留 !n 声明槽位比较；闭合后相同的实参不能把不同声明重载折叠。
         // vararg 调用点在 sentinel 后携带可选实参，声明只包含 sentinel 前的固定参数。
@@ -357,13 +361,16 @@ internal static partial class CecilTypeMapper
             .TakeWhile(parameter => !isVarArg || parameter.ParameterType is not SentinelType)
             .Select(parameter => CanonicalParameterForm(parameter.ParameterType)).ToArray();
         var returnType = CanonicalParameterForm(method.ReturnType);
-        bool Matches(MethodDefinition candidate) =>
-            candidate.Name == method.Name && candidate.GenericParameters.Count == MethodGenericArity(method) &&
-            candidate.HasThis == method.HasThis && candidate.ExplicitThis == method.ExplicitThis &&
-            (candidate.CallingConvention & ~MethodCallingConvention.Generic) ==
-                (method.CallingConvention & ~MethodCallingConvention.Generic) &&
-            candidate.Parameters.Select(parameter => CanonicalParameterForm(parameter.ParameterType)).SequenceEqual(parameters) &&
-            CanonicalParameterForm(candidate.ReturnType) == returnType;
+        bool Matches(MethodDefinition candidate)
+        {
+            if (candidate.Name != method.Name || candidate.GenericParameters.Count != MethodGenericArity(method) ||
+                candidate.HasThis != method.HasThis || candidate.ExplicitThis != method.ExplicitThis ||
+                (candidate.CallingConvention & ~MethodCallingConvention.Generic) !=
+                (method.CallingConvention & ~MethodCallingConvention.Generic)) return false;
+            CecilNativeTypeLimitGuard.ValidateMethod(candidate);
+            return candidate.Parameters.Select(parameter => CanonicalParameterForm(parameter.ParameterType)).SequenceEqual(parameters) &&
+                CanonicalParameterForm(candidate.ReturnType) == returnType;
+        }
         // 原生解析负责继承链查找，但必须验证其结果包含正确的参数程序集身份。
         var resolved = method.Resolve();
         if (resolved is not null && Matches(resolved)) return resolved;

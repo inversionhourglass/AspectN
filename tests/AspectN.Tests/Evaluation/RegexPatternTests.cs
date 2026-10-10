@@ -11,7 +11,7 @@ public sealed class RegexPatternTests
     [Theory]
     [InlineData(65_537, 0)]
     [InlineData(int.MaxValue, 1)]
-    public void Match_NestedOpenArgumentExceedsFormattingBudget_ReturnsUnknown(int arity, int nestedArity)
+    public void Match_NestedOpenArgumentExceedsArityLimit_ReturnsUnknown(int arity, int nestedArity)
     {
         var assembly = new AssemblyIdentity("Example");
         var identity = new TypeIdentity(assembly, "Example", "Huge", arity, TypeKind.Class);
@@ -26,13 +26,13 @@ public sealed class RegexPatternTests
         var result = Match("regex(.*)", candidate);
 
         Assert.Equal(MatchStatus.Unknown, result.Status);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == DiagnosticCodes.MissingBackendCapability);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == DiagnosticCodes.MetadataGenericArityExceeded);
     }
 
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public void Match_OpenGenericArityExceedsFormattingBudget_ReturnsUnknown(bool declaringType)
+    public void Match_OpenGenericArityExceedsArityLimit_ReturnsUnknown(bool declaringType)
     {
         var assembly = new AssemblyIdentity("Example");
         var outer = new TypeIdentity(assembly, "Example", "Outer", int.MaxValue, TypeKind.Class);
@@ -43,7 +43,7 @@ public sealed class RegexPatternTests
                 RefKind.None, TypeUseKind.Return), [], [], [], [], []);
         var result = Match("regex(.*)", candidate);
         Assert.Equal(MatchStatus.Unknown, result.Status);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == DiagnosticCodes.MissingBackendCapability);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == DiagnosticCodes.MetadataGenericArityExceeded);
     }
 
     [Fact]

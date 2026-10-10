@@ -24,6 +24,9 @@ public sealed class AspectNSyntaxTree
         if (root.Depth > ParserDepthGuard.MAXIMUM_SYNTAX_DEPTH)
             snapshot.Add(new AspectNDiagnostic(DiagnosticCodes.InputDepthExceeded,
                 DiagnosticSeverity.Error, "The syntax tree exceeds the supported depth of 256 nodes.", root.FullSpan));
+        if (TypeStructureGuard.ExceedsLimit(root))
+            snapshot.Add(new AspectNDiagnostic(DiagnosticCodes.InputDepthExceeded,
+                DiagnosticSeverity.Error, "The type pattern exceeds the supported structural depth of 64 levels.", root.FullSpan));
         _diagnostics = new ReadOnlyCollection<AspectNDiagnostic>(DiagnosticSnapshot.Create(snapshot));
     }
 

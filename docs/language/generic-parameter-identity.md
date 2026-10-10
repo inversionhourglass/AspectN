@@ -9,6 +9,10 @@ type chain, while owner ID identifies the level that declares the parameter.
 For `Outer<T1,T2>.Inner<U>`, `U` belongs to `Inner` and has position 2.
 Method parameter positions are local to the method and start at zero.
 
+The effective type arity, including enclosing types, is limited to 64. A method's own generic arity has an independent limit of 64, so a type with 64 parameters may declare a method with another 64. Declared arities and supplied argument counts are checked before summing or synthesizing positional arguments. Native mapping rejects excessive arity with `AspectNLimitException`/AN3006; matching an externally constructed neutral signature returns Unknown/AN3006.
+
+Canonical regex names for an open constructed declaring type traverse its actual arguments and number each distinct generic parameter in first-occurrence order, whether its declaration belongs to a type or a method. The mapped callable's own method parameters follow those remaining parameters, skipping declarations already encountered in the declaring type arguments.
+
 Method owner IDs include the declaration type, method name, generic arity and
 recursive CLI parameter shapes. Each named parameter type includes its assembly
 name, version, culture and public key token, including names inside arrays,

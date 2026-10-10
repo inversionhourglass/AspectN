@@ -43,6 +43,12 @@ internal static class RuntimeTypeFacts
             Type.EmptyTypes);
     private static readonly MethodInfo? _GetModifiedParameterType =
         typeof(ParameterInfo).GetMethod("GetModifiedParameterType", Type.EmptyTypes);
+    private static readonly MethodInfo? _GetModifiedPropertyType =
+        typeof(PropertyInfo).GetMethod("GetModifiedPropertyType", Type.EmptyTypes);
+    private static readonly MethodInfo? _GetRequiredCustomModifiers =
+        typeof(Type).GetMethod("GetRequiredCustomModifiers", Type.EmptyTypes);
+    private static readonly MethodInfo? _GetOptionalCustomModifiers =
+        typeof(Type).GetMethod("GetOptionalCustomModifiers", Type.EmptyTypes);
     private static readonly PropertyInfo? _IsUnmanagedFunctionPointer =
         typeof(Type).GetProperty("IsUnmanagedFunctionPointer");
     private static readonly MethodInfo? _GetFunctionPointerCallingConventions =
@@ -135,6 +141,44 @@ internal static class RuntimeTypeFacts
         catch (Exception exception) when (exception is NotSupportedException or TargetInvocationException)
         {
             return parameter.ParameterType;
+        }
+    }
+
+    internal static Type GetPropertyType(PropertyInfo property, out bool isModified)
+    {
+        isModified = false;
+        try
+        {
+#if NETSTANDARD2_0
+            if (_GetModifiedPropertyType?.Invoke(property, null) is not Type modified) return property.PropertyType;
+#else
+            var modified = property.GetModifiedPropertyType();
+#endif
+            isModified = true;
+            return modified;
+        }
+        catch (Exception exception) when (exception is NotSupportedException or TargetInvocationException)
+        {
+            return property.PropertyType;
+        }
+    }
+
+    internal static IEnumerable<Type> GetCustomModifierTypes(Type type)
+    {
+        try
+        {
+#if NETSTANDARD2_0
+            var required = _GetRequiredCustomModifiers?.Invoke(type, null) as Type[] ?? Type.EmptyTypes;
+            var optional = _GetOptionalCustomModifiers?.Invoke(type, null) as Type[] ?? Type.EmptyTypes;
+#else
+            var required = type.GetRequiredCustomModifiers();
+            var optional = type.GetOptionalCustomModifiers();
+#endif
+            return required.Concat(optional);
+        }
+        catch (Exception exception) when (exception is NotSupportedException or TargetInvocationException)
+        {
+            return Type.EmptyTypes;
         }
     }
 

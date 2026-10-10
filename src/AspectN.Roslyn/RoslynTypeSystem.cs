@@ -83,14 +83,18 @@ public sealed class RoslynTypeSystem : ITypeSystem
                 cancellationToken.ThrowIfCancellationRequested();
                 var current = pending.Dequeue();
                 if (!visited.Add(current)) continue;
-                var relation = CompareUnqualified(
-                    Mapper.MapType(current),
-                    target);
-                if (relation.Status == MatchStatus.Matched) return relation;
-                // 不可读的祖先只影响该分支；后续已知接口仍能给出确定匹配。
-                if (relation.Status == MatchStatus.Unknown) unresolved ??= relation;
-
-                EnqueueNominalAncestors(current, pending);
+                try
+                {
+                    var relation = CompareUnqualified(Mapper.MapType(current), target);
+                    if (relation.Status == MatchStatus.Matched) return relation;
+                    // 不可读的祖先只影响该分支；后续已知接口仍能给出确定匹配。
+                    if (relation.Status == MatchStatus.Unknown) unresolved ??= relation;
+                    EnqueueNominalAncestors(current, pending);
+                }
+                catch (AspectNLimitException exception)
+                {
+                    unresolved ??= TypeRelationResult.Unknown(exception.Diagnostic);
+                }
             }
 
             return unresolved ?? TypeRelationResult.NotMatched;
@@ -118,6 +122,7 @@ public sealed class RoslynTypeSystem : ITypeSystem
         }
 
         var closure = new List<TypeSignature>();
+        TypeRelationResult? failure = null;
         try
         {
             var pending = new Queue<ITypeSymbol>();
@@ -130,8 +135,15 @@ public sealed class RoslynTypeSystem : ITypeSystem
                 cancellationToken.ThrowIfCancellationRequested();
                 var current = pending.Dequeue();
                 if (!visited.Add(current)) continue;
-                closure.Add(Mapper.MapType(current));
-                EnqueueNominalAncestors(current, pending);
+                try
+                {
+                    closure.Add(Mapper.MapType(current));
+                    EnqueueNominalAncestors(current, pending);
+                }
+                catch (AspectNLimitException exception)
+                {
+                    failure ??= TypeRelationResult.Unknown(exception.Diagnostic);
+                }
             }
         }
         catch (Exception exception) when (IsSymbolFailure(exception))
@@ -142,7 +154,7 @@ public sealed class RoslynTypeSystem : ITypeSystem
                 SymbolFailure(candidateSymbol, exception));
         }
 
-        return new InheritanceClosure(closure, null);
+        return new InheritanceClosure(closure, failure);
     }
 
     /// <summary>Determines whether has direct attribute.</summary>
@@ -247,7 +259,7 @@ public sealed class RoslynTypeSystem : ITypeSystem
 
     private static bool IsSymbolFailure(Exception exception)
     {
-        return exception is InvalidOperationException or ArgumentException;
+        return exception is InvalidOperationException or ArgumentException or AspectNLimitException;
     }
 
     private static TypeRelationResult MissingNativeSymbol(
@@ -271,6 +283,7 @@ public sealed class RoslynTypeSystem : ITypeSystem
         object source,
         Exception exception)
     {
+        if (exception is AspectNLimitException limit) return TypeRelationResult.Unknown(limit.Diagnostic);
         return TypeRelationResult.Unknown(
             new AspectNDiagnostic(
                 DiagnosticCodes.MissingBackendCapability,

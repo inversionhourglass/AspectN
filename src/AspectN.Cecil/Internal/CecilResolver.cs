@@ -43,6 +43,8 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
             var (current, constraintContext) = pending.Dequeue();
             try
             {
+                CecilNativeTypeLimitGuard.ValidateType(current);
+                if (constraintContext is not null) CecilNativeTypeLimitGuard.ValidateType(constraintContext);
                 if (!visited.Add((CecilTypeCacheKey.Create(current), constraintContext is null ? null : CecilTypeCacheKey.Create(constraintContext)))) continue;
 
                 var relation = UnqualifiedTypeComparer.AreEqual(
@@ -84,7 +86,7 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
                 var expansionFailure = EnqueueAncestors(current, definition, pending);
                 unresolved ??= expansionFailure;
             }
-            catch (Exception exception) when (CecilMetadataReader.IsRecoverable(exception))
+            catch (Exception exception) when (IsQueryFailure(exception))
             {
                 unresolved ??= ResolutionFailure(current, exception);
             }
@@ -120,6 +122,8 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
             var (current, constraintContext) = pending.Dequeue();
             try
             {
+                CecilNativeTypeLimitGuard.ValidateType(current);
+                if (constraintContext is not null) CecilNativeTypeLimitGuard.ValidateType(constraintContext);
                 if (!visited.Add((CecilTypeCacheKey.Create(current), constraintContext is null ? null : CecilTypeCacheKey.Create(constraintContext)))) continue;
 
                 if (current is ArrayType array)
@@ -153,7 +157,7 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
                 var expansionFailure = EnqueueAncestors(current, definition, pending);
                 unresolved ??= expansionFailure;
             }
-            catch (Exception exception) when (CecilMetadataReader.IsRecoverable(exception))
+            catch (Exception exception) when (IsQueryFailure(exception))
             {
                 unresolved ??= ResolutionFailure(current, exception);
             }
@@ -394,6 +398,7 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
         TypeReference typeReference,
         Exception? exception)
     {
+        if (exception is AspectNLimitException limit) return TypeRelationResult.Unknown(limit.Diagnostic);
         var detail = exception is null
             ? "The resolver returned no definition."
             : $"{exception.GetType().Name}: {exception.Message}";
@@ -403,4 +408,7 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
                 DiagnosticSeverity.Warning,
                 $"Could not read Cecil {typeReference.GetType().Name} metadata. {detail}"));
     }
+
+    private static bool IsQueryFailure(Exception exception) =>
+        exception is AspectNLimitException || CecilMetadataReader.IsRecoverable(exception);
 }

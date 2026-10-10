@@ -2,6 +2,7 @@ using System.Reflection.Metadata;
 using AspectN.AdapterInternals;
 using AspectN.Metadata;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using CoreAccessibility = AspectN.Metadata.Accessibility;
 using CoreAssemblyIdentity = AspectN.Metadata.AssemblyIdentity;
 using CoreMethodKind = AspectN.Metadata.MethodKind;
@@ -36,6 +37,7 @@ public sealed partial class RoslynSignatureMapper
     /// <summary>Maps a Roslyn type graph, normalizing tuples and dynamic to their metadata forms.</summary>
     /// <param name="typeSymbol">The symbol whose shape and flattened containing-type arguments are mapped.</param>
     /// <returns>A neutral signature; unsupported shapes retain canonical text and a reason.</returns>
+    /// <exception cref="AspectNLimitException">The native signature exceeds a supported type depth or generic arity.</exception>
     public TypeSignature MapType(ITypeSymbol typeSymbol)
     {
 #if NET10_0_OR_GREATER
@@ -46,6 +48,7 @@ public sealed partial class RoslynSignatureMapper
 #endif
 
         typeSymbol = NormalizeType(typeSymbol);
+        ValidateType(typeSymbol);
         lock (_gate)
         {
             return IterativeTypeMapping.Map(typeSymbol,
@@ -74,6 +77,7 @@ public sealed partial class RoslynSignatureMapper
     /// <param name="useKind">The position in which the type occurs.</param>
     /// <returns>A neutral type use with RefKind.None.</returns>
     /// <remarks>Use member mapping to read ref classification from parameter, method or property symbols.</remarks>
+    /// <exception cref="AspectNLimitException">The native signature exceeds a supported type depth or generic arity.</exception>
     public TypeUseSignature MapTypeUse(
         ITypeSymbol typeSymbol,
         TypeUseKind useKind)
@@ -87,6 +91,7 @@ public sealed partial class RoslynSignatureMapper
     /// <summary>Maps callable metadata to an AspectN signature.</summary>
     /// <param name="methodSymbol">Specifies the method symbol.</param>
     /// <returns>Returns the result of the operation.</returns>
+    /// <exception cref="AspectNLimitException">The native signature exceeds a supported type depth or generic arity.</exception>
     public MethodSignature MapMethod(IMethodSymbol methodSymbol)
     {
 #if NET10_0_OR_GREATER
@@ -96,6 +101,7 @@ public sealed partial class RoslynSignatureMapper
             throw new ArgumentNullException(nameof(methodSymbol));
 #endif
 
+        ValidateMethod(methodSymbol);
         lock (_gate)
         {
             if (_callables.TryGetValue(methodSymbol, out var cached))
@@ -112,6 +118,7 @@ public sealed partial class RoslynSignatureMapper
     /// <summary>Maps property metadata to an AspectN signature.</summary>
     /// <param name="propertySymbol">Specifies the property symbol.</param>
     /// <returns>Returns the result of the operation.</returns>
+    /// <exception cref="AspectNLimitException">The native signature exceeds a supported type depth or generic arity.</exception>
     public PropertySignature MapProperty(IPropertySymbol propertySymbol)
     {
 #if NET10_0_OR_GREATER
@@ -121,6 +128,7 @@ public sealed partial class RoslynSignatureMapper
             throw new ArgumentNullException(nameof(propertySymbol));
 #endif
 
+        ValidateProperty(propertySymbol);
         lock (_gate)
         {
             if (_properties.TryGetValue(propertySymbol, out var cached))
@@ -217,9 +225,7 @@ public sealed partial class RoslynSignatureMapper
             constructed
                 ? methodSymbol.TypeArguments.Select(MapType).ToArray()
                 : Array.Empty<TypeSignature>(),
-            MapAttributes(
-                methodSymbol.GetAttributes(),
-                AttributeTargetKind.Method),
+            MapMethodAttributes(methodSymbol),
             MapReturnAttributes(methodSymbol),
             // 声明类型特性：attr(type ...) 通配/复合查询需要（对应旧 Shared 的 AttributeSignatures.Types）。
             MapAttributes(
@@ -263,6 +269,37 @@ public sealed partial class RoslynSignatureMapper
             parameter.IsOptional);
     }
 
+    private AttributeSignature[] MapMethodAttributes(IMethodSymbol method)
+    {
+        var attributes = MapAttributes(method.GetAttributes(), AttributeTargetKind.Method);
+        if (method.DeclaringSyntaxReferences.Length == 0) return attributes;
+
+        // partial 实现的状态机标记不由编译器写入 PE；保留合并的显式特性即可。
+        if (method.PartialDefinitionPart is not null) return attributes;
+
+        // 源码符号不公开 lowering 阶段生成的状态机 CA；只补足可由当前方法确定的记录。
+        var iterator = method.DeclaringSyntaxReferences.Any(reference => ContainsYield(reference.GetSyntax()));
+        var marker = (method.IsAsync, iterator) switch
+        {
+            (true, true) => "System.Runtime.CompilerServices.AsyncIteratorStateMachineAttribute",
+            (true, false) => "System.Runtime.CompilerServices.AsyncStateMachineAttribute",
+            (false, true) => "System.Runtime.CompilerServices.IteratorStateMachineAttribute",
+            _ => null
+        };
+        // 状态机标记不会像 readonly 标记一样自动嵌入；缺少其定义时编译器不生成该 CA。
+        if (marker is null || _compilation.GetTypeByMetadataName(marker) is null) return attributes;
+
+        return AddCompilerAttribute(attributes, marker, AttributeTargetKind.Method);
+    }
+
+    private static bool ContainsYield(SyntaxNode declaration)
+    {
+        // 局部函数/匿名函数属于独立 callable；映射局部函数本身时仍需遍历其根节点。
+        return declaration.DescendantNodes(node => node == declaration ||
+                node is not (LocalFunctionStatementSyntax or AnonymousFunctionExpressionSyntax))
+            .Any(node => node is YieldStatementSyntax);
+    }
+
     private AttributeSignature[] MapParameterAttributes(IParameterSymbol parameter)
     {
         var attributes = MapAttributes(parameter.GetAttributes(), AttributeTargetKind.Parameter, parameter.Ordinal);
@@ -286,7 +323,7 @@ public sealed partial class RoslynSignatureMapper
     private AttributeSignature[] AddCompilerAttribute(AttributeSignature[] attributes, string? name,
         AttributeTargetKind target, int? parameterIndex = null)
     {
-        // in/ref readonly 的标记是编译器生成的真实 CA 记录，不是参数标志合成的伪特性。
+        // readonly 和状态机标记是编译器生成的真实 CA 记录，不是元数据标志合成的伪特性。
         if (name is null || attributes.Any(attribute => attribute.AttributeType is NamedTypeSignature named &&
                 named.Identity.FullMetadataName == name)) return attributes;
         var marker = _compilation.GetTypeByMetadataName(name);

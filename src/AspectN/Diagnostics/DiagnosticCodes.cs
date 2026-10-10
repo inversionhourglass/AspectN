@@ -9,6 +9,9 @@ public static class DiagnosticCodes
     /// <summary>Identifies a candidate whose nested type structure exceeds matching limits.</summary>
     public static string MetadataDepthExceeded => "AN3005";
 
+    /// <summary>Identifies a type or method whose generic arity exceeds the supported limit.</summary>
+    public static string MetadataGenericArityExceeded => "AN3006";
+
     /// <summary>Identifies a recoverable metadata resolution or reading failure.</summary>
     public static string ResolutionFailure => "AN3004";
 

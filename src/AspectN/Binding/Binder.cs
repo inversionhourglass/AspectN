@@ -677,6 +677,18 @@ internal sealed partial class Binder(
     {
         var outerTypeIndex = syntax.Separators.ToList().FindIndex(token => token.Kind == SyntaxKind.SlashToken);
         if (outerTypeIndex < 0) outerTypeIndex = syntax.Segments.Count - 1;
+        var remainingArity = AspectNLimits.MaximumGenericParameters;
+        foreach (var segment in syntax.Segments.Skip(outerTypeIndex))
+        {
+            var arity = segment.GenericArguments?.Arity ?? 0;
+            if (arity > remainingArity)
+            {
+                _diagnostics.Add(DiagnosticCodes.InvalidGenericClause, DiagnosticSeverity.Error,
+                    "The effective type arity, including enclosing types, cannot exceed 64 parameters.", syntax.FullSpan);
+                break;
+            }
+            remainingArity -= arity;
+        }
         var segments = syntax.Segments.Select((segment, index) =>
         {
             var genericSyntax = segment.GenericArguments;
@@ -737,6 +749,13 @@ internal sealed partial class Binder(
                     ? BoundGenericArityKind.Any
                     : BoundGenericArityKind.Exact,
                 0);
+        }
+
+        if (syntax.Arity > AspectNLimits.MaximumGenericParameters)
+        {
+            _diagnostics.Add(DiagnosticCodes.InvalidGenericClause, DiagnosticSeverity.Error,
+                "A generic clause cannot exceed 64 parameters.", syntax.FullSpan);
+            return new BoundGenericPattern(BoundGenericArityKind.Exact, 0);
         }
 
         BoundTypePattern[] arguments;

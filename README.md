@@ -67,6 +67,8 @@ nested/subtracted character classes are compile-time errors. Ordinary groups,
 `(?:...)`, character classes, alternation, anchors and quantifiers remain
 available; matching retains a finite timeout.
 
+Type structures support up to 64 levels, counting the root as one. Effective type generic arity (including enclosing types) and method generic arity each support up to 64 parameters. `AspectNLimits` exposes these bounds. Native mapping throws `AspectNLimitException` with AN3005 or AN3006 for over-limit input; matching an over-limit neutral signature returns `Unknown` with the same diagnostic.
+
 See the [language guide](docs/language/README.md), the
 [normative language specification](docs/superpowers/specs/2026-07-31-aspectn-language-spec.md),
 and the [Shared.Cecil.AspectN migration guide](docs/migration/shared-cecil-to-aspectn.md).

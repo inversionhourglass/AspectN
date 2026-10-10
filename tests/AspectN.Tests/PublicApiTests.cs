@@ -61,7 +61,7 @@ public sealed class PublicApiTests
                 Assert.All(additionalTypes, exposed => Assert.DoesNotContain(adapterPrefixes,
                     prefix => UsesNamespace(exposed, prefix)));
                 Assert.All(
-                    type.GetProperties(),
+                    type.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly),
                     property => Assert.DoesNotContain(
                         adapterPrefixes,
                         prefix => UsesNamespace(

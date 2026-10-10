@@ -70,10 +70,12 @@ signature instances and certainty agree. Distinct keys remain separate even
 when they refer to the same type: a conjunction of `n` groups such as
 `(List<$L_i> || List<$R_i>)` can retain up to `2^n` alternatives. Allocation and
 matching work can therefore grow exponentially. Binding count, allocation and
-time budgets remain deferred; existing parser and candidate-depth limits do
+time budgets remain deferred; parser, type-depth and generic-arity limits do
 not bound this growth. Regression tests cover equivalent alternatives and a
 bounded eight-group distinct-binding case; their allocation ceiling is a test
 threshold, not a runtime resource guarantee.
+
+Type structures are limited to 64 levels, counting the root as one. A type's effective generic arity, including enclosing types, is limited to 64; a method's own generic arity has an independent limit of 64. These bounds reject impractical metadata shapes before recursive classification, arity summation and positional-argument allocation. See the implementation-limits section of the normative language specification for diagnostic and exception behavior.
 
 Namespace segments and property-name atoms cannot have generic clauses
 (AN2011); declaring types and method names retain them. `<!>` denotes zero

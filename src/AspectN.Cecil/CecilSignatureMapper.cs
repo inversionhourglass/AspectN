@@ -26,6 +26,7 @@ public sealed class CecilSignatureMapper
     /// <summary>Maps a Cecil type graph, resolving definition identities where possible.</summary>
     /// <param name="typeReference">The native reference whose shape and generic arguments are mapped.</param>
     /// <returns>A neutral signature; unsupported shapes retain canonical text and a reason.</returns>
+    /// <exception cref="AspectNLimitException">The native signature exceeds a supported type depth or generic arity.</exception>
     public TypeSignature MapType(TypeReference typeReference)
     {
 #if NET10_0_OR_GREATER
@@ -36,6 +37,7 @@ public sealed class CecilSignatureMapper
 #endif
 
         _typeSystem.ThrowIfDisposed();
+        CecilNativeTypeLimitGuard.ValidateType(typeReference);
         return IterativeTypeMapping.Map(typeReference, _cache.Find, TypeDependencies,
             type => CecilTypeMapper.Map(type, MapType), _cache.GetOrAdd);
     }
@@ -57,21 +59,23 @@ public sealed class CecilSignatureMapper
     /// <param name="useKind">The position in which the type occurs.</param>
     /// <returns>A known by-reference shape with unavailable exact ref classification when necessary.</returns>
     /// <remarks>Use member mapping to distinguish ref, out, in and ref readonly from definition metadata.</remarks>
+    /// <exception cref="AspectNLimitException">The native signature exceeds a supported type depth or generic arity.</exception>
     public TypeUseSignature MapTypeUse(
         TypeReference typeReference,
         TypeUseKind useKind)
     {
+        var type = MapType(typeReference);
         if (CecilRefKindDetector.ContainsByReference(typeReference))
         {
             return new TypeUseSignature(
-                MapType(typeReference),
+                type,
                 RefKind.Ref,
                 useKind,
                 new MetadataAvailability(MetadataFacts.RefKind));
         }
 
         return new TypeUseSignature(
-            MapType(typeReference),
+            type,
             RefKind.None,
             useKind);
     }
@@ -79,6 +83,7 @@ public sealed class CecilSignatureMapper
     /// <summary>Maps callable metadata to an AspectN signature.</summary>
     /// <param name="methodReference">Specifies the method reference.</param>
     /// <returns>Returns the result of the operation.</returns>
+    /// <exception cref="AspectNLimitException">The native signature exceeds a supported type depth or generic arity.</exception>
     public MethodSignature MapMethod(MethodReference methodReference)
     {
 #if NET10_0_OR_GREATER
@@ -89,6 +94,7 @@ public sealed class CecilSignatureMapper
 #endif
 
         _typeSystem.ThrowIfDisposed();
+        CecilNativeTypeLimitGuard.ValidateMethod(methodReference);
         var key = new CecilMemberCacheKey(methodReference);
         lock (_memberGate)
         {
@@ -114,6 +120,7 @@ public sealed class CecilSignatureMapper
     /// <summary>Maps property metadata to an AspectN signature.</summary>
     /// <param name="propertyReference">Specifies the property reference.</param>
     /// <returns>Returns the result of the operation.</returns>
+    /// <exception cref="AspectNLimitException">The native signature exceeds a supported type depth or generic arity.</exception>
     public PropertySignature MapProperty(PropertyReference propertyReference)
     {
 #if NET10_0_OR_GREATER
@@ -124,6 +131,16 @@ public sealed class CecilSignatureMapper
 #endif
 
         _typeSystem.ThrowIfDisposed();
+        CecilNativeTypeLimitGuard.ValidateType(propertyReference.DeclaringType);
+        CecilNativeTypeLimitGuard.ValidateType(propertyReference.PropertyType);
+        try
+        {
+            foreach (var parameter in propertyReference.Parameters) CecilNativeTypeLimitGuard.ValidateType(parameter.ParameterType);
+        }
+        catch (Exception exception) when (CecilMetadataReader.IsRecoverable(exception))
+        {
+            // 延迟读取失败仍由 MapPropertyCore 标记 Parameters 不可用；限制异常不在恢复范围内。
+        }
         var key = new CecilMemberCacheKey(propertyReference);
         lock (_memberGate)
         {
@@ -167,6 +184,7 @@ public sealed class CecilSignatureMapper
         MethodReference methodReference)
     {
         var definition = GetDefinition(methodReference, out var methodAvailability);
+        if (definition is not null) CecilNativeTypeLimitGuard.ValidateMethod(definition);
         var typeAvailability = MetadataAvailability.Complete;
         var typeDefinition = methodReference.DeclaringType is ArrayType ? null : CecilMetadataReader.Read(
             () => methodReference.DeclaringType.Resolve(), methodReference.DeclaringType.Name,
@@ -297,6 +315,8 @@ public sealed class CecilSignatureMapper
                 parameter.ParameterType,
                 genericInstance,
                 declaringInstance);
+            var mappedType = MapType(type);
+            if (definition is not null) CecilNativeTypeLimitGuard.ValidateType(definition.ParameterType);
             var byReference = CecilRefKindDetector.ContainsByReference(type);
             var refKind = definition is null ? (byReference ? RefKind.Ref : RefKind.None) :
                 CecilMetadataReader.ReadValue(() => CecilRefKindDetector.ForParameter(definition),
@@ -308,7 +328,7 @@ public sealed class CecilSignatureMapper
                 definition?.Name ?? parameter.Name ?? string.Empty,
                 index,
                 new TypeUseSignature(
-                    MapType(type),
+                    mappedType,
                     refKind,
                     TypeUseKind.Parameter,
                     byReference ? classification : MetadataAvailability.Complete),
@@ -356,6 +376,8 @@ public sealed class CecilSignatureMapper
     private TypeUseSignature MapReturnType(TypeReference type, MethodDefinition? definition,
         TypeUseKind useKind, MetadataAvailability memberAvailability)
     {
+        var mappedType = MapType(type);
+        if (definition is not null) CecilNativeTypeLimitGuard.ValidateType(definition.ReturnType);
         var byReference = CecilRefKindDetector.ContainsByReference(type);
         var availability = definition is null && byReference
             ? new MetadataAvailability(MetadataFacts.RefKind, memberAvailability.Diagnostics)
@@ -363,7 +385,7 @@ public sealed class CecilSignatureMapper
         var refKind = definition is null ? (byReference ? RefKind.Ref : RefKind.None) :
             CecilMetadataReader.ReadValue(() => CecilRefKindDetector.ForReturn(definition),
                 byReference ? RefKind.Ref : RefKind.None, definition.Name, MetadataFacts.RefKind, out availability);
-        return new TypeUseSignature(MapType(type), refKind, useKind, availability);
+        return new TypeUseSignature(mappedType, refKind, useKind, availability);
     }
 
     private AttributeSignature[] ReadAttributes(Func<Collection<CustomAttribute>?> read,

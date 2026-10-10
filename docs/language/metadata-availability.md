@@ -1,8 +1,12 @@
 # Metadata availability
 
+Roslyn source mapping supplements the compiler's async, iterator and async-iterator state-machine CustomAttribute records, as it does readonly markers. State-machine markers are added only when their attribute type is available to the compilation. Partial method implementations retain explicit attributes without synthesizing markers that the compiler omits from the emitted method. Iterator detection belongs to the mapped callable: a nested local function's `yield` does not mark its enclosing method as an iterator.
+
 The neutral signatures expose immutable `MetadataAvailability`. `UnavailableFacts` identifies fields whose stored values are placeholders; `Diagnostics` explains reading failures. A manually constructed signature defaults to `MetadataAvailability.Complete`, meaning its supplied values and empty collections are known. Explicit `Accessibility.Unknown` remains unknown even with that default.
 
 Method and property parameter collections are snapshots in declaration order. Each `ParameterSignature.Position` must equal its zero-based list index. Constructors reject null entries, reordered positions, duplicates and gaps with `ArgumentException`; they do not reorder supplied metadata.
+
+Native mapping supports type structures up to 64 levels (root counted as one), effective type generic arity up to 64 including enclosing types, and method generic arity independently up to 64. Over-limit input throws `AspectNLimitException` with AN3005 (depth) or AN3006 (arity) before expansion. This exception propagates through metadata recovery; exceeding a supported limit is not an unavailable metadata fact. Matching an externally constructed over-limit neutral signature returns Unknown with the corresponding diagnostic. `AspectNLimits` exposes both limits.
 
 | Signature | Applicable facts |
 | --- | --- |

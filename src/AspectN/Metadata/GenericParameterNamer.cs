@@ -9,6 +9,9 @@ internal static class GenericParameterNamer
 {
     public static TypeSignature[] GetEffectiveMethodArguments(MethodSignature candidate)
     {
+        if (candidate.GenericArguments.Count > AspectNLimits.MaximumGenericParameters ||
+            candidate.GenericParameters.Count > AspectNLimits.MaximumGenericParameters)
+            throw new AspectNLimitException(AspectNLimits.ArityFailure());
         if (candidate.GenericArguments.Count > 0) return candidate.GenericArguments.ToArray();
 
         return candidate.GenericParameters
@@ -20,7 +23,15 @@ internal static class GenericParameterNamer
         NamedTypeSignature candidate)
     {
         var identities = GetTypeChain(candidate.Identity);
-        var totalArity = identities.Sum(identity => identity.GenericArity);
+        var totalArity = 0;
+        foreach (var identity in identities)
+        {
+            if (identity.GenericArity > AspectNLimits.MaximumGenericParameters - totalArity)
+                throw new AspectNLimitException(AspectNLimits.ArityFailure());
+            totalArity += identity.GenericArity;
+        }
+        if (candidate.TypeArguments.Count > AspectNLimits.MaximumGenericParameters)
+            throw new AspectNLimitException(AspectNLimits.ArityFailure());
         if (candidate.TypeArguments.Count == totalArity)
         {
             return candidate.TypeArguments.ToArray();
@@ -65,7 +76,10 @@ internal static class GenericParameterNamer
     {
         var declaring = candidate.DeclaringType as NamedTypeSignature;
         var typeParameters = GetDeclaringTypeParameters(declaring, validateEffectiveArity, cancellationToken);
-        var methodParameters = candidate.GenericParameters.ToArray();
+        var seen = new HashSet<GenericParameterKey>(typeParameters.Select(parameter => new GenericParameterKey(parameter)));
+        var methodParameters = candidate.GenericParameters
+            .Where(parameter => seen.Add(new GenericParameterKey(parameter)))
+            .ToArray();
         var names = new Dictionary<GenericParameterKey, string>();
         foreach (var (parameter, name) in EnumeratePositionalNames(
                      typeParameters,
@@ -100,8 +114,7 @@ internal static class GenericParameterNamer
 
             switch (current)
             {
-                case GenericParameterTypeSignature parameter
-                    when parameter.Parameter.OwnerKind == GenericParameterOwnerKind.Type:
+                case GenericParameterTypeSignature parameter:
                     if (seen.Add(new GenericParameterKey(parameter.Parameter)))
                         parameters.Add(parameter.Parameter);
                     break;
@@ -153,6 +166,8 @@ internal static class GenericParameterNamer
              current is not null;
              current = current.ContainingType)
         {
+            if (identities.Count >= AspectNLimits.MaximumTypeDepth)
+                throw new AspectNLimitException(AspectNLimits.DepthFailure());
             identities.Add(current);
         }
 

@@ -749,9 +749,15 @@ The [design decisions](../../language/standard-design-decisions.md) explain the 
 
 ## 21. Implementation limits and diagnostic presentation
 
-Parsing limits recursive nesting to 128 entries and resulting syntax-tree depth to 256 nodes. Exceeding either limit reports AN1002 and prevents binding. Candidate type structures deeper than 256 nodes produce Unknown/AN3005 before evaluation. These are robustness limits, not an alternate grammar.
+`AspectNLimits` exposes a maximum type-structure depth of 64 and a maximum generic arity of 64. The root type counts as one level; each array, pointer, native wrapper, constructed argument or containing type adds a structural level. Generic-parameter declaration owners, original definitions and custom-modifier type identities are checked independently as identity contexts, without adding a structural level or following identity cycles repeatedly. Type patterns deeper than 64 levels report AN1002 before binding. Parsing also retains safeguards of 128 recursive entries and 256 syntax-tree nodes in depth; exceeding either reports AN1002.
 
-Adapters map native array, constructed-generic and containing-type graphs with explicit work stacks. Mapping itself adds no type-depth budget; the AN3005 limit applies when matching the resulting neutral signature. Canonical native type text and legacy Reflection function-pointer ambiguity checks also traverse shapes iteratively. Reflection caches keep native dependencies alive during one mapping operation without retaining them permanently.
+A named type's effective generic arity includes all parameters across its containing-type chain. A method's own generic arity is limited independently: a type with 64 parameters may declare a method with another 64. Both declared arity and supplied argument counts are checked. Explicit generic clauses with more than 64 slots, including the sum across a nested type path, report AN2011.
+
+Adapters reject native signatures exceeding these limits with `AspectNLimitException`; its `Diagnostic` reports AN3005 for depth or AN3006 for generic arity. Checks precede adapter cache keys, recursive ref classification, canonical owner text and positional generic-argument synthesis. Arity checks use the remaining capacity before addition, preventing integer overflow and excessive allocation. A manually constructed neutral signature exceeding either limit produces Unknown with the same diagnostic before matching, including wildcard and regex matching.
+
+Relationship queries that encounter an over-limit ancestor retain that diagnostic and continue other branches. A known matching branch produces Matched; when no known branch matches, the incomplete relationship produces Unknown/AN3005 or Unknown/AN3006.
+
+Adapters map native array, constructed-generic and containing-type graphs with explicit work stacks. Canonical native type text and legacy Reflection function-pointer ambiguity checks also traverse shapes iteratively. Reflection caches keep native dependencies alive during one mapping operation without retaining them permanently. These are implementation robustness limits and apply to every adapter, including Cecil.Fody.
 
 Public diagnostic collections are immutable snapshots. Exact duplicates with the same code, severity, span and message are removed. Ordering is by span start (unlocated diagnostics last), ordinal code, severity, span length, then ordinal message. Distinct messages at the same code/span remain distinct.
 
@@ -759,4 +765,4 @@ Regex generic names require declaration identity and positional slots. An incomp
 
 Canonical regex signatures are limited to 65,536 UTF-16 characters. The formatter checks this cumulative budget before appending, including repeated shared-type subgraphs and bulk array-rank punctuation. Exceeding the budget produces Unknown/AN3001 with a formatting-limit diagnostic. Formatting observes the match cancellation token; the regex timeout starts only after formatting.
 
-Before synthesizing positional generic arguments, the formatter also checks total arity across containing types and method generic parameters against the formatting budget using overflow-safe arithmetic. Excessive arity produces Unknown/AN3001 before allocation.
+The generic-arity limit is checked before synthesizing positional arguments. The cumulative canonical-text budget remains separate: a supported signature can still produce Unknown/AN3001 when its formatted text exceeds 65,536 characters.

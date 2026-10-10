@@ -97,6 +97,41 @@ public sealed class GenericDefinitionMatchingTests
             MatchOpenConstructed(declaringType, "Echo", "regex(GenericRepo<.*List<T1>>\\.Echo<T2>\\(.*List<T1>, T2\\))"));
     }
 
+    [Theory]
+    [InlineData(false, "regex(GenericRepo<.*List<T>>\\.Find\\(.*List<T>\\))")]
+    [InlineData(true, "regex(GenericRepo<T\\[\\]>\\.Find\\(T\\[\\]\\))")]
+    public void Regex_OpenConstructedDeclaringType_NamesExternalMethodParameter(
+        bool arrayArgument, string expression)
+    {
+        var parameter = typeof(Enumerable).GetMethod(nameof(Enumerable.Empty))!.GetGenericArguments()[0];
+        var argument = arrayArgument ? parameter.MakeArrayType() : typeof(List<>).MakeGenericType(parameter);
+        var declaringType = typeof(GenericRepo<>).MakeGenericType(argument);
+
+        Assert.Equal(MatchStatus.Matched, MatchOpenConstructed(declaringType, "Find", expression));
+    }
+
+    [Fact]
+    public void Regex_OpenConstructedDeclaringType_NumbersExternalBeforeOwnMethodParameter()
+    {
+        var parameter = typeof(Enumerable).GetMethod(nameof(Enumerable.Empty))!.GetGenericArguments()[0];
+        var declaringType = typeof(GenericRepo<>).MakeGenericType(parameter);
+
+        Assert.Equal(
+            MatchStatus.Matched,
+            MatchOpenConstructed(declaringType, "Echo", "regex(GenericRepo<T1>\\.Echo<T2>\\(T1, T2\\))"));
+    }
+
+    [Fact]
+    public void Regex_OpenConstructedDeclaringType_DeduplicatesOwnMethodParameter()
+    {
+        var parameter = typeof(GenericRepo<>).GetMethod("Echo")!.GetGenericArguments()[0];
+        var declaringType = typeof(GenericRepo<>).MakeGenericType(parameter);
+
+        Assert.Equal(
+            MatchStatus.Matched,
+            MatchOpenConstructed(declaringType, "Echo", "regex(GenericRepo<T>\\.Echo<T>\\(T, T\\))"));
+    }
+
     private static MatchStatus MatchOpenConstructed(Type declaringType, string methodName, string expression)
     {
         var typeSystem = new ReflectionTypeSystem();

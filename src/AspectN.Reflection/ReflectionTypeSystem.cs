@@ -257,7 +257,7 @@ public sealed class ReflectionTypeSystem : ITypeSystem
             BadImageFormatException or
             NotSupportedException or
             InvalidOperationException or
-            ArgumentException;
+            ArgumentException or AspectNLimitException;
     }
 
     private static TypeRelationResult MissingNativeReference(
@@ -281,6 +281,7 @@ public sealed class ReflectionTypeSystem : ITypeSystem
         object source,
         Exception exception)
     {
+        if (exception is AspectNLimitException limit) return TypeRelationResult.Unknown(limit.Diagnostic);
         return TypeRelationResult.Unknown(
             new AspectNDiagnostic(
                 DiagnosticCodes.ResolutionFailure,

@@ -39,6 +39,7 @@ public sealed partial class ReflectionSignatureMapper
     /// <summary>Maps a Reflection type graph while preserving weak native associations.</summary>
     /// <param name="type">The native type whose shape and generic arguments are mapped.</param>
     /// <returns>A neutral signature; pointers and function pointers retain unsupported canonical text.</returns>
+    /// <exception cref="AspectNLimitException">The native signature exceeds a supported type depth or generic arity.</exception>
     public TypeSignature MapType(Type type)
     {
 #if NET10_0_OR_GREATER
@@ -52,6 +53,7 @@ public sealed partial class ReflectionSignatureMapper
 
     internal TypeSignature MapType(Type type, Type? context)
     {
+        ValidateType(type);
         // CLR 的方法形参 Type 只标识开放声明；不同封闭 owner 必须分别缓存查询上下文。
         var cache = context is { IsConstructedGenericType: true }
             ? _contextTypes.GetValue(context, _types.CreateContextCache)
@@ -79,6 +81,7 @@ public sealed partial class ReflectionSignatureMapper
     /// <param name="useKind">The position in which the type occurs.</param>
     /// <returns>A known by-reference shape with unavailable exact ref classification for by-ref types.</returns>
     /// <remarks>Use member mapping to distinguish ref, out, in and ref readonly.</remarks>
+    /// <exception cref="AspectNLimitException">The native signature exceeds a supported type depth or generic arity.</exception>
     public TypeUseSignature MapTypeUse(Type type, TypeUseKind useKind)
     {
 #if NET10_0_OR_GREATER
@@ -87,6 +90,7 @@ public sealed partial class ReflectionSignatureMapper
         if (type is null) throw new ArgumentNullException(nameof(type));
 #endif
 
+        ValidateType(type);
         if (type.IsByRef)
         {
             return new TypeUseSignature(
@@ -102,6 +106,7 @@ public sealed partial class ReflectionSignatureMapper
     /// <summary>Maps callable metadata to an AspectN signature.</summary>
     /// <param name="method">Specifies the method.</param>
     /// <returns>Returns the result of the operation.</returns>
+    /// <exception cref="AspectNLimitException">The native signature exceeds a supported type depth or generic arity.</exception>
     public MethodSignature MapMethod(MethodBase method)
     {
 #if NET10_0_OR_GREATER
@@ -110,12 +115,14 @@ public sealed partial class ReflectionSignatureMapper
         if (method is null) throw new ArgumentNullException(nameof(method));
 #endif
 
+        ValidateMethod(method);
         return _callables.GetValue(method, MapMethodCore);
     }
 
     /// <summary>Maps property metadata to an AspectN signature.</summary>
     /// <param name="property">Specifies the property.</param>
     /// <returns>Returns the result of the operation.</returns>
+    /// <exception cref="AspectNLimitException">The native signature exceeds a supported type depth or generic arity.</exception>
     public PropertySignature MapProperty(PropertyInfo property)
     {
 #if NET10_0_OR_GREATER
@@ -124,6 +131,7 @@ public sealed partial class ReflectionSignatureMapper
         if (property is null) throw new ArgumentNullException(nameof(property));
 #endif
 
+        ValidateProperty(property);
         return _properties.GetValue(property, MapPropertyCore);
     }
 

@@ -22,7 +22,39 @@ public sealed class MappingDepthTests
     [InlineData("Reflection", "hidden-pointer", 1024)]
     [InlineData("Cecil", "owner", 1024)]
     [InlineData("Cecil", "owner-reference", 8192)]
-    public async Task MapType_DeepNativeShapeOnSmallStack_CompletesInIsolatedProcess(string backend, string shape, int depth)
+    [InlineData("Cecil", "type-use", 8192)]
+    [InlineData("Cecil", "type-use", 64)]
+    [InlineData("Cecil", "array", 63)]
+    [InlineData("Cecil", "array", 64)]
+    [InlineData("Reflection", "array", 63)]
+    [InlineData("Reflection", "array", 64)]
+    [InlineData("Roslyn", "array", 63)]
+    [InlineData("Roslyn", "array", 64)]
+    [InlineData("Cecil", "containing", 64)]
+    [InlineData("Cecil", "containing", 65)]
+    [InlineData("Reflection", "containing", 64)]
+    [InlineData("Reflection", "containing", 65)]
+    [InlineData("Roslyn", "containing", 64)]
+    [InlineData("Roslyn", "containing", 65)]
+    [InlineData("Cecil", "generic", 63)]
+    [InlineData("Cecil", "generic", 64)]
+    [InlineData("Reflection", "generic", 63)]
+    [InlineData("Reflection", "generic", 64)]
+    [InlineData("Roslyn", "generic", 63)]
+    [InlineData("Roslyn", "generic", 64)]
+    [InlineData("Cecil", "pointer", 62)]
+    [InlineData("Cecil", "pointer", 63)]
+    [InlineData("Reflection", "pointer", 62)]
+    [InlineData("Reflection", "pointer", 63)]
+    [InlineData("Roslyn", "pointer", 62)]
+    [InlineData("Roslyn", "pointer", 63)]
+    [InlineData("Cecil", "owner", 64)]
+    [InlineData("Cecil", "owner", 65)]
+    [InlineData("Cecil", "by-reference", 62)]
+    [InlineData("Cecil", "by-reference", 63)]
+    [InlineData("Reflection", "by-reference", 62)]
+    [InlineData("Reflection", "by-reference", 63)]
+    public async Task MapType_NativeShapeOnSmallStack_EnforcesLimitsInIsolatedProcess(string backend, string shape, int depth)
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
         var configuration = directory.Parent!.Name;
@@ -52,6 +84,8 @@ public sealed class MappingDepthTests
             if (!process.HasExited) process.Kill(entireProcessTree: true);
         }
         Assert.True(process.ExitCode == 0, $"{backend}/{shape}: {await output}\n{await error}");
-        Assert.Contains($"mapped:{backend}:{shape}:{depth}", await output);
+        var limited = shape != "hidden-pointer" && (shape is "containing" or "owner" or "owner-reference" ? depth > 64 :
+            shape is "pointer" or "by-reference" ? depth > 62 : depth > 63);
+        Assert.Contains($"{(limited ? "limited" : "mapped")}:{backend}:{shape}:{depth}", await output);
     }
 }

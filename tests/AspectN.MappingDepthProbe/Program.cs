@@ -50,7 +50,7 @@ for (var index = 0; index < depth; index++)
     }
     if (backend == "Cecil")
     {
-        if (shape is "array" or "pointer") cecilType = new ArrayType(cecilType);
+        if (shape is "array" or "pointer" or "type-use" or "by-reference") cecilType = new ArrayType(cecilType);
         else
         {
             var constructed = new GenericInstanceType(definition);
@@ -58,7 +58,7 @@ for (var index = 0; index < depth; index++)
             cecilType = constructed;
         }
     }
-    if (backend == "Reflection") runtimeType = shape is "array" or "pointer" or "hidden-pointer" ? runtimeType.MakeArrayType() : typeof(List<>).MakeGenericType(runtimeType);
+    if (backend == "Reflection") runtimeType = shape is "array" or "pointer" or "hidden-pointer" or "by-reference" ? runtimeType.MakeArrayType() : typeof(List<>).MakeGenericType(runtimeType);
     if (backend == "Roslyn") symbol = shape is "array" or "pointer" ? compilation.CreateArrayTypeSymbol(symbol) :
         compilation.GetTypeByMetadataName("System.Collections.Generic.List`1")!.Construct(symbol);
 }
@@ -83,8 +83,14 @@ if (shape == "pointer")
     runtimeType = runtimeType.MakePointerType();
     symbol = compilation.CreatePointerTypeSymbol(symbol);
 }
+if (shape == "by-reference")
+{
+    cecilType = new ByReferenceType(cecilType);
+    runtimeType = runtimeType.MakeByRefType();
+}
 
 Exception? failure = null;
+var limited = false;
 var thread = new Thread(() =>
 {
     try
@@ -100,8 +106,8 @@ var thread = new Thread(() =>
         ITypeSystem system = backend switch { "Cecil" => cecil, "Reflection" => reflection, _ => roslyn };
         var mapped = backend switch
         {
-            "Cecil" => cecil.Mapper.MapType(cecilType),
-            "Reflection" => reflection.Mapper.MapType(runtimeType),
+            "Cecil" => shape is "type-use" or "by-reference" ? cecil.Mapper.MapTypeUse(cecilType, TypeUseKind.Parameter).Type : cecil.Mapper.MapType(cecilType),
+            "Reflection" => shape == "by-reference" ? reflection.Mapper.MapTypeUse(runtimeType, TypeUseKind.Parameter).Type : reflection.Mapper.MapType(runtimeType),
             _ => roslyn.Mapper.MapType(symbol)
         };
         var current = mapped;
@@ -134,13 +140,13 @@ var thread = new Thread(() =>
             _ => throw new InvalidOperationException($"Missing mapped layer {index}.")
         };
         if (current is not NamedTypeSignature { Identity.MetadataName: "Int32" }) throw new InvalidOperationException("Wrong leaf.");
-        if (depth >= 256)
-        {
-            if (!new AspectNEngine().CompileTypePattern("*").TryGetTypePattern(out var pattern)) throw new InvalidOperationException("Cannot compile.");
-            var result = pattern.Match(mapped, system);
-            if (result.Status != MatchStatus.Unknown || !result.Diagnostics.Any(diagnostic => diagnostic.Code == DiagnosticCodes.MetadataDepthExceeded))
-                throw new InvalidOperationException("Match depth guard was lost.");
-        }
+        if (!new AspectNEngine().CompileTypePattern("*").TryGetTypePattern(out var pattern)) throw new InvalidOperationException("Cannot compile.");
+        if (pattern.Match(mapped, system).Status != MatchStatus.Matched)
+            throw new InvalidOperationException("A supported mapped shape did not match.");
+    }
+    catch (AspectNLimitException exception) when (exception.Diagnostic.Code == DiagnosticCodes.MetadataDepthExceeded)
+    {
+        limited = true;
     }
     catch (Exception exception)
     {
@@ -150,7 +156,7 @@ var thread = new Thread(() =>
 thread.Start();
 thread.Join();
 if (failure is not null) throw failure;
-Console.WriteLine($"mapped:{backend}:{shape}:{depth}");
+Console.WriteLine($"{(limited ? "limited" : "mapped")}:{backend}:{shape}:{depth}");
 
 internal sealed class ContainingType(int index, Type? containing) : System.Reflection.TypeDelegator(typeof(object))
 {

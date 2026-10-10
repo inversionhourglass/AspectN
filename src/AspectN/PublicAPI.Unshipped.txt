@@ -567,3 +567,10 @@ AspectN.Metadata.ArrayTypeSignature.ArrayTypeSignature(AspectN.Metadata.TypeSign
 AspectN.Metadata.ArrayTypeSignature.Shape.get -> AspectN.Metadata.ArrayShape
 static AspectN.Diagnostics.DiagnosticCodes.InputDepthExceeded.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.MetadataDepthExceeded.get -> string!
+AspectN.AspectNLimits
+static AspectN.AspectNLimits.MaximumTypeDepth.get -> int
+static AspectN.AspectNLimits.MaximumGenericParameters.get -> int
+AspectN.AspectNLimitException
+AspectN.AspectNLimitException.AspectNLimitException(AspectN.Diagnostics.AspectNDiagnostic! diagnostic) -> void
+AspectN.AspectNLimitException.Diagnostic.get -> AspectN.Diagnostics.AspectNDiagnostic!
+static AspectN.Diagnostics.DiagnosticCodes.MetadataGenericArityExceeded.get -> string!

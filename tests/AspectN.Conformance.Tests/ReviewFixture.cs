@@ -41,14 +41,17 @@ internal sealed class ReviewFixture : IDisposable
     }
 
     internal IEnumerable<(string Backend, ITypeSystem System, MethodSignature Method)> Methods(string name)
+        => MethodMappings(name).Select(value => (value.Backend, value.System, value.Map()));
+
+    internal IEnumerable<(string Backend, ITypeSystem System, Func<MethodSignature> Map)> MethodMappings(string name)
     {
         foreach (var (backend, system) in new[] { ("Roslyn source", Source), ("Roslyn PE", Metadata) })
         {
             var symbol = system.Compilation.GetTypeByMetadataName(_typeName)!.GetMembers(name).OfType<IMethodSymbol>().Single();
-            yield return (backend, system, system.Mapper.MapMethod(symbol));
+            yield return (backend, system, () => system.Mapper.MapMethod(symbol));
         }
-        yield return ("Cecil", Cecil, Cecil.Mapper.MapMethod(Cecil.Module.GetType(_typeName).Methods.Single(method => method.Name == name)));
-        yield return ("Reflection", Reflection, Reflection.Mapper.MapMethod(_assembly.GetType(_typeName)!.GetMethod(name)!));
+        yield return ("Cecil", Cecil, () => Cecil.Mapper.MapMethod(Cecil.Module.GetType(_typeName).Methods.Single(method => method.Name == name)));
+        yield return ("Reflection", Reflection, () => Reflection.Mapper.MapMethod(_assembly.GetType(_typeName)!.GetMethod(name)!));
     }
 
     public void Dispose()

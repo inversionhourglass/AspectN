@@ -39,7 +39,8 @@ public sealed class CompiledMemberPattern : CompiledPattern
 #endif
 
         cancellationToken.ThrowIfCancellationRequested();
-        if (MetadataDepthGuard.ExceedsLimit(candidate, cancellationToken)) return MetadataDepthGuard.Failure();
+        var failure = MetadataLimitGuard.GetFailure(candidate, cancellationToken);
+        if (failure is not null) return MatchResult.Unknown(failure);
         var context = new EvaluationContext(
             typeSystem,
             Options,

@@ -150,7 +150,9 @@ public sealed class SignatureTests
         };
         var publicProperties = typeof(TypeSignature).Assembly
             .GetExportedTypes()
-            .SelectMany(type => type.GetProperties());
+            .SelectMany(type => type.GetProperties(System.Reflection.BindingFlags.Public |
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static |
+                System.Reflection.BindingFlags.DeclaredOnly));
 
         foreach (var property in publicProperties)
         {
