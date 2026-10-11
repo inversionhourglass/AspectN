@@ -23,6 +23,8 @@ public sealed class CecilSignatureMapper
         _typeSystem = typeSystem;
     }
 
+    internal ModuleDefinition Module => _typeSystem.Module;
+
     /// <summary>Maps a Cecil type graph, resolving definition identities where possible.</summary>
     /// <param name="typeReference">The native reference whose shape and generic arguments are mapped.</param>
     /// <returns>A neutral signature; unsupported shapes retain canonical text and a reason.</returns>

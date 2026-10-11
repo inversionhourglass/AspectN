@@ -198,7 +198,8 @@ public sealed class CecilTypeSystem : ITypeSystem, IDisposable
     {
         availability = MetadataAvailability.Complete;
         if (!Mapper.TryGetTypeReference(type, out var reference) || reference is null) return null;
-        if (reference is ArrayType) return Array.Empty<AttributeSignature>();
+        if (reference is ArrayType or PointerType or FunctionPointerType or PinnedType or SentinelType)
+            return Array.Empty<AttributeSignature>();
         return CecilMetadataReader.Read(() =>
             (reference as TypeDefinition ?? reference.Resolve())?.CustomAttributes
                 .Select(attribute => new AttributeSignature(Mapper.MapType(attribute.AttributeType), AttributeTargetKind.Type))

@@ -54,7 +54,7 @@ public sealed class ReflectionTypeSystem : ITypeSystem
         if (!Mapper.TryGetType(candidate, out var candidateType, out var candidateContext) ||
             candidateType is null)
         {
-            return MissingNativeReference(candidate);
+            return unresolved ?? MissingNativeReference(candidate);
         }
 
         try

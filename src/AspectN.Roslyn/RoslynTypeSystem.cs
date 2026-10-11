@@ -82,18 +82,18 @@ public sealed class RoslynTypeSystem : ITypeSystem
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var current = pending.Dequeue();
-                if (!visited.Add(current)) continue;
                 try
                 {
+                    if (!visited.Add(current)) continue;
                     var relation = CompareUnqualified(Mapper.MapType(current), target);
                     if (relation.Status == MatchStatus.Matched) return relation;
                     // 不可读的祖先只影响该分支；后续已知接口仍能给出确定匹配。
                     if (relation.Status == MatchStatus.Unknown) unresolved ??= relation;
                     EnqueueNominalAncestors(current, pending);
                 }
-                catch (AspectNLimitException exception)
+                catch (Exception exception) when (IsSymbolFailure(exception))
                 {
-                    unresolved ??= TypeRelationResult.Unknown(exception.Diagnostic);
+                    unresolved ??= SymbolFailure(current, exception);
                 }
             }
 
@@ -113,6 +113,7 @@ public sealed class RoslynTypeSystem : ITypeSystem
         TypeSignature candidate,
         CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         if (!Mapper.TryGetTypeSymbol(candidate, out var candidateSymbol) ||
             candidateSymbol is null)
         {
@@ -134,15 +135,15 @@ public sealed class RoslynTypeSystem : ITypeSystem
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var current = pending.Dequeue();
-                if (!visited.Add(current)) continue;
                 try
                 {
+                    if (!visited.Add(current)) continue;
                     closure.Add(Mapper.MapType(current));
                     EnqueueNominalAncestors(current, pending);
                 }
-                catch (AspectNLimitException exception)
+                catch (Exception exception) when (IsSymbolFailure(exception))
                 {
-                    failure ??= TypeRelationResult.Unknown(exception.Diagnostic);
+                    failure ??= SymbolFailure(current, exception);
                 }
             }
         }
@@ -286,7 +287,7 @@ public sealed class RoslynTypeSystem : ITypeSystem
         if (exception is AspectNLimitException limit) return TypeRelationResult.Unknown(limit.Diagnostic);
         return TypeRelationResult.Unknown(
             new AspectNDiagnostic(
-                DiagnosticCodes.MissingBackendCapability,
+                DiagnosticCodes.ResolutionFailure,
                 CoreDiagnosticSeverity.Warning,
                 $"Roslyn symbol data for '{source}' could not be read. " +
                 $"{exception.GetType().Name}: {exception.Message}"));

@@ -185,12 +185,19 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
         }
     }
 
-    private static TypeRelationResult? EnqueueConstraints(GenericParameter parameter, Queue<(TypeReference Type, GenericInstanceType? Context)> pending, GenericInstanceType? constraintContext)
+    private TypeRelationResult? EnqueueConstraints(GenericParameter parameter, Queue<(TypeReference Type, GenericInstanceType? Context)> pending, GenericInstanceType? constraintContext)
     {
         // 泛型形参不能 Resolve 为类型定义；约束及隐含基类本身构成可遍历的名义关系。
-        pending.Enqueue((parameter.Module.TypeSystem.Object, null));
+        var module = parameter.Module ?? _mapper.Module;
+        pending.Enqueue((module.TypeSystem.Object, null));
+        var valueTypeQueued = parameter.HasNotNullableValueTypeConstraint;
+        if (valueTypeQueued) pending.Enqueue((SyntheticReference(module, "System", "ValueType"), null));
         try
         {
+            // 游离引用的声明不可解析，但已经知道的隐含基类仍应保留在队列中。
+            if (parameter.Module is null &&
+                parameter.Owner is MethodReference { IsDefinition: false } or TypeReference { IsDefinition: false })
+                return ResolutionFailure(parameter, null);
             // 约束链中的中间方法形参仍需沿用最初封闭声明类型的替换上下文。
             var constructed = constraintContext ?? (parameter.Owner is MethodReference methodOwner
                 ? methodOwner.DeclaringType as GenericInstanceType
@@ -207,8 +214,8 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
                     return ResolutionFailure(parameter, null);
                 parameter = declaration[parameter.Position];
             }
-            if (parameter.HasNotNullableValueTypeConstraint)
-                pending.Enqueue((SyntheticReference(parameter.Module, "System", "ValueType"), null));
+            if (!valueTypeQueued && parameter.HasNotNullableValueTypeConstraint)
+                pending.Enqueue((SyntheticReference(parameter.Module ?? module, "System", "ValueType"), null));
             foreach (var constraint in parameter.Constraints)
                 pending.Enqueue((Substitute(constraint.ConstraintType, constructed), constructed));
             return null;
