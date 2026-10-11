@@ -44,4 +44,25 @@ public sealed class TypePatternRecoveryTests
         Assert.Equal(DiagnosticCodes.InvalidRefKind, diagnostic.Code);
         Assert.Contains("member", diagnostic.Message, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Theory]
+    [InlineData("List<ref int>")]
+    [InlineData("List<ref readonly int>")]
+    [InlineData("int || out string")]
+    [InlineData("int && in T")]
+    public void ParseTypePattern_NestedRefKindPrefixes_ReportInvalidRefKind(string source)
+    {
+        var diagnostic = Assert.Single(AspectNParser.ParseTypePattern(source).Diagnostics);
+        Assert.Equal(DiagnosticCodes.InvalidRefKind, diagnostic.Code);
+        Assert.Contains("member", diagnostic.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Theory]
+    [InlineData("List<ref>")]
+    [InlineData("int || ref")]
+    [InlineData("! ref")]
+    public void ParseTypePattern_BareRefNameOutsideRoot_RemainsValid(string source)
+    {
+        Assert.Empty(AspectNParser.ParseTypePattern(source).Diagnostics);
+    }
 }

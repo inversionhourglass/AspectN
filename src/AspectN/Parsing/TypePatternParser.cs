@@ -83,6 +83,7 @@ internal sealed class TypePatternParser
 
     private TypePatternSyntax ParseTypeExpression(int parentPrecedence = 0)
     {
+        ReportNestedRefKindPrefix();
         using var nesting = _depthGuard.Enter(Current.Span);
         TypePatternSyntax left;
         var unaryPrecedence = GetUnaryPrecedence(Current.Kind);
@@ -122,6 +123,41 @@ internal sealed class TypePatternParser
         }
 
         return left;
+    }
+
+    private void ReportNestedRefKindPrefix()
+    {
+        if (!IsIdentifier("ref") &&
+            !IsIdentifier("out") &&
+            !IsIdentifier("in"))
+        {
+            return;
+        }
+
+        var next = PeekNextToken();
+        var hasReadonly = IsIdentifier("ref") &&
+            next.Kind == SyntaxKind.IdentifierToken &&
+            next.Text == "readonly";
+        var typeStart = hasReadonly ? PeekNextToken(2) : next;
+        if (!CanStartTypePattern(typeStart)) return;
+
+        var refKind = NextToken();
+        if (hasReadonly) NextToken();
+        _diagnostics.Add(
+            DiagnosticCodes.InvalidRefKind,
+            DiagnosticSeverity.Error,
+            "Ref-kind annotations require a member parameter or return type use.",
+            refKind.Span);
+    }
+
+    private static bool CanStartTypePattern(SyntaxToken token)
+    {
+        return token.Kind is
+                   SyntaxKind.DollarToken or
+                   SyntaxKind.OpenParenToken or
+                   SyntaxKind.StarToken or
+                   SyntaxKind.BangToken ||
+               TypePatternSyntaxFacts.IsNamePart(token);
     }
 
     private TypePatternSyntax ParseTypePrimaryWithSuffixes()
@@ -519,11 +555,13 @@ internal sealed class TypePatternParser
             SyntaxToken.Missing(SyntaxKind.StarToken, position));
     }
 
-    private SyntaxToken PeekNextToken()
+    private SyntaxToken PeekNextToken(int offset = 1)
     {
         var lexer = new Lexer(_source);
         lexer.Reset(Current.Span.End);
-        return lexer.Lex();
+        var token = lexer.Lex();
+        for (var index = 1; index < offset; index++) token = lexer.Lex();
+        return token;
     }
 
     private static int GetUnaryPrecedence(SyntaxKind kind)
