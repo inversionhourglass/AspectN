@@ -5,6 +5,19 @@ namespace AspectN.Tests.Parsing;
 
 public sealed class SelectorParserTests
 {
+    [Theory]
+    [InlineData("method(* Take(! ref int))")]
+    [InlineData("method(! ref int Take())")]
+    [InlineData("property(!\tref int Value)")]
+    [InlineData("ctor(Service(!\nref int))")]
+    public void ParseMemberExpression_SeparatedNegatedRef_ReportsInvalidRefKind(string source)
+    {
+        var compilation = AspectNCompilation.Create(AspectNParser.ParseMemberExpression(source));
+
+        Assert.Contains(compilation.Diagnostics, diagnostic => diagnostic.Code == DiagnosticCodes.InvalidRefKind);
+        Assert.False(compilation.TryGetMemberPattern(out _));
+    }
+
     public static TheoryData<string, Type> StandardSelectorCases => new()
     {
         {

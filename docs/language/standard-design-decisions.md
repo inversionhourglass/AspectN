@@ -138,7 +138,8 @@ There is at most one positive accessibility group. Duplicate modifiers and
 compound phrase, and cannot be combined with alternation.
 
 Unannotated type uses accept every ref kind. `ref`, `out`, `in` and
-`ref readonly` match exactly; `!ref` matches by-value only. Returns cannot use
+`ref readonly` match exactly; adjacent `!ref` matches by-value only. Whitespace
+between `!` and `ref` produces AN2005. Returns cannot use
 `out` or `in`. Empty parameter slots are wildcard parameters with exact count:
 `(int,)` has two slots, while `(..)` accepts any parameter count.
 
@@ -150,8 +151,10 @@ sugar is removed. `MethodSignature.IsAsync` remains general backend metadata.
 
 The result clause must be adjacent: `tasklike<int>` is valid and
 `tasklike <int>` is rejected. `tasklike` remains a literal declaring-type
-name; its shape keyword is used in return/parameter and generic-argument
-patterns. Operator/conversion classification validates public special-name
+name in member paths; its shape keyword is used in return/parameter,
+generic-argument and constructor/static-constructor declaring-type patterns.
+For a literal constructor declaring type named tasklike, use a qualified name
+such as `Example.tasklike`. Operator/conversion classification validates public special-name
 metadata without runtime-special, method-generic, vararg or params flags;
 parameter ref kinds must be by value or `in`. It then checks recognized
 names, static/instance, return shape and parameter count,

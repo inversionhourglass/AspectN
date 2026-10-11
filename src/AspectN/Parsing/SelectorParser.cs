@@ -551,6 +551,9 @@ internal sealed partial class SelectorParser(Parser parser)
             if (following.Kind == SyntaxKind.IdentifierToken &&
                 EqualsKeyword(following.Text, "ref"))
             {
+                if (following.Span.Start != Current.Span.End)
+                    _parser.AddSelectorDiagnostic(DiagnosticCodes.InvalidRefKind,
+                        "'!ref' requires adjacent '!' and 'ref' tokens.", Current);
                 negatedRefTokens.Add(NextToken());
                 negatedRefTokens.Add(NextToken());
             }

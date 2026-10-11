@@ -171,7 +171,7 @@ method(* int?.GetValueOrDefault(..))
 不是把数组或 nullable 后缀忽略后匹配原类型。
 旧的 `(Owner.Run || Owner.Foo)` 应按意图改为 `Owner.(Run || Foo)` 或外层选择器组合。
 
-`tasklike` 在声明类型位置仍是字面名称；返回、参数及泛型实参位置使用 Task/ValueTask 形状语义。
+`tasklike` 在成员路径的声明类型位置仍是字面名称；返回、参数、泛型实参及 ctor/cctor 的声明类型模式使用 Task/ValueTask 形状语义。构造器要匹配名为 tasklike 的字面类型时使用限定名，例如 `Example.tasklike`。
 例如 `tasklike<int>+.Get` 的声明类型名称是 tasklike，限定名 `Example.tasklike<int>` 更明确。
 
 **原因：功能增强、bug 修复。** 对两个不同匹配维度分别组合，避免从类型分支里猜测成员名；
@@ -477,7 +477,7 @@ Standard 将 ref kind 与类型结构分开，返回值支持 ref/ref readonly�
 | `method(* Take(!ref int))` | 只匹配 by-value int |
 | `method(ref readonly int Read())` | 匹配 ref readonly 返回 |
 
-返回位置不接受 out/in；`!ref` 不能和显式 kind 合用，也没有 `!out` / `!in` 语法。
+返回位置不接受 out/in；`!ref` 的两个 token 必须邻接，`! ref`（含制表符或换行）报 AN2005；`!ref` 不能和显式 kind 合用，也没有 `!out` / `!in` 语法。
 参数空槽仍为任意类型且精确计数：`(int,)` 是两槽，`(..)` 是任意参数数目。
 
 **原因：bug 修复、功能增强、设计统一。** 未写出的维度不应隐含限制，

@@ -74,7 +74,7 @@ Comments are not part of AspectN 1.0 expression syntax.
 
 `identifier` follows the C# Unicode category profile and is used for selector names and pattern variables. Starts accept `_` and Lu, Ll, Lt, Lm, Lo, Nl; subsequent characters additionally accept Nd, Pc, Mn, Mc, Cf. This profile does not include UAX #31 Other_ID_Start/Other_ID_Continue additions or escaped identifier syntax. `name-pattern` is a non-empty metadata-name segment containing literal name characters and `*`; reserved punctuation and whitespace terminate the segment. Matching is ordinal.
 
-Consecutive nullable suffixes, such as `int??` and `List<int??>`, produce AN2010. Nested or separated nullable uses remain valid, for example `List<int?>` and `int?[]?`. Ref-kind annotations, including adjacent `!ref`, require member parameter or return type slots and produce AN2005 at the standalone type-pattern entry point, including inside generic and Boolean type patterns.
+Consecutive nullable suffixes, such as `int??` and `List<int??>`, produce AN2010. Nested or separated nullable uses remain valid, for example `List<int?>` and `int?[]?`. Ref-kind annotations, including adjacent `!ref`, require member parameter or return type slots and produce AN2005 at the standalone type-pattern entry point, including inside generic and Boolean type patterns. The `!` and `ref` tokens must touch: `! ref`, including a tab or newline between the tokens, produces AN2005 in member type slots.
 
 ```ebnf
 name-pattern             = ( name-character | "*" ), { name-character | "*" } ;
@@ -186,7 +186,7 @@ cctor-selector     = "cctor",     "(", type-pattern, ")" ;
 - `ctor(...)` matches instance constructors.
 - `cctor(...)` matches static constructors.
 
-Whether a member has a body or can be woven is not implied by any selector. Rougamo applies that scenario-specific filter after AspectN matching or through a registered predicate such as `hasBody`.
+Whether a member has a body or can be woven is not implied by any selector. Rougamo applies that scenario-specific filter after AspectN matching.
 
 ## 7. Callable Signatures
 
@@ -225,7 +225,7 @@ Group Boolean declaring types before the member separator: `(A || B).Run`. Names
 
 A prefix `!` negates the entire conjunction of declaring type, member name and that name's generic clause. It does not negate modifiers, return/property type, parameters or the selector domain. Thus `!Run` complements zero-arity `Run`; `!Run<?>` complements `Run` at every arity. To negate only the name, write `A.!Run`; to negate only the declaring type, write `(!A).Run`. `!*(..)` matches no members. Negation isolates tentative variable bindings, and Boolean branches use the scope rules in §13.
 
-`tasklike` remains a literal name in declaring-type name positions, including `tasklike<int>+.Get`. In return/parameter type patterns and generic argument patterns it denotes the Task/ValueTask shape. A qualified literal type name such as `Example.tasklike<int>` is unambiguous in any position.
+`tasklike` remains a literal name in member-path declaring-type name positions, including `tasklike<int>+.Get`. In return/parameter type patterns, generic argument patterns, and the declaring-type patterns of `ctor`/`cctor`, it denotes the Task/ValueTask shape. Thus `ctor(tasklike(..))` and `cctor(tasklike<int>)` use shape matching. A qualified literal type name such as `Example.tasklike<int>` is unambiguous in any position, including constructors.
 
 `..` is a namespace ellipsis: it may only appear between namespace segments, never immediately before the member name. The member name is always joined to its declaring type with `.` — `method(* *..StaticMethod(..))` and `method(* System..*(..))` are errors because the declaring type's type-name segment is missing; write `method(* *..*.StaticMethod(..))`, or omit the declaring type entirely with `method(* StaticMethod(..))`. These replacements have different ranges: a written namespace/type path excludes global or nested types unless explicitly expressed, while an omitted declaring type includes them.
 

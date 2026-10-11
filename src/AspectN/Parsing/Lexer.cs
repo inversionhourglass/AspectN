@@ -123,7 +123,10 @@ internal sealed class Lexer
             {
                 if (!inClass && (Peek(1) is >= '1' and <= '9' || Peek(1) == 'k'))
                     ReportUnsupportedRegexFeature("Backreferences are not supported.", 2);
-                var escapeLength = Peek(1) == 'c' ? 3 : 2;
+                // 只有合法的控制字符转义才包含第三个字符；无效 \c 不得吞掉选择器的结束括号。
+                var controlCharacter = Peek(2);
+                if (controlCharacter is >= 'a' and <= 'z') controlCharacter = (char)(controlCharacter - ('a' - 'A'));
+                var escapeLength = Peek(1) == 'c' && controlCharacter is >= '@' and <= '_' ? 3 : 2;
                 _position += Math.Min(escapeLength, _source.Length - _position);
                 continue;
             }

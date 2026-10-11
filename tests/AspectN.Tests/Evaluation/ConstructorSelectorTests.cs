@@ -8,6 +8,45 @@ namespace AspectN.Tests.Evaluation;
 public sealed class ConstructorSelectorTests
 {
     [Theory]
+    [InlineData("ctor(tasklike())", MethodKind.InstanceConstructor, "Task", false)]
+    [InlineData("ctor(tasklike())", MethodKind.InstanceConstructor, "ValueTask", false)]
+    [InlineData("ctor(tasklike<int>())", MethodKind.InstanceConstructor, "Task", true)]
+    [InlineData("ctor(tasklike<int>())", MethodKind.InstanceConstructor, "ValueTask", true)]
+    [InlineData("cctor(tasklike)", MethodKind.StaticConstructor, "Task", false)]
+    [InlineData("cctor(tasklike)", MethodKind.StaticConstructor, "ValueTask", false)]
+    [InlineData("cctor(tasklike<int>)", MethodKind.StaticConstructor, "Task", true)]
+    [InlineData("cctor(tasklike<int>)", MethodKind.StaticConstructor, "ValueTask", true)]
+    public void Match_TaskLikeConstructorDeclaringType_UsesShape(string source, MethodKind kind, string name, bool generic)
+    {
+        var identity = new TypeIdentity(new AssemblyIdentity("Example.Assembly"), "System.Threading.Tasks", name,
+            generic ? 1 : 0, name == "Task" ? TypeKind.Class : TypeKind.Struct);
+        var declaringType = generic
+            ? new NamedTypeSignature(identity, new[] { Named("System", "Int32", TypeKind.Struct) }, new NamedTypeSignature(identity))
+            : new NamedTypeSignature(identity);
+
+        Assert.Equal(MatchStatus.Matched, Match(source, Callable(kind, declaringType)).Status);
+    }
+
+    [Theory]
+    [InlineData("ctor(tasklike())", MethodKind.InstanceConstructor, MatchStatus.NotMatched)]
+    [InlineData("cctor(tasklike)", MethodKind.StaticConstructor, MatchStatus.NotMatched)]
+    [InlineData("ctor(Example.tasklike())", MethodKind.InstanceConstructor, MatchStatus.Matched)]
+    [InlineData("cctor(Example.tasklike)", MethodKind.StaticConstructor, MatchStatus.Matched)]
+    public void Match_LiteralTaskLikeConstructorDeclaringType_RequiresQualification(string source, MethodKind kind, MatchStatus expected)
+    {
+        Assert.Equal(expected, Match(source, Callable(kind, Named("Example", "tasklike"))).Status);
+    }
+
+    [Fact]
+    public void Match_TaskLikeMemberPathDeclaringType_RemainsLiteralName()
+    {
+        Assert.Equal(MatchStatus.Matched, Match("method(* tasklike.*(..))",
+            Callable(MethodKind.OrdinaryMethod, Named("", "tasklike"))).Status);
+        Assert.Equal(MatchStatus.NotMatched, Match("method(* tasklike.*(..))",
+            Callable(MethodKind.OrdinaryMethod, Named("System.Threading.Tasks", "Task"))).Status);
+    }
+
+    [Theory]
     [InlineData("ctor(Service(..))", MethodKind.InstanceConstructor, MatchStatus.Matched)]
     [InlineData("ctor(Service(..))", MethodKind.StaticConstructor, MatchStatus.NotMatched)]
     [InlineData("cctor(Service)", MethodKind.InstanceConstructor, MatchStatus.NotMatched)]
