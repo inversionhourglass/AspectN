@@ -100,7 +100,8 @@ public sealed class TypeIdentity : IEquatable<TypeIdentity>
     {
         unchecked
         {
-            var hashes = new Stack<int>();
+            var result = 0;
+            // 按由内到外的包含顺序累计；交换类型层级不再产生固定的 XOR 碰撞。
             for (var current = this; current is not null; current = current.ContainingType)
             {
                 var local = current.Assembly.GetHashCode();
@@ -108,10 +109,8 @@ public sealed class TypeIdentity : IEquatable<TypeIdentity>
                 local = (local * 397) ^ StringComparer.Ordinal.GetHashCode(current.MetadataName);
                 local = (local * 397) ^ current.GenericArity;
                 local = (local * 397) ^ (int)current.Kind;
-                hashes.Push(local * 397);
+                result = (result * 397) ^ local;
             }
-            var result = 0;
-            while (hashes.Count != 0) result = hashes.Pop() ^ result;
             return result;
         }
     }

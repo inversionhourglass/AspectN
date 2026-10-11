@@ -5,6 +5,46 @@ namespace AspectN.Tests.Metadata;
 public sealed class SignatureTests
 {
     [Fact]
+    public void GetHashCode_ReversedContainingChains_AvoidsSystematicCollisions()
+    {
+        var assembly = new AssemblyIdentity("Example.Assembly");
+        var collisions = 0;
+        for (var index = 0; index < 32; index++)
+        {
+            var firstName = $"First{index}";
+            var secondName = $"Second{index}";
+            var forward = new TypeIdentity(assembly, "", secondName, 0, TypeKind.Class,
+                new TypeIdentity(assembly, "", firstName, 0, TypeKind.Class));
+            var reverse = new TypeIdentity(assembly, "", firstName, 0, TypeKind.Class,
+                new TypeIdentity(assembly, "", secondName, 0, TypeKind.Class));
+
+            Assert.NotEqual(forward, reverse);
+            if (forward.GetHashCode() == reverse.GetHashCode()) collisions++;
+        }
+
+        Assert.InRange(collisions, 0, 1);
+    }
+
+    [Fact]
+    public void GetHashCode_RepeatedNestedIdentity_DoesNotAllocate()
+    {
+        var assembly = new AssemblyIdentity("Example.Assembly");
+        var identity = new TypeIdentity(assembly, "", "Inner", 1, TypeKind.Class,
+            new TypeIdentity(assembly, "Example", "Outer", 2, TypeKind.Class));
+        var equal = new TypeIdentity(assembly, "", "Inner", 1, TypeKind.Class,
+            new TypeIdentity(assembly, "Example", "Outer", 2, TypeKind.Class));
+        Assert.Equal(identity, equal);
+        Assert.Equal(identity.GetHashCode(), equal.GetHashCode());
+        for (var index = 0; index < 100; index++) _ = identity.GetHashCode();
+        var before = GC.GetAllocatedBytesForCurrentThread();
+
+        for (var index = 0; index < 1000; index++) _ = identity.GetHashCode();
+
+        var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+        Assert.Equal(0, allocated);
+    }
+
+    [Fact]
     public void TypeIdentity_DifferentAssembly_IsNotEqual()
     {
         var first = Identity("Contracts", "1.0.0.0", "Example", "Service");
