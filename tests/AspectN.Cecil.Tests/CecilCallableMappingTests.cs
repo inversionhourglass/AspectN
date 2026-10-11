@@ -90,6 +90,83 @@ public sealed class CecilCallableMappingTests
                 .Identity.FullMetadataName);
     }
 
+    [Theory]
+    [InlineData(false, "SentinelType")]
+    [InlineData(true, "PinnedType")]
+    public void MapMethod_ConstructedDeclaringType_SubstitutesWrappedTypeArguments(
+        bool isPinned,
+        string expectedShape)
+    {
+        using var module = TestModuleFactory.Create();
+        var definition = new TypeDefinition(
+            "Example",
+            "Box`1",
+            TypeAttributes.Public | TypeAttributes.Class,
+            module.TypeSystem.Object);
+        var genericParameter = new GenericParameter("T", definition);
+        definition.GenericParameters.Add(genericParameter);
+        module.Types.Add(definition);
+
+        var declaringType = new GenericInstanceType(definition);
+        declaringType.GenericArguments.Add(module.TypeSystem.Int32);
+        var method = new MethodReference(
+            "Use",
+            module.TypeSystem.Void,
+            declaringType)
+        {
+            HasThis = true
+        };
+        TypeReference parameterType = isPinned
+            ? new PinnedType(genericParameter)
+            : new SentinelType(genericParameter);
+        method.Parameters.Add(new ParameterDefinition(parameterType));
+        using var typeSystem = new CecilTypeSystem(module);
+
+        var signature = typeSystem.Mapper.MapMethod(method);
+
+        var unsupported = Assert.IsType<UnsupportedTypeSignature>(
+            Assert.Single(signature.Parameters).Type.Type);
+        Assert.Equal("System.Int32", unsupported.DisplayName);
+        Assert.Contains(expectedShape, unsupported.Reason, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(false, "SentinelType")]
+    [InlineData(true, "PinnedType")]
+    public void MapMethod_GenericInstance_SubstitutesWrappedMethodArguments(
+        bool isPinned,
+        string expectedShape)
+    {
+        using var module = TestModuleFactory.Create();
+        var declaringType = new TypeDefinition(
+            "Example",
+            "Fixture",
+            TypeAttributes.Public | TypeAttributes.Class,
+            module.TypeSystem.Object);
+        module.Types.Add(declaringType);
+        var definition = new MethodDefinition(
+            "Use",
+            MethodAttributes.Public,
+            module.TypeSystem.Void);
+        declaringType.Methods.Add(definition);
+        var genericParameter = new GenericParameter("T", definition);
+        definition.GenericParameters.Add(genericParameter);
+        TypeReference parameterType = isPinned
+            ? new PinnedType(genericParameter)
+            : new SentinelType(genericParameter);
+        definition.Parameters.Add(new ParameterDefinition(parameterType));
+        var instance = new GenericInstanceMethod(definition);
+        instance.GenericArguments.Add(module.TypeSystem.String);
+        using var typeSystem = new CecilTypeSystem(module);
+
+        var signature = typeSystem.Mapper.MapMethod(instance);
+
+        var unsupported = Assert.IsType<UnsupportedTypeSignature>(
+            Assert.Single(signature.Parameters).Type.Type);
+        Assert.Equal("System.String", unsupported.DisplayName);
+        Assert.Contains(expectedShape, unsupported.Reason, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void MapMethod_RefKinds_MapsParametersAndReturnSeparately()
     {

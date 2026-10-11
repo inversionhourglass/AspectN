@@ -548,6 +548,18 @@ public sealed class CecilSignatureMapper
                         pointer.ElementType,
                         genericInstance,
                         declaringInstance));
+            case SentinelType sentinel:
+                return new SentinelType(
+                    SubstituteMemberGenericParameters(
+                        sentinel.ElementType,
+                        genericInstance,
+                        declaringInstance));
+            case PinnedType pinned:
+                return new PinnedType(
+                    SubstituteMemberGenericParameters(
+                        pinned.ElementType,
+                        genericInstance,
+                        declaringInstance));
             case OptionalModifierType optional:
                 return new OptionalModifierType(
                     SubstituteMemberGenericParameters(
