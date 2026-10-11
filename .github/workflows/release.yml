@@ -5,6 +5,10 @@ on:
     tags:
       - "v*"
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: read
 
@@ -207,7 +211,8 @@ jobs:
           }
           $packages = @(
             Get-ChildItem -LiteralPath artifacts/release -File |
-              Where-Object { $_.Extension -in @('.nupkg', '.snupkg') })
+              Where-Object { $_.Extension -eq '.nupkg' })
+          # Each nupkg push also uploads its signed sibling snupkg through NuGet's symbol service.
           foreach ($package in $packages) {
             dotnet nuget push $package.FullName --api-key $env:NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
             if ($LASTEXITCODE -ne 0) {
