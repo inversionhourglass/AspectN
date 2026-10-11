@@ -15,6 +15,31 @@ public sealed class CustomAttributeRecordTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
+    public void MapReturn_PeReadonlyMarker_TracksActualRecordPresence(bool includeRecord)
+    {
+        using var fixture = new CompiledAdapterFixture(SOURCE);
+        var method = fixture.Cecil.Module.GetType("Example.C").Methods.Single(value => value.Name == "Readonly");
+        if (!includeRecord) method.MethodReturnType.CustomAttributes.Clear();
+        using var image = new MemoryStream();
+        fixture.Cecil.Module.Write(image);
+        var reader = CSharpCompilation.Create("ReadonlyReader",
+            references: FixtureCompiler.TrustedPlatformReferences().Append(MetadataReference.CreateFromImage(image.ToArray())),
+            options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, metadataImportOptions: MetadataImportOptions.All));
+        var system = new AspectN.Roslyn.RoslynTypeSystem(reader);
+        var symbol = reader.GetTypeByMetadataName("Example.C")!.GetMembers("Readonly").OfType<IMethodSymbol>().Single();
+        var signature = system.Mapper.MapMethod(symbol);
+
+        Assert.Equal(includeRecord, symbol.ReturnsByRefReadonly);
+        Assert.Equal(includeRecord, Attributes(signature.ReturnAttributes)
+            .Contains("System.Runtime.CompilerServices.IsReadOnlyAttribute", StringComparer.Ordinal));
+        var compilation = new AspectNEngine().CompileMemberExpression("attr(ret System.Runtime.CompilerServices.IsReadOnlyAttribute)");
+        Assert.True(compilation.TryGetMemberPattern(out var pattern));
+        Assert.Equal(includeRecord ? MatchStatus.Matched : MatchStatus.NotMatched, pattern.Match(signature, system).Status);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
     public void MapParameter_RealOptionalRecordWithOrWithoutFlag_PreservesRecord(bool optionalFlag)
     {
         using var module = ModuleDefinition.CreateModule($"OptionalRecord{Guid.NewGuid():N}", ModuleKind.Dll);
@@ -111,8 +136,10 @@ public sealed class CustomAttributeRecordTests
         Assert.Equal(Attributes(cecil.Attributes), Attributes(metadata.Attributes));
         Assert.Equal(Attributes(cecil.ReturnAttributes), Attributes(reflection.ReturnAttributes));
         Assert.Equal(Attributes(cecil.ReturnAttributes), Attributes(source.ReturnAttributes));
+        Assert.Equal(Attributes(cecil.ReturnAttributes), Attributes(metadata.ReturnAttributes));
         Assert.Equal(Attributes(cecil.TypeAttributes), Attributes(reflection.TypeAttributes));
         Assert.Equal(Attributes(cecil.TypeAttributes), Attributes(source.TypeAttributes));
+        Assert.Equal(Attributes(cecil.TypeAttributes), Attributes(metadata.TypeAttributes));
         for (var index = 0; index < cecil.Parameters.Count; index++)
         {
             Assert.Equal(Attributes(cecil.Parameters[index].Attributes), Attributes(reflection.Parameters[index].Attributes));

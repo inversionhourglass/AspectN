@@ -315,7 +315,8 @@ public sealed partial class RoslynSignatureMapper
     private AttributeSignature[] MapReturnAttributes(IMethodSymbol method)
     {
         var attributes = MapAttributes(method.GetReturnTypeAttributes(), AttributeTargetKind.Return);
-        return method.ReturnsByRefReadonly && method.DeclaringSyntaxReferences.Length > 0
+        // PE 的 readonly ref 分类由真实 IsReadOnlyAttribute 记录确定，但 GetReturnTypeAttributes 会隐藏它。
+        return method.ReturnsByRefReadonly
             ? AddCompilerAttribute(attributes, "System.Runtime.CompilerServices.IsReadOnlyAttribute", AttributeTargetKind.Return)
             : attributes;
     }

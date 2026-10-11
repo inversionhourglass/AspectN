@@ -56,10 +56,7 @@ public sealed class MappingDepthTests
     [InlineData("Reflection", "by-reference", 63)]
     public async Task MapType_NativeShapeOnSmallStack_EnforcesLimitsInIsolatedProcess(string backend, string shape, int depth)
     {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        var configuration = directory.Parent!.Name;
-        var tests = directory.Parent.Parent!.Parent!.Parent!.FullName;
-        var probe = Path.Combine(tests, "AspectN.MappingDepthProbe", "bin", configuration, "net10.0", "AspectN.MappingDepthProbe.dll");
+        var probe = Path.Combine(AppContext.BaseDirectory, "mapping-depth-probe", "AspectN.MappingDepthProbe.dll");
         var start = new ProcessStartInfo("dotnet")
         {
             RedirectStandardOutput = true,

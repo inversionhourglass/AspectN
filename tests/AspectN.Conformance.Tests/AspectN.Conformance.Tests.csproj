@@ -26,4 +26,21 @@
     <None Include="$(PkgMicrosoft_NETFramework_ReferenceAssemblies_net472)/build/.NETFramework/v4.7.2/mscorlib.dll"
           Link="framework-references/mscorlib.dll" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+  <Target Name="CopyMappingDepthProbe" AfterTargets="Build" Condition="'$(DesignTimeBuild)' != 'true'">
+    <MSBuild Projects="../AspectN.MappingDepthProbe/AspectN.MappingDepthProbe.csproj"
+             Targets="GetTargetPath" Properties="Configuration=$(Configuration)" RemoveProperties="TargetFramework">
+      <Output TaskParameter="TargetOutputs" ItemName="_MappingDepthProbeTarget" />
+    </MSBuild>
+    <PropertyGroup>
+      <_MappingDepthProbeDirectory>@(_MappingDepthProbeTarget->'%(RootDir)%(Directory)')</_MappingDepthProbeDirectory>
+    </PropertyGroup>
+    <Error Condition="'$(_MappingDepthProbeDirectory)' == ''" Text="The mapping-depth probe did not provide an output path." />
+    <ItemGroup>
+      <_MappingDepthProbeFiles Include="$(_MappingDepthProbeDirectory)/**/*" />
+      <FileWrites Include="@(_MappingDepthProbeFiles->'$(TargetDir)mapping-depth-probe/%(RecursiveDir)%(Filename)%(Extension)')" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_MappingDepthProbeFiles)"
+          DestinationFiles="@(_MappingDepthProbeFiles->'$(TargetDir)mapping-depth-probe/%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+  </Target>
 </Project>

@@ -1,6 +1,6 @@
 # Review follow-up implementation plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **Execution workflow:** Apply executing-plans and test-driven-development, with independent review before completing each batch.
 
 **Goal:** Repair the accepted REVIEW.md findings and record the maintainer's decisions in task-scoped local commits.
 
@@ -51,11 +51,11 @@ Files: Metadata/TypeIdentity.cs and identity regression tests.
 
 ## Batch 4: conformance and fuzz coverage (L10, L11, L12, L13, L15)
 
-Files: ReviewFixture.cs, CustomAttributeRecordTests.cs, MappingDepthTests.cs, conformance project file and focused fixture/fuzz tests.
+Files: ReviewFixture.cs, CustomAttributeRecordTests.cs, MappingDepthTests.cs, conformance project file, RoslynSignatureMapper.cs and focused fixture/fuzz tests.
 
 1. Add private/internal method mapping regressions; verify current helper failures.
 2. Enable all metadata imports and all relevant Reflection member visibility flags.
-3. Extend return and declaring-type attribute comparisons to Roslyn PE.
+3. Extend return and declaring-type attribute comparisons to Roslyn PE. The added assertion exposed a hidden readonly-return CA record; restore it from Roslyn's CA-backed ref classification, and verify PE images with and without the actual record.
 4. Copy the probe's runnable output and dependencies into test output at build time; resolve from AppContext.BaseDirectory. Verify the existing isolated-process cases from both default and relocated outputs.
 5. Retain the bounded generator invariant and add bounded-count long Unicode parser cases with termination/span assertions.
 6. Run conformance/core tests, then commit.

@@ -33,7 +33,7 @@ internal sealed class ReviewFixture : IDisposable
         Source = new RoslynTypeSystem(compilation);
         Metadata = new RoslynTypeSystem(CSharpCompilation.Create("Reader",
             references: FixtureCompiler.TrustedPlatformReferences().Append(MetadataReference.CreateFromImage(image)),
-            options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)));
+            options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, metadataImportOptions: MetadataImportOptions.All)));
         _resolver.AddSearchDirectory(Path.GetDirectoryName(typeof(object).Assembly.Location)!);
         Cecil = new CecilTypeSystem(ModuleDefinition.ReadModule(new MemoryStream(image, writable: false),
             new ReaderParameters { AssemblyResolver = _resolver, InMemory = true }));
@@ -51,7 +51,8 @@ internal sealed class ReviewFixture : IDisposable
             yield return (backend, system, () => system.Mapper.MapMethod(symbol));
         }
         yield return ("Cecil", Cecil, () => Cecil.Mapper.MapMethod(Cecil.Module.GetType(_typeName).Methods.Single(method => method.Name == name)));
-        yield return ("Reflection", Reflection, () => Reflection.Mapper.MapMethod(_assembly.GetType(_typeName)!.GetMethod(name)!));
+        yield return ("Reflection", Reflection, () => Reflection.Mapper.MapMethod(_assembly.GetType(_typeName)!.GetMethod(name,
+            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly)!));
     }
 
     public void Dispose()

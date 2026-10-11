@@ -10,6 +10,26 @@ public sealed class ParserTerminationTests
         TimeSpan.FromSeconds(1);
 
     [Property(
+        MaxTest = FuzzConfiguration.LONG_GENERATED_CASES,
+        Replay = FuzzConfiguration.REPLAY_SEED,
+        Timeout = FuzzConfiguration.TEST_TIMEOUT_MILLISECONDS,
+        Arbitrary = new[] { typeof(ArbitrarySourceTests) })]
+    public void ParseMemberExpression_LongUnicode_TerminatesWithValidSpans(LongArbitrarySource source)
+    {
+        AssertTerminatesWithValidSpans(source.Value, value => AspectNParser.ParseMemberExpression(value));
+    }
+
+    [Property(
+        MaxTest = FuzzConfiguration.LONG_GENERATED_CASES,
+        Replay = FuzzConfiguration.REPLAY_SEED,
+        Timeout = FuzzConfiguration.TEST_TIMEOUT_MILLISECONDS,
+        Arbitrary = new[] { typeof(ArbitrarySourceTests) })]
+    public void ParseTypePattern_LongUnicode_TerminatesWithValidSpans(LongArbitrarySource source)
+    {
+        AssertTerminatesWithValidSpans(source.Value, value => AspectNParser.ParseTypePattern(value));
+    }
+
+    [Property(
         MaxTest = FuzzConfiguration.GENERATED_CASES,
         Replay = FuzzConfiguration.REPLAY_SEED,
         EndSize = FuzzConfiguration.MAXIMUM_SOURCE_LENGTH - 1,
