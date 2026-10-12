@@ -39,6 +39,14 @@ jobs:
       - name: Restore
         run: dotnet restore AspectN.sln
 
+      - name: Verify documentation structure and references
+        shell: pwsh
+        run: ./eng/verify-documentation.ps1
+
+      - name: Test documentation verifier
+        shell: pwsh
+        run: ./eng/tests/verify-documentation.Tests.ps1
+
       - name: Verify formatting
         run: dotnet format AspectN.sln --verify-no-changes --no-restore
 

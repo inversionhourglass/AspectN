@@ -32,4 +32,24 @@ Follow the existing Conventional Commit style, such as `feat(core): add lexer`, 
 
 ## Agent-Specific Instructions
 
+### Documentation and knowledge-base pilot
+
+For user guidance, start at `docs/usage/index.md`. For capability changes or review,
+start at `docs/knowledge/index.md`, load only affected entries and their declared
+dependencies, and use `docs/knowledge/review/index.md` for the review process.
+The approved workflow design is `docs/superpowers/specs/2026-10-12-aspectn-documentation-knowledge-base-design.md`.
+
+For the documented pilot capabilities, declare affected capability/scenario IDs;
+update the relevant knowledge entry, user-visible guidance, and evidence in the
+same reviewable change, or state a concrete no-impact reason. For unassessed
+surfaces, add/update `docs/knowledge/coverage.json` and follow existing specification
+and conformance rules. Do not infer exclusion from missing documentation or mark
+verification complete merely because test source exists. Reassess evidence when
+its implementation, tests, contract or environment changes; preserve old reports.
+Run `pwsh -NoProfile -File eng/verify-documentation.ps1` for these changes.
+Finding references initially warn; semantic approval, N/A reasoning and current
+evidence applicability require review. New/changed pilot N/A records need a
+non-author reviewer and date. Full-repository mandatory synchronization awaits
+the readiness gate and maintainer confirmation; the pilot is not a full support matrix.
+
 Work in the existing checkout; do not create Git worktrees. Preserve existing untracked files. Do not publish packages, push branches, remove Rougamo submodules, or modify adjacent repositories or the frozen oracle cache without explicit authorization. Rougamo migration and major-version publication are separate tasks.
