@@ -24,6 +24,9 @@ Use `AspectN.Cecil.Fody` inside Fody weavers that reference `FodyHelpers`.
 
 ## Quick start
 
+See the [中文使用指南](docs/usage/index.md) for task-based guidance and runnable examples,
+or the [Agent knowledge base](docs/knowledge/index.md) for scoped contracts and review evidence.
+
 ```csharp
 using AspectN;
 using AspectN.Evaluation;

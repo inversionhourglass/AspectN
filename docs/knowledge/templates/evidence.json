@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "EV-YYYYMMDD-NNN",
+  "method": "automated",
+  "scenario_refs": [],
+  "oracle_refs": [],
+  "procedure": "执行时填写命令及对应断言范围",
+  "result": "inconclusive",
+  "recorded_on": null,
+  "environment": {},
+  "code_state": {
+    "head": null,
+    "dirty": true,
+    "files": []
+  },
+  "dependency_scope": {
+    "paths": [],
+    "environment_keys": []
+  },
+  "revalidation_conditions": "根据实际实现、测试、规范与环境声明重验条件"
+}

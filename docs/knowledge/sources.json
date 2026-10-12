@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "sources": [
+    {
+      "id": "SRC-LANGUAGE",
+      "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+      "role": "normative",
+      "scope": "当前单一 Standard 语言契约",
+      "target": "working-tree",
+      "approval": "approved",
+      "delegated_by": [],
+      "supersedes": [],
+      "approval_refs": [
+        {
+          "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+          "section": "已批准状态或明确委托的适用条款"
+        }
+      ]
+    },
+    {
+      "id": "SRC-ARCHITECTURE",
+      "path": "docs/superpowers/specs/2026-07-31-aspectn-redesign-design.md",
+      "role": "normative",
+      "scope": "核心/适配器职责、公开元数据模型、输入与生命周期",
+      "target": "working-tree",
+      "approval": "approved",
+      "delegated_by": [],
+      "supersedes": [],
+      "approval_refs": [
+        {
+          "path": "docs/superpowers/specs/2026-07-31-aspectn-redesign-design.md",
+          "section": "已批准状态或明确委托的适用条款"
+        }
+      ]
+    },
+    {
+      "id": "SRC-AVAILABILITY",
+      "path": "docs/language/metadata-availability.md",
+      "role": "normative",
+      "scope": "签名可用性、读取失败、by-ref 分类和限制",
+      "target": "working-tree",
+      "approval": "approved",
+      "delegated_by": [
+        {
+          "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+          "section": "5"
+        },
+        {
+          "path": "docs/superpowers/specs/2026-07-31-aspectn-redesign-design.md",
+          "section": "8"
+        }
+      ],
+      "supersedes": [],
+      "approval_refs": [
+        {
+          "path": "docs/language/metadata-availability.md",
+          "section": "已批准状态或明确委托的适用条款"
+        }
+      ]
+    },
+    {
+      "id": "SRC-ARRAY",
+      "path": "docs/language/array-shape.md",
+      "role": "normative",
+      "scope": "CLI 数组形状、身份和名义关系；DSL 仍按 rank",
+      "target": "working-tree",
+      "approval": "approved",
+      "delegated_by": [
+        {
+          "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+          "section": "12.5"
+        }
+      ],
+      "supersedes": [],
+      "approval_refs": [
+        {
+          "path": "docs/language/array-shape.md",
+          "section": "已批准状态或明确委托的适用条款"
+        }
+      ]
+    },
+    {
+      "id": "SRC-GENERIC-GUIDE",
+      "path": "docs/language/generic-parameter-identity.md",
+      "role": "guide",
+      "scope": "泛型声明身份编码和闭合查询上下文的实现说明",
+      "target": "working-tree",
+      "approval": "pending",
+      "delegated_by": [],
+      "supersedes": []
+    },
+    {
+      "id": "SRC-WORKFLOW",
+      "path": "docs/superpowers/specs/2026-10-12-aspectn-documentation-knowledge-base-design.md",
+      "role": "normative",
+      "scope": "本轮已批准文档工程流程；不批准新的产品语义",
+      "target": "working-tree",
+      "approval": "approved",
+      "delegated_by": [],
+      "supersedes": [],
+      "approval_refs": [
+        {
+          "path": "docs/superpowers/specs/2026-10-12-aspectn-documentation-knowledge-base-design.md",
+          "section": "已批准状态或明确委托的适用条款"
+        }
+      ]
+    },
+    {
+      "id": "SRC-SINGLE-LANGUAGE",
+      "path": "docs/plans/2026-10-03-single-language-aspectn.md",
+      "role": "history",
+      "scope": "移除 Legacy 的维护者决定和历史实施记录",
+      "target": "working-tree",
+      "approval": "historical",
+      "delegated_by": [],
+      "supersedes": []
+    },
+    {
+      "id": "SRC-DISCUSSION",
+      "path": "DOCUMENTATION-KNOWLEDGE-BASE-DESIGN.md",
+      "role": "history",
+      "scope": "多模型讨论及 §17 D1–D4 维护者裁决；流程由最终设计收敛",
+      "target": "working-tree",
+      "approval": "historical",
+      "delegated_by": [],
+      "supersedes": []
+    },
+    {
+      "id": "SRC-H1",
+      "path": "docs/reviews/2026-10-11-review-followup.md",
+      "role": "history",
+      "scope": "维护者 H1 不修复、不阻塞裁决及历史跟进",
+      "target": "working-tree",
+      "approval": "historical",
+      "delegated_by": [],
+      "supersedes": []
+    }
+  ]
+}

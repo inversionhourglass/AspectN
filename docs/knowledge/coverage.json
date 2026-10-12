@@ -1,0 +1,236 @@
+{
+  "schema_version": 1,
+  "items": [
+    {
+      "id": "INV-0001",
+      "subject": "泛型声明身份与闭合上下文",
+      "origin_refs": [
+        {
+          "path": "docs/superpowers/specs/2026-07-31-aspectn-redesign-design.md",
+          "section": "8.4"
+        }
+      ],
+      "assessment_status": "documented",
+      "capability_ids": [
+        "GEN-IDENTITY-001"
+      ],
+      "notes": "已建档；证据范围由场景和报告确定"
+    },
+    {
+      "id": "INV-0002",
+      "subject": "ref-kind 与 ByReference",
+      "origin_refs": [
+        {
+          "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+          "section": "11"
+        }
+      ],
+      "assessment_status": "documented",
+      "capability_ids": [
+        "USE-REF-001"
+      ],
+      "notes": "已建档；证据范围由场景和报告确定"
+    },
+    {
+      "id": "INV-0003",
+      "subject": "数组身份、rank 与名义关系",
+      "origin_refs": [
+        {
+          "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+          "section": "12.5"
+        }
+      ],
+      "assessment_status": "documented",
+      "capability_ids": [
+        "USE-ARRAY-001"
+      ],
+      "notes": "已建档；证据范围由场景和报告确定"
+    },
+    {
+      "id": "INV-0004",
+      "subject": "元数据可用性与阶段失败",
+      "origin_refs": [
+        {
+          "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+          "section": "5"
+        }
+      ],
+      "assessment_status": "documented",
+      "capability_ids": [
+        "CROSS-AVAILABILITY-001"
+      ],
+      "notes": "已建档；证据范围由场景和报告确定"
+    },
+    {
+      "id": "INV-0005",
+      "subject": "三态运算与诊断",
+      "origin_refs": [
+        {
+          "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+          "section": "5"
+        }
+      ],
+      "assessment_status": "documented",
+      "capability_ids": [
+        "CROSS-LOGIC-001"
+      ],
+      "notes": "已建档；证据范围由场景和报告确定"
+    },
+    {
+      "id": "INV-0006",
+      "subject": "损坏 Cecil 对象输入与 H1 裁决",
+      "origin_refs": [
+        {
+          "path": "docs/reviews/2026-10-11-review-followup.md",
+          "section": "维护者裁决/H1"
+        }
+      ],
+      "assessment_status": "unassessed",
+      "capability_ids": [],
+      "notes": "尚未完整盘点；不代表不支持"
+    },
+    {
+      "id": "INV-0007",
+      "subject": "词法、邻接与语法诊断",
+      "origin_refs": [
+        {
+          "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+          "section": "3 / 17"
+        }
+      ],
+      "assessment_status": "unassessed",
+      "capability_ids": [],
+      "notes": "尚未完整盘点；不代表不支持"
+    },
+    {
+      "id": "INV-0008",
+      "subject": "泛型 arity、变量绑定与作用域",
+      "origin_refs": [
+        {
+          "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+          "section": "13"
+        }
+      ],
+      "assessment_status": "unassessed",
+      "capability_ids": [],
+      "notes": "尚未完整盘点；不代表不支持"
+    },
+    {
+      "id": "INV-0009",
+      "subject": "nullable、tuple、指针、函数指针与 custom modifier",
+      "origin_refs": [
+        {
+          "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+          "section": "12 / 16"
+        }
+      ],
+      "assessment_status": "unassessed",
+      "capability_ids": [],
+      "notes": "尚未完整盘点；不代表不支持"
+    },
+    {
+      "id": "INV-0010",
+      "subject": "选择器、访问器与生成成员",
+      "origin_refs": [
+        {
+          "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+          "section": "6–10"
+        }
+      ],
+      "assessment_status": "unassessed",
+      "capability_ids": [],
+      "notes": "尚未完整盘点；不代表不支持"
+    },
+    {
+      "id": "INV-0011",
+      "subject": "直接属性目标与缺失事实",
+      "origin_refs": [
+        {
+          "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+          "section": "14"
+        }
+      ],
+      "assessment_status": "unassessed",
+      "capability_ids": [],
+      "notes": "尚未完整盘点；不代表不支持"
+    },
+    {
+      "id": "INV-0012",
+      "subject": "regex 子集、超时与规范签名文本",
+      "origin_refs": [
+        {
+          "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+          "section": "15 / 21"
+        }
+      ],
+      "assessment_status": "unassessed",
+      "capability_ids": [],
+      "notes": "尚未完整盘点；不代表不支持"
+    },
+    {
+      "id": "INV-0013",
+      "subject": "取消、资源限制、缓存和生命周期",
+      "origin_refs": [
+        {
+          "path": "docs/superpowers/specs/2026-07-31-aspectn-redesign-design.md",
+          "section": "9 / 12 / 13"
+        }
+      ],
+      "assessment_status": "unassessed",
+      "capability_ids": [],
+      "notes": "尚未完整盘点；不代表不支持"
+    },
+    {
+      "id": "INV-0014",
+      "subject": "公开 API、包边界及兼容矩阵",
+      "origin_refs": [
+        {
+          "path": "docs/superpowers/specs/2026-07-31-aspectn-redesign-design.md",
+          "section": "5 / 14.2 / 16"
+        }
+      ],
+      "assessment_status": "unassessed",
+      "capability_ids": [],
+      "notes": "尚未完整盘点；不代表不支持"
+    },
+    {
+      "id": "INV-0015",
+      "subject": "名称、嵌套、程序集、转发与关系",
+      "origin_refs": [
+        {
+          "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+          "section": "12"
+        }
+      ],
+      "assessment_status": "unassessed",
+      "capability_ids": [],
+      "notes": "尚未完整盘点；不代表不支持"
+    },
+    {
+      "id": "INV-0016",
+      "subject": "async、iterator、partial、源码与 PE",
+      "origin_refs": [
+        {
+          "path": "docs/language/metadata-availability.md",
+          "section": "Roslyn source mapping"
+        }
+      ],
+      "assessment_status": "unassessed",
+      "capability_ids": [],
+      "notes": "尚未完整盘点；不代表不支持"
+    },
+    {
+      "id": "INV-0017",
+      "subject": "五主题以外 Fody 和未执行模式",
+      "origin_refs": [
+        {
+          "path": "docs/superpowers/specs/2026-07-31-aspectn-redesign-design.md",
+          "section": "9.1"
+        }
+      ],
+      "assessment_status": "unassessed",
+      "capability_ids": [],
+      "notes": "尚未完整盘点；不代表不支持"
+    }
+  ]
+}

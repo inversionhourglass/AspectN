@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "profiles": [
+    {
+      "id": "feature-v1",
+      "kind": "feature",
+      "required_sections": [
+        "摘要",
+        "契约",
+        "输入条件",
+        "分层能力",
+        "阶段失败",
+        "例子与边界",
+        "规范依据",
+        "实现与证据",
+        "关联与缺口"
+      ],
+      "invariants": [
+        {
+          "id": "INVLOGIC",
+          "condition": "消费或组合 MatchStatus/MatchResult；纯字符串身份编码不适用"
+        },
+        {
+          "id": "INVPARITY",
+          "condition": "比较多个后端映射或关系行为，需同等输入及所需可用事实"
+        },
+        {
+          "id": "INVMISSING",
+          "condition": "查询可能缺失的元数据或原生关联；确定的值运算不适用"
+        },
+        {
+          "id": "INVCANCEL",
+          "condition": "公开入口声明 CancellationToken；未声明取消的纯值函数不适用"
+        }
+      ]
+    },
+    {
+      "id": "cross-cutting-v1",
+      "kind": "cross_cutting",
+      "required_sections": [
+        "摘要",
+        "契约",
+        "输入条件",
+        "分层能力",
+        "阶段失败",
+        "例子与边界",
+        "规范依据",
+        "实现与证据",
+        "关联与缺口"
+      ],
+      "invariants": [
+        {
+          "id": "INVLOGIC",
+          "condition": "消费或组合 MatchStatus/MatchResult；纯字符串身份编码不适用"
+        },
+        {
+          "id": "INVPARITY",
+          "condition": "比较多个后端映射或关系行为，需同等输入及所需可用事实"
+        },
+        {
+          "id": "INVMISSING",
+          "condition": "查询可能缺失的元数据或原生关联；确定的值运算不适用"
+        },
+        {
+          "id": "INVCANCEL",
+          "condition": "公开入口声明 CancellationToken；未声明取消的纯值函数不适用"
+        }
+      ]
+    }
+  ]
+}
