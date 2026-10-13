@@ -56,7 +56,7 @@ Legacy 退役已提交为 `1fc3b44`（`refactor(core)!: retire Legacy and keep a
 | any / none 修饰符 | enum 名泄漏；none 的零值实际不约束 | 不是修饰符 | B |
 | 未提及修饰符维度 | 不约束 | 不约束；成员声明权限，属性选择器仍看当前 accessor 权限 | 相同；Composite 删除为 A |
 | 历史 async | async T/async null/async void 三分糖，不检查 compiler async flag | 以 tasklike/result/void 表达，删除 async 糖 | A |
-| tasklike | 普通类型名 | Task/ValueTask 返回形状；tasklike<void> AN4004 | A；空白结果子句见 §6 |
+| tasklike | 普通类型名 | Task/ValueTask 返回形状；`tasklike<void>` AN4004 | A；空白结果子句见 §6 |
 | 省略泛型子句 | genericIn 裸单段通常零，限定名/成员/genericOut 通常任意 | 具名零；裸 `*` 任意；无位置双轨 | A |
 | `<!>`、`<>`、`<,>`、`<,,>`、`<..>` | 有这些形式，但 genericIn 前置空槽丢计数 | 零/一/二/三/正元数，空槽精确占位 | A / N03 |
 | `<?>` | 不具备 Standard 的统一 AnyArity 含义；某些位置可接受但非该语义 | 一切合法泛型子句位置均为任意元数含零 | A |
@@ -70,7 +70,7 @@ Legacy 退役已提交为 `1fc3b44`（`refactor(core)!: retire Legacy and keep a
 | 属性名泛型子句 | 有些形式影响匹配 | 当前静默丢弃，违反 property signature 契约 | I01 |
 | 裸命名模式与数组 | 剥离候选数组后看元素，包括泛型实参位置 | 普通 named/tuple/nullable 模式不剥数组；裸 `*` 仍全通配 | A |
 | 显式数组 rank/层级 | 按 rank/层级；后缀 `*` 内层变零泛型名字通配 | 按结构；内层 `*` 保持全通配，`*[]` 可命中更深层数组 | A；混合 rank 匹配顺序本次一致 |
-| nullable | 只看 Nullable<T>；若干后缀更早的 `?` 混入字面名字 | 引用类型 CLR 身份不变；非 nullable 值类型包装；结构组合后缀 | A / B |
+| nullable | 只看 `Nullable<T>`；若干后缀更早的 `?` 混入字面名字 | 引用类型 CLR 身份不变；非 nullable 值类型包装；结构组合后缀 | A / B |
 | tuple 家族/最低项数 | Tuple 与 ValueTuple；单/空 tuple 可接受 | 仅 ValueTuple，至少两项；System.Tuple 显式写名 | A / B |
 | tuple 空槽与尾逗号 | 逗号可被跳过、静默坍缩元素数 | 拒绝缺元素；区别于有效参数/泛型空槽 | N09 |
 | 长 tuple Rest | 直接按 CLR 的 8 个参数看 TRest | 将 ValueTuple Rest 链扁平化为逻辑元素 | N08 |
@@ -128,15 +128,15 @@ Shared 接受 `method(* Owner[].Run(..))`、`method(* Owner?.Run(..))` 及 `meth
 | --- | --- | --- |
 | `List<,>` 对 `List<int>` | Matched | NotMatched |
 | `Box<,,>` 对两槽 Box | Matched | NotMatched（要求三槽） |
-| `Dictionary<,string>` 对 Dictionary<int,string> | NotMatched | Matched |
+| `Dictionary<,string>` 对 `Dictionary<int,string>` | NotMatched | Matched |
 
 Shared 的 CompileGenericIn 遇开头 `<` 只在参数栈为空时补 Any，前置空位被丢弃；genericOut 的声明位置并不是这个错误。**建议确认修正：**所有逗号均占位置，纯空/混合空槽采用 Standard 精确元数。
 
 ### N04：泛型实参数组不会提升到外层
 
-Shared `List<int[]>` 对 List<int[]> 不匹配、对 List<int>[] 匹配。旧 Legacy / Standard 相反。Shared CompileGenericIn 复用外层 ranks 栈，实参数组后缀落到了外层。
+Shared `List<int[]>` 对 `List<int[]>` 不匹配、对 `List<int>`[] 匹配。旧 Legacy / Standard 相反。Shared CompileGenericIn 复用外层 ranks 栈，实参数组后缀落到了外层。
 
-**建议确认修正：**array 属于对应实参 AST 节点；`List<int[]>` 与 `List<int>[]` 严格区分。另一个已批准的数组剥离规则也会影响实参：Shared `List<int>` 可命中 List<int[]>，Standard 不会；该部分不重复确认。
+**建议确认修正：**array 属于对应实参 AST 节点；`List<int[]>` 与 `List<int>[]` 严格区分。另一个已批准的数组剥离规则也会影响实参：Shared `List<int>` 可命中 `List<int[]>`，Standard 不会；该部分不重复确认。
 
 ### N05：genericIn 短嵌套类型路径正常工作
 
@@ -148,7 +148,7 @@ Shared `List<int[]>` 对 List<int[]> 不匹配、对 List<int>[] 匹配。旧 Le
 
 Shared `List<List<int>>`、`Dictionary<string,List<int>>` 和 `List<(int,string)>` 会拒绝；Legacy / Standard 接受。反而 `List<System.Nullable<int>>` 和限定名的 `Dictionary<string,System.Collections.Generic.List<int>>` 可以在 Shared 解析，说明这不是统一禁止嵌套，而是短名编译分支不完整。
 
-`Probe.Base<List<int>>+` 对 Leaf : Middle<int>，Middle<U> : Base<List<U>>，Shared 拒绝解析，Legacy / Standard 正确匹配；简单 `Base2<int>+` 的继承实参替换三者一致。不要误称 Shared 完全没有泛型继承替换。
+`Probe.Base<List<int>>+` 对 Leaf : `Middle<int>`，`Middle<U>` : `Base<List<U>>`，Shared 拒绝解析，Legacy / Standard 正确匹配；简单 `Base2<int>+` 的继承实参替换三者一致。不要误称 Shared 完全没有泛型继承替换。
 
 **建议确认修正/增强：**普通、限定、嵌套泛型、tuple 和 Boolean 实参均保留结构，不因是否写 namespace 而改变语法能力。Boolean 部分已有批准。直接首槽 `!` 的未实现部分见 I03。
 
@@ -162,13 +162,13 @@ Shared 的 genericOut 声明类型/ctor 分支连裸 alias 也不展开：`metho
 
 ### N08：长 ValueTuple 使用逻辑元素，TRest 不作为第八项
 
-对八个 int 的 ValueTuple（CLR 第八槽是 ValueTuple<int>）：Shared `(int,int,int,int,int,int,int,int)` 不匹配，而 `(int,int,int,int,int,int,int,ValueTuple<int>)` 匹配。Legacy / Standard 恰好相反，因为扁平化了 Rest 链。
+对八个 int 的 ValueTuple（CLR 第八槽是 `ValueTuple<int>`）：Shared `(int,int,int,int,int,int,int,int)` 不匹配，而 `(int,int,int,int,int,int,int,ValueTuple<int>)` 匹配。Legacy / Standard 恰好相反，因为扁平化了 Rest 链。
 
 **建议确认：**tuple sugar 按 C# 逻辑元素；若要观察 CLR 第八槽则写显式 `System.ValueTuple<...>` named pattern。只匹配 ValueTuple、排除 System.Tuple 已经确认。
 
 ### N09：tuple 中的空槽/尾逗号不被静默删除
 
-Shared `(int,string,)`、`(,int,string)`、`(int,,string)`、`(,int,string,)` 均按两元素 tuple 匹配 ValueTuple<int,string>。Legacy / Standard 全部 AN1001。
+Shared `(int,string,)`、`(,int,string)`、`(int,,string)`、`(,int,string,)` 均按两元素 tuple 匹配 `ValueTuple<int,string>`。Legacy / Standard 全部 AN1001。
 
 **建议确认收紧：**tuple 每项必有类型，不允许空元素或尾逗号。有效的参数/泛型空槽继续保留。旧政策只逐项确认空 tuple 和单项 tuple，未完整说明这种多项坍缩。
 
@@ -200,7 +200,7 @@ Shared `method(!* *(..))` 对返回 int 的 Run 为 Matched；`method(* *(!*))` 
 
 ### N14：精确泛型特性查询也采用零元数省略
 
-方法带 GenericMarkerAttribute<int>。Shared `attr(exec Probe.GenericMarkerAttribute)` 为 Matched；旧 Legacy 和 Standard 都 NotMatched。Shared 走类型模式，限定名省略=任意元数；Legacy 的精确直接查询先收窄到零元数，已不是完整 Shared 行为。
+方法带 `GenericMarkerAttribute<int>`。Shared `attr(exec Probe.GenericMarkerAttribute)` 为 Matched；旧 Legacy 和 Standard 都 NotMatched。Shared 走类型模式，限定名省略=任意元数；Legacy 的精确直接查询先收窄到零元数，已不是完整 Shared 行为。
 
 Standard 的精确名与部分名称通配（如 GenericMarker*）省略子句均为零元数，具名查询包含泛型需明确 `<>` / `<..>` / `<?>` / `<int>`。裸 `*`（包括完整名段 Probe.*）仍沿用 AnyArity 例外，整体 `attr(exec *)` 也是全通配。Legacy 的通配 fallback 又与其精确查询不同，旧表已说明。
 
@@ -233,7 +233,7 @@ Standard 的精确名与部分名称通配（如 GenericMarker*）省略子句�
 
 ### N18：同名的类型与方法泛型形参不再导致异常
 
-Base<U0> 内的 Shadow<U0>() 返回方法形参 U0，Shared ParseMethod 因 ToDictionary 按名称建 genericMap 抛 ArgumentException；Legacy / Standard 按 owner/position 身份区分并正常匹配。这是合法泛型遮蔽元数据，C# 可用同名形参声明（有警告）。
+`Base<U0>` 内的 `Shadow<U0>`() 返回方法形参 U0，Shared ParseMethod 因 ToDictionary 按名称建 genericMap 抛 ArgumentException；Legacy / Standard 按 owner/position 身份区分并正常匹配。这是合法泛型遮蔽元数据，C# 可用同名形参声明（有警告）。
 
 **建议确认修正：**形参身份采用所属声明与位置；名字仅用于显示。这是元数据/求值能力差异，未增加语法关键字。
 
@@ -270,7 +270,7 @@ Base<U0> 内的 Shadow<U0>() 返回方法形参 U0，Shared ParseMethod 因 ToDi
 
 ### I04：namespace 段的泛型子句被绑定后忽略
 
-`System<>.Int32`、`System<..>.Int32`、`System<int>.Int32` 当前均编译并匹配 int；Shared 不匹配。`method(* Probe<int>.Owner.Run(..))` 同样无视 Probe<int>。`System<$T>.Int32` 甚至绑定了后续不求值的变量。
+`System<>.Int32`、`System<..>.Int32`、`System<int>.Int32` 当前均编译并匹配 int；Shared 不匹配。`method(* Probe<int>.Owner.Run(..))` 同样无视 `Probe<int>`。`System<$T>.Int32` 甚至绑定了后续不求值的变量。
 
 Binder 为所有 name segment 绑定子句；TypePatternEvaluator 只在实际类型段检查元数/实参，namespace 匹配只看段名（Binder.cs:700，TypePatternEvaluator.cs:487、527、588–624）。
 
@@ -286,7 +286,7 @@ Binder 为所有 name segment 绑定子句；TypePatternEvaluator 只在实际�
 这些不是漏列的内建语法糖，但会影响迁移的最终效果：
 
 - Shared 解析/求值可能抛 ArgumentException、RegexParseException、NotImplementedException 等；Standard 编译失败返回定位诊断及不可用 pattern，匹配失败的能力问题可为 Unknown。保留 AN4003/AN4004/AN4005，不能把报错或异常伪装成 NotMatched。
-- Shared 单泛型槽 `method(* Echo1<T>(..))` 可以解析但不匹配 Echo1<X0>；其虚拟名字单槽编码不一致。`method(T Echo1<T>(T))` 又可能因 GenericParameterTypePattern.AssignableMatch 未实现而抛 NotImplementedException。Legacy 已修复，Standard 迁移为 `$T`；这些是 Shared 的旧错误，不表示 Standard 应恢复隐式变量。
+- Shared 单泛型槽 `method(* Echo1<T>(..))` 可以解析但不匹配 `Echo1<X0>`；其虚拟名字单槽编码不一致。`method(T Echo1<T>(T))` 又可能因 GenericParameterTypePattern.AssignableMatch 未实现而抛 NotImplementedException。Legacy 已修复，Standard 迁移为 `$T`；这些是 Shared 的旧错误，不表示 Standard 应恢复隐式变量。
 - 指针/function pointer、params/scoped 没有 Standard 专用语法。`Int32*` 是名字通配；对真正 int*，Shared 可能按 Cecil 名字得到 Matched，Standard named 查询为 Unknown:AN3001；裸 `*` 仍 Matched。这属于“不支持结构”的三态契约，不能把通配的星号重新解释成指针声明。
 - Standard `+` 保留泛型替换，并按名义闭包含 SZ-array 合成接口：`System.Array+`、`System.Collections.Generic.IEnumerable<int>+` 对 int[] 是 Matched，Shared / Legacy 因数组剥离为 NotMatched。此规则已在 Standard 规范 §12.4 明确；`int+` 命中 int[] 的 Shared 行为也由已批准不剥数组规则替代，不再另要批准。variance 不加入。
 - Shared 的 type cache 按 Scope/文本、method cache 按 MethodDefinition 且静态持有；Standard 使用规范元数据身份、有限编译缓存、adapter 生命周期和卸载约束。缓存隔离、取消、Unknown 传播保留现有 Standard 测试。

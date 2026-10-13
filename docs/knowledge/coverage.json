@@ -83,11 +83,15 @@
         {
           "path": "docs/reviews/2026-10-11-review-followup.md",
           "section": "维护者裁决/H1"
+        },
+        {
+          "path": "docs/reviews/2026-10-13-documentation-feedback.md",
+          "section": "影响范围与证据"
         }
       ],
       "assessment_status": "unassessed",
       "capability_ids": [],
-      "notes": "尚未完整盘点；不代表不支持"
+      "notes": "H1 仍为历史接受风险；本次边界示例未执行该人工损坏输入，不改变真实可达性证据缺口。 说明、执行和范围见 docs/reviews/2026-10-13-documentation-feedback.md；状态仍为 unassessed。"
     },
     {
       "id": "INV-0007",
@@ -96,37 +100,49 @@
         {
           "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
           "section": "3 / 17"
+        },
+        {
+          "path": "docs/reviews/2026-10-13-documentation-feedback.md",
+          "section": "影响范围与证据"
         }
       ],
       "assessment_status": "unassessed",
       "capability_ids": [],
-      "notes": "尚未完整盘点；不代表不支持"
+      "notes": "本次补充 ! ref 邻接和排除语法的失败示例，未完成全部词法与解析诊断盘点。 说明、执行和范围见 docs/reviews/2026-10-13-documentation-feedback.md；状态仍为 unassessed。"
     },
     {
       "id": "INV-0008",
-      "subject": "泛型 arity、变量绑定与作用域",
+      "subject": "泛型元数、变量绑定与作用域",
       "origin_refs": [
         {
           "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
           "section": "13"
+        },
+        {
+          "path": "docs/reviews/2026-10-13-documentation-feedback.md",
+          "section": "影响范围与证据"
         }
       ],
       "assessment_status": "unassessed",
       "capability_ids": [],
-      "notes": "尚未完整盘点；不代表不支持"
+      "notes": "本次补充具体名称零元数与任意元数示例，未完成泛型绑定和作用域全量盘点。 说明、执行和范围见 docs/reviews/2026-10-13-documentation-feedback.md；状态仍为 unassessed。"
     },
     {
       "id": "INV-0009",
-      "subject": "nullable、tuple、指针、函数指针与 custom modifier",
+      "subject": "可空类型、元组、指针、函数指针与自定义修饰符",
       "origin_refs": [
         {
           "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
           "section": "12 / 16"
+        },
+        {
+          "path": "docs/reviews/2026-10-13-documentation-feedback.md",
+          "section": "影响范围与证据"
         }
       ],
       "assessment_status": "unassessed",
       "capability_ids": [],
-      "notes": "尚未完整盘点；不代表不支持"
+      "notes": "本次补充 string/string? 身份及普通指针表示示例，未完成元组、函数指针和自定义修饰符盘点。 说明、执行和范围见 docs/reviews/2026-10-13-documentation-feedback.md；状态仍为 unassessed。"
     },
     {
       "id": "INV-0010",
@@ -135,11 +151,15 @@
         {
           "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
           "section": "6–10"
+        },
+        {
+          "path": "docs/reviews/2026-10-13-documentation-feedback.md",
+          "section": "影响范围与证据"
         }
       ],
       "assessment_status": "unassessed",
       "capability_ids": [],
-      "notes": "尚未完整盘点；不代表不支持"
+      "notes": "本次解释字段/事件声明选择器排除及 params/scoped 边界，未完整评估全部选择器、访问器和生成成员。 说明、执行和范围见 docs/reviews/2026-10-13-documentation-feedback.md；状态仍为 unassessed。"
     },
     {
       "id": "INV-0011",
@@ -161,11 +181,15 @@
         {
           "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
           "section": "15 / 21"
+        },
+        {
+          "path": "docs/reviews/2026-10-13-documentation-feedback.md",
+          "section": "影响范围与证据"
         }
       ],
       "assessment_status": "unassessed",
       "capability_ids": [],
-      "notes": "尚未完整盘点；不代表不支持"
+      "notes": "本次验证环视表达式拒绝；没有据此证明完整正则子集、超时或规范文本边界。 说明、执行和范围见 docs/reviews/2026-10-13-documentation-feedback.md；状态仍为 unassessed。"
     },
     {
       "id": "INV-0013",
@@ -174,11 +198,15 @@
         {
           "path": "docs/superpowers/specs/2026-07-31-aspectn-redesign-design.md",
           "section": "9 / 12 / 13"
+        },
+        {
+          "path": "docs/reviews/2026-10-13-documentation-feedback.md",
+          "section": "影响范围与证据"
         }
       ],
       "assessment_status": "unassessed",
       "capability_ids": [],
-      "notes": "尚未完整盘点；不代表不支持"
+      "notes": "本次验证选定 Reflection 原生类型和中立签名的 65 层深度超限；取消、缓存和生命周期仍待专题盘点。 说明、执行和范围见 docs/reviews/2026-10-13-documentation-feedback.md；状态仍为 unassessed。"
     },
     {
       "id": "INV-0014",
@@ -187,11 +215,15 @@
         {
           "path": "docs/superpowers/specs/2026-07-31-aspectn-redesign-design.md",
           "section": "5 / 14.2 / 16"
+        },
+        {
+          "path": "docs/reviews/2026-10-13-documentation-feedback.md",
+          "section": "影响范围与证据"
         }
       ],
       "assessment_status": "unassessed",
       "capability_ids": [],
-      "notes": "尚未完整盘点；不代表不支持"
+      "notes": "本次新增反射类型/方法查找示例并修订通用匹配定位；没有修改库公开 API、包依赖或兼容支持承诺。 说明、执行和范围见 docs/reviews/2026-10-13-documentation-feedback.md；状态仍为 unassessed。"
     },
     {
       "id": "INV-0015",
@@ -200,19 +232,23 @@
         {
           "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
           "section": "12"
+        },
+        {
+          "path": "docs/reviews/2026-10-13-documentation-feedback.md",
+          "section": "影响范围与证据"
         }
       ],
       "assessment_status": "unassessed",
       "capability_ids": [],
-      "notes": "尚未完整盘点；不代表不支持"
+      "notes": "本次解释数组关系不等同完整 CLR 协变；尚未全面盘点名称、嵌套、程序集、转发与名义关系。 说明、执行和范围见 docs/reviews/2026-10-13-documentation-feedback.md；状态仍为 unassessed。"
     },
     {
       "id": "INV-0016",
-      "subject": "async、iterator、partial、源码与 PE",
+      "subject": "async、迭代器、partial、源码与 PE",
       "origin_refs": [
         {
           "path": "docs/language/metadata-availability.md",
-          "section": "Roslyn source mapping"
+          "section": "Roslyn 源码映射"
         }
       ],
       "assessment_status": "unassessed",

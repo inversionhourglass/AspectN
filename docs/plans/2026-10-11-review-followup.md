@@ -1,73 +1,73 @@
-# Review follow-up implementation plan
+# 审查跟进实施计划
 
-> **Execution workflow:** Apply executing-plans and test-driven-development, with independent review before completing each batch.
+> **执行流程：** 使用 executing-plans 和 test-driven-development，每批完成前独立审查。
 
-**Goal:** Repair the accepted REVIEW.md findings and record the maintainer's decisions in task-scoped local commits.
+**目标：** 修复已接受的 REVIEW.md 发现，按任务本地提交并记录维护者裁决。
 
-**Architecture:** Preserve the backend-neutral core and existing adapter boundaries. Fix each adapter's query behavior and diagnostics, keep constructor shape matching, require adjacent `!ref`, and remove test output-layout assumptions.
+**架构：** 保留中立核心及适配器边界，修正各后端查询/诊断，保留构造器形状匹配，要求 !ref 邻接，移除测试产物布局假设。
 
-**Tech Stack:** C#, xUnit, FsCheck, Mono.Cecil, Roslyn, Reflection, MSBuild, GitHub Actions.
+**技术栈：** C#、xUnit、FsCheck、Mono.Cecil、Roslyn、Reflection、MSBuild、GitHub Actions。
 
-## Scope and decisions
+## 范围与裁决
 
-- M1 is already addressed by `07fea5c`; L2 by `9309bcc`. Do not redo either change.
-- H1: maintainer decides not to fix. Mapper inputs must contain required ReturnType/ElementType information. Keep exceptions for incomplete graphs; do not introduce Unsupported/Unknown fallback or improve exception messages in this task. Reassess only with an actual assembly reproduction; this is not a merge blocker.
-- L7: retain constructor and static-constructor shape matching. Document its distinction from literal declaring-type member paths and add matching regressions.
-- L8: `!ref` requires adjacency.
-- M5 is a false positive: NuGet selects a symbol upload endpoint. Simplify redundant package enumeration without treating it as a publication blocker.
-- L6 is a hash quality/allocation improvement; L15 is a generator invariant test, retained alongside stronger long-input parser fuzz coverage.
-- Work in the existing checkout. Preserve untracked REVIEW.md and nul. Do not push, publish, or modify adjacent repositories.
+- M1 已由 07fea5c 修复，L2 已由 9309bcc 修复，不重复处理。
+- H1：维护者决定不修复。映射输入必须含 ReturnType/ElementType。对不完整图保留异常，不引入 Unsupported/Unknown 回退，本任务不改异常文案。有真实程序集复现才重评估，不阻塞合并。
+- L7：保留实例/静态构造器形状匹配，说明与字面声明类型成员路径的区别，并加匹配回归。
+- L8：!ref 要求邻接。
+- M5 是误报：NuGet 选择符号上传端点；简化重复枚举，不当作发布阻塞。
+- L6 是哈希质量/分配改进；L15 是生成器不变量测试，与更强长输入模糊测试并存。
+- 在现有检出工作，保留未跟踪 REVIEW.md/nul，不推送、发布或修改相邻仓库。
 
-## Batch 1: adapter query correctness (M2, M3, M4, L3, L4, L5)
+## 批次 1：适配器查询正确性（M2、M3、M4、L3、L4、L5）
 
-Files: CecilTypeSystem.cs, CecilSignatureMapper.cs, Internal/CecilResolver.cs, RoslynTypeSystem.cs, ReflectionTypeSystem.cs and focused adapter regression tests.
+文件：CecilTypeSystem.cs、CecilSignatureMapper.cs、Internal/CecilResolver.cs、RoslynTypeSystem.cs、ReflectionTypeSystem.cs 及聚焦适配器回归。
 
-1. Add regressions for wrapper attributes, detached generic constraints, unreadable Roslyn siblings and resolution diagnostics, cancelled closure fast paths, and preserved Reflection uncertainty.
-2. Run the focused tests and record expected failures before production edits.
-3. Return no direct type attributes for array/pointer/function-pointer/pinned/sentinel shapes, retaining named generic behavior.
-4. Use the live Cecil adapter module for implicit generic roots when a parameter's module is absent; do not resolve detached reference owners, and preserve Unknown/AN3004 for unavailable declarations.
-5. Catch recoverable Roslyn symbol failures per queued node, preserve known sibling branches, use AN3004, and check cancellation before closure fast paths.
-6. Preserve `unresolved ?? MissingNativeReference(candidate)` in Reflection.
-7. Run all affected adapter suites, including same-source Cecil.Fody, then commit.
+1. 添加包装特性、脱离关联泛型约束、不可读 Roslyn 兄弟分支/解析诊断、取消闭包快速路径、Reflection 不确定性保留回归。
+2. 生产修改前聚焦运行并记录预期失败。
+3. 数组/指针/函数指针/pinned/sentinel 不返回直接类型特性，保留有名泛型行为。
+4. 形参无模块时，隐式泛型根使用活动 Cecil 模块；不解析脱离关联引用声明者；不可用声明保留 Unknown/AN3004。
+5. Roslyn 每个队列节点捕获可恢复失败，保留已知兄弟分支，使用 AN3004，在闭包快速路径前检查取消。
+6. Reflection 保留 `unresolved ?? MissingNativeReference(candidate)`。
+7. 运行全部受影响套件，含同源码 Cecil.Fody，再提交。
 
-## Batch 2: parsing and language contract (L1, L7, L8, L9)
+## 批次 2：解析与语言契约（L1、L7、L8、L9）
 
-Files: Lexer.cs, SelectorParser.cs, parser/constructor regression tests, language spec and design decisions.
+文件：Lexer.cs、SelectorParser.cs、解析器/构造器回归、规范和设计决策。
 
-1. Add failures proving invalid `\\c` must preserve the selector delimiter and subsequent OR, while valid control escapes stay legal; add spaced `! ref` rejection.
-2. Add positive constructor/cctor tasklike shape tests plus literal declaring-type member path tests.
-3. Consume a third regex escape character only for legal control characters; check span adjacency for member ref negation.
-4. Document constructor shape matching, strict `!ref`, and Rougamo filtering after matching.
-5. Run core and relevant conformance tests, then commit.
+1. 添加失败证明：无效 \\c 必须保留选择器分隔符和后续 OR，合法控制转义仍允许；拒绝带空白 ! ref。
+2. 添加实例/静态构造器 tasklike 形状及字面声明类型成员路径正向测试。
+3. 只对合法控制字符消费正则转义第三字符；检查成员引用否定跨度邻接。
+4. 说明构造器形状、严格 !ref 和 Rougamo 匹配后过滤。
+5. 核心及相关一致性测试，再提交。
 
-## Batch 3: identity hash (L6)
+## 批次 3：身份哈希（L6）
 
-Files: Metadata/TypeIdentity.cs and identity regression tests.
+文件：Metadata/TypeIdentity.cs 及身份回归。
 
-1. Add regression for reversed containing chains and a warmed-up allocation check.
-2. Run to demonstrate current order-insensitive hashes and allocations.
-3. Fold local hashes in chain order with multiplication, without a Stack allocation.
-4. Run identity/core tests and commit.
+1. 添加反向包含链回归及预热分配检查。
+2. 运行，证明当前哈希忽略顺序且发生分配。
+3. 按链顺序乘法折叠局部哈希，不分配 Stack。
+4. 身份/核心测试并提交。
 
-## Batch 4: conformance and fuzz coverage (L10, L11, L12, L13, L15)
+## 批次 4：一致性与模糊覆盖（L10、L11、L12、L13、L15）
 
-Files: ReviewFixture.cs, CustomAttributeRecordTests.cs, MappingDepthTests.cs, conformance project file, RoslynSignatureMapper.cs and focused fixture/fuzz tests.
+文件：ReviewFixture.cs、CustomAttributeRecordTests.cs、MappingDepthTests.cs、一致性项目、RoslynSignatureMapper.cs 及聚焦测试。
 
-1. Add private/internal method mapping regressions; verify current helper failures.
-2. Enable all metadata imports and all relevant Reflection member visibility flags.
-3. Extend return and declaring-type attribute comparisons to Roslyn PE. The added assertion exposed a hidden readonly-return CA record; restore it from Roslyn's CA-backed ref classification, and verify PE images with and without the actual record.
-4. Copy the probe's runnable output and dependencies into test output at build time; resolve from AppContext.BaseDirectory. Verify the existing isolated-process cases from both default and relocated outputs.
-5. Retain the bounded generator invariant and add bounded-count long Unicode parser cases with termination/span assertions.
-6. Run conformance/core tests, then commit.
+1. 添加 private/internal 方法映射回归，核验当前辅助方法失败。
+2. 启用全部元数据导入及相关 Reflection 成员可见性标志。
+3. 返回/声明类型特性比较扩展到 Roslyn PE；断言暴露隐藏 readonly 返回 CA，从 CA 支持的引用分类恢复，核验含/不含实际记录的 PE。
+4. 构建时复制可运行探针及依赖到测试输出，从 AppContext.BaseDirectory 解析；默认和迁移输出均验证隔离案例。
+5. 保留有界生成器不变量，增加有界数量长 Unicode 解析案例，断言终止和跨度。
+6. 一致性/核心测试，再提交。
 
-## Batch 5: release flow and outcome record (M5, L14)
+## 批次 5：发布流程与结果记录（M5、L14）
 
-Files: .github/workflows/release.yml and docs/reviews/2026-10-11-review-followup.md.
+文件：.github/workflows/release.yml、docs/reviews/2026-10-11-review-followup.md。
 
-1. Add per-tag concurrency with `cancel-in-progress: false` and enumerate nupkg only for publication, preserving symbol signing/verification.
-2. Inspect the final YAML and record all dispositions, tests, and commit evidence.
-3. Run `dotnet build AspectN.sln -c Release --no-restore`, `dotnet test AspectN.sln -c Release --no-build --no-restore`, and `dotnet format AspectN.sln --verify-no-changes --no-restore`.
-4. Request independent code review under requesting-code-review; repair material findings and rerun affected checks.
-5. Commit release changes and the completion record. Verify only original untracked files remain.
+1. 按标签并发，cancel-in-progress: false；只为发布枚举 nupkg，保留符号签名/验证。
+2. 核验最终 YAML，记录全部处置、测试和提交证据。
+3. 运行 dotnet build AspectN.sln -c Release --no-restore、dotnet test AspectN.sln -c Release --no-build --no-restore、dotnet format AspectN.sln --verify-no-changes --no-restore。
+4. 按 requesting-code-review 独立审查，修复实质发现并重跑受影响检查。
+5. 提交发布改动和完成记录，确认只剩原未跟踪文件。
 
-The user has approved implementation and batched commits in this chat; execute without further design approval or checkpoint pauses.
+当时用户已在会话批准实施及分批提交，执行无需额外设计批准或检查点暂停。

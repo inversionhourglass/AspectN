@@ -1,77 +1,77 @@
-# Final Review Remediation Implementation Plan
+# 最终审查修复实施计划
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **面向 Claude 的原执行说明：** 必须使用 superpowers:executing-plans，逐项执行本计划。
 
-**Goal:** Repair the verified review findings and implement the maintainer-approved contracts, with regression evidence and separate local commits.
+**目标：** 修复已核实发现，实施维护者批准的契约，保留回归证据并分批本地提交。
 
-**Architecture:** Keep the Standard language and backend-neutral public model. Normalize resolved type identity, expose only real custom attributes, enforce ordered parameter positions, and map native type graphs iteratively without introducing a new depth or binding budget.
+**架构：** 保留 Standard 及中立公共模型。归一已解析类型身份，只公开真实自定义特性，强制参数声明顺序，迭代映射原生类型图，不引入新深度或绑定预算。
 
-**Tech Stack:** C#, .NET 10/netstandard2.0/net472, xUnit/FsCheck, Mono.Cecil, Roslyn, Reflection, PowerShell.
+**技术栈：** C#、.NET 10/netstandard2.0/net472、xUnit/FsCheck、Mono.Cecil、Roslyn、Reflection、PowerShell。
 
-## Approved design and scope
+## 已批准设计与范围
 
-The maintainer approved the recommended directions on 2026-10-09 and authorized implementation and task-scoped local commits. Use the existing checkout. Preserve all existing untracked files; do not stage the four review reports or `nul`. Do not push, publish, modify adjacent repositories, or change release/environment approval policy.
+维护者于 2026-10-09 批准建议方向、实施及任务级本地提交。在现有检出工作。保留全部未跟踪文件，不暂存四份审查报告或 nul。不推送、发布、修改相邻仓库，也不改变发布/环境批准策略。
 
-- `attr` consumes actual CustomAttribute entries. Interop attributes encoded as flags and runtime pseudo attributes are excluded consistently, including Roslyn source symbols. Arrays do not inherit element attributes.
-- Named type identity uses the resolved definition assembly when available; unresolved references retain their reference assembly identity.
-- Method/property parameter lists use declaration order, with `Position == index`; malformed lists are rejected, never silently reordered.
-- Consecutive nullable suffixes are invalid; valid nested nullable uses remain supported.
-- Identifier categories follow the C# Unicode category profile, including Nl; do not expand to UAX #31 Other_ID_Start or add escaped-name syntax.
-- Binding alternative budgets remain deferred. Preserve meaningful bounded regressions and explicitly document growth with distinct bindings.
-- Adapter mapping uses explicit work stacks, retaining existing cache/native associations and lifetime contracts. Do not impose a new native shape limit.
-- Reflection's previously approved open constraint context boundary remains unchanged.
+- attr 消费真实 CustomAttribute 项。互操作标志及运行时伪特性一致排除，Roslyn 源码符号也如此；数组不继承元素特性。
+- 有名类型可解析时使用定义程序集身份，否则保留引用程序集身份。
+- 方法/属性参数列表按声明顺序，Position == index；拒绝损坏列表，不默默重排。
+- 连续可空后缀无效，合法嵌套可空使用仍支持。
+- 标识符采用 C# Unicode 类别范围，含 Nl；不扩充 UAX #31 Other_ID_Start 或转义名语法。
+- 绑定备选预算仍后置，保留有意义有界回归，明确说明不同绑定的增长。
+- 适配器映射使用显式工作栈，保留缓存/原生关联及生命周期契约，不添加新原生形状上限。
+- Reflection 此前批准的开放约束上下文边界不变。
 
-## Batch 1: Core language and public contract
+## 批次 1：核心语言及公共契约
 
-Files: `src/AspectN/Parsing/TypePatternParser.cs`, `Lexer.cs`, `SelectorParser.cs`, `src/AspectN/Binding/Binder.cs`, `src/AspectN/Evaluation/TypePatternEvaluator.cs`, `src/AspectN/Metadata/MethodSignature.cs`, `PropertySignature.cs`, `GenericParameterSignature.cs`, `src/AspectN/AspectNCompilation.cs`, relevant core tests/public API baselines, language specification.
+文件：`src/AspectN/Parsing/TypePatternParser.cs`、Lexer.cs、SelectorParser.cs、`src/AspectN/Binding/Binder.cs`、`src/AspectN/Evaluation/TypePatternEvaluator.cs`、`src/AspectN/Metadata/MethodSignature.cs`、PropertySignature.cs、GenericParameterSignature.cs、`src/AspectN/AspectNCompilation.cs`，相关核心测试/公共 API 基线及语言规范。
 
-1. Add regression tests for standalone `!ref`, repeated nullable suffixes, Nl identifiers, open Nullable equivalence, invalid parameter positions, and nullable TryGet consumption. Run focused tests and record the intended failures.
-2. Add the missing parser guard, reject nested direct nullable suffix nodes with AN2010, recognize the C# identifier category profile, use effective Nullable arguments, validate copied parameter lists, and annotate successful TryGet results. Clarify the flattened generic parameter slot contract.
-3. Run core tests, solution build, and formatting. Request independent review and resolve actionable findings.
-4. Commit the batch as `fix(core): enforce language and signature contracts`.
+1. 添加独立 !ref、重复可空后缀、Nl 标识符、开放 Nullable 相等、无效参数位置、可空 TryGet 消费回归。聚焦运行并记录预期失败。
+2. 补解析保护，以 AN2010 拒绝直接嵌套可空后缀节点；识别 C# Unicode 类别，使用有效 Nullable 实参，核验复制参数列表，标注 TryGet 成功结果，说明展开的泛型槽契约。
+3. 核心测试、解决方案构建、格式及独立审查，解决可执行发现。
+4. 提交 fix(core): enforce language and signature contracts。
 
-## Batch 2: Cecil identities, metadata failures and relationship queries
+## 批次 2：Cecil 身份、元数据失败与关系查询
 
-Files: `src/AspectN.Cecil/Internal/CecilTypeMapper.cs`, `CecilResolver.cs`, `src/AspectN.Cecil/CecilSignatureMapper.cs`, `src/AspectN.Reflection/ReflectionTypeSystem.cs`, Cecil/Reflection/conformance tests, identity/availability documents.
+文件：`src/AspectN.Cecil/Internal/CecilTypeMapper.cs`、CecilResolver.cs、`src/AspectN.Cecil/CecilSignatureMapper.cs`、`src/AspectN.Reflection/ReflectionTypeSystem.cs`，Cecil/Reflection/一致性测试及身份/可用性文档。
 
-1. Add ordinary SDK/ref-pack reference identity, damaged InterfaceImpl TypeSpec, array element attribute isolation, and legal `I<int*[]>`/`I<int[]>` relation regressions. Confirm each fails before implementation.
-2. Normalize resolvable assembly identities, protect node expansion with recoverable-failure diagnostics, isolate array declaration attributes, and defer Unknown until all known relation branches are considered.
-3. Run Cecil, linked Fody, Reflection and conformance tests; format and request independent review.
-4. Commit as `fix(adapters): preserve neutral identities and relation evidence`.
+1. 添加普通 SDK/ref-pack 引用身份、损坏 InterfaceImpl TypeSpec、数组元素特性隔离及合法 `I<int*[]>`/`I<int[]>` 关系回归，先确认失败。
+2. 归一可解析程序集身份，节点展开保护附可恢复失败诊断，隔离数组声明特性；全部已知关系分支处理后才决定 Unknown。
+3. Cecil、链接 Fody、Reflection、一致性测试，格式及独立审查。
+4. 提交 fix(adapters): preserve neutral identities and relation evidence。
 
-## Batch 3: Real attributes and Reflection metadata
+## 批次 3：真实特性与 Reflection 元数据
 
-Files: Reflection/Roslyn signature mappers, shared adapter-only attribute policy if needed, Reflection type system, relevant mapper/conformance fixtures/tests, attribute/availability documents.
+文件：Reflection/Roslyn 映射器、必要的适配器共享特性策略、Reflection 类型系统、相关测试/测试程序集及特性/可用性文档。
 
-1. Add source/PE/Cecil/Reflection parity for out/in/optional and explicit pseudo attributes, ordinary marker attributes, nested pointers, arity names without suffixes, and detached by-ref availability. Verify red outcomes.
-2. Filter metadata-flag pseudo attributes consistently without removing true attribute blobs, preserve by-reference facts without guessing classification, canonicalize pointers, recover own generic arity, and report read failures as AN3004.
-3. Run adapter/conformance tests, netstandard build, format and independent review.
-4. Commit as `fix(adapters): align custom attributes and reflection metadata`.
+1. 添加源码/PE/Cecil/Reflection 的 out/in/optional、显式伪特性、普通标记、嵌套指针、无后缀元数名、脱离关联引用可用性一致性测试，确认红。
+2. 一致过滤元数据标志伪特性但保留真实记录；保留引用形状不猜分类；规范化指针、恢复自身元数，读取失败用 AN3004。
+3. 适配器/一致性测试、netstandard 构建、格式及独立审查。
+4. 提交 fix(adapters): align custom attributes and reflection metadata。
 
-## Batch 4: Iterative native type mapping
+## 批次 4：迭代原生类型映射
 
-Files: all three signature mappers, native type caches/keys as necessary, `src/Shared` adapter-only work-stack support if warranted, depth and lifetime tests.
+文件：三个签名映射器、必要原生缓存/键、必要 src/Shared 工作栈支持、深度及生命周期测试。
 
-1. Add deep array/generic/containing-type mapping regressions using isolated processes where stack overflow would kill the test host. Preserve ordinary nested generic identity, shared graph cache reuse, and collectible/module lifetime tests.
-2. Replace recursive shape and containing identity mapping with explicit dependency stacks; retain backend normalization, stable references, weak Reflection cache semantics and locking. Check that cache-key generation does not reintroduce native recursion.
-3. Run mapping, lifetime, Fody and conformance suites and independent review. Validate that deep mapping succeeds and the existing Match guard still returns AN3005.
-4. Commit as `refactor(adapters): map native type graphs iteratively`.
+1. 对深数组/泛型/包含链添加回归，可能栈溢出杀宿主时用隔离进程。保留普通嵌套身份、共享图缓存复用、可回收/模块生命周期测试。
+2. 用显式依赖栈替代递归形状/包含身份映射，保留后端归一、稳定引用、Reflection 弱缓存和锁；确认缓存键不会重引入递归。
+3. 运行映射/生命周期/Fody/一致性及独立审查。确认深映射成功，已有 Match 保护仍返回 AN3005。
+4. 提交 refactor(adapters): map native type graphs iteratively。
 
-## Batch 5: Coverage and engineering follow-up
+## 批次 5：覆盖及工程跟进
 
-Files: conformance missing-ancestor fixture/helper and attribute snapshot filter, binding alternative tests, `eng/verify-packages.ps1`, `.github/workflows/ci.yml`, README, language/resource documentation, small verified test/spec naming fixes.
+文件：一致性缺失祖先测试/辅助方法、特性快照过滤、绑定备选测试、eng/verify-packages.ps1、.github/workflows/ci.yml、README、语言/资源文档，以及小型已核实测试/规范命名修正。
 
-1. Repair misleading Reflection fallback coverage and empty Review attribute snapshots with tests that distinguish native input from detached input and verify actual attribute fields.
-2. Fix the package consumer's literal backtick, assert the intended owner ID, and exercise TryGet guarded consumption. Main CI default dependency versions come from CPM; preserve explicit alternative matrices. Do not change release approval/gates.
-3. Document Windows full-matrix requirements, distinct-binding resource growth, mapping guard scope and approved contracts; fix duplicate specification numbering and clearly inaccurate test names.
-4. Run full restore/build/test/format, both supported adapter dependency lanes, local package/consumer validation and independent final review.
-5. Commit as `test: close review coverage and consumer validation gaps` (split docs/CI into an additional scoped commit if clearer).
+1. 纠正误导性 Reflection 回退覆盖和空 Review 特性快照，测试区分原生输入与脱离关联输入，并验证真实字段。
+2. 修正程序包使用方字面反引号，断言预期声明者 ID，执行 TryGet 保护消费。主 CI 默认版本来自 CPM，保留显式替代矩阵，不改发布批准/闸门。
+3. 说明 Windows 完整矩阵、不同绑定资源增长、映射保护范围及批准契约；修正规范重复编号和明显错误测试名称。
+4. 完整还原/构建/测试/格式、两个支持依赖分支、本地包/使用方及独立最终审查。
+5. 提交 test: close review coverage and consumer validation gaps；更清楚时将文档/CI 单独提交。
 
-## Validation and execution evidence
+## 验证与执行证据
 
-Save red/green and review evidence under ignored `artifacts/final-review-remediation/`. Keep this plan's completion section current. Use exact path staging for every commit.
+红/绿及审查证据保存到忽略目录 artifacts/final-review-remediation/，更新本计划完成节。每次提交精确指定路径。
 
-Final commands:
+最终命令：
 
 ```text
 dotnet restore AspectN.sln
@@ -84,12 +84,12 @@ dotnet test tests/AspectN.Conformance.Tests/AspectN.Conformance.Tests.csproj -c 
 eng/verify-packages.ps1 -PackageDirectory artifacts/final-review-remediation/packages-after-owner
 ```
 
-Restore/build the default solution after alternative-version lanes before package validation, so their shared bin/obj outputs cannot create misleading version conflicts.
+替代版本分支后，包验证前还原/构建默认解决方案，避免共享 bin/obj 产生误导版本冲突。
 
-## Completion
+## 完成
 
-- [x] Batch 1: core contracts — 21 initial failures plus 3 nested `!ref` failures confirmed; full solution 1,301 tests passed, Release build 0 warnings/errors, format passed (workspace-load warning only). Independent read-only review passed, including netstandard nullable consumer compilation.
-- [x] Batch 2: identities / metadata / relations — five intended regressions reproduced; added unresolved-scope fallback coverage. Full solution 1,312 tests passed, Release build 0 warnings/errors; independent read-only review passed.
-- [x] Batch 3: attributes / Reflection metadata — initial six failures reproduced; eight CA/pointer conformance cases cover true blobs alongside flags and embedded old-framework markers. Full solution 1,322 tests passed; Release build and format passed. Independent review's two P2 findings were fixed and re-reviewed successfully.
-- [x] Batch 4: iterative mapping — five deep-shape failures and two deep-pointer failures reproduced in isolated small-stack processes. Thirteen initial deep mapping / legacy ambiguity cases plus no-suffix generic pointer regression pass; full solution 1,337 tests passed. Independent review's two P2 findings and weak-cache keep-alive suggestion were resolved and re-reviewed successfully. Follow-up review reproduced native Scope/FullName recursion at 8,192 reference-owner levels (1,024/2,048 passed): iterative metadata scope and native-format owner text remove those paths while preserving reference-local module fallback. Fifteen depth probes and byte-for-byte owner text/context checks cover the supplement.
-- [x] Batch 5: coverage / engineering / final gates — parser/attribute snapshot regressions reproduced before repair; missing-dependency Reflection coverage now identifies native materialization failure separately from detached capability loss. Final default full solution: 1,379 passed, 0 failed/skipped (automatically summed across eight test legs); Release build 0 warnings/errors; format passed with workspace-load warning only. Supported Cecil 0.11.6 / Roslyn 5.6.0 lanes passed 130 / 22 tests, combined conformance 179 including all fifteen small-stack probes. Final source packages validated five packages, two dependency groups and ten net472/net10.0 consumer builds/runs. Independent read-only review and the owner-module supplement re-review passed. Issue 8 remains deferred; release workflow unchanged.
+- [x] 批次 1：核心契约。确认 21 个初始失败及 3 个嵌套 !ref 失败；完整 1,301 通过，Release 零警告/错误，格式通过（仅工作区加载提示）。独立只读审查通过，含 netstandard 可空使用方编译。
+- [x] 批次 2：身份/元数据/关系。复现五项预期回归，补未解析作用域回退。完整 1,312 通过，Release 零警告/错误，独立审查通过。
+- [x] 批次 3：特性/Reflection。复现初始六项失败；八项 CA/指针案例覆盖标志旁真实记录及旧框架内嵌标记。完整 1,322 通过，Release/格式通过；审查两项 P2 修复并复核通过。
+- [x] 批次 4：迭代映射。小栈隔离进程复现五个深形状和两个深指针失败。十三个初始深映射/旧歧义案例和无后缀泛型指针回归通过，完整 1,337 通过。审查两项 P2 及弱缓存保活建议修复并复核。后续在 8,192 引用声明者层级复现 Scope/FullName 递归（1,024/2,048 通过），迭代作用域/原生声明者格式移除路径，保留引用局部模块回退。十五个深度探针及逐字节声明者文本/上下文检查覆盖补充。
+- [x] 批次 5：覆盖/工程/最终闸门。修复前复现解析器/特性快照失败；缺失依赖 Reflection 覆盖明确区分原生创建失败与脱离关联能力缺失。默认完整 1,379 通过，零失败/跳过（八分支自动求和），Release 零警告/错误，格式仅工作区加载提示。Cecil 0.11.6/Roslyn 5.6.0 分别 130/22 通过，联合一致性 179（含十五个小栈探针）。最终源码包验证五包、两依赖组及十个 net472/net10.0 使用方构建/运行。独立审查及声明者模块补充复核通过。问题 8 仍后置，发布流程不变。

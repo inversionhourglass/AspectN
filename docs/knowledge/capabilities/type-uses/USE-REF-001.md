@@ -15,7 +15,7 @@
     },
     {
       "path": "docs/language/metadata-availability.md",
-      "section": "By-reference shape / Reflection bare Type"
+      "section": "引用形状 / Reflection 裸 Type"
     }
   ],
   "scenarios": [
@@ -33,7 +33,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261012-001"
+        "EV-20261012-001", "EV-20261013-002"
       ],
       "unverified_notes": ""
     },
@@ -51,7 +51,7 @@
         "automated"
       ],
       "evidence_ids": [],
-      "unverified_notes": "执行报告和适用性尚未登记；不外推其他环境或输入"
+      "unverified_notes": "EV-20261013-001 已验证裸 Type 的 ByReference 已知、RefKind 不可用；尚未验证消费精确分类时的完整三态行为"
     },
     {
       "id": "S3",
@@ -99,7 +99,7 @@
         "automated"
       ],
       "evidence_ids": [],
-      "unverified_notes": "执行报告和适用性尚未登记；不外推其他环境或输入"
+      "unverified_notes": "EV-20261013-001 仅补充有效 out/ref 成员和省略/精确/否定注解的示例；readonly/location 标记等完整分类仍未登记验证"
     },
     {
       "id": "S6",
@@ -220,5 +220,7 @@ method(* Service.Get(ref int))：Ref 满足、None 不满足。!ref int 对 Ref 
 ## 关联与缺口
 
 核心 ref 维度已定位证据；原生成员、裸 Type 缺事实及 Fody 场景须分别执行验证。
+
+[边界示例](../../../usage/examples/MatchingBoundaries/Program.cs)和[新增证据](../../../reviews/evidence/EV-20261013-001.json)补充裸 Type 的映射事实、有效 out/ref 成员及部分表达式结果。S2 的缺事实三态求值与 S5 的完整 readonly 分类尚未覆盖，两者仍为 unverified。
 
 INVCANCEL 的 N/A 已由非作者按选定入口核验；其余适用性检查仍待核。[审查记录](../../../reviews/2026-10-12-documentation-pilot.md)保留范围与结果。

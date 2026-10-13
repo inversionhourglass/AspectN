@@ -15,7 +15,7 @@
     },
     {
       "path": "docs/language/array-shape.md",
-      "section": "Array shape"
+      "section": "数组形状"
     }
   ],
   "scenarios": [
@@ -33,7 +33,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261012-002"
+        "EV-20261012-002", "EV-20261013-003"
       ],
       "unverified_notes": ""
     },
@@ -51,7 +51,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261012-002"
+        "EV-20261012-002", "EV-20261013-003"
       ],
       "unverified_notes": ""
     },
@@ -69,7 +69,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261012-002"
+        "EV-20261012-002", "EV-20261013-003"
       ],
       "unverified_notes": ""
     },
@@ -82,12 +82,12 @@
       "target": "working-tree",
       "expected_behavior": "标准 DSL 不增加 [*] 形状语法，输入不能成功编译",
       "contract_status": "excluded",
-      "verification_status": "unverified",
+      "verification_status": "verified",
       "verification_methods": [
         "automated"
       ],
-      "evidence_ids": [],
-      "unverified_notes": "该排除有正式规范依据，本轮没有单独执行 int[*] 的诊断断言",
+      "evidence_ids": ["EV-20261013-001"],
+      "unverified_notes": "",
       "exclusion": {
         "reason_code": "dsl_not_expressible",
         "reason": "DSL 按 rank 匹配；CLI Shape 独立保存在模型，不增加另一套模式语法或 regex selector",
@@ -98,10 +98,10 @@
           },
           {
             "path": "docs/language/array-shape.md",
-            "section": "Standard type patterns"
+            "section": "Standard 类型模式"
           }
         ],
-        "failure_behavior": "编译产生诊断而无有效模式；具体诊断需运行相应解析测试确认"
+        "failure_behavior": "编译产生诊断而无有效模式；新增示例验证该失败形态，没有固定具体诊断码"
       }
     }
   ],
@@ -203,5 +203,7 @@ int[]→int[*] 为 Matched，int[*]→int[] 为 NotMatched；AreEqual 区别两�
 ## 关联与缺口
 
 Fody、Roslyn source 数组及资源/取消专门场景不在本轮 IL fixture 证据内。
+
+[新增边界证据](../../../reviews/evidence/EV-20261013-001.json)直接验证 S4 的 `int[*]` 编译失败，因此仅将 S4 更新为 verified。其 Reflection 数组形状、方向和协变对比是运行时类型示例，不能替代 S1–S3 的同一 IL fixture，也不外推其他环境。
 
 不变量适用性初始待核，核验主体须为非作者。

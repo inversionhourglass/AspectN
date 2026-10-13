@@ -21,7 +21,7 @@
 | 场景 | 适配器 | 原生输入 |
 | --- | --- | --- |
 | 离线程序集元数据 | AspectN.Cecil | ModuleDefinition / TypeReference / MethodReference |
-| Fody weaver | AspectN.Cecil.Fody | FodyHelpers 使用的 Cecil 身份 |
+| Fody 织入器 | AspectN.Cecil.Fody | FodyHelpers 使用的 Cecil 身份 |
 | 编译期分析 | AspectN.Roslyn | Compilation 与类型/成员符号 |
 | 已加载运行时对象 | AspectN.Reflection | Type / MethodBase / PropertyInfo |
 

@@ -29,15 +29,15 @@
 | callable(* Example.Service.*(..)) | 可调用成员，含访问器/运算符等 |
 | execution(* Example.Service.*(..)) | 还包括构造器 |
 | attr(call Example.MarkerAttribute) | 直接方法目标属性 |
-| System.Collections.Generic.IEnumerable<string>+ | 声明的类型关系模式 |
+| `System.Collections.Generic.IEnumerable<string>`+ | 声明的类型关系模式 |
 
 选择器/属性/regex 尚未逐能力建档，精确定义依[规范 §6–15](../superpowers/specs/2026-07-31-aspectn-language-spec.md)，不按示例猜测全部适用域。
 
 ## 泛型
 
-模式变量要写 $T，例如 method($T Converter.Convert<$T>($T))。省略 generic clause 对普通名字要求 arity=0；Name<?> 才是不限定 arity，裸 * 有单独规则。模式变量与 CLR 声明形参身份不同。
+模式变量要写 $T，例如 method($T `Converter.Convert<$T>`($T))。省略 generic clause 对普通名字要求 arity=0；`Name<?>` 才是不限定 arity，裸 * 有单独规则。模式变量与 CLR 声明形参身份不同。
 
-Owner<string>.M<V> 与 Owner<int>.M<V> 中 V 的声明可相同，但有效约束查询上下文不同；同名不同程序集或不同重载不能按显示名称合并。详见[泛型身份](../knowledge/capabilities/generics/GEN-IDENTITY-001.md)。
+`Owner<string>`.`M<V>` 与 `Owner<int>`.`M<V>` 中 V 的声明可相同，但有效约束查询上下文不同；同名不同程序集或不同重载不能按显示名称合并。详见[泛型身份](../knowledge/capabilities/generics/GEN-IDENTITY-001.md)。
 
 ## ref 和数组
 

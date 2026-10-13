@@ -86,7 +86,7 @@ Reflection 的 netstandard2.0 资产已分别在 .NET 7.0.20 和 .NET 10.0.12 �
 | M7 | Reset 明确为前瞻 seek，保留累计诊断；未发现所述污染主词法器的可达路径。 |
 | M8 | 整数词法使用 ASCII 数字，与解析和规范一致。 |
 | M9 | 反斜杠后真实换行停止字符串扫描并诊断，不再跨物理行继续吞输入。 |
-| M10 | 规范明确括号仅作 Boolean 分组、tuple 至少两项，tasklike<System.Void> 与 void 一致；保留已确认语义。 |
+| M10 | 规范明确括号仅作 Boolean 分组、tuple 至少两项，`tasklike<System.Void>` 与 void 一致；保留已确认语义。 |
 | M11 | 已修复现代和 netstandard 反射桥的 modified parameter/function-pointer conventions 读取。managed/unmanaged、cdecl/stdcall 及额外约定统一 canonical；旧运行时用 MVID/token 后缀区分声明，不伪造 managed。 |
 | M12 | IsAsync 统一表示编译器异步方法，包括迭代器；Roslyn source 和 PE 标记、Cecil、Reflection 四视图有回归。tasklike 仍只匹配返回形状。 |
 | M13 | 入库 emitted IL 证明 Roslyn PE 没有 RaiseMethod 事实时仍是 OrdinaryMethod，Cecil/Reflection 为 EventRaiser。明确后端边界，禁止按名字猜。 |

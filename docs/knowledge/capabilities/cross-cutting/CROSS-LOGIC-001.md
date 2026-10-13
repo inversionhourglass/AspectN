@@ -15,7 +15,7 @@
     },
     {
       "path": "docs/superpowers/specs/2026-07-31-aspectn-redesign-design.md",
-      "section": "16 Public API Direction"
+      "section": "16 公共 API 方向"
     }
   ],
   "scenarios": [
@@ -33,7 +33,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261012-001"
+        "EV-20261012-001", "EV-20261013-002"
       ],
       "unverified_notes": ""
     },
@@ -51,7 +51,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261012-001"
+        "EV-20261012-001", "EV-20261013-002"
       ],
       "unverified_notes": ""
     }

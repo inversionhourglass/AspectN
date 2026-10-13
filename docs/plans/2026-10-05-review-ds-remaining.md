@@ -1,35 +1,35 @@
-# REVIEW-DS remaining remediation
+# REVIEW-DS 剩余修复
 
-**Goal:** Close every verified, deterministic issue in REVIEW-DS without changing the Standard language contract or reopening the four maintainer decisions.
+**目标：** 关闭 REVIEW-DS 中已确认的确定性问题，不改变 Standard 契约，不重新讨论四项维护者裁决。
 
-**Status:** Completed and verified at `18483b7`; see [the item-by-item remediation and validation record](../reviews/2026-10-05-review-ds-remediation.md). Performance work remains deferred.
+**状态：** 已在 `18483b7` 完成并验证，见[逐项修复与验证记录](../reviews/2026-10-05-review-ds-remediation.md)。性能仍后置。
 
-**Architecture:** Preserve backend-neutral signatures and the existing nominal relation contract. Reject excessive syntax nesting with diagnostics, make neutral structural comparison stack-safe, and preserve unavailable metadata as Unknown. Backend-specific gaps must be documented and tested rather than inferred from names.
+**架构：** 保留中立签名及名义关系契约。过度嵌套语法通过诊断拒绝，中立结构比较保证栈安全，不可用元数据保留为 Unknown。后端缺口以文档和测试说明，不从名称推断。
 
-**Technology:** C#, xUnit/FsCheck, Cecil 0.11.5/0.11.6, Roslyn 4.12.0/5.6.0, net10.0/netstandard2.0/net472, PowerShell/GitHub Actions. Work in this checkout and preserve the original untracked reports.
+**技术：** C#、xUnit/FsCheck、Cecil 0.11.5/0.11.6、Roslyn 4.12.0/5.6.0、net10.0/netstandard2.0/net472、PowerShell/GitHub Actions。在现有检出工作，保留原未跟踪报告。
 
-## Execution and evidence
+## 执行与证据
 
-1. **Stack safety (C1, M30).** Add failing depth-limit tests in `tests/AspectN.Tests`; reproduce process-fatal deep comparisons in the isolated verification probe. Guard recursive parser entry and resulting syntax depth in `src/AspectN/Parsing` and `Syntax`; replace recursive neutral comparison in `TypeSystem/StructuralTypeComparer.cs`. Protect matching of excessively deep neutral inputs. Verify ordinary expressions and isolated adversarial cases.
-2. **Relations and metadata (I2, I3, I9, M11–M13, M15–M18).** Add source/PE/Reflection/Cecil conformance examples for generic constraints, zero/long/invalid tuples, dynamic generic owner identities, async iterators and function-pointer conventions. Repair the corresponding type systems and mappers. Preserve unsupported pointer matching and document PE event-raiser/foreign-language boundaries.
-3. **Parser correctness (M1, M3–M10).** Add focused failure/recovery/span tests for selector tuples, nested-type separators, ref-kind entry points, numeric characters, C# Unicode escapes and escaped line breaks. Share small recovery helpers where useful; keep existing Boolean grouping and substring-regex semantics.
-4. **Neutral public contracts (M18, M20, M22–M25, M28, M31–M32, M37–M38).** Test owner assembly identity, argument guards, attribute ownership, immutable closures, stable deduplicated diagnostics and unavailable generic positions. Rewrite identified public documentation with concrete semantics; remove the unused Reflection member cache.
-5. **Verification quality (I7–I8, M35, M40–M44, M48, M50, M52, M54).** Strengthen assertions that previously could pass without exercising behavior, include type attributes in snapshots, reject unknown corpus kinds, extend API/Framework/netstandard runtime coverage, and clarify architecture/migration/history evidence. Keep performance gates deferred.
-6. **Build/release correctness (M39, M45–M47).** Consolidate evaluated pack properties, require the net472 release gate, emit LF checksums, propagate dependency/version properties through final artifact validation, and validate the actual release packages with temporary consumers. Do not publish or push.
-7. **Independent review and closure.** Request a read-only review after substantive batches, fix actionable findings, then run restore/build/test/format plus package and alternate dependency validation. Record each report item as fixed, previously fixed, not substantiated, an explicit backend boundary, or deferred. Commit task-scoped changes locally.
+1. **栈安全（C1、M30）。** 在核心测试添加失败深度测试，隔离探针复现致进程终止的深比较。保护 Parsing/Syntax 的递归入口和结果语法深度，替换 TypeSystem/StructuralTypeComparer.cs 递归比较，保护过深中立输入匹配。验证普通及隔离对抗案例。
+2. **关系与元数据（I2、I3、I9、M11–M13、M15–M18）。** 添加源码/PE/Reflection/Cecil 的泛型约束、零/长/无效元组、动态声明者身份、异步迭代器及函数指针约定一致性示例。修复类型系统和映射器。保留不支持指针匹配，说明 PE 事件触发器/其他语言边界。
+3. **解析正确性（M1、M3–M10）。** 聚焦选择器元组、嵌套分隔符、引用分类入口、数字字符、C# Unicode 转义及转义换行的失败/恢复/跨度测试。适当共享小恢复方法，保留布尔分组和正则子串语义。
+4. **中立公开契约（M18、M20、M22–M25、M28、M31–M32、M37–M38）。** 测试声明者程序集身份、参数保护、特性所属位置、不可变闭包、稳定去重诊断和不可用泛型位置。用具体语义重写相关 API 文档，移除未使用 Reflection 成员缓存。
+5. **验证质量（I7–I8、M35、M40–M44、M48、M50、M52、M54）。** 强化未实际执行行为也可能通过的断言，快照加入类型特性，拒绝未知语料类别，扩展 API/Framework/netstandard 运行覆盖，澄清架构/迁移/历史证据。性能闸门继续后置。
+6. **构建/发布正确性（M39、M45–M47）。** 合并求值后的打包属性，要求 net472 发布闸门，生成 LF 校验和，最终产物验证传递依赖/版本属性，以临时使用方验证真实发布包。不发布或推送。
+7. **独立审查与关闭。** 实质批次后请求只读审查，修复可执行发现；运行还原/构建/测试/格式、包和替代依赖验证。各报告项记录为已修复、此前已修复、未证实、明确后端边界或后置。按任务本地提交。
 
-## Verification commands
+## 验证命令
 
 - `dotnet restore AspectN.sln`
 - `dotnet build AspectN.sln -c Release --no-restore`
 - `dotnet test AspectN.sln -c Release --no-build --no-restore`
 - `dotnet format AspectN.sln --verify-no-changes --no-restore`
-- Repeat the matrix with `-p:CecilVersion=0.11.6 -p:RoslynVersion=5.6.0` (confirm the repository's actual property names before execution).
-- Run `eng/verify-packages.ps1` against both the normal and final-version artifacts, including each backend consumer.
-- Run isolated stack probes and modern-runtime tests consuming the netstandard2.0 assemblies.
+- 用 -p:CecilVersion=0.11.6 -p:RoslynVersion=5.6.0 重跑矩阵，执行前核对实际属性名。
+- eng/verify-packages.ps1 验证普通及最终版本产物，含各后端使用方。
+- 运行隔离栈探针及使用 netstandard2.0 程序集的现代运行时测试。
 
-## Scope exclusions already settled
+## 已裁决排除范围
 
-- Custom matching extensions were removed in their own commit.
-- Performance/benchmark acceptance is deferred by the maintainer.
-- Do not renumber SyntaxKind, amend historical commits, impose whole-string regex matching, broaden nominal assignment to arbitrary CLR conversions, or delete the untracked report/nul files.
+- 自定义匹配扩展已在独立提交移除。
+- 维护者后置性能/基准验收。
+- 不重编号 SyntaxKind、不改写历史提交、不强制整串正则匹配、不把名义关系扩大为任意 CLR 转换、不删除未跟踪报告/nul。

@@ -1,72 +1,66 @@
-# AspectN Industrial Redesign
+# `AspectN` 工业化重构设计
 
-**Status:** Approved architecture, updated for the single-language decision
-**Date:** 2026-07-31; updated 2026-10-03
-**Decision owners:** AspectN maintainers
-**Scope:** AspectN core and metadata adapters; Rougamo migration is follow-up work
+**状态：** 已批准架构，按单一语言裁决更新
+**日期：** 2026-07-31；更新于 2026-10-03
+**决策主体：** `AspectN` 维护者
+**范围：** `AspectN` 核心与元数据适配器；Rougamo 迁移属于后续工作
 
-## 1. Summary
+## 1. 概述
 
-AspectN is a backend-neutral .NET pattern-matching engine developed directly in the `AspectN` repository. It implements one language contract: the existing Standard grammar and matching semantics. Shared.Cecil.AspectN remains historical source outside the build and test graph.
+`AspectN` 是直接在 `AspectN` 仓库开发、与后端无关的 .NET 模式匹配引擎，只实现现有 Standard 语法和匹配语义这一种语言契约。Shared.Cecil.`AspectN` 作为历史源码保留在构建及测试图之外。
 
-The redesign separates:
+重构分离以下部分：
 
-1. Source text, tokens, and immutable syntax trees.
-2. Semantic binding for the single language contract.
-3. Backend-neutral metadata and type-system contracts.
-4. Immutable compiled match plans.
-5. Mono.Cecil, Roslyn, and Reflection adapters.
+1. 源文本、记号和不可变语法树。
+2. 单一语言契约的语义绑定。
+3. 与后端无关的元数据和类型系统契约。
+4. 不可变编译匹配计划。
+5. Mono.Cecil、Roslyn、Reflection 适配器。
 
-The Legacy compatibility layer and language selection APIs are removed. Its partial repairs already departed from Shared syntax; retaining them would preserve design problems and burden the common implementation. Rougamo will migrate deliberately and publish a breaking major version in a separate task.
+Legacy 兼容层与语言选择 API 移除。其部分修复已偏离 Shared 语法，继续保留会延续设计问题并增加通用实现负担。Rougamo 将在独立任务中有计划地迁移，并发布破坏性大版本。
 
-## 2. Goals
+## 2. 目标
 
-- Preserve the existing Standard input, diagnostic and matching contract.
-- Define the language with explicit grammar, names, precedence, diagnostics, and semantic rules.
-- Match equivalent type and member information consistently across Mono.Cecil, Roslyn, and Reflection.
-- Keep `AspectN` independent from all native backend object models.
-- Support both definitions and constructed references.
-- Expose incomplete backend knowledge as `Unknown` instead of silently treating it as a negative match.
-- Provide deterministic, thread-safe compilation and matching without global mutable state.
-- Publish normal NuGet packages instead of consuming a shared-project submodule.
-- Keep the matching language and semantic contract closed.
+- 保留现有 Standard 输入、诊断和匹配契约。
+- 用明确的语法、名称、优先级、诊断和语义规则定义语言。
+- 在 Mono.Cecil、Roslyn、Reflection 中一致匹配等价类型/成员信息。
+- `AspectN` 不依赖任何原生后端对象模型。
+- 支持定义与构造引用。
+- 后端知识不完整时公开 `Unknown`，不默默视为不匹配。
+- 提供确定性、线程安全的编译及匹配，不使用全局可变状态。
+- 发布普通 NuGet 程序包，取代共享项目子模块依赖。
+- 保持匹配语言和语义契约封闭。
 
-## 3. Non-goals for 1.0
+## 3. 1.0 不包含的目标
 
-- Binary or source compatibility with `PatternParser`, `SignatureParser`, `IMatcher`, or other old CLR APIs.
-- A fully serialized offline metadata universe.
-- Returning `$T` capture values or multiple query solutions.
-- Field and event declaration selectors.
-- DSL syntax for `params`, `scoped`, pointers, or function pointers.
-- Nullable reference annotation matching.
-- Third-party selectors, predicates, matching semantics or grammar extensions.
-- A general AOP weaving model. AspectN matches metadata; Rougamo decides whether and how a match can be woven.
+- 与 `PatternParser`、`SignatureParser`、`IMatcher` 或其他旧 CLR API 保持二进制/源码兼容。
+- 完整序列化的离线元数据环境。
+- 返回 `$T` 捕获值或多个查询解。
+- 字段与事件声明选择器。
+- `params`、`scoped`、指针或函数指针的 DSL 语法。
+- 可空引用注解匹配。
+- 第三方选择器、谓词、匹配语义或语法扩展。
+- 通用 AOP 织入模型。`AspectN` 匹配元数据；Rougamo 决定是否以及如何织入匹配成员。
 
-## 4. Language and Migration Contract
+## 4. 语言与迁移契约
 
-The language is governed by its EBNF, semantic specification and Standard
-regression and conformance tests. Existing Standard inputs, empty slots,
-parameter attribute forms and migration diagnostics remain supported.
+语言由 EBNF、语义规范、Standard 回归和一致性测试共同约束。保留现有 Standard 输入、空槽、参数特性写法及迁移诊断。
 
-There is no compatibility mode. Language selection API removal and deletion
-of Cecil's outer-type accessibility intersection are intentional API breaks.
-Old Shared CLR APIs and parser accidents are not part of the contract.
-Migration must review expressions and match ranges, preserve `Unknown` policy
-and validate real Rougamo scenarios before a future breaking major release.
+没有兼容模式。移除语言选择 API 和 Cecil 外层类型可见性交集属于有意的 API 破坏性变化。旧 Shared CLR API 及解析器偶然行为不属于契约。未来破坏性大版本发布前，迁移必须核对表达式和匹配范围，保留 `Unknown` 策略，并验证真实 Rougamo 场景。
 
-## 5. Package and Dependency Layout
+## 5. 程序包与依赖布局
 
-The first stable release contains five packages:
+首次稳定版本包含五个程序包：
 
-| Package | Responsibility | External dependency |
+| 程序包 | 职责 | 外部依赖 |
 |---|---|---|
-| `AspectN` | Parser, syntax model, binder, compiled plans, unified metadata contracts, matching | None beyond the BCL |
-| `AspectN.Cecil` | Mono.Cecil mapping, resolution, equality, and relationship queries | Mono.Cecil |
-| `AspectN.Cecil.Fody` | The same Cecil adapter API compiled for Fody's strong-named Cecil identity | FodyHelpers |
-| `AspectN.Roslyn` | `ISymbol` mapping and `SyntaxNode + SemanticModel` convenience entry points | Microsoft.CodeAnalysis |
-| `AspectN.Reflection` | `Type`, `MethodBase`, `PropertyInfo`, and related reflection mapping | BCL Reflection |
+| `AspectN` | 解析器、语法模型、绑定器、编译计划、统一元数据契约及匹配 | 除 BCL 外无依赖 |
+| `AspectN.Cecil` | Mono.Cecil 映射、解析引用、相等及关系查询 | Mono.Cecil |
+| `AspectN.Cecil.Fody` | 相同 Cecil 适配器 API，针对 Fody 的强名称 Cecil 身份编译 | FodyHelpers |
+| `AspectN.Roslyn` | ISymbol 映射与 SyntaxNode + SemanticModel 便利入口 | Microsoft.CodeAnalysis |
+| `AspectN.Reflection` | Type、MethodBase、PropertyInfo 及相关反射映射 | BCL Reflection |
 
-Dependency direction is strict:
+依赖方向严格限定为：
 
 ```text
 AspectN.Cecil ──────┐
@@ -75,207 +69,198 @@ AspectN.Roslyn ─────┼──> AspectN
 AspectN.Reflection ─┘
 ```
 
-Adapters never reference one another. `AspectN` never references an adapter.
+适配器之间互不引用，`AspectN` 从不引用适配器。
 
-`AspectN.Cecil` and `AspectN.Cecil.Fody` share adapter source but are mutually
-exclusive consumer dependencies because their Cecil assembly public key tokens
-differ. Fody upgrades are compatibility events and must re-run the shared Cecil
-contract and Rougamo integration lanes.
+`AspectN.Cecil` 与 `AspectN.Cecil.Fody` 共享适配器源码，但其 Cecil 程序集公钥标记不同，因此使用方依赖互斥。Fody 升级是兼容性事件，必须重跑共享 Cecil 契约和 Rougamo 集成验证。
 
-`AspectN.Abstractions` is not a separate package in 1.0. The core `AspectN` package is the abstraction boundary.
+1.0 不提供独立 `AspectN.Abstractions` 程序包，核心 `AspectN` 程序包就是抽象边界。
 
-All packages target:
+所有程序包面向：
 
 ```text
 netstandard2.0;net10.0
 ```
 
-The officially supported .NET Framework floor is 4.7.2. Rougamo retains a .NET Framework 4.6.1 compatibility smoke test without turning 4.6.1 into an AspectN support commitment.
+官方 .NET Framework 支持下限为 4.7.2。Rougamo 保留 .NET Framework 4.6.1 兼容性冒烟测试，但不把它变成 `AspectN` 的 4.6.1 支持承诺。
 
-## 6. Architectural Pipeline
+## 6. 架构流程
 
 ```text
 SourceText
   -> Lexer
   -> SyntaxTree
-  -> Semantic Binder
-  -> Compiled Pattern
-  -> Evaluator
+  -> 语义绑定器
+  -> 编译后的模式
+  -> 求值器
   -> MatchResult
 ```
 
-Native metadata flows through a separate path:
+原生元数据经独立路径进入：
 
 ```text
-Mono.Cecil object ──> CecilTypeSystem ──────┐
-Roslyn ISymbol ─────> RoslynTypeSystem ─────┼──> unified semantic view
-Reflection object ──> ReflectionTypeSystem ─┘
+Mono.Cecil 对象 ────> CecilTypeSystem ──────┐
+Roslyn ISymbol ─────> RoslynTypeSystem ─────┼──> 统一语义视图
+Reflection 对象 ────> ReflectionTypeSystem ─┘
 ```
 
-The evaluator sees only the unified semantic view and `ITypeSystem` operations.
+求值器只接触统一语义视图和 `ITypeSystem` 操作。
 
-## 7. Parser Architecture
+## 7. 解析器架构
 
-### 7.1 Lexer
+### 7.1 词法分析器
 
-The lexer produces immutable tokens with:
+词法分析器产生不可变记号，包含：
 
-- Token kind.
-- Exact source span.
-- Original text.
-- Normalized value where appropriate.
-- Lexical diagnostics.
+- 记号种类。
+- 精确源跨度。
+- 原始文本。
+- 适用时的归一值。
+- 词法诊断。
 
-Whitespace is trivia. Invalid characters produce bad tokens and diagnostics rather than uncontrolled exceptions.
+空白属于附属文本。非法字符产生错误记号和诊断，不产生失控异常。
 
-### 7.2 Syntax tree
+### 7.2 语法树
 
-Syntax nodes describe only source structure. Every concrete node name ends in `Syntax`. Syntax trees:
+语法节点只描述源码结构，所有具体节点名称以 `Syntax` 结尾。语法树：
 
-- Preserve spans required for diagnostics.
-- Contain no Cecil, Roslyn, or Reflection objects.
-- Are immutable and thread-safe.
-- Can represent malformed input sufficiently for multiple diagnostics.
+- 保留诊断所需跨度。
+- 不包含 Cecil、Roslyn、Reflection 对象。
+- 不可变且线程安全。
+- 能充分表示损坏输入，以提供多个诊断。
 
-Member paths have a dedicated `MemberPathSyntax` node containing optional joint negation,
-a declaring `TypePatternSyntax`, and a `MemberNamePatternSyntax` tree. Each name leaf owns
-its generic clause; Boolean combinations preserve this structure instead of flattening
-tokens or extracting a name from a type branch.
+成员路径有专用 `MemberPathSyntax`，包含可选联合否定、声明 `TypePatternSyntax` 和 `MemberNamePatternSyntax` 树。每个名称叶节点拥有自身泛型子句；布尔组合保留该结构，不将记号扁平化或从类型分支提取名称。
 
-### 7.3 Parser
+### 7.3 解析器
 
-The parser is handwritten:
+解析器手工编写：
 
-- Pratt or precedence-climbing parsing for `!`, `&&`, `||`, and grouping.
-- Recursive descent for selectors, signatures, types, generics, attributes, and parameter lists.
-- Explicit parse entry points for member expressions and type patterns.
-- No parser-generator runtime dependency.
+- `!`、`&&`、`||` 及分组使用 Pratt 或优先级爬升。
+- 选择器、签名、类型、泛型、特性和参数列表使用递归下降。
+- 明确区分成员表达式与类型模式解析入口。
+- 不依赖解析器生成器运行时。
 
-The parser returns a syntax tree and diagnostics. Invalid user text is an expected result and is not reported through `ArgumentException`.
+解析返回语法树和诊断。无效用户文本是预期结果，不通过 `ArgumentException` 报告。
 
-### 7.4 Semantic binder
+### 7.4 语义绑定器
 
-The binder:
+绑定器：
 
-- Applies the language specification directly, without a mode parameter.
-- Resolves aliases and syntax sugar.
-- Creates and scopes `$T` variables.
-- Validates selector target domains.
-- Receives only known selectors from syntax trees that have no parse errors.
-- Emits semantic diagnostics.
-- Produces immutable bound nodes.
+- 直接应用语言规范，不接收模式参数。
+- 解析别名及语法简写。
+- 创建 `$T` 变量并管理作用域。
+- 核验选择器目标域。
+- 只接收无解析错误语法树中的已知选择器。
+- 产生语义诊断。
+- 生成不可变绑定节点。
 
-Syntax nodes and bound nodes are separate types. Bound nodes are not exposed as a mutable plugin surface.
+语法节点与绑定节点是不同类型，绑定节点不作为可变插件接口公开。
 
-The binder validates property-name and namespace generic clauses and scopes variables
-through declaring-type and member-name Boolean branches. Evaluation negates the joint
-declaring type, name, and generic constraints in an isolated binding environment;
-selector domain, modifiers, return type, and parameters remain outside that negation.
+绑定器核验属性名和命名空间泛型子句，并通过声明类型及成员名布尔分支管理变量作用域。求值在隔离绑定环境中否定声明类型、名称及泛型约束的联合条件；选择器域、修饰符、返回类型及参数不在该否定范围内。
 
-### 7.5 Compiled patterns
+### 7.5 编译模式
 
-A successful bind produces an immutable, thread-safe compiled plan. A plan contains no mutable per-match state. Each evaluation allocates or rents an isolated binding environment.
+成功绑定产生不可变、线程安全的编译计划。计划不包含每次匹配的可变状态，每次求值单独分配或租用隔离绑定环境。
 
-## 8. Unified Metadata Model
+## 8. 统一元数据模型
 
-The core model distinguishes identity, type use, member signature, and relationship queries.
+核心模型区分身份、类型使用位置、成员签名和关系查询。
 
-Member and type-use signatures expose immutable `MetadataAvailability`: unavailable values are placeholders, and independent known facts remain usable. The applicable facts, by-reference marker/classification distinction and recoverable Cecil read failures are defined in [metadata availability](../../language/metadata-availability.md). Resolution failures use `AN3004`; `AN3002` remains invalid regex. This contract was approved on 2026-10-05.
+成员及类型使用签名公开不可变 `MetadataAvailability`，不可用值是占位值，独立已知事实仍可使用。适用事实、引用标记与精确分类的区别，以及可恢复 Cecil 读取失败，由[元数据可用性](../../language/metadata-availability.md)定义。解析引用失败使用 `AN3004`，`AN3002` 仍表示无效正则。该契约于 2026-10-05 获批。
 
-### 8.1 Type identity
+### 8.1 类型身份
 
-Type identity contains backend-neutral facts such as:
+类型身份包含与后端无关的事实，如：
 
-- Namespace.
-- Containing type chain.
-- Metadata name and generic arity.
-- Type kind.
-- Definition versus constructed form.
-- Generic arguments.
-- Array shape and other supported wrappers.
+- 命名空间。
+- 包含类型链。
+- 元数据名及泛型元数。
+- 类型种类。
+- 定义或构造形式。
+- 泛型实参。
+- 数组形状及其他受支持包装。
 
-Native backend objects never appear in public core model properties.
+核心公开模型属性从不包含原生后端对象。
 
-`ArrayTypeSignature` retains rank and `ArrayShape.Vector`/`General`, including rank-one non-SZ arrays. All adapters map this shape into the neutral model. Structural equality and array-to-array relationships consume it without native cache side channels. The two-argument constructor defaults rank one to vector and higher ranks to general. See [array shape](../../language/array-shape.md).
+`ArrayTypeSignature` 保留维数和 `ArrayShape.Vector`/`General`，包括非 SZ 一维数组。全部适配器将其映射到中立模型；结构相等及数组之间的关系直接消费该形状，不依赖原生缓存的额外通道。双参数构造器默认一维为 Vector，其他维数为 `General`。见[数组形状](../../language/array-shape.md)。
 
-### 8.2 Type use
+### 8.2 类型使用位置
 
-A type use records how a type occurs in a signature. It includes:
+类型使用记录类型如何出现在签名中，包含：
 
-- The referenced type identity.
-- `RefKind`: none, `ref`, `out`, `in`, or `ref readonly`.
-- Array ranks.
-- Generic substitutions.
-- Whether the use is a formal parameter, return, declaring type, or generic argument where that distinction affects semantics.
+- 引用的类型身份。
+- `RefKind`：无、`ref`、`out`、`in` 或 `ref readonly`。
+- 数组维数。
+- 泛型替换。
+- 语义受其影响时，区分形参、返回、声明类型或泛型实参位置。
 
-Nullable reference annotations are not part of core type identity. Standard treats `T?` on reference types as the same CLR type identity as `T`.
+可空引用注解不属于核心类型身份。Standard 对引用类型的 `T?` 使用与 `T` 相同 CLR 身份。
 
-### 8.3 Members
+### 8.3 成员
 
-The core member model distinguishes:
+核心成员模型区分：
 
-- Ordinary methods.
-- Property getters and setters.
-- Event accessors.
-- User-defined operators and conversions.
-- Instance constructors.
-- Static constructors.
-- Original definitions and constructed references.
+- 普通方法。
+- 属性 getter/setter。
+- 事件访问器。
+- 用户定义运算符和转换。
+- 实例构造器。
+- 静态构造器。
+- 原始定义及构造引用。
 
-Property metadata is represented independently and linked to its accessors. `property(...)` selects property getters and setters. Modifiers match the current accessor's declaration accessibility; property metadata retains the merged accessor accessibility. Cecil does not intersect member accessibility with containing types. `CecilMappingOptions` only controls `LeaveOpen`.
+属性元数据独立表示并关联访问器。`property(...)` 选择 getter/setter。修饰符匹配当前访问器声明可见性，属性元数据保留合并的访问器可见性。Cecil 不将成员可见性与包含类型求交，`CecilMappingOptions` 只控制 `LeaveOpen`。
 
-### 8.4 Definitions and constructed references
+### 8.4 定义与构造引用
 
-Every constructed type or member can expose:
+每个构造类型/成员可以公开：
 
-- Its original definition.
-- Its current constructed identity.
-- The generic substitution map.
-- The effective return and parameter types after substitution.
+- 原始定义。
+- 当前构造身份。
+- 泛型替换映射。
+- 替换后的有效返回及参数类型。
 
-Matching uses the effective signature by default. Original definitions remain inspectable metadata; there is no custom matching hook.
+默认按有效签名匹配。原始定义保留为可检查元数据，没有自定义匹配钩子。
 
-### 8.5 Type-system service
+### 8.5 类型系统服务
 
-`ITypeSystem` supplies environment-dependent operations:
+`ITypeSystem` 提供依赖环境的操作：
 
-- Type equality.
-- Base type and interface traversal.
-- Assignability.
-- Generic substitution.
-- Direct attribute lookup.
-- Original-definition mapping.
-- Capability discovery.
+- 类型相等。
+- 基类和接口遍历。
+- 类型关系。
+- 泛型替换。
+- 直接特性查询。
+- 原始定义映射。
+- 能力发现。
 
-This avoids copying an entire metadata graph into detached DTOs.
+避免将完整元数据图复制到脱离原生关联的 DTO 中。
 
-## 9. Adapter Requirements
+## 9. 适配器要求
 
 ### 9.1 Mono.Cecil
 
-The Cecil adapter accepts definitions and references, including constructed generic types and methods. Resolution failures return `Unknown` with diagnostics.
+Cecil 适配器接受定义和引用，包括构造泛型类型及方法。解析引用失败返回带诊断的 `Unknown`。
 
-Its caches are scoped to a `ModuleDefinition` or an explicitly shorter lifetime. A cache must not keep an obsolete module graph alive.
+缓存范围限于 `ModuleDefinition` 或显式更短生命周期，不得使过期模块图继续存活。
 
 ### 9.2 Roslyn
 
-Roslyn is Symbol-first:
+Roslyn 以符号为主要输入：
 
-- Primary inputs are `ITypeSymbol`, `IMethodSymbol`, `IPropertySymbol`, and related symbols.
-- Convenience overloads accept a declaration syntax node together with `SemanticModel` or `Compilation`.
-- SyntaxNode-only matching is not a complete semantic mode.
+- 主输入为 `ITypeSymbol`、`IMethodSymbol`、`IPropertySymbol` 及相关符号。
+- 便利重载接受声明语法节点及 `SemanticModel` 或 `Compilation`。
+- 只有 SyntaxNode 的匹配不是完整语义模式。
 
-The adapter preserves original definitions and constructed symbols. It binds cache lifetime to the owning `Compilation`.
+保留原始定义及构造符号，缓存生命周期绑定其所属 `Compilation`。
 
 ### 9.3 Reflection
 
-The Reflection adapter accepts `Type`, `MethodBase`, `PropertyInfo`, and related objects without instantiating attributes merely to inspect their type.
+Reflection 接受 `Type`、`MethodBase`、`PropertyInfo` 等对象，不能仅为检查特性类型就实例化特性。
 
-Its caches must not prevent a collectible `AssemblyLoadContext` from unloading. Where reflection cannot recover required metadata, evaluation returns `Unknown`.
+缓存不得阻止可回收 `AssemblyLoadContext` 卸载。反射无法恢复必需元数据时，求值返回 `Unknown`。
 
-## 10. Match Semantics
+## 10. 匹配语义
 
-The core result is:
+核心结果为：
 
 ```text
 Matched
@@ -283,155 +268,155 @@ NotMatched
 Unknown
 ```
 
-`Unknown` carries one or more diagnostics describing missing resolution, unsupported capabilities, or incomplete metadata.
+`Unknown` 携带至少一个诊断，说明解析引用缺失、不支持能力或元数据不完整。
 
-Convenience policies may map the result:
+便利策略可以转换结果：
 
-- Compatibility policy: `Unknown` becomes `false`.
-- Strict policy: `Unknown` raises a controlled evaluation failure.
-- Diagnostic policy: matching continues and reports warnings.
+- 兼容策略：`Unknown` 转为 `false`。
+- 严格策略：`Unknown` 触发受控求值失败。
+- 诊断策略：继续匹配并报告警告。
 
-The core never silently rewrites `Unknown` to `NotMatched`.
+核心从不默默将 `Unknown` 改为 `NotMatched`。
 
-`$T` variables are internal unification variables. They constrain equality across pattern positions but are not returned to callers in 1.0.
+`$T` 是内部统一变量，约束多个模式位置的相等性；1.0 不向调用方返回它们。
 
-## 11. Closed Semantic Contract
+## 11. 封闭语义契约
 
-The core supports the built-in Standard selectors only. There is no custom selector, predicate, matcher or extension registry API. Unknown names, including qualified names, produce `AN2001` and an error-recovery node. This decision was approved on 2026-10-05 and supersedes the original extension design.
+核心只支持内置 Standard 选择器，没有自定义选择器、谓词、匹配器或扩展注册表 API。包括限定名称在内的未知名产生 `AN2001` 和错误恢复节点。该裁决于 2026-10-05 获批，取代原扩展设计。
 
-## 12. Caching and Lifetime
+## 12. 缓存与生命周期
 
-There are no unbounded global static caches.
+没有无界全局静态缓存。
 
-- Syntax trees and compiled plans are immutable.
-- Parser and binder do not hide global caches.
-- An optional engine-scoped cache is explicit and bounded.
-- Cache keys include source text, parse entry point, regex timeout.
-- Adapter caches follow `ModuleDefinition`, `Compilation`, or collectible assembly lifetime.
-- Rougamo may reuse one engine for a weave operation and dispose it when the operation completes.
+- 语法树与编译计划不可变。
+- 解析器和绑定器不隐藏全局缓存。
+- 可选引擎级缓存显式且有界。
+- 缓存键含源文本、解析入口、正则超时。
+- 适配器缓存遵守 `ModuleDefinition`、`Compilation` 或可回收程序集的生命周期。
+- Rougamo 可以在一次织入操作内复用一个引擎，操作结束后释放。
 
-## 13. Diagnostics and Safety
+## 13. 诊断与安全
 
-Diagnostics have:
+诊断包含：
 
-- Stable code.
-- Severity.
-- Message.
-- Source span when applicable.
-- Optional backend context.
+- 稳定诊断码。
+- 严重度。
+- 消息。
+- 适用时的源跨度。
+- 可选后端上下文。
 
-Parsing and binding attempt to report multiple useful diagnostics in one pass.
+解析与绑定争取在一次处理中报告多个有用诊断。
 
-Regex matching:
+正则匹配：
 
-- Uses one canonical member signature, never an arbitrary `ToString()`.
-- Is culture-invariant.
-- Accepts only the regex subset defined in language-spec section 15; unsupported features are compile-time AN2012 errors, and invalid regex syntax is a compile-time AN3002 error.
-- Has a mandatory finite timeout.
-- Returns `Unknown` with a diagnostic on timeout.
-- Is documented as an escape hatch rather than the primary matching mechanism.
+- 使用一种规范成员签名，不使用任意 `ToString()`。
+- 与区域性无关。
+- 只接受语言规范第 15 节子集；不支持的特性是编译期 AN2012，无效语法是编译期 `AN3002`。
+- 必须设有限超时。
+- 超时返回带诊断的 `Unknown`。
+- 文档将其作为特殊需求的补充途径，不作为主要匹配机制。
 
-Public long-running operations accept `CancellationToken`. Hot, already-compiled match operations remain synchronous.
+公开的长时间运行操作接受 `CancellationToken`，已编译的热路径匹配保持同步。
 
-## 14. Verification Strategy
+## 14. 验证策略
 
-### 14.1 Syntax and semantics
+### 14.1 语法与语义
 
-- Lexer golden tests for every token and malformed-token class.
-- Parser precedence and grouping tests.
-- Syntax round-trip tests where preservation is supported.
-- Binder tests for every language-version difference.
-- Diagnostic code and span tests.
-- Property-based and fuzz tests proving arbitrary input does not hang or crash unexpectedly.
+- 为每个记号和损坏记号类别建立词法黄金测试。
+- 解析优先级及分组测试。
+- 支持保留信息的部分做语法往返测试。
+- 各语言版本差异的绑定器测试。
+- 诊断码及跨度测试。
+- 属性测试与模糊测试，证明任意输入不会意外挂起或崩溃。
 
-### 14.2 Regression and adapter compatibility
+### 14.2 回归与适配器兼容性
 
-- Preserve Standard behavior for generic arity, formal parameter binding, Boolean scopes, suffix structure, attributes and migration diagnostics.
-- Use neutral shared fixtures for open and nested generics and assembly unloading.
-- Keep the Cecil/Roslyn version matrices, Fody Cecil identity and Rougamo compilation checks, .NET Framework and package validation.
-- Build, tests and formatting have no oracle dependency.
+- 保留 Standard 的泛型元数、声明形参绑定、布尔作用域、后缀结构、特性和迁移诊断行为。
+- 开放/嵌套泛型与程序集卸载使用中立共享测试数据。
+- 保留 Cecil/Roslyn 版本矩阵、Fody Cecil 身份、Rougamo 编译检查、.NET Framework 和程序包验证。
+- 构建、测试及格式检查不依赖对照实现。
 
-### 14.3 Cross-adapter conformance
+### 14.3 跨适配器一致性
 
-Build one source fixture and inspect it through:
+构建同一源码测试程序集，分别检查：
 
-- Roslyn before emission.
-- Mono.Cecil after emission.
-- Reflection after loading.
+- 发射前的 Roslyn。
+- 发射后的 Mono.Cecil。
+- 加载后的 Reflection。
 
-Equivalent facts must produce equivalent results. Missing information must produce `Unknown`, not an unexplained backend-specific negative.
+等价事实必须产生等价结果。缺失信息必须产生 `Unknown`，不能成为无解释的后端特定不匹配。
 
-### 14.4 Performance
+### 14.4 性能
 
-**Deferred by the maintainer on 2026-10-05.** There is currently no executable benchmark suite or reproducible performance baseline. The performance gate remains open; correctness tests, caches and package verification do not establish it. The unused BenchmarkDotNet package pin is removed until benchmark work is scheduled.
+**维护者于 2026-10-05 决定后置。** 当前没有可执行基准套件或可复现性能基线。性能闸门仍未通过，正确性测试、缓存及程序包验证不能证明它。未使用的 BenchmarkDotNet 版本锁定已移除，待安排基准工作再引入。
 
-The future benchmark task must cover:
+未来基准任务必须覆盖：
 
-- Lex and parse.
-- Bind and compile.
-- Cached hot matching.
-- Assignability-heavy matching.
-- Adapter conversion and cache reuse.
+- 词法与解析。
+- 绑定与编译。
+- 缓存热路径匹配。
+- 大量类型关系查询的匹配。
+- 适配器转换及缓存复用。
 
-Performance evidence for Rougamo integration belongs to the future migration task. The Legacy retirement only removes compatibility-driven overhead and redundancy.
+Rougamo 集成的性能证据属于未来迁移任务。Legacy 退休只移除兼容性带来的额外成本和重复。
 
-Record the SDK, runtime, hardware, dependency versions, corpus, commands and raw results. Separate cold compilation, warm matching and allocations, and set explicit acceptance thresholds before treating this gate as complete. No performance conclusion is claimed by the 2026-10-05 review repairs.
+记录 SDK、运行时、硬件、依赖版本、语料、命令和原始结果。分别测量冷编译、热匹配及分配量，先设明确验收阈值，再将该闸门视为完成。2026-10-05 审查修复不宣称性能结论。
 
-## 15. Migration and Release Plan
+## 15. 迁移与发布计划
 
-1. Retire Legacy and make parsing, binding, evaluation and caches implement Standard directly.
-2. Preserve shared capabilities and valuable regression tests; update APIs and documentation.
-3. Validate cross-adapter behavior, package boundaries, formatting and the complete retained matrix.
-4. In a future task, migrate Rougamo expressions and integration and prepare its breaking major release.
+1. 退休 Legacy，让解析、绑定、求值和缓存直接实现 Standard。
+2. 保留共享能力及有价值回归，更新 API 和文档。
+3. 验证跨适配器行为、程序包边界、格式及完整保留矩阵。
+4. 未来独立迁移 Rougamo 表达式与集成，准备破坏性大版本。
 
-This work does not modify adjacent repositories, frozen cache checkouts or Rougamo submodules, and does not publish packages or push branches.
+本工作不修改相邻仓库、冻结缓存检出或 Rougamo 子模块，不发布程序包、不推送分支。
 
-## 16. Public API Direction
+## 16. 公共 API 方向
 
-Public roles and naming are fixed:
+公共职责与命名固定为：
 
-- `AspectNParser`: parse source into syntax trees and diagnostics.
-- `AspectNSyntaxTree`: immutable parsed representation.
-- `AspectNCompilation`: syntax tree, compilation options, and binding.
-- `CompiledPattern`: immutable executable plan.
-- `MatchResult` and `MatchStatus`: three-state evaluation.
-- `ITypeSystem`: backend-neutral relationship contract.
-- `CecilTypeSystem`, `RoslynTypeSystem`, `ReflectionTypeSystem`: adapter contexts.
+- `AspectNParser`：将源码解析为语法树及诊断。
+- `AspectNSyntaxTree`：不可变解析表示。
+- `AspectNCompilation`：语法树、编译选项及绑定。
+- `CompiledPattern`：不可变可执行计划。
+- `MatchResult`、`MatchStatus`：三态求值。
+- `ITypeSystem`：与后端无关的关系契约。
+- `CecilTypeSystem`、`RoslynTypeSystem`、`ReflectionTypeSystem`：适配器上下文。
 
-A simple facade may combine parse, bind, and compile, but it must expose diagnostics and must not bypass the explicit compilation model.
+简单入口可组合解析、绑定与编译，但必须公开诊断，不能绕过显式编译模型。
 
-## 17. Rejected Alternatives
+## 17. 已拒绝方案
 
-### Refactor Shared.Cecil.AspectN first
+### 先重构 Shared.Cecil.`AspectN`
 
-Rejected because it would alter the historical implementation and require a second migration into AspectN.
+会改动历史实现并要求再迁移到 `AspectN`，因此拒绝。
 
-### One self-contained metadata snapshot
+### 自包含完整元数据快照
 
-Rejected for 1.0 because assignability and resolution depend on backend context, and copying complete metadata graphs is expensive and error-prone.
+1.0 拒绝：关系及解析引用依赖后端上下文，复制完整元数据图成本高且容易出错。
 
-### Parser generator
+### 解析器生成器
 
-Rejected because the grammar is compact, requires precise diagnostics, and does not justify generated artifacts or another runtime dependency.
+语法紧凑且要求精确诊断，不足以证明生成产物或新增运行时依赖的必要性，因此拒绝。
 
-### Backend-specific ASTs
+### 各后端独立 AST
 
-Rejected because they would duplicate language semantics and make conformance unprovable.
+会重复语言语义，无法证明一致性，因此拒绝。
 
-### Global static caches and extension registries
+### 全局静态缓存及扩展注册表
 
-Rejected because they cause memory retention, non-determinism, cache corruption, and test interference.
+导致内存保留、非确定性、缓存损坏和测试相互干扰，因此拒绝。
 
-### Public capture/query results
+### 公开捕获/查询结果
 
-Rejected for 1.0 because OR, negation, multiple solutions, and backend-object lifetime would expand the matcher into a query language.
+1.0 拒绝：OR、否定、多解及后端对象生命周期会把匹配器扩展为查询语言。
 
-## 18. Review Checklist
+## 18. 审查清单
 
-- Parsing and binding implement a single language without retired mode parameters.
-- Standard regression coverage and stable diagnostics are preserved.
-- Native backend objects cannot leak into the core model.
-- `Unknown` is preserved through core evaluation.
-- No global mutable cache or grammar extension exists.
-- Rougamo integration and publication remain separate work.
-- 1.0 non-goals are not pulled into implementation tasks.
+- 解析及绑定实现单一语言，不保留已退休模式参数。
+- 保留 Standard 回归覆盖及稳定诊断。
+- 原生后端对象不泄漏到核心模型。
+- 核心求值保留 `Unknown`。
+- 没有全局可变缓存或语法扩展。
+- Rougamo 集成及发布仍是独立任务。
+- 不将 1.0 非目标带入实现任务。

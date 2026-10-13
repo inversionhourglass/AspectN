@@ -15,7 +15,7 @@
     },
     {
       "path": "docs/language/metadata-availability.md",
-      "section": "Metadata availability"
+      "section": "元数据可用性"
     }
   ],
   "scenarios": [
@@ -33,7 +33,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261012-001"
+        "EV-20261012-001", "EV-20261013-002"
       ],
       "unverified_notes": ""
     },
@@ -186,5 +186,7 @@ Service.Run 返回 Int32 且只有 Accessibility 未知：method(public * Servic
 ## 关联与缺口
 
 试点验证中立查询和不可变性；原生读取失败、取消、超限和生命周期另待精确场景证据。H1 损坏 Cecil 输入保留未修复处置，不外推真实程序集风险。
+
+[边界示例](../../../usage/examples/MatchingBoundaries/Program.cs)验证已知空特性集合与不可用空占位值、参数位置构造约束，以及选定输入的原生/中立深度超限形态。[反馈记录](../../../reviews/2026-10-13-documentation-feedback.md)登记其范围；没有据此将 S2–S4 的读取失败、取消和生命周期宽场景标为已验证，也没有验证 H1。
 
 不变量适用性初始待核，核验主体须为非作者。

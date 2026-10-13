@@ -1,43 +1,19 @@
-# Generic parameter identity
+# 泛型形参身份
 
-A generic parameter's neutral identity is its owner kind, declaration owner ID,
-owner assembly and position. Closing a declaring type does not change the
-declaration identity of a method's generic parameter.
+泛型形参的中立身份由声明者种类、声明者 ID、声明者程序集和位置组成。将声明类型闭合，不会改变方法泛型形参的声明身份。
 
-For type parameters, position is the flattened CLI slot across the containing
-type chain, while owner ID identifies the level that declares the parameter.
-For `Outer<T1,T2>.Inner<U>`, `U` belongs to `Inner` and has position 2.
-Method parameter positions are local to the method and start at zero.
+类型形参的位置是沿包含类型链展开的 CLI 槽位；声明者 ID 标识实际声明该形参的层级。例如 `Outer<T1,T2>.Inner<U>` 中的 `U` 属于 `Inner`，位置为 2。方法形参的位置局限于该方法，从零开始。
 
-The effective type arity, including enclosing types, is limited to 64. A method's own generic arity has an independent limit of 64, so a type with 64 parameters may declare a method with another 64. Declared arities and supplied argument counts are checked before summing or synthesizing positional arguments. Native mapping rejects excessive arity with `AspectNLimitException`/AN3006; matching an externally constructed neutral signature returns Unknown/AN3006.
+包括外层类型在内的有效类型泛型元数最多为 64。方法自身的泛型元数另有独立的 64 上限，因此含 64 个形参的类型可再声明含 64 个形参的方法。在累加或合成位置实参之前，检查声明元数和提供的实参数量。原生映射以 `AspectNLimitException`/AN3006 拒绝超限元数；匹配外部构造的中立签名时返回 Unknown/AN3006。
 
-Canonical regex names for an open constructed declaring type traverse its actual arguments and number each distinct generic parameter in first-occurrence order, whether its declaration belongs to a type or a method. The mapped callable's own method parameters follow those remaining parameters, skipping declarations already encountered in the declaring type arguments.
+开放构造声明类型的规范正则名称遍历其实际实参，按首次出现的顺序对每个不同泛型形参编号，不论该形参声明在类型还是方法上。被映射可调用成员自身的方法形参接在这些剩余形参之后，并跳过已在声明类型实参中出现的声明。
 
-Method owner IDs include the declaration type, method name, generic arity and
-recursive CLI parameter shapes. Each named parameter type includes its assembly
-name, version, culture and public key token, including names inside arrays,
-constructed generic arguments and function pointers. The shared adapter encoder
-uses length-prefixed assembly fields to avoid delimiter collisions. Cecil uses
-resolved declarations when available, including forwarded named types, and
-retains the available reference identity when resolution fails.
+方法声明者 ID 包含声明类型、方法名、泛型元数和递归 CLI 参数形状。每个有名参数类型均包含程序集名称、版本、区域性和公钥标记，包括数组、构造泛型实参及函数指针内部的名称。共享适配器编码器用长度前缀编码程序集字段，避免分隔符冲突。Cecil 在可解析时使用解析后的声明，包括类型转发后的有名类型；解析失败时保留可用的引用身份。
 
-This definition-assembly rule also applies to ordinary named type signatures,
-not only owner IDs. SDK facades such as `System.Runtime` and a resolved
-`System.Private.CoreLib` definition therefore produce the same named identity
-when resolution succeeds. Unresolved references retain their scope assembly.
+上述定义程序集规则也适用于普通有名类型签名，不仅适用于声明者 ID。因此，SDK 外观程序集 `System.Runtime` 与解析到的 `System.Private.CoreLib` 定义在解析成功时产生相同有名身份。未解析引用保留其作用域程序集。
 
-Cecil verifies the complete parameter identity of a resolved method before using
-its declaration. Declaration generic slots remain distinct even when closing a
-type makes two overloads' parameter types identical. References through derived
-types can resolve inherited declarations. For vararg call sites, only the fixed
-parameters before the sentinel participate in declaration lookup; optional call
-arguments do not appear in the declaration signature.
+Cecil 在使用已解析方法声明之前核验完整参数身份。即使闭合类型使两个重载的参数类型相同，声明泛型槽位仍保持不同。经过派生类型的引用可以解析到继承声明。对于 vararg 调用点，只有 sentinel 之前的固定参数参与声明查找；可选调用实参不出现在声明签名中。
 
-Cecil's cache separately retains the closed declaring-type context. Parameters
-from `Owner<string>.M<V>` and `Owner<int>.M<V>` compare as the same declaration,
-while `where V : T` still resolves constraints using the corresponding actual
-type. The owner ID is metadata identity; it does not change regex or diagnostic
-type rendering.
+Cecil 缓存单独保留闭合声明类型的上下文。`Owner<string>.M<V>` 与 `Owner<int>.M<V>` 的形参比较为同一声明，但 `where V : T` 仍用对应实际类型解析约束。声明者 ID 表示元数据身份，不改变正则或诊断中的类型呈现。
 
-The cross-adapter regression scenarios are in
-`tests/AspectN.Conformance.Tests/MethodGenericOwnerIdentityTests.cs`.
+跨适配器回归场景位于 `tests/AspectN.Conformance.Tests/MethodGenericOwnerIdentityTests.cs`。

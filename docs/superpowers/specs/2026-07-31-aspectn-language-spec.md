@@ -1,91 +1,91 @@
-# AspectN Language Design
+# AspectN 语言设计
 
-**Status:** Approved single-language contract
-**Date:** 2026-07-31; updated 2026-10-03
-**Applies to:** AspectN 1.0 language design
-**Language:** Standard (the sole AspectN language)
+**状态：** 已批准的单一语言契约
+**日期：** 2026-07-31；更新于 2026-10-03
+**适用范围：** AspectN 1.0 语言设计
+**语言：** Standard（AspectN 唯一语言）
 
-## 1. Purpose
+## 1. 目的
 
-AspectN is a .NET type and callable-member pattern language. It parses backend-neutral patterns and evaluates them against normalized metadata supplied by Mono.Cecil, Roslyn, Reflection, or future adapters.
+AspectN 是面向 .NET 类型和可调用成员的模式语言。它解析与后端无关的模式，并针对 Mono.Cecil、Roslyn、Reflection 或未来适配器提供的归一化元数据求值。
 
-The language has two entry points:
+语言有两个入口：
 
-- **Type pattern:** matches one type use or type identity.
-- **Member expression:** combines member selectors with boolean operators.
+- **类型模式：** 匹配一个类型使用位置或类型身份。
+- **成员表达式：** 用布尔运算符组合成员选择器。
 
-AspectN is a matcher, not a query projection language. Evaluation returns a three-state match result and does not return variable captures.
+AspectN 负责匹配，不提供查询投影。求值返回三态匹配结果，不返回变量捕获。
 
-## 2. Single Language Contract
+## 2. 单一语言契约
 
-AspectN directly implements the existing Standard grammar. It uses:
+AspectN 直接实现现有 Standard 语法，采用：
 
-- `callable(...)` for non-constructor method-like members, or `execution(...)` to cover constructors as well.
-- `property(...)` for property getters and setters together.
-- `ctor(...)` and `cctor(...)`.
-- Standard C# accessibility phrases, with `|` joining accessibility alternatives.
-- Explicit `$T` pattern variables.
-- C# `ValueTuple` meaning for tuple syntax.
-- Task-like return matching via `tasklike` or `tasklike<T>`; no `async` modifier.
-- Explicit `ref`, `out`, `in`, and `ref readonly`.
+- `callable(...)` 选择非构造器的方法类成员，`execution(...)` 同时覆盖构造器。
+- `property(...)` 同时选择属性 getter 和 setter。
+- `ctor(...)` 和 `cctor(...)`。
+- 标准 C# 可见性短语，用 `|` 连接可见性备选。
+- 显式 `$T` 模式变量。
+- 元组语法表示 C# `ValueTuple`。
+- 用 `tasklike` 或 `tasklike<T>` 匹配任务类返回形状，不使用 `async` 修饰符。
+- 显式 `ref`、`out`、`in` 和 `ref readonly`。
 
-There is no language selection API or compatibility mode. `AspectNParser` exposes `ParseMemberExpression(string source)` and `ParseTypePattern(string source)`. `AspectNEngine` compilation methods accept source and optional compilation options. Cache keys contain source text, parse entry point, regex timeout. Migrating from Shared.Cecil.AspectN is a breaking change; Rougamo integration and its major release are separate tasks.
+没有语言选择 API 或兼容模式。`AspectNParser` 公开 `ParseMemberExpression(string source)`、`ParseTypePattern(string source)`。`AspectNEngine` 编译方法接受源码和可选编译选项。缓存键包含源文本、解析入口和正则超时。从 Shared.Cecil.AspectN 迁移是破坏性变化；Rougamo 集成及对应大版本发布属于独立任务。
 
-## 3. Lexical Rules
+## 3. 词法规则
 
-### 3.1 Case
+### 3.1 大小写
 
-- Standard keywords are lowercase and case-sensitive.
-- Type, namespace, member, and variable identifiers are case-sensitive.
+- Standard 关键字小写且区分大小写。
+- 类型、命名空间、成员及变量标识符均区分大小写。
 
-### 3.2 Trivia
+### 3.2 空白与附属文本
 
-Whitespace may separate tokens unless it participates in a Standard composite phrase such as `private protected`, `protected internal`, or `ref readonly`.
+空白可以分隔记号，但 Standard 的 `private protected`、`protected internal`、`ref readonly` 等复合短语需要保留其组合含义。
 
-Within a name, the separators `.`/`..`/`/`, the generic opening `<`, and the assignability suffix `+` continue the name only when adjacent to it; whitespace ends the name and separates the surrounding slots. The array suffix `[` and the nullable suffix `?` must also be adjacent to the type pattern; whitespace inside a `<...>` generic pattern list and inside array rank brackets (`int[ , ]`) is free.
+名称内部的 `.``/``..``/``/`、泛型起始 `<` 和关系后缀 `+`，只有邻接时才继续该名称；空白终止名称并分隔周围槽位。数组后缀 `[` 与可空后缀 `?` 也必须邻接类型模式。`<...>` 泛型模式列表和数组维数括号（如 `int[ , ]`）内部允许自由空白。
 
-The result-clause opening `<` must also touch `tasklike`: `tasklike<int>` is valid, while `tasklike <int>` is an error. A member separator `.` must touch both its declaring type pattern and its member-name pattern, including their grouping parentheses.
+结果子句起始 `<` 必须邻接 `tasklike`：`tasklike<int>` 合法，`tasklike <int>` 是错误。成员分隔符 `.` 必须同时邻接声明类型模式及成员名模式，包括其分组括号。
 
-Comments are not part of AspectN 1.0 expression syntax.
+AspectN 1.0 表达式语法不包含注释。
 
-### 3.3 Core punctuation
+### 3.3 核心标点
 
-| Token | Meaning |
+| 记号 | 含义 |
 |---|---|
-| `!` | Logical negation |
-| `&&` | Logical conjunction |
-| `||` | Logical disjunction |
-| `|` | Accessibility alternation separator (Standard modifiers) |
-| `(` `)` | Grouping, selector body, parameter list, or tuple |
-| `<` `>` | Generic pattern list |
-| `[` `]` | Array rank or attribute parameter index |
-| `,` | List separator or array-rank marker |
-| `.` | Namespace/type/member separator |
-| `/` | Nested-type separator |
-| `..` | Namespace segment ellipsis in qualified names, any-positive arity in `<..>`, or any parameter count in `(..)` |
-| `*` | Name or type wildcard |
-| `+` | Assignability suffix |
-| `?` | Nullable suffix; alone in a generic clause (`<?>`) it means any arity including zero |
-| `$` | Pattern-variable prefix |
+| `!` | 逻辑否定 |
+| `&&` | 逻辑合取 |
+| `||` | 逻辑析取 |
+| `|` | 可见性备选分隔符（Standard 修饰符） |
+| `(` `)` | 分组、选择器主体、参数列表或元组 |
+| `<` `>` | 泛型模式列表 |
+| `[` `]` | 数组维数或特性参数索引 |
+| `,` | 列表分隔符或数组维数标记 |
+| `.` | 命名空间/类型/成员分隔符 |
+| `/` | 嵌套类型分隔符 |
+| `..` | 限定名中的命名空间省略段、`<..>` 的任意正元数或 `(..)` 的任意参数数量 |
+| `*` | 名称或类型通配符 |
+| `+` | 类型关系后缀 |
+| `?` | 可空后缀；单独用于泛型子句 `<?>` 时表示包括零的任意元数 |
+| `$` | 模式变量前缀 |
 
-`/` is the canonical nested-type separator. Adapters normalize Cecil `/`, Reflection `+`, and Roslyn containing-type symbols to this form.
+`/` 是规范嵌套类型分隔符。适配器将 Cecil `/`、Reflection `+` 和 Roslyn 包含类型符号归一为该形式。
 
-### 3.4 Identifiers, name patterns, and literals
+### 3.4 标识符、名称模式与字面量
 
-`identifier` follows the C# Unicode category profile and is used for selector names and pattern variables. Starts accept `_` and Lu, Ll, Lt, Lm, Lo, Nl; subsequent characters additionally accept Nd, Pc, Mn, Mc, Cf. This profile does not include UAX #31 Other_ID_Start/Other_ID_Continue additions or escaped identifier syntax. `name-pattern` is a non-empty metadata-name segment containing literal name characters and `*`; reserved punctuation and whitespace terminate the segment. Matching is ordinal.
+`identifier` 遵循 C# Unicode 类别范围，用于选择器名和模式变量。起始字符接受 `_`、Lu、Ll、Lt、Lm、Lo、Nl；后续字符还接受 Nd、Pc、Mn、Mc、Cf。不包含 UAX #31 的 Other_ID_Start/Other_ID_Continue 扩充，也不包含转义标识符语法。`name-pattern` 是包含字面名称字符和 `*` 的非空元数据名称段；保留标点和空白终止该段。匹配使用序数比较。
 
-Consecutive nullable suffixes, such as `int??` and `List<int??>`, produce AN2010. Nested or separated nullable uses remain valid, for example `List<int?>` and `int?[]?`. Ref-kind annotations, including adjacent `!ref`, require member parameter or return type slots and produce AN2005 at the standalone type-pattern entry point, including inside generic and Boolean type patterns. The `!` and `ref` tokens must touch: `! ref`, including a tab or newline between the tokens, produces AN2005 in member type slots.
+连续可空后缀（如 `int??`、`List<int??>`）产生 AN2010。嵌套或分隔的可空使用仍合法，如 `List<int?>`、`int?[]?`。引用注解（含邻接 `!ref`）只能用于成员参数或返回类型槽；在独立类型模式入口产生 AN2005，泛型与布尔类型模式内部也如此。`!`、`ref` 必须邻接，成员类型槽中的 `! ref`，包括中间的制表符或换行，均产生 AN2005。
 
 ```ebnf
 name-pattern             = ( name-character | "*" ), { name-character | "*" } ;
 boolean-literal         = "true" | "false" ;
 ```
 
-`name-character`, `identifier`, `string-literal`, `integer-literal`, and `regex-body` are lexer primitives. Strings use C#-style escapes, integers are signed decimal values, and Boolean literals are the lowercase tokens `true` and `false`.
+`name-character`、`identifier`、`string-literal`、`integer-literal`、`regex-body` 是词法原语。字符串使用 C# 风格转义，整数是有符号十进制值，布尔字面量是小写 `true`、`false`。
 
-## 4. Boolean Expressions
+## 4. 布尔表达式
 
-The common expression grammar is:
+通用表达式语法：
 
 ```ebnf
 expression          = or-expression ;
@@ -95,33 +95,33 @@ unary-expression    = [ "!" ], primary-expression ;
 primary-expression  = selector | "(", expression, ")" ;
 ```
 
-Precedence from highest to lowest:
+优先级从高到低：
 
 1. `!`
 2. `&&`
 3. `||`
 
-Operators of the same precedence associate left to right. Parentheses override precedence.
+相同优先级的运算符从左向右结合，括号覆盖优先级。
 
-Consecutive unary negations, including whitespace-separated `! !`, are errors (AN1001 at the second `!`). This applies to member expressions, type patterns and member-name patterns. Explicitly grouped negation such as `!(!int)` remains valid. Negating a full wildcard always yields the empty match set; there is no wildcard exception to Boolean complement.
+连续一元否定（含空白分隔的 `! !`）是错误，在第二个 `!` 处报告 AN1001。该规则适用于成员表达式、类型模式及成员名称模式。显式分组的 `!(!int)` 仍合法。完整通配符的否定始终产生空匹配集，布尔补集没有通配符例外。
 
-## 5. Three-state Boolean Logic
+## 5. 三态布尔逻辑
 
-Evaluation uses `Matched`, `NotMatched`, and `Unknown`.
+求值使用 `Matched`、`NotMatched` 和 `Unknown`。
 
-Selectors query only the facts they consume. Unavailable metadata propagates `Unknown`, including through negation; known mismatches still dominate conjunctions and known matches dominate disjunctions. Empty collections whose availability is unknown do not establish absence. See [metadata availability](../../language/metadata-availability.md) for the signature contract and examples.
+选择器只查询实际消费的事实。不可用元数据传播 `Unknown`，否定也如此；已知不匹配支配合取，已知匹配支配析取。可用性未知的空集合不能证明不存在。签名契约及示例见[元数据可用性](../../language/metadata-availability.md)。
 
-### 5.1 Negation
+### 5.1 否定
 
-| Input | Result |
+| 输入 | 结果 |
 |---|---|
 | Matched | NotMatched |
 | NotMatched | Matched |
 | Unknown | Unknown |
 
-### 5.2 Conjunction
+### 5.2 合取
 
-| Left | Right | Result |
+| 左侧 | 右侧 | 结果 |
 |---|---|---|
 | Matched | Matched | Matched |
 | Matched | NotMatched | NotMatched |
@@ -133,9 +133,9 @@ Selectors query only the facts they consume. Unavailable metadata propagates `Un
 | Unknown | NotMatched | NotMatched |
 | Unknown | Unknown | Unknown |
 
-### 5.3 Disjunction
+### 5.3 析取
 
-| Left | Right | Result |
+| 左侧 | 右侧 | 结果 |
 |---|---|---|
 | Matched | Matched | Matched |
 | Matched | NotMatched | Matched |
@@ -147,9 +147,9 @@ Selectors query only the facts they consume. Unavailable metadata propagates `Un
 | Unknown | NotMatched | Unknown |
 | Unknown | Unknown | Unknown |
 
-Implementations may short-circuit only when doing so preserves diagnostics required by the selected evaluation policy.
+只有能保留所选求值策略要求的诊断时，实现才可短路。
 
-## 6. Standard Member Selectors
+## 6. Standard 成员选择器
 
 ```ebnf
 selector =
@@ -175,20 +175,20 @@ cctor-selector     = "cctor",     "(", type-pattern, ")" ;
 
 ```
 
-### 6.1 Selector domains
+### 6.1 选择器适用域
 
-- `callable(...)` matches non-constructor method-like members: ordinary methods, property/event accessors, operators, and conversions.
-- `execution(...)` matches every method-like member, including instance and static constructors. Constructor candidates match a callable signature by their metadata name (`.ctor`/`.cctor`) and `void` return type.
-- `method(...)` matches ordinary methods only.
-- `property(...)` matches a property getter or setter.
-- `getter(...)` matches only a property getter.
-- `setter(...)` matches only a property setter.
-- `ctor(...)` matches instance constructors.
-- `cctor(...)` matches static constructors.
+- `callable(...)` 匹配非构造器的方法类成员：普通方法、属性`/`事件访问器、运算符及转换。
+- `execution(...)` 匹配全部方法类成员，包括实例与静态构造器。构造器候选通过其元数据名称（`.ctor``/``.cctor`）及 `void` 返回类型匹配可调用签名。
+- `method(...)` 只匹配普通方法。
+- `property(...)` 匹配属性 getter 或 setter。
+- `getter(...)` 只匹配属性 getter。
+- `setter(...)` 只匹配属性 setter。
+- `ctor(...)` 匹配实例构造器。
+- `cctor(...)` 匹配静态构造器。
 
-Whether a member has a body or can be woven is not implied by any selector. Rougamo applies that scenario-specific filter after AspectN matching.
+任何选择器都不隐含成员有方法体或可以织入。Rougamo 在 AspectN 匹配之后应用其场景专用过滤。
 
-## 7. Callable Signatures
+## 7. 可调用签名
 
 ```ebnf
 callable-signature =
@@ -219,32 +219,32 @@ return-ref-kind =
     | "ref", "readonly" ;
 ```
 
-A member path has an optional prefix negation, an optional declaring type pattern and a Boolean member-name pattern. The declaring type is omitted by writing nothing — `method(* Get(..))` matches members named `Get` on any declaring type; there is no leading-separator spelling. Separators (`.`, `..`, `/`) must remain adjacent (§3.2).
+成员路径包含可选前置否定、可选声明类型模式和布尔成员名称模式。省略声明类型时不写任何内容：`method(* Get(..))` 匹配任意声明类型上名为 `Get` 的成员，没有前导分隔符写法。分隔符 `.`、`..`、`/` 必须保持邻接（第 3.2 节）。
 
-Group Boolean declaring types before the member separator: `(A || B).Run`. Names can be grouped independently: `A.(Run || Stop)`, or combined as `(A || B).(Run && !Stop)`. Arrays and nullable types use the same structural matching rules as other type positions: `int[,].Get`, `int?.GetValueOrDefault`. Name atoms are literal metadata names with wildcard characters and optional method generic clauses, not type aliases or structural type patterns.
+成员分隔符前的布尔声明类型需要分组，如 `(A || B).Run`。名称可独立分组，如 `A.(Run || Stop)`，也可组合为 `(A || B).(Run && !Stop)`。数组和可空类型采用其他类型位置相同的结构规则，如 `int[,].Get`、`int?.GetValueOrDefault`。名称叶节点是带通配字符和可选方法泛型子句的字面元数据名，不是类型别名或结构类型模式。
 
-A prefix `!` negates the entire conjunction of declaring type, member name and that name's generic clause. It does not negate modifiers, return/property type, parameters or the selector domain. Thus `!Run` complements zero-arity `Run`; `!Run<?>` complements `Run` at every arity. To negate only the name, write `A.!Run`; to negate only the declaring type, write `(!A).Run`. `!*(..)` matches no members. Negation isolates tentative variable bindings, and Boolean branches use the scope rules in §13.
+前置 `!` 否定声明类型、成员名称及该名称泛型子句的完整合取，不否定修饰符、返回`/`属性类型、参数或选择器适用域。因此 `!Run` 是零元数 `Run` 的补集，`!Run<?>` 是任意元数 `Run` 的补集。只否定名称用 `A.!Run`，只否定声明类型用 `(!A).Run`。`!*(..)` 不匹配成员。否定隔离暂定变量绑定，布尔分支按第 13 节的作用域规则处理。
 
-`tasklike` remains a literal name in member-path declaring-type name positions, including `tasklike<int>+.Get`. In return/parameter type patterns, generic argument patterns, and the declaring-type patterns of `ctor`/`cctor`, it denotes the Task/ValueTask shape. Thus `ctor(tasklike(..))` and `cctor(tasklike<int>)` use shape matching. A qualified literal type name such as `Example.tasklike<int>` is unambiguous in any position, including constructors.
+`tasklike` 在成员路径的声明类型名位置仍是字面名，包括 `tasklike<int>+.Get`。在返回`/`参数类型模式、泛型实参及 `ctor`/`cctor` 声明类型模式中，它表示 `Task`/`ValueTask` 形状。因此 `ctor(tasklike(..))`、`cctor(tasklike<int>)` 使用形状匹配。`Example.tasklike<int>` 这类限定字面名在任何位置（包括构造器）都无歧义。
 
-`..` is a namespace ellipsis: it may only appear between namespace segments, never immediately before the member name. The member name is always joined to its declaring type with `.` — `method(* *..StaticMethod(..))` and `method(* System..*(..))` are errors because the declaring type's type-name segment is missing; write `method(* *..*.StaticMethod(..))`, or omit the declaring type entirely with `method(* StaticMethod(..))`. These replacements have different ranges: a written namespace/type path excludes global or nested types unless explicitly expressed, while an omitted declaring type includes them.
+`..` 是命名空间省略段，只能位于命名空间段之间，不能直接位于成员名之前。成员名始终通过 `.` 与声明类型连接。`method(* *..StaticMethod(..))`、`method(* System..*(..))` 因缺少声明类型的类型名称段而错误；应写 `method(* *..*.StaticMethod(..))`，或用 `method(* StaticMethod(..))` 完全省略声明类型。替代写法范围不同：显式命名空间`/`类型路径除非明确表达，否则排除全局或嵌套类型；省略声明类型则包含它们。
 
-`*` as the whole member path matches any namespace, declaring type, member name and generic arity. With the structured declaring-type grammar, `*.*` also uses the full type wildcard and includes arrays, generic parameters and nested declaring types. Adding a declaring-type generic clause changes it to a named pattern: `*<?>.*` excludes arrays and generic parameters, and nested types require `/`. Other written names continue to follow the namespace and nesting rules.
+整个成员路径的 `*` 匹配任意命名空间、声明类型、成员名及泛型元数。结构化声明类型语法下，`*.*` 同样使用完整类型通配符，包含数组、泛型形参和嵌套声明类型。添加声明类型泛型子句后成为有名模式：`*<?>.*` 排除数组与泛型形参，嵌套类型要求 `/`。其他显式名称继续遵守命名空间与嵌套规则。
 
-Standard has no `async` modifier: writing `async` in a signature is an error. Asynchrony is matched through the return type instead.
+Standard 没有 `async` 修饰符，签名中将 `async` 用作修饰符是错误。异步形状通过返回类型匹配。
 
-Task-like return matching is expressed as a type pattern:
+任务类返回匹配使用类型模式：
 
 ```text
 method(tasklike<string> Service.Get(..))
 method(tasklike Service.Flush(..))
 ```
 
-`tasklike<T>` matches `Task<T>` or `ValueTask<T>` regardless of whether the method was compiled with `async`. Bare `tasklike` matches non-generic `Task` or `ValueTask`; `tasklike<void>` and `tasklike<System.Void>` are rejected with a migration diagnostic. Custom awaitables are outside 1.0 task-like syntax.
+`tasklike<T>` 匹配 `Task<T>` 或 `ValueTask<T>`，与方法是否使用 `async` 编译无关。裸 `tasklike` 匹配非泛型 `Task`/`ValueTask`；`tasklike<void>`、`tasklike<System.Void>` 被拒绝并附迁移诊断。自定义可等待类型不在 1.0 `tasklike` 语法范围内。
 
-The historical `async` return sugar is unsupported. General `MethodSignature.IsAsync` metadata remains available to consumers.
+历史 `async` 返回简写不受支持，通用 `MethodSignature.IsAsync` 元数据仍可供调用方使用。
 
-## 8. Property Signatures
+## 8. 属性签名
 
 ```ebnf
 property-signature =
@@ -253,13 +253,13 @@ property-signature =
     member-path-pattern ;
 ```
 
-The type position is the property type, not the setter method's CLR return type.
+类型位置表示属性类型，不是 setter 方法的 CLR 返回类型。
 
-Property names use the same Boolean and path negation syntax as methods. Generic clauses on any property-name atom are errors (AN2011), even `<!>` or a clause inside a Boolean branch; generic clauses on its declaring type remain valid.
+属性名称采用与方法相同的布尔和路径否定语法。任何属性名称叶节点上的泛型子句都是错误（AN2011），包括 `<!>` 或布尔分支内部的子句；声明类型的泛型子句仍合法。
 
-`property(...)` evaluates the associated property metadata and then selects both getter and setter methods. The unified model represents the property and its accessors separately.
+`property(...)` 对关联属性元数据求值，选择 getter 和 setter 方法。统一模型分别表示属性与访问器。
 
-## 9. Constructor Signatures
+## 9. 构造器签名
 
 ```ebnf
 ctor-signature =
@@ -267,11 +267,11 @@ ctor-signature =
     parameter-pattern-list ;
 ```
 
-`ctor(...)` never matches a static constructor. `cctor(...)` never matches an instance constructor.
+`ctor` 永不匹配静态构造器；`cctor` 永不匹配实例构造器。
 
-## 10. Modifiers
+## 10. 修饰符
 
-Standard recognizes:
+Standard 识别：
 
 - `public`
 - `protected`
@@ -281,7 +281,7 @@ Standard recognizes:
 - `private protected`
 - `static`
 - `!static`
-- Negated accessibility such as `!public`
+- `!public` 等否定可见性
 
 ```ebnf
 modifier =
@@ -313,22 +313,22 @@ compound-accessibility =
     | "private", "protected" ;
 ```
 
-At most one positive accessibility (or one `|` alternation group) appears in one Standard signature. `|` joins positive alternatives; a candidate matches when its accessibility equals any alternative. A compound accessibility combined with `|` must be parenthesized. Parentheses around a lone compound accessibility are also allowed for readability; a parenthesized single accessibility such as `(public)`, or a pair that is not a compound such as `(internal public)`, is an error — whitespace never joins accessibility alternatives, use `|`:
+一个 Standard 签名最多出现一项正向可见性或一组 `|` 备选。`|` 连接正向备选，候选可见性等于其中任一项即匹配。复合可见性与 `|` 组合时必须加括号。为可读性也允许单独的复合可见性加括号；单个可见性的 `(public)`，或不构成复合短语的 `(internal public)` 是错误。空白不连接可见性备选，必须用 `|`：
 
 ```text
 method(private|internal * *(..))
 method((private protected)|(protected internal)|public * *(..))
 ```
 
-Negation applies to a single accessibility phrase only; `!` cannot be combined with `|`:
+否定只作用于一个可见性短语，`!` 不能与 `|` 组合：
 
 ```text
 method(!protected internal * *(..))
 ```
 
-`private protected` and `protected internal` each denote one composite accessibility. Use `|` to express alternatives. Concatenated historical spellings report AN4003 with the corresponding spaced phrase.
+`private protected` 和 `protected internal` 各表示一个复合可见性；备选用 `|` 表达。历史无空格拼写报告 AN4003，并给出带空格的替代短语。
 
-## 11. Parameter Patterns and Ref Kinds
+## 11. 参数模式与引用分类
 
 ```ebnf
 parameter-pattern-list =
@@ -349,23 +349,22 @@ ref-kind =
     | "ref", "readonly" ;
 ```
 
-Rules:
+规则：
 
-- `(..)` matches any parameter count and any parameter types.
-- `()` matches zero parameters.
-- An explicit list matches exact count and order.
-- An empty slot between or after commas is an implicit `*` parameter: `(int,)` matches two parameters (`int` plus any), and `(,int)` matches (any, `int`).
-- Omitting the ref annotation does not constrain ref kind: the parameter or return matches by-value and by-ref candidates alike. `ref`, `out`, `in`, and `ref readonly` match that exact kind, and `!ref` matches only non-by-ref (by-value) candidates. `!ref` cannot be combined with an explicit ref kind, and no `!out`/`!in` negation exists — negation applies to the by-ref concept as a whole.
-- Return type uses support `ref`, `ref readonly`, and `!ref`; `out` and `in` are invalid for returns.
+- `(..)` 匹配任意数量和类型的参数。
+- `()` 匹配零参数。
+- 显式列表匹配精确数量与顺序。
+- 逗号之间或之后的空槽隐含 `*` 参数：`(int,)` 匹配两个参数（`int` 加任意），`(,int)` 匹配（任意加 `int`）。
+- 省略引用注解不约束引用分类，参数`/`返回槽同时匹配按值和引用候选。`ref`/`out`/`in`/`ref readonly` 精确匹配对应种类；`!ref` 只匹配非引用（按值）候选。`!ref` 不能与显式引用分类组合，没有 `!out``/``!in`，否定作用于整体引用概念。
+- 返回槽支持 `ref`、`ref readonly`、`!ref`；`out` 和 `in` 对返回值无效。
 
-`params`, `scoped`, pointers, and function pointers are not expressible in Standard 1.0, although adapters may preserve those facts for future predicates.
+`params`、`scoped`、指针和函数指针无法用 Standard 1.0 表达，适配器可以为未来谓词保留相应事实。
 
-## 12. Type Patterns
+## 12. 类型模式
 
-### 12.1 Structure
+### 12.1 结构
 
-Parentheses group Boolean type expressions such as `(A || B)`. A lone `(int)` is rejected; write `int`. Tuple syntax requires at least two elements, so `()` and `(int,)` are invalid. Standalone `ParseTypePattern` accepts pure type patterns; `ref`, `out`, `in`, `ref readonly`, and `!ref` belong to member return/parameter type-use positions.
-
+括号对布尔类型表达式分组，如 `(A || B)`。单独 `(int)` 被拒绝，应写 `int`。元组至少两个元素，因此 `()`、`(int,)` 无效。独立 `ParseTypePattern` 接受纯类型模式；`ref`/`out`/`in`/`ref readonly`/`!ref` 属于成员返回`/`参数的类型使用位置。
 
 ```ebnf
 type-pattern =
@@ -423,21 +422,21 @@ array-rank-specifier =
     "[", { "," }, "]" ;
 ```
 
-Type-level boolean operators use the same precedence and three-state logic as member expressions.
+类型级布尔运算采用与成员表达式相同的优先级和三态逻辑。
 
-The binder validates suffix ordering and applicability. Each comma in an array rank specifier increases the rank by one; `[]` is rank one.
+绑定器核验后缀顺序及适用性。数组维数说明符每个逗号使维数加一；`[]` 为一维。
 
-### 12.2 Namespaces and names
+### 12.2 命名空间与名称
 
-- `*` matches zero or more characters inside one name segment.
-- `..` matches zero or more namespace segments.
-- Omitted namespace matches any namespace.
-- `/` separates nested types.
-- Matching is ordinal and case-sensitive in Standard.
+- `*` 在单个名称段内匹配零个或多个字符。
+- `..` 匹配零个或多个命名空间段。
+- 省略命名空间匹配任意命名空间。
+- `/` 分隔嵌套类型。
+- Standard 使用区分大小写的序数匹配。
 
-Namespace segments never have generic clauses (AN2011 at the clause). `Ns<int>.Owner` is invalid; `Ns.Outer<int>/Inner<string>` is valid. Use `/` for nested types rather than placing a generic type in a namespace segment.
+命名空间段不能有泛型子句，在子句处报告 AN2011。`Ns<int>.Owner` 无效，`Ns.Outer<int>/Inner<string>` 合法。嵌套类型使用 `/`，不能把泛型类型放在命名空间段中。
 
-Examples:
+示例：
 
 ```text
 Service
@@ -446,38 +445,38 @@ MyCompany..Internal..*Service
 Outer/Inner
 ```
 
-### 12.3 Primitive aliases
+### 12.3 基础类型别名
 
-Standard recognizes:
+Standard 识别：
 
 ```text
 bool byte sbyte short ushort int uint long ulong
 char float double decimal string object void
 ```
 
-Each alias maps to its corresponding `System` type.
+每个别名映射到对应 `System` 类型。
 
-### 12.4 Assignability
+### 12.4 类型关系
 
-The postfix `+` matches the named type itself or any declared subtype/implementation, including runtime-synthesized interface implementations such as the generic collection interfaces of SZ arrays:
+后缀 `+` 匹配有名类型自身，或任何已声明子类型`/`实现，包括运行时合成的接口实现，如 SZ 数组的泛型集合接口：
 
 ```text
 System.IDisposable+
 *Provider+
 ```
 
-The target of `+` is validated structurally: after unwrapping parentheses it must be a named type pattern (wildcard names and explicit generic clauses allowed) or a single-level nullable of a named type pattern (`X?+`). Any other target structure — arrays, nested or interleaved nullable wrappers, bare wildcards, tuples, Boolean combinations, pattern variables, `tasklike`, or a second `+` separated by another suffix — is rejected with a binding diagnostic. The rule constrains the target node itself only: array, wildcard, and tuple patterns inside the generic arguments of a named target (`List<int[]>+`) remain legal, and `int+?` (a nullable wrapping an assignable pattern, not an assignability target) is unaffected.
+`+` 的目标按结构校验：移除分组括号后，必须是有名类型模式（允许通配名称和显式泛型子句），或有名类型外包一层可空模式（`X?+`）。其他目标结构均以绑定诊断拒绝：数组、嵌套或交错的可空包装、裸通配符、元组、布尔组合、模式变量、`tasklike`，以及被其他后缀隔开的第二个 `+`。规则只约束目标节点自身：有名目标泛型实参中的数组、通配符和元组仍合法，如 `List<int[]>+`；`int+?` 是可空包装关系模式，不是关系目标，不受影响。
 
-Variance conversions — array covariance and generic co/contravariance — are not part of `+`. Express them compositionally by placing `+` inside type arguments or array elements:
+变体转换（数组协变、泛型协变`/`逆变）不属于 `+`。可将 `+` 放到类型实参或数组元素内部，组合表达所需匹配：
 
 ```text
 Base+[]                     matches Derived[]
 IEnumerable<object+>        matches IEnumerable<string>
 ```
 
-Failure to resolve required base or interface information produces `Unknown`.
+无法解析必需基类或接口信息时产生 `Unknown`。
 
-### 12.5 Arrays
+### 12.5 数组
 
 ```text
 int[]
@@ -485,62 +484,62 @@ int[,]
 string[][]
 ```
 
-Ranks and nesting must match exactly unless a wildcard pattern explicitly removes that constraint.
+除非通配模式明确移除约束，否则维数和嵌套必须完全匹配。
 
-Standard array patterns constrain rank and element patterns. `int[]` accepts both a vector (`int[]`, SZ) and a general rank-one array (`int[*]`, non-SZ); `[*]` is metadata notation, not added DSL syntax. The public `ArrayTypeSignature.Shape` preserves this distinction for identity and nominal relationship queries. Shape is compared recursively in nested arrays and generic arguments. Nominal array-to-array queries permit vector-to-general shape conversion with identical elements, but not the reverse; they do not introduce CLR element covariance. See [array shape](../../language/array-shape.md).
+Standard 数组模式约束维数及元素模式。`int[]` 同时接受 Vector（`int[]`、SZ）和 General 一维数组（`int[*]`、非 SZ）；`[*]` 是元数据记号，不是新增 DSL 语法。公共 `ArrayTypeSignature.Shape` 为身份与名义关系查询保留该区别。嵌套数组和泛型实参递归比较形状。数组到数组的名义查询允许元素相同的 Vector→General 形状转换，不允许反向转换，也不增加 CLR 元素协变。见[数组形状](../../language/array-shape.md)。
 
-### 12.6 Nullability
+### 12.6 可空性
 
-Standard rules:
+Standard 规则：
 
-- If `T` resolves to a non-nullable value type, `T?` matches `System.Nullable<T>`.
-- If `T` resolves to a reference type, `T?` is equivalent to `T`.
-- Nullable reference annotations are not matched.
-- `System.Nullable<T>` can always be written explicitly.
+- `T` 解析为不可空值类型时，`T?` 匹配 `System.Nullable<T>`。
+- `T` 解析为引用类型时，`T?` 等同于 `T`。
+- 不匹配引用类型的可空注解。
+- 始终可以显式写 `System.Nullable<T>`。
 
-### 12.7 Tuples
+### 12.7 元组
 
-Standard:
+Standard：
 
 ```text
 (int, string)
 method(($T, decimal) Service.M<$T>())
 ```
 
-matches `System.ValueTuple` only. Long tuples are normalized structurally so callers do not need to express the runtime `TRest` nesting.
+只匹配 `System.ValueTuple`。长元组按结构归一，调用方无需表达运行时 `TRest` 嵌套。
 
-To match `System.Tuple`, write it explicitly:
+匹配 `System.Tuple` 时显式写：
 
 ```text
 System.Tuple<int, string>
 ```
 
-Match `System.Tuple` explicitly with a named generic type pattern.
+使用有名泛型类型模式显式匹配 `System.Tuple`。
 
-## 13. Generics
+## 13. 泛型
 
-### 13.1 Arity
+### 13.1 元数
 
-Standard uses:
+Standard 使用：
 
-| Pattern | Meaning |
+| 模式 | 含义 |
 |---|---|
-| `Name` | Non-generic type or member named `Name` (omission means arity zero) |
-| `Name<!>` | Explicit arity zero |
-| `Name<>` | Arity 1 with any argument |
-| `Name<,>` | Arity 2 with any arguments |
-| `Name<,,>` | Arity 3 with any arguments |
-| `Name<..>` | Any positive arity (at least one) |
-| `Name<?>` | Any arity including zero — generic and non-generic alike |
-| `Name<T1,T2>` | Exact argument patterns |
-| `Name<T,>` / `Name<,T>` | Arity 2 with one exact and one any-argument slot |
-| `Name<T,,U>` | Arity 3 with a middle any-argument slot |
+| `Name` | 名为 Name 的非泛型类型/成员，省略子句即零元数 |
+| `Name<!>` | 显式零元数 |
+| `Name<>` | 元数 1，实参任意 |
+| `Name<,>` | 元数 2，实参任意 |
+| `Name<,,>` | 元数 3，实参任意 |
+| `Name<..>` | 任意正元数，至少一个 |
+| `Name<?>` | 任意元数，包括零；泛型和非泛型均可 |
+| `Name<T1,T2>` | 精确实参模式 |
+| `Name<T,>`/`Name<,T>` | 元数 2，一项精确、一项通配 |
+| `Name<T,,U>` | 元数 3，中间槽通配 |
 
-`<!>` and `<?>` are available in every generic-clause position (type patterns, declaring types, member generic clauses) and on wildcard names. A suffixed `*` clause binds as a named wildcard pattern — it is not the full type wildcard: arrays and generic-parameter candidates are never matched, and a single-segment pattern does not cross nested types (§7). `ValueTuple<...>` is an ordinary named generic type from the CLR's perspective and is matched by `*<?>`/`*<..>` like any constructed generic. `*` without a clause remains the only full wildcard and the only abbreviation that matches arrays and nesting.
+`<!>`、`<?>` 可用于所有泛型子句位置（类型、声明类型、成员泛型子句）及通配名称。带子句的 `*` 绑定为有名通配模式，不是完整类型通配符：不匹配数组和泛型形参候选，单段模式不跨越嵌套类型（第 7 节）。从 CLR 看，`ValueTuple<...>` 是普通有名泛型类型，同其他构造泛型一样由 `*<?>``/``*<..>` 匹配。没有子句的 `*` 仍是唯一完整通配符，也是唯一匹配数组和嵌套的简写。
 
-The special name wildcard `*` without a generic clause matches any arity — the single abbreviation exception. For every other name, omission means arity zero; write `Name<?>` to include generic candidates.
+特殊名称通配符 `*` 不带泛型子句时匹配任意元数，这是唯一简写例外。其他名称省略子句均为零元数；包含泛型候选应写 `Name<?>`。
 
-`void` never has generic parameters: any generic clause on `void` (`void<>`, `void<..>`, `void<!>`, `void<?>`) is rejected with a binding diagnostic.
+`void` 不含泛型形参，其任何泛型子句（`void<>`、`void<..>`、`void<!>`、`void<?>`）都以绑定诊断拒绝。
 
 ```ebnf
 generic-pattern-list =
@@ -550,13 +549,13 @@ generic-slot =
     [ type-pattern ] ;
 ```
 
-An empty wildcard list `<>` represents arity one; an all-comma list has arity equal to its comma count plus one; a list with at least one typed argument has arity equal to its slot count, and each empty slot is an any-type argument occupying one position.
+空通配列表 `<>` 表示元数一；全逗号列表的元数是逗号数加一；至少有一项带类型实参的列表按槽位数确定元数，每个空槽占一个任意类型实参位置。
 
-The zero-arity form is recognized only when `!` is followed immediately by the closing token (ignoring whitespace inside the clause). `Box<!>` is zero arity; `Box<!int>` is one generic argument with the Boolean pattern `!int`. First and later argument slots have the same type-pattern grammar.
+只有 `!` 后紧接闭合记号时才识别零元数形式（忽略子句内部空白）。`Box<!>` 是零元数；`Box<!int>` 是包含布尔模式 `!int` 的一个泛型实参。首槽和后续槽采用相同类型模式语法。
 
-### 13.2 Pattern variables
+### 13.2 模式变量
 
-Standard variables begin with `$`:
+Standard 变量以 `$` 开头：
 
 ```text
 $T
@@ -564,32 +563,32 @@ $Result
 $TKey
 ```
 
-Example:
+示例：
 
 ```text
 method($T Service.Convert<$T>($T))
 ```
 
-A variable is declared by a positive occurrence in a type or method generic clause. Its first evaluation binds it; later references must be type-equal under the active `ITypeSystem`. Within a member signature, the declaring-type and method generic clauses are bound and evaluated before return/property types and parameters, regardless of textual order.
+变量由类型或方法泛型子句中的正向出现声明。首次求值建立绑定，后续引用要求在当前 `ITypeSystem` 下类型相等。成员签名中，声明类型与方法泛型子句先于返回`/`属性类型和参数绑定、求值，与文本顺序无关。
 
-Rules:
+规则：
 
-- Ordinary `T` or `Result` is a type name, never an implicit variable.
-- Return/property types and method/constructor parameter types can only reference variables already declared in an enclosing type or method generic clause or the visible conjunction scope. Nested generic clauses in those type uses do not declare variables.
-- A standalone `$T` cannot declare a variable. A generic declaration argument cannot negate a variable, even when that name is already visible: `method($T Service.M<!$T>())` and `method($T Service<$T>.M<!$T>())` are invalid. Concrete negated arguments such as `Box<!int>` remain valid.
-- A return or parameter reference may be negated: `method(!$T Service.M<$T>())` is valid. Negating a whole type pattern can reference an existing variable, as in `Box<$T> && !Box<$T>`.
-- Conjunction shares a binding environment.
-- Each OR branch evaluates with an isolated copy.
-- Matched and unknown binding alternatives survive OR and inheritance/attribute enumeration; unknown alternatives retain their uncertainty through later conjunctions. Equivalent alternatives may be coalesced without adding a resource budget or changing match status.
-- Bindings created inside negation do not escape it.
-- A variable may not be introduced for the first time under negation.
-- Bindings are not returned in public `MatchResult`.
+- 普通 `T`/`Result` 是类型名，不是隐式变量。
+- 返回`/`属性类型及方法`/`构造器参数类型只能引用外层类型、方法泛型子句或可见合取作用域已声明的变量。这些类型使用内部的嵌套泛型子句不声明变量。
+- 单独 `$T` 不能声明变量。泛型声明实参不能否定变量，即使名称已可见；`method($T Service.M<!$T>())`、`method($T Service<$T>.M<!$T>())` 无效。`Box<!int>` 等具体否定实参仍合法。
+- 返回或参数引用可被否定，`method(!$T Service.M<$T>())` 合法。整个类型模式的否定可以引用现有变量，如 `Box<$T> && !Box<$T>`。
+- 合取共享绑定环境。
+- 每个 OR 分支使用隔离副本求值。
+- 匹配及未知的绑定备选在 OR、继承`/`特性枚举后保留；未知备选在后续合取中仍带不确定性。等价备选可以合并，但不增加资源预算、不改变匹配状态。
+- 否定内创建的绑定不向外逃逸。
+- 变量不能首次在否定下引入。
+- 公共 `MatchResult` 不返回绑定。
 
-Variables may bind formal generic parameters or constructed concrete types.
+变量可绑定声明泛型形参或构造的具体类型。
 
-## 14. Attributes
+## 14. 特性
 
-Attribute selectors use short position names:
+特性选择器使用位置短名称：
 
 ```ebnf
 attribute-selector =
@@ -618,84 +617,84 @@ attr(exec AttributeType)
 attr(any AttributeType)
 ```
 
-Semantics:
+语义：
 
-- `type`: direct attributes on the declaring type.
-- `call`: direct attributes on the current method — for an accessor candidate this is the accessor method itself.
-- `prop`: direct attributes on the associated property when the candidate is a property accessor. A candidate that is not an accessor definitively has no property location and returns `NotMatched`; an accessor whose property link is missing from backend metadata returns `Unknown`.
-- `para[n]` or `para n`: direct attributes on parameter `n`.
-- `para[*]` or `para *`: direct attributes on any parameter.
-- `ret`: direct attributes on the return location.
-- `exec`: direct attributes on the current callable, plus direct attributes on the associated property when the candidate is a property accessor.
-- `any` or `*`: any supported direct location.
+- `type`：声明类型的直接特性。
+- `call`：当前方法的直接特性，候选为访问器时表示访问器方法自身。
+- `prop`：候选是属性访问器时，表示关联属性的直接特性。非访问器候选确定没有属性位置，返回 `NotMatched`；后端缺少访问器属性关联时返回 `Unknown`。
+- `para[n]`/`para n`：参数 `n` 的直接特性。
+- `para[*]`/`para *`：任意参数的直接特性。
+- `ret`：返回位置的直接特性。
+- `exec`：当前可调用成员的直接特性；候选为属性访问器时还包括关联属性的直接特性。
+- `any`/`*`：任意支持的直接位置。
 
-There is no `get`/`set` attribute position: accessor-scoped attributes are expressed compositionally, because `call` on an accessor candidate already denotes that accessor's own attributes:
+没有 `get`/`set` 特性位置。访问器范围的特性用组合表达，因为访问器候选上的 `call` 已表示该访问器自身特性：
 
 ```text
 getter(string Name) && attr(call ObsoleteAttribute)
 ```
 
-The earlier long position names `callable`, `property`, `parameter`, and `return` are rejected with a migration diagnostic (AN4005) naming the short replacement.
+此前的长位置名 `callable`/`property`/`parameter`/`return` 被拒绝，迁移诊断 AN4005 给出短名称替代。
 
-Attribute matching does not instantiate attribute objects. Inherited-attribute semantics are outside Standard 1.0.
+特性匹配不实例化特性对象。继承特性语义不在 Standard 1.0 范围内。
 
-`attr` uses CustomAttribute records. Metadata flags and other metadata table encodings are not attribute records, even when Reflection exposes them as pseudo attributes or source uses attribute notation. This excludes `Serializable`, `ComImport`, `StructLayout`, `DllImport`, `PreserveSig`, `MethodImpl`, `In`, `Out`, `Optional`, `MarshalAs` and `DefaultParameterValue` encodings. A real PE CustomAttribute blob of one of these types remains visible, including when the same metadata also causes a pseudo attribute to be synthesized. Ordinary marker attributes and real readonly marker records remain visible. Array declaring types do not inherit attributes from their element type.
+`attr` 使用 CustomAttribute 记录。元数据标志及其他表编码不是特性记录，即使 Reflection 将其公开为伪特性，或源代码使用特性写法也如此。排除 `Serializable`、`ComImport`、`StructLayout`、`DllImport`、`PreserveSig`、`MethodImpl`、`In`、`Out`、`Optional`、`MarshalAs`、`DefaultParameterValue` 编码。但这些类型的真实 PE CustomAttribute 数据仍可见，包括同一元数据也导致伪特性合成的情况。普通标记特性及真实 readonly 标记记录仍可见。数组声明类型不继承元素类型的特性。
 
-## 15. Regex
+## 15. 正则表达式
 
 ```ebnf
 regex-selector = "regex", "(", regex-body, ")" ;
 ```
 
-`regex-body` preserves its original characters. The closing delimiter is the unmatched outer `)` after honoring escape atoms, ordinary character classes and nested groups. The supported regex subset is:
+`regex-body` 保留原始字符。闭合分隔符是在处理转义原子、普通字符类和嵌套分组之后，未配对的外层 `)`。支持的正则子集为：
 
-- Literals, character escapes, `.`, character categories such as `\d`, `\w`, `\s` and `\p{L}`, and their complements.
-- Ordinary character classes, ranges and negation, such as `[a-z]` and `[^\s]`. Literal `[` and `]` inside a class must be escaped as `\[` and `\]`.
-- Ordinary groups `(...)`, noncapturing groups `(?:...)`, alternation `|`, anchors, greedy and lazy quantifiers `*`, `+`, `?`, `{m}`, `{m,}`, `{m,n}`.
+- 字面量、字符转义、`.`、`\d``/``\w``/``\s``/``\p{L}` 等字符类别及其补集。
+- 普通字符类、范围和否定，如 `[a-z]`、`[^\s]`。字符类内的字面 `[`、`]` 必须转义为 `\[`、`\]`。
+- 普通分组 `(...)`、非捕获分组 `(?:...)`、分支 `|`、锚点、贪婪`/`懒惰量词 `*`、`+`、`?`、`{m}`、`{m,}`、`{m,n}`。
 
-All other `(?...)` group forms are rejected: comments, inline or scoped options (including `(?x)` and `(?i)`), named or balancing groups, conditionals, lookarounds and atomic groups. Backreferences (`\1` through `\9` and longer numeric forms, or `\k<name>` / `\k'name'`) and nested or subtracted character classes are also rejected. Numeric escapes beginning with `1` through `9` outside a class are always rejected, including ambiguous octal forms; use `\xNN` or `\uNNNN` for literal character codes. Initial unescaped `]` in a class and the `[[]` literal-bracket convention are not supported. Whitespace and `#` always remain literal characters.
+其他所有 `(?...)` 分组被拒绝：注释、内联或局部选项（含 `(?x)`、`(?i)`）、命名/平衡分组、条件、环视和原子分组。反向引用（`\1` 到 `\9`、更长数字形式、`\k<name>`、`\k'name'`）及嵌套/相减字符类也被拒绝。类外以 `1`–9 开头的数字转义始终被拒绝，包括有歧义的八进制形式；字面字符编码使用 `\xNN` 或 `\uNNNN`。字符类开头未转义的 `]` 和 `[[]` 字面括号惯用写法不支持。空白及 `#` 始终保持字面字符。
 
-Unsupported constructs produce a compile-time `AN2012` error (`UnsupportedRegexFeature`); escaped or class-contained literal text resembling a construct is accepted. For example, `regex(\(\?x\))` matches the literal text `(?x)`. After subset validation, .NET validates regex syntax: an invalid pattern produces a compile-time `AN3002` error (`InvalidRegex`). Neither error produces a compiled member pattern. Authors should express complex selection logic with structured selectors and `&&`, `||`, `!`.
+不支持的结构产生编译期 `AN2012`（`UnsupportedRegexFeature`）；转义或类内看似结构的字面文本可以接受，如 `regex(\(\?x\))` 匹配字面 `(?x)`。子集校验后由 .NET 核验正则语法，无效模式产生编译期 `AN3002`（`InvalidRegex`）。两类错误均不产生编译成员模式。复杂选择逻辑应使用结构选择器与 `&&``/``||``/``!`。
 
-Regex uses culture-invariant `Regex.IsMatch` substring search on one canonical member signature. Use `^...$` for a full-signature match:
+正则用与区域性无关的 `Regex.IsMatch`，在单一规范成员签名上做子串搜索。完整签名匹配使用 `^...$`：
 
 ```text
 <accessibility> [static] <return-type> <declaring-type>.<member-name><generic-part>(<parameters>)
 ```
 
-The compiler `async` flag is not part of the canonical signature; return shapes are matched with `tasklike`. Ref kinds are rendered before affected parameter or return types. Nested types use `/`. Type names are fully qualified except generic formal parameters in definition signatures, which are renamed positionally to `T1..TN`: declaring-type parameters first (outermost type, left to right, then nested levels), followed by method parameters. Every occurrence of one parameter renders the same name, in the declaring-type clause, the method generic clause, and use positions alike. Constructed signatures render the actual type arguments.
+编译器 `async` 标记不属于规范签名，返回形状用 `tasklike` 匹配。引用分类呈现在受影响参数`/`返回类型之前。嵌套类型使用 `/`。除定义签名中的声明泛型形参之外，类型名完全限定；形参按位置改名为 `T1..TN`：先声明类型形参（最外层从左到右，然后嵌套层），再方法形参。同一个形参在声明类型子句、方法泛型子句和使用位置中均呈现相同名称。构造签名呈现实际类型实参。
 
-For an open constructed declaring type, recursively visit its actual arguments from left to right, including named generic arguments and array elements. Assign one position to each distinct type-parameter declaration in first-occurrence order, then append method parameters. For example, `Container<List<T>>` retains `T` inside `List<T>`, while `Pair<T,T>` uses the same name for both occurrences. With an additional method parameter the names become `T1` and `T2`. Closed arguments do not consume parameter positions.
+开放构造声明类型按从左到右顺序递归访问实际实参，包含有名泛型实参及数组元素。按首次出现为每个不同类型形参声明分配一个位置，再追加方法形参。例如 `Container<List<T>>` 保留 `List<T>` 内的 `T`，而 `Pair<T,T>` 两次使用同一名称。另有方法形参时名称为 `T1`、`T2`。闭合实参不占形参位置。
 
-Positional numbering is deliberate: patterns stay valid when source renames a generic parameter, and authors only need the arity of each type and the method. When the total parameter count (type plus method) is exactly one, the sole parameter renders as bare `T`; otherwise parameters are numbered `T1..TN`. Bare `T` and `T` followed by digits are reserved for this encoding — a concrete type whose fully qualified name is exactly such a token (only possible in the global namespace) is not distinguishable from a positional parameter by regex; use a structured selector for such members.
+按位置编号是有意设计：源码重命名泛型形参时模式仍有效，作者只需知道各类型及方法的元数。总形参数量（类型加方法）恰好一个时，唯一形参呈现为裸 `T`；其他情况为 `T1..TN`。裸 `T` 和 `T` 加数字为该编码保留。完全限定名恰为这些记号的具体类型（仅可能在全局命名空间中），正则无法将它与位置形参区分；此类成员使用结构选择器。
 
-Regex evaluation has a mandatory finite timeout. Timeout produces `Unknown` with `AN3003`. Ordinary quantifiers can still cause expensive backtracking; restricting syntax does not remove the timeout requirement.
+正则求值必须设有限超时，超时产生 `Unknown`/`AN3003`。普通量词仍可能造成高成本回溯，限制语法不能取消超时要求。
 
-## 16. Closed Semantic Contract
+## 16. 封闭语义契约
 
-Custom selectors, predicates and matching semantics are not supported. Selector names are the built-in names in section 6 and are case-sensitive. Both unqualified unknown names and qualified names such as `vendor.feature(...)` produce `AN2001` (`UnknownSelector`) during parsing. Recovery retains consumed tokens and continues at the next outer expression boundary; it does not interpret custom arguments.
+不支持自定义选择器、谓词和匹配语义。选择器名称是第 6 节内置名称，区分大小写。非限定未知名和 `vendor.feature(...)` 等限定名均在解析时产生 `AN2001`（`UnknownSelector`）。恢复保留已消费记号，在下一个外层表达式边界继续，不解释自定义实参。
 
-The engine and compilation APIs have no extension registry parameter. The former extension diagnostic `AN2008` is retired and is not reassigned.
+引擎及编译 API 没有扩展注册表参数。此前的扩展诊断 `AN2008` 已退休，不重新分配。
 
-## 17. Diagnostics
+## 17. 诊断
 
-Standard diagnostics include stable categories for:
+Standard 诊断包含以下稳定类别：
 
-- Lexical errors.
-- Missing or unexpected tokens.
-- Unknown selector or predicate.
-- Invalid target domain.
-- Invalid modifier combinations.
-- Invalid ref kind.
-- Invalid generic clause (including any generic clause on `void`).
-- Duplicate or illegally scoped variables.
-- Invalid parameter index outside the Int32 range.
-- Missing backend capability.
-- Resolution failure.
-- Unsupported regex features (AN2012) and invalid regex syntax (AN3002), both compile-time errors.
-- Regex timeout.
+- 词法错误。
+- 缺少或意外记号。
+- 未知选择器或谓词。
+- 无效目标域。
+- 无效修饰符组合。
+- 无效引用分类。
+- 无效泛型子句，包括 `void` 的任意泛型子句。
+- 重复或非法作用域变量。
+- 超出 Int32 范围的无效参数索引。
+- 后端能力缺失。
+- 解析引用失败。
+- 不支持的正则特性（`AN2012`）和无效正则语法（`AN3002`），均为编译错误。
+- 正则超时。
 
-Migration diagnostics include an actionable replacement where one exists:
+存在替代写法时，迁移诊断提供可执行的替代建议：
 
 ```text
 privateprotected -> private protected
@@ -707,11 +706,11 @@ attr(parameter ...) -> attr(para ...)
 attr(return ...) -> attr(ret ...)
 ```
 
-## 18. Conformance
+## 18. 一致性
 
-The existing Standard regression suites and cross-adapter cases define conformance. The solution has no oracle dependency. AN4003, AN4004 and AN4005 remain migration diagnostics; the removed selector-mode diagnostic AN2002 is not reassigned.
+现有 Standard 回归套件和跨适配器案例定义一致性。解决方案不依赖对照实现。AN4003、AN4004、AN4005 保持迁移诊断；已移除选择器模式诊断 AN2002 不重新分配。
 
-## 19. Standard Examples
+## 19. Standard 示例
 
 ```text
 method(public static string MyCompany.Services.UserService.Get*(..))
@@ -743,26 +742,26 @@ attr(para[*] System.ComponentModel.DataAnnotations.RequiredAttribute)
 method(* Service.*(..)) && !attr(call ObsoleteAttribute)
 ```
 
-## 20. Design Rationale and Migration
+## 20. 设计原因与迁移
 
-The [design decisions](../../language/standard-design-decisions.md) explain the name model, generic arity, wildcard family, ref kinds and structural suffix rules. The [migration guide](../../migration/shared-cecil-to-aspectn.md) describes the breaking transition from Shared.Cecil.AspectN and the removed public APIs.
+[设计决策](../../language/standard-design-decisions.md)解释名称模型、泛型元数、通配符族、引用分类及结构后缀。[迁移指南](../../migration/shared-cecil-to-aspectn.md)说明从 Shared.Cecil.AspectN 迁移的破坏性变化及移除的公共 API。
 
-## 21. Implementation limits and diagnostic presentation
+## 21. 实现限制与诊断呈现
 
-`AspectNLimits` exposes a maximum type-structure depth of 64 and a maximum generic arity of 64. The root type counts as one level; each array, pointer, native wrapper, constructed argument or containing type adds a structural level. Generic-parameter declaration owners, original definitions and custom-modifier type identities are checked independently as identity contexts, without adding a structural level or following identity cycles repeatedly. Type patterns deeper than 64 levels report AN1002 before binding. Parsing also retains safeguards of 128 recursive entries and 256 syntax-tree nodes in depth; exceeding either reports AN1002.
+`AspectNLimits` 公开最大类型结构深度 64 和最大泛型元数 64。根为第一层；每个数组、指针、原生包装、构造实参或包含类型增加一层结构深度。泛型形参声明者、原始定义及自定义修饰符类型身份分别作为身份上下文检查，不增加结构层，不重复追踪身份循环。超过 64 层的类型模式在绑定前报告 AN1002。解析还保留递归入口 128 和语法树深度 256 的保护，超出任一项报告 AN1002。
 
-A named type's effective generic arity includes all parameters across its containing-type chain. A method's own generic arity is limited independently: a type with 64 parameters may declare a method with another 64. Both declared arity and supplied argument counts are checked. Explicit generic clauses with more than 64 slots, including the sum across a nested type path, report AN2011.
+有名类型的有效泛型元数包括整个包含类型链的形参。方法自身元数独立限制，含 64 个形参的类型可声明另有 64 个形参的方法。声明元数及提供的实参数量均检查。显式泛型子句超过 64 槽（包括嵌套类型路径的累计槽数）报告 AN2011。
 
-Adapters reject native signatures exceeding these limits with `AspectNLimitException`; its `Diagnostic` reports AN3005 for depth or AN3006 for generic arity. Checks precede adapter cache keys, recursive ref classification, canonical owner text and positional generic-argument synthesis. Arity checks use the remaining capacity before addition, preventing integer overflow and excessive allocation. A manually constructed neutral signature exceeding either limit produces Unknown with the same diagnostic before matching, including wildcard and regex matching.
+适配器以 `AspectNLimitException` 拒绝超限原生签名，其 `Diagnostic` 用 AN3005 表示深度、AN3006 表示元数。检查先于适配器缓存键、递归引用分类、规范声明者文本和位置泛型实参合成。元数检查在加法前使用剩余容量，避免整数溢出及过量分配。手工中立签名超出任一上限时，在匹配前产生 `Unknown` 和相同诊断，包含通配及正则匹配。
 
-Relationship queries that encounter an over-limit ancestor retain that diagnostic and continue other branches. A known matching branch produces Matched; when no known branch matches, the incomplete relationship produces Unknown/AN3005 or Unknown/AN3006.
+关系查询遇到超限祖先时保留诊断并继续其他分支。已知匹配分支产生 `Matched`；没有已知匹配分支时，不完整关系产生 `Unknown`/AN3005 或 `Unknown`/AN3006。
 
-Adapters map native array, constructed-generic and containing-type graphs with explicit work stacks. Canonical native type text and legacy Reflection function-pointer ambiguity checks also traverse shapes iteratively. Reflection caches keep native dependencies alive during one mapping operation without retaining them permanently. These are implementation robustness limits and apply to every adapter, including Cecil.Fody.
+适配器用显式工作栈映射原生数组、构造泛型及包含类型图。规范原生类型文本和旧版 Reflection 函数指针歧义检查也迭代遍历形状。Reflection 缓存在单次映射期间保持原生依赖存活，不永久保留。这些实现健壮性限制适用于所有适配器，包括 Cecil.Fody。
 
-Public diagnostic collections are immutable snapshots. Exact duplicates with the same code, severity, span and message are removed. Ordering is by span start (unlocated diagnostics last), ordinal code, severity, span length, then ordinal message. Distinct messages at the same code/span remain distinct.
+公共诊断集合是不可变快照。诊断码、严重度、跨度和消息相同的精确重复项去重。顺序为跨度起点（无位置诊断最后）、序数诊断码、严重度、跨度长度，再序数消息。同一码`/`跨度但不同消息仍独立保留。
 
-Regex generic names require declaration identity and positional slots. An incomplete externally constructed signature that cannot supply them produces Unknown/AN3001; the formatter never substitutes source parameter names.
+正则泛型名称要求声明身份和位置槽位。外部构造的不完整签名无法提供它们时产生 `Unknown`/AN3001，格式化器不会用源形参名称代替。
 
-Canonical regex signatures are limited to 65,536 UTF-16 characters. The formatter checks this cumulative budget before appending, including repeated shared-type subgraphs and bulk array-rank punctuation. Exceeding the budget produces Unknown/AN3001 with a formatting-limit diagnostic. Formatting observes the match cancellation token; the regex timeout starts only after formatting.
+规范正则签名最多 65,536 个 UTF-16 字符。格式化器在追加前检查累计预算，包括重复共享类型子图和批量数组维数标点。超限产生 `Unknown`/AN3001，并附格式化限制诊断。格式化遵守匹配取消令牌；正则超时只从格式化结束后开始计算。
 
-The generic-arity limit is checked before synthesizing positional arguments. The cumulative canonical-text budget remains separate: a supported signature can still produce Unknown/AN3001 when its formatted text exceeds 65,536 characters.
+泛型元数上限在合成位置实参前检查。累计规范文本预算独立存在：受支持的签名在格式化文本超过 65,536 字符时，仍可能返回 `Unknown`/AN3001。

@@ -29,7 +29,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261012-002"
+        "EV-20261012-002", "EV-20261013-003"
       ],
       "unverified_notes": ""
     },
@@ -47,7 +47,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261012-002"
+        "EV-20261012-002", "EV-20261013-003"
       ],
       "unverified_notes": ""
     },
@@ -65,7 +65,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261012-002"
+        "EV-20261012-002", "EV-20261013-003"
       ],
       "unverified_notes": ""
     }
@@ -153,7 +153,7 @@ DSL 的 $T 是模式变量，不能当作某个 CLI 声明形参身份。核心�
 
 ## 例子与边界
 
-Owner<string>.M<V> 与 Owner<int>.M<V> 中 V 可属于同一声明，但 where V : T 的有效约束分别消费 string/int。两重载闭合后参数显示相同时仍保留不同声明槽。用户可运行 MethodGenericOwnerIdentityTests；不是按 ToString() 判断相等。
+`Owner<string>`.`M<V>` 与 `Owner<int>`.`M<V>` 中 V 可属于同一声明，但 where V : T 的有效约束分别消费 string/int。两重载闭合后参数显示相同时仍保留不同声明槽。用户可运行 MethodGenericOwnerIdentityTests；不是按 ToString() 判断相等。
 
 ## 规范依据
 

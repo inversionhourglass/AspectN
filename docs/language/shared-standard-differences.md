@@ -167,7 +167,7 @@ method(* int?.GetValueOrDefault(..))
 ```
 
 前两条分别组合声明类型、名称及每个名称叶节点自己的泛型约束。
-后两条可以匹配多维数组实际的 Get 方法、Nullable<int> 的 GetValueOrDefault 方法，
+后两条可以匹配多维数组实际的 Get 方法、`Nullable<int>` 的 GetValueOrDefault 方法，
 不是把数组或 nullable 后缀忽略后匹配原类型。
 旧的 `(Owner.Run || Owner.Foo)` 应按意图改为 `Owner.(Run || Foo)` 或外层选择器组合。
 
@@ -211,7 +211,7 @@ Standard 在所有合法泛型位置使用以下同一套规则：
 | 裸 `*` | 唯一的省略子句仍允许任意元数的名称通配例外 |
 
 例如 `method(* Run(..))` 不匹配 `Run<T>`，应写 `Run<?>` 或指定子句；
-`System.Collections.Generic.List` 不匹配 List<int>，应写 `List<>`、`List<..>`、`List<?>` 或 `List<int>`。
+`System.Collections.Generic.List` 不匹配 `List<int>`，应写 `List<>`、`List<..>`、`List<?>` 或 `List<int>`。
 Shared 的 `<?>` 不具备这套统一的“包含零的任意元数”含义。
 
 **原因：设计统一、功能增强。** 增加 namespace 或移动到返回/声明位置不应改变元数；
@@ -223,9 +223,9 @@ Shared 的 genericIn 曾丢弃开头空槽（N03）；Standard 每个空槽都�
 
 | 模式和候选 | Shared | Standard |
 | --- | --- | --- |
-| `List<,>` 对 List<int> | 匹配 | 不匹配，模式要求两槽 |
+| `List<,>` 对 `List<int>` | 匹配 | 不匹配，模式要求两槽 |
 | `Box<,,>` 对两槽 Box | 匹配 | 不匹配，模式要求三槽 |
-| `Dictionary<,string>` 对 Dictionary<int,string> | 不匹配 | 匹配，第一槽为任意类型 |
+| `Dictionary<,string>` 对 `Dictionary<int,string>` | 不匹配 | 匹配，第一槽为任意类型 |
 
 **原因：bug 修复。** 逗号描述的是槽位边界，不能因空槽在开头就少算一个参数。
 
@@ -243,7 +243,7 @@ Dictionary<!int,string>
 ```
 
 I03 已修复：只有整个子句为 `<!>` 时才是零元数；`List<!int>` 是一个否定类型实参，
-可匹配 List<string>，不匹配 List<int>。第一槽与后续槽遵循相同类型 grammar。
+可匹配 `List<string>`，不匹配 `List<int>`。第一槽与后续槽遵循相同类型 grammar。
 `List<!!int>` 仍因连续否定报错，而不是因为首槽不能否定。
 
 **原因：bug 修复、功能增强、设计统一。** 实参是类型模式节点，不能复用一种只处理名称或元数的捷径。
@@ -269,7 +269,7 @@ Shared 的单泛型槽虚拟名称编码曾导致 `Echo1<T>` 不匹配，
 
 Shared 存在重复名字覆盖和局部绑定不完整的问题。Standard 中：
 
-- 重复 `$T` 必须绑定同一类型；例如 `Pair<$T,$T>` 匹配 Pair<int,int>，不匹配 Pair<int,string>。
+- 重复 `$T` 必须绑定同一类型；例如 `Pair<$T,$T>` 匹配 `Pair<int,int>`，不匹配 `Pair<int,string>`。
 - `&&` 共享已建立的约束；`||` 分支的首次绑定不能向外泄漏。
 - 变量不能首次在否定中引入；已经绑定的变量可用于否定条件。
 
@@ -314,8 +314,8 @@ Standard 依据候选原本的结构匹配；裸 `*` 仍是完整通配。
 | 模式和候选 | Shared | Standard |
 | --- | --- | --- |
 | `int` 对 int[] | 可按元素匹配 | 不匹配 |
-| `List<int>` 对 List<int[]> | 可按实参元素匹配 | 不匹配 |
-| `*[]` 对 int[][]、List<int>[] | 内层通配曾退化为零泛型名字匹配 | 匹配，外层 rank 为一，元素为完整通配 |
+| `List<int>` 对 `List<int[]>` | 可按实参元素匹配 | 不匹配 |
+| `*[]` 对 int[][]、`List<int>`[] | 内层通配曾退化为零泛型名字匹配 | 匹配，外层 rank 为一，元素为完整通配 |
 
 `*<?>` 等带泛型子句的星号是具名类型模式，不是裸 `*`：
 它不匹配数组或泛型形参，单段模式也不跨过未写出的嵌套层级。
@@ -329,19 +329,19 @@ Shared 曾把实参数组的 rank 提升到外层（N04）：
 
 | 模式 `List<int[]>` 的候选 | Shared | Standard |
 | --- | --- | --- |
-| List<int[]> | 不匹配 | 匹配 |
-| List<int>[] | 匹配 | 不匹配 |
+| `List<int[]>` | 不匹配 | 匹配 |
+| `List<int>`[] | 匹配 | 不匹配 |
 
-**原因：bug 修复。** 前者是“int 数组的 List”，后者是“List<int> 的数组”，必须保留不同 AST 结构。
+**原因：bug 修复。** 前者是“int 数组的 List”，后者是“`List<int>` 的数组”，必须保留不同 AST 结构。
 
 ### 4.3 nullable 语义包含引用类型，并按后缀结构组合
 
-Shared 主要识别 Nullable<T>，部分后缀组合中的 `?` 会混入字面名称。
-Standard 中，非 nullable 值类型的 `T?` 表示 Nullable<T>，引用类型的 `T?` 与 T 具有相同 CLR 身份。
+Shared 主要识别 `Nullable<T>`，部分后缀组合中的 `?` 会混入字面名称。
+Standard 中，非 nullable 值类型的 `T?` 表示 `Nullable<T>`，引用类型的 `T?` 与 T 具有相同 CLR 身份。
 
 | 模式 | Standard 含义 |
 | --- | --- |
-| `int?` | Nullable<int>，不匹配普通 int |
+| `int?` | `Nullable<int>`，不匹配普通 int |
 | `string?` | 与 string 相同；不检查源代码 nullable annotation |
 | `int?[]` | nullable int 的数组 |
 | `*?` | 保留内部完整通配，按候选引用/nullable 结构求值 |
@@ -356,7 +356,7 @@ Standard 中，非 nullable 值类型的 `T?` 表示 Nullable<T>，引用类型�
 Shared 的 tuple 简写同时包含 System.Tuple 和 System.ValueTuple；Standard 只表示 ValueTuple。
 引用 tuple 应显式写 `System.Tuple<int,string>`。
 
-Standard 的 `(int,string)` 匹配 ValueTuple<int,string>；空 `()`、单项 `(int,)`、
+Standard 的 `(int,string)` 匹配 `ValueTuple<int,string>`；空 `()`、单项 `(int,)`、
 `(,int,string)`、`(int,,string)`、`(int,string,)` 均不作为有效 tuple 接受。
 Shared 曾跳过空元素或尾逗号，把这些多项写法坍缩成两项 tuple（N09）。
 
@@ -381,7 +381,7 @@ Standard 对 `+` 的目标采用已确认的结构白名单（语言规范 §12.
 | `int+?` | 合法，nullable 包在可赋值模式外 |
 | `int[]+`、`*+`、`(A \|\| B)+`、`(int,string)+`、`$T+`、`tasklike+` | 报 AN2010，目标结构不在白名单 |
 
-继承遍历保留泛型替换。例如 Leaf : Middle<int>，Middle<U> : Base<List<U>>，
+继承遍历保留泛型替换。例如 Leaf : `Middle<int>`，`Middle<U>` : `Base<List<U>>`，
 `Base<List<int>>+` 可匹配 Leaf；Shared 曾因短实参结构不能解析而拒绝该模式（N06）。
 Shared 并非完全没有泛型继承替换，简单 `Base2<int>+` 在双方可以一致。
 
@@ -494,7 +494,7 @@ Standard 删除这套拼写，按意图迁移为：
 | 无结果的 Task/ValueTask | `method(tasklike Flush(..))` |
 | 实际 void 返回 | `method(void Fire(..))` |
 
-tasklike 同样与编译器 async 标记无关；一个普通方法返回 Task<int> 也可匹配。
+tasklike 同样与编译器 async 标记无关；一个普通方法返回 `Task<int>` 也可匹配。
 `tasklike<void>` 报 AN4004，应使用裸 tasklike。
 裸 tasklike 不等于 void，自定义 awaitable 不在当前形状语法范围内。
 `MethodSignature.IsAsync` 保留为通用元数据，但不是已删除的 async 语法条件。

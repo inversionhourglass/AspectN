@@ -37,10 +37,30 @@ Console.WriteLine(result.Status);
 
 先判断编译诊断，再处理匹配结果；Unknown 时检查 result.Diagnostics 并明确选择策略。用 CompileTypePattern 编译纯类型模式，不能把 ref 参数注解当作纯类型表达式。
 
-可完整运行的[示例源码](examples/ReflectionQuickStart/Program.cs)包含 Service 和 Owner<T> 定义，并断言普通成员匹配、ref/out、数组两种形状、泛型声明身份、缺失可见性和三态转换：
+可完整运行的[示例源码](examples/ReflectionQuickStart/Program.cs)包含 Service 和 `Owner<T>` 定义，并断言普通成员匹配、ref/out、数组两种形状、泛型声明身份、缺失可见性和三态转换：
 
 ```powershell
 dotnet run --project docs/usage/examples/ReflectionQuickStart/ReflectionQuickStart.csproj -c Release
 ```
 
-预期输出 Documentation examples passed. 测试通过范围按[正式证据](../reviews/evidence/EV-20261012-003.json)记录；不能由此推断所有适配器已验证。[后续表达式](matching.md)和[诊断](results-and-diagnostics.md)解释各例边界。
+预期输出 `Documentation examples passed.`。测试通过范围按[正式证据](../reviews/evidence/EV-20261012-003.json)记录；不能由此推断所有适配器已验证。[后续表达式](matching.md)和[诊断](results-and-diagnostics.md)解释各例边界。
+
+## 日常类型和方法查找
+
+把表达式应用到已有候选集合，就能筛选类型或方法。例如，查找 `string` 的公开、返回 `string` 的方法：
+
+```csharp
+var engine = new AspectNEngine();
+var compilation = engine.CompileMemberExpression("method(public string *(..))");
+if (!compilation.TryGetMemberPattern(out var pattern))
+    throw new InvalidOperationException("方法筛选表达式编译失败。");
+
+var typeSystem = new ReflectionTypeSystem();
+var methods = typeof(string).GetMethods()
+    .Where(method => pattern.Match(typeSystem.Mapper.MapMethod(method), typeSystem).Status == MatchStatus.Matched)
+    .ToArray();
+```
+
+这里由调用方提供候选方法集合，AspectN 判断哪些候选满足表达式。类型筛选可同样使用 `CompileTypePattern` 和 `Mapper.MapType`。该例明确只保留 `Matched`；遇到可能缺失元数据的候选时，按[结果与诊断](results-and-diagnostics.md)处理 `Unknown`。
+
+[边界示例源码](examples/MatchingBoundaries/Program.cs)同时演示类型、方法查找，并包含本指南各项限制的断言。运行方式见[限制与常见坑](limits-and-pitfalls.md)。

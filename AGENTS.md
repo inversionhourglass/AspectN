@@ -1,55 +1,49 @@
-# Repository Guidelines
+# 仓库规则
 
-## Project Structure & Module Organization
+## 项目结构与模块组织
 
-AspectN is a backend-neutral expression parser and matcher with one language contract: the existing Standard grammar. The target layout is defined in `docs/plans/2026-07-31-aspectn-industrial-redesign.md`; its Legacy compatibility requirements are superseded by `docs/plans/2026-10-03-single-language-aspectn.md`. Core syntax, semantics, signatures, and matching belong in `src/AspectN`; backend types must not enter its public API. Mono.Cecil, Roslyn, and Reflection mappings live in `src/AspectN.Cecil`, `src/AspectN.Roslyn`, and `src/AspectN.Reflection`; Fody consumes the Cecil sources through `src/AspectN.Cecil.Fody`.
+AspectN 是与元数据后端无关的表达式解析与匹配工具，只有现有 Standard 语法这一种语言契约。目标布局见 `docs/plans/2026-07-31-aspectn-industrial-redesign.md`；其中的 Legacy 兼容性要求已由 `docs/plans/2026-10-03-single-language-aspectn.md` 取代。核心语法、语义、签名和匹配归属 `src/AspectN`，公共 API 不得暴露后端类型。Mono.Cecil、Roslyn、Reflection 映射分别放在 `src/AspectN.Cecil`、`src/AspectN.Roslyn`、`src/AspectN.Reflection`；Fody 通过 `src/AspectN.Cecil.Fody` 复用 Cecil 源码。
 
-`src/Shared` contains adapter-only sources compiled into each backend assembly under `AspectN.AdapterInternals`; they are not a separate assembly and must not enter the core public API.
+`src/Shared` 仅包含适配器共享源码，由各后端程序集编译到 `AspectN.AdapterInternals` 命名空间中；它不是独立程序集，也不得进入核心公共 API。
 
-Mirror production projects under `tests/`. Keep cross-adapter conformance, .NET Framework compatibility, and fixture assemblies in their dedicated test projects. Place benchmarks in `benchmarks/`, engineering scripts in `eng/`, and normative architecture/language documents in `docs/superpowers/specs/`.
+`tests/` 与生产项目一一对应。跨适配器一致性、.NET Framework 兼容性和测试用程序集保留在专用项目中。基准测试放在 `benchmarks/`，工程脚本放在 `eng/`，正式架构及语言文档放在 `docs/superpowers/specs/`。
 
-## Build, Test, and Development Commands
+## 构建、测试与开发命令
 
-Use:
+- `dotnet restore AspectN.sln`：还原集中管理的依赖。
+- `dotnet build AspectN.sln -c Release --no-restore`：以 Release 配置编译全部库并检查警告。
+- `dotnet test AspectN.sln -c Release --no-build --no-restore`：运行完整测试矩阵。
+- `dotnet test tests/AspectN.Tests/AspectN.Tests.csproj -c Release`：运行聚焦测试。
+- `dotnet format AspectN.sln --verify-no-changes --no-restore`：提交前核验格式。
 
-- `dotnet restore AspectN.sln` — restore centrally managed packages.
-- `dotnet build AspectN.sln -c Release --no-restore` — compile all libraries with release warnings.
-- `dotnet test AspectN.sln -c Release --no-build --no-restore` — run the complete test matrix.
-- `dotnet test tests/AspectN.Tests/AspectN.Tests.csproj -c Release` — run one focused suite.
-- `dotnet format AspectN.sln --verify-no-changes --no-restore` — verify formatting before committing.
+## 代码风格与命名
 
-## Coding Style & Naming Conventions
+C# 使用四空格缩进和文件范围命名空间。私有实例字段使用 `_camelCase`，私有静态字段使用 `_PascalCase`，常量使用 `UPPER_SNAKE_CASE`。优先使用前置条件检查和提前返回，避免深层嵌套。详见 `.agents/rules/csharp-style.md`；可自动校验的规则以 `.editorconfig` 为准。
 
-Use C# with four-space indentation and file-scoped namespaces. Private instance fields are `_camelCase`, private static fields are `_PascalCase`, and constants are `UPPER_SNAKE_CASE`. Prefer guard clauses and early exits to deep nesting. See `.agents/rules/csharp-style.md`; `.editorconfig` is authoritative where automation is possible.
+## 文档和注释语言
 
-## Testing Guidelines
+Markdown 说明文档必须使用中文，包括 README、用户指南、知识库、规范、计划、审查记录和规则文件。标题、解释、表格说明及新增示例中的说明性注释使用中文；API/类型/包名、文件路径、命令、DSL、机器字段和枚举值保留原样。翻译历史资料时保留其时间、状态、原始结论和条款编号，不能把旧计划改成当前承诺，也不改写历史证据报告。
 
-Use xUnit for examples and FsCheck for bounded property tests. Name test classes after the subject and tests as `Method_State_ExpectedResult`. Keep fixtures deterministic. Preserve Standard regression coverage, including generic arity, variable scope, attributes, diagnostics, and adapter lifetimes. Intentional language changes require specification and conformance updates. There is no Legacy oracle or approved-differences baseline in the solution.
+对外公开的类型、接口、枚举、方法、构造器和属性使用英文 XML API 文档注释，包括适用的参数、返回值与契约异常说明；以类型与成员的有效可见性为准，内部类型中的 public 辅助成员仍属于内部范围。内部 XML 注释及代码注释使用中文，解释不明显的算法、状态转换、元数据映射、兼容规则或不变量；不为显然的语句添加注释。
 
-## Commit & Pull Request Guidelines
+产品介绍将 AspectN 定位为通用 .NET 类型与成员匹配工具，覆盖日常查找、元数据检索与代码分析。AOP/代码织入可以作为一种应用场景说明，不能成为工具定位的前提。
 
-Follow the existing Conventional Commit style, such as `feat(core): add lexer`, `test: prove Cecil parity`, or `docs: clarify syntax`. Keep commits task-scoped. PRs must explain behavior and architecture impact, link relevant issues/specs, and list exact verification commands. Include compatibility, public API, package, or benchmark evidence when those surfaces change.
+## 测试规则
 
-## Agent-Specific Instructions
+示例测试使用 xUnit，有界属性测试使用 FsCheck。测试类按被测对象命名，方法使用 `Method_State_ExpectedResult`。测试数据保持确定性。保留 Standard 回归覆盖，包括泛型元数、变量作用域、特性、诊断和适配器生命周期。主动改变语言契约时必须同步规范和一致性测试。解决方案不包含 Legacy 对照实现，也没有 approved-differences 基线。
 
-### Documentation and knowledge-base pilot
+## 提交与拉取请求
 
-For user guidance, start at `docs/usage/index.md`. For capability changes or review,
-start at `docs/knowledge/index.md`, load only affected entries and their declared
-dependencies, and use `docs/knowledge/review/index.md` for the review process.
-The approved workflow design is `docs/superpowers/specs/2026-10-12-aspectn-documentation-knowledge-base-design.md`.
+沿用 Conventional Commit 风格，例如 `feat(core): add lexer`、`test: prove Cecil parity`、`docs: clarify syntax`。每个提交聚焦当前任务。PR 说明行为和架构影响，关联有关问题及规范，列出准确验证命令。改变兼容性、公共 API、程序包或性能范围时，提供对应证据。
 
-For the documented pilot capabilities, declare affected capability/scenario IDs;
-update the relevant knowledge entry, user-visible guidance, and evidence in the
-same reviewable change, or state a concrete no-impact reason. For unassessed
-surfaces, add/update `docs/knowledge/coverage.json` and follow existing specification
-and conformance rules. Do not infer exclusion from missing documentation or mark
-verification complete merely because test source exists. Reassess evidence when
-its implementation, tests, contract or environment changes; preserve old reports.
-Run `pwsh -NoProfile -File eng/verify-documentation.ps1` for these changes.
-Finding references initially warn; semantic approval, N/A reasoning and current
-evidence applicability require review. New/changed pilot N/A records need a
-non-author reviewer and date. Full-repository mandatory synchronization awaits
-the readiness gate and maintainer confirmation; the pilot is not a full support matrix.
+## Agent 专用说明
 
-Work in the existing checkout; do not create Git worktrees. Preserve existing untracked files. Do not publish packages, push branches, remove Rougamo submodules, or modify adjacent repositories or the frozen oracle cache without explicit authorization. Rougamo migration and major-version publication are separate tasks.
+### 文档与知识库试点
+
+用户说明从 `docs/usage/index.md` 读取。Agent 分析能力变更或执行审查时，从 `docs/knowledge/index.md` 按需加载受影响条目及其声明的依赖，再按 `docs/knowledge/review/index.md` 执行审查。已批准流程设计为 `docs/superpowers/specs/2026-10-12-aspectn-documentation-knowledge-base-design.md`。
+
+已建档试点能力的变更必须声明受影响能力/场景编号，并在同一可审查变更中同步知识库、用户受影响章节和证据，或给出具体无影响理由。未盘点范围更新 `docs/knowledge/coverage.json`，继续遵守现有规范和一致性测试要求。不能从缺少文档推断排除，也不能仅因存在测试源码就标记为已验证。实现、测试、契约或环境变化时重评估证据适用性，保留历史报告。
+
+运行 `pwsh -NoProfile -File eng/verify-documentation.ps1` 检查有关变更。Finding 引用初期仅告警；语义批准、N/A 理由及当前证据适用性仍需审查。新增或改动的试点 N/A 记录需要非作者核验主体和日期。全仓强制同步需通过准备闸门并由维护者确认；试点不是完整支持矩阵。
+
+在现有检出目录工作，不创建 Git worktree。保留既有未跟踪文件。未经明确授权，不发布程序包、推送分支、移除 Rougamo 子模块、修改相邻仓库或冻结的对照缓存。Rougamo 迁移和大版本发布属于独立任务。

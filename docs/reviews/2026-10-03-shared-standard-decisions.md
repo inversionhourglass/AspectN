@@ -38,7 +38,7 @@ MemberNamePattern 节点，每个方法名叶节点持有自己的泛型子句�
 
 N02 是实质扩展，不再将声明类型限定为名称 token 路径。
 多维数组确有自身的 Get/Set/Address 方法，`int[,].Get` 可匹配它们；
-`int?.GetValueOrDefault` 可匹配 Nullable<int> 的实例方法。
+`int?.GetValueOrDefault` 可匹配 `Nullable<int>` 的实例方法。
 声明位置的裸 `*` 采用完整类型通配语义，因此 `*.Run` 现在包括数组、
 泛型参数及嵌套类型。若需要单层具名类型约束，写 `*<?>.Run`；
 其他具名模式的 namespace、arity 与 `/` 规则没有改变。

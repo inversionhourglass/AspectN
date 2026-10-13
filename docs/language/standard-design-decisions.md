@@ -1,195 +1,87 @@
-# AspectN language design decisions
+# AspectN 语言设计决策
 
-AspectN has one language: the existing Standard syntax and semantics. These
-decisions were extracted from the former compatibility difference inventory.
-The [normative specification](../superpowers/specs/2026-07-31-aspectn-language-spec.md)
-defines the full contract; [migration guidance](../migration/shared-cecil-to-aspectn.md)
-explains the breaking transition from Shared.Cecil.AspectN.
+AspectN 只有现有 Standard 语法与语义这一种语言。以下决策从此前的兼容差异盘点中整理而来。[正式规范](../superpowers/specs/2026-07-31-aspectn-language-spec.md)定义完整契约；[迁移指南](../migration/shared-cecil-to-aspectn.md)说明从 Shared.Cecil.AspectN 迁移的破坏性变化。
 
-The [confirmed Shared/Standard comparison](shared-standard-differences.md)
-provides Chinese explanations, examples and the reason for each difference.
+[已确认的 Shared/Standard 比较](shared-standard-differences.md)提供每项差异的中文解释、示例和原因。
 
-## Names and selector domains
+## 名称与选择器适用域
 
-Keywords are lowercase and case-sensitive. Bare identifiers always denote
-literal type names; variables use `$T`. Numeric names are rejected.
-`method` selects ordinary methods, `callable` adds accessors, operators and
-conversions, and `execution` also includes instance and static constructors.
-Whether a selected member can be woven is a caller decision.
+关键字小写且区分大小写。裸标识符始终表示字面类型名；变量使用 `$T`。数字名称被拒绝。`method` 选择普通方法，`callable` 增加访问器、运算符和类型转换，`execution` 还包含实例及静态构造器。调用方将选中成员用于织入时，是否可织入由调用方判断。
 
-Omitting a namespace allows any namespace, including the global namespace.
-`..` joins namespace segments and permits zero or more intervening segments;
-`*..*` still requires at least one namespace segment. Nested types require `/`.
-The member joins its declaring type with `.`, so `*..M` is incomplete. Omitting
-the declaring type matches global and nested types too. Structured declaring
-types now use the full type-pattern grammar: `*.*` includes all type shapes,
-while `*<?>.*` and `*..*.M` remain named paths with explicit nesting rules.
+省略命名空间允许任意命名空间，包括全局命名空间。`..` 连接命名空间段，允许中间零个或多个段；`*..*` 仍要求至少一个命名空间段。嵌套类型要求 `/`。成员通过 `.` 连接声明类型，因此 `*..M` 不完整。省略声明类型也匹配全局和嵌套类型。结构化声明类型使用完整类型模式语法：`*.*` 包含全部类型形状，而 `*<?>.*` 和 `*..*.M` 仍是遵守显式嵌套规则的有名路径。
 
-Member paths support prefix negation and independent Boolean combinations:
-`!(A || B).(Run || Stop)` negates the conjunction of declaring type and
-member-name pattern. Each method-name atom retains its own generic clause.
-`!Run` complements zero-arity Run; use `!Run<?>` for every arity. Return types,
-parameters, modifiers and selector domains remain outside path negation.
-Array and nullable declaring patterns such as `int[,].Get` and
-`int?.GetValueOrDefault` follow ordinary type-pattern semantics.
+成员路径支持前置否定和各位置独立的布尔组合：`!(A || B).(Run || Stop)` 否定声明类型与成员名模式的合取。每个方法名称叶节点保留自身泛型子句。`!Run` 取零元数 Run 的补集；排除任意元数使用 `!Run<?>`。返回类型、参数、修饰符和选择器适用域不在路径否定中。数组和可空声明模式，如 `int[,].Get`、`int?.GetValueOrDefault`，遵循普通类型模式语义。
 
-Consecutive `!` tokens, even separated by whitespace, are rejected as likely
-typing mistakes. Explicit parentheses may still group negation. Negation of
-the full wildcard always selects an empty set, including in member paths.
+连续 `!` 即使以空白隔开也被视为可能的输入错误而拒绝。仍可用显式括号组织否定。完整通配符的否定始终选择空集，成员路径也如此。
 
-## Generic arity and variables
+## 泛型元数与变量
 
-| Clause | Meaning |
+| 子句 | 含义 |
 | --- | --- |
-| Omitted on a literal name | Exactly zero parameters |
-| `<!>` | Exactly zero parameters |
-| `<>`, `<,>`, `<,,>` | Exactly one, two, three parameters |
-| `<..>` | Any positive arity |
-| `<?>` | Any arity, including zero |
-| `<$T,>`, `<,$T>`, `<$T,,$U>` | Exact slot count; empty slots are wildcard arguments |
-| Omitted on the name `*` | Any arity |
+| 具体名称省略子句 | 恰好零个形参 |
+| `<!>` | 恰好零个形参 |
+| `<>`、`<,>`、`<,,>` | 恰好一个、两个、三个形参 |
+| `<..>` | 任意正元数 |
+| `<?>` | 任意元数，包括零 |
+| `<$T,>`、`<,$T>`、`<$T,,$U>` | 槽位数量精确；空槽是通配实参 |
+| 名称 `*` 省略子句 | 任意元数 |
 
-These rules apply to type, declaring-type and method clauses. Explicit clauses
-retain their constraints even on primitive aliases and assignable targets.
-Every clause on `void` is invalid (AN2011). `$T` can bind a formal generic
-parameter or a constructed type; repeated occurrences enforce equality.
-Variables are declared in positive type or method generic clauses. Return,
-property and parameter types only reference visible declarations, including
-inside their nested generic clauses. The declaring-type/method clauses are
-processed before those references regardless of textual order.
-`method($T Service.M<!$T>())` is invalid; negated generic-variable declaration
-arguments remain invalid even when the variable is already visible.
-`method(!$T Service.M<$T>())` is a valid negated return reference.
-Adapter declaration identity and closed query contexts are described in
-[generic parameter identity](generic-parameter-identity.md).
-Variables introduced under negation are invalid, and variables introduced in
-isolated OR branches cannot escape. Bare `T` never becomes a variable.
+这些规则适用于类型、声明类型和方法子句。显式子句即使位于基础类型别名或关系目标上也保留约束。`void` 的全部泛型子句均无效（AN2011）。`$T` 可绑定声明泛型形参或构造类型；重复出现要求相等。
 
-Equivalent binding environments are coalesced only when variable keys, bound
-signature instances and certainty agree. Distinct keys remain separate even
-when they refer to the same type: a conjunction of `n` groups such as
-`(List<$L_i> || List<$R_i>)` can retain up to `2^n` alternatives. Allocation and
-matching work can therefore grow exponentially. Binding count, allocation and
-time budgets remain deferred; parser, type-depth and generic-arity limits do
-not bound this growth. Regression tests cover equivalent alternatives and a
-bounded eight-group distinct-binding case; their allocation ceiling is a test
-threshold, not a runtime resource guarantee.
+变量在正向类型或方法泛型子句中声明。返回、属性和参数类型只引用可见声明，包括其嵌套泛型子句内部的引用。不论文本顺序如何，声明类型/方法子句都先于这些引用处理。`method($T Service.M<!$T>())` 无效；即使变量已可见，否定的泛型变量声明实参也仍无效。`method(!$T Service.M<$T>())` 是合法的否定返回引用。适配器声明身份与闭合查询上下文见[泛型形参身份](generic-parameter-identity.md)。否定之下不能引入变量，隔离 OR 分支引入的变量不能向外逃逸。裸 `T` 从不自动成为变量。
 
-Type structures are limited to 64 levels, counting the root as one. A type's effective generic arity, including enclosing types, is limited to 64; a method's own generic arity has an independent limit of 64. These bounds reject impractical metadata shapes before recursive classification, arity summation and positional-argument allocation. See the implementation-limits section of the normative language specification for diagnostic and exception behavior.
+只有变量键、绑定签名实例和确定性均一致时，才合并等价绑定环境。即使不同键指向同一类型，也保持独立：`(List<$L_i> || List<$R_i>)` 这类 n 组合取最多保留 `2^n` 个备选。分配量和匹配工作可能因此指数增长。绑定数量、分配量和时间预算仍待后续实现；解析器、类型深度、泛型元数上限不能约束这种增长。回归覆盖等价备选和有界的八组不同绑定；其中分配量上限是测试阈值，不是运行时资源保证。
 
-Namespace segments and property-name atoms cannot have generic clauses
-(AN2011); declaring types and method names retain them. `<!>` denotes zero
-arity only when `!` is the entire clause. `Box<!int>` uses a negated first
-argument pattern, just like later slots.
+类型结构最多 64 层，根计第一层。包含外层类型的有效类型泛型元数最多 64；方法自身另有独立的 64 上限。这些上限在递归分类、元数求和和位置实参分配前拒绝不实用的元数据形状。诊断和异常行为见正式规范的实现限制章节。
 
-## Wildcard family
+命名空间段和属性名称叶节点不能有泛型子句（AN2011）；声明类型和方法名可以。只有 `!` 是整个子句时，`<!>` 才表示零元数。`Box<!int>` 的首实参是一个否定模式，与后续槽位的否定相同。
 
-Bare `*` is a full type wildcard. Adding a generic clause makes it a named-type
-pattern with that arity constraint; it excludes arrays, generic parameter
-candidates and nested types without an explicit `/` path.
+## 通配符族
 
-| Candidate | `*` | `*<?>` | `*<!>` | `*<..>` |
+裸 `*` 是完整类型通配符。添加泛型子句后，它变成带元数约束的有名类型模式，排除数组、候选泛型形参，以及没有显式 `/` 路径的嵌套类型。
+
+| 候选 | `*` | `*<?>` | `*<!>` | `*<..>` |
 | --- | --- | --- | --- | --- |
-| `int`, `string`, ordinary class | Yes | Yes | Yes | No |
-| `List<int>` or open `List<T>` | Yes | Yes | No | Yes |
-| `Nullable<int>` or `ValueTuple<int,string>` | Yes | Yes | No | Yes |
-| Non-generic `System.ValueTuple` | Yes | Yes | Yes | No |
-| Array | Yes | No | No | No |
-| Generic parameter `T` | Yes | No | No | No |
-| Nested `Outer/Inner` | Yes | No | No | No |
+| `int`、`string`、普通类 | 是 | 是 | 是 | 否 |
+| `List<int>` 或开放 `List<T>` | 是 | 是 | 否 | 是 |
+| `Nullable<int>` 或 `ValueTuple<int,string>` | 是 | 是 | 否 | 是 |
+| 非泛型 `System.ValueTuple` | 是 | 是 | 是 | 否 |
+| 数组 | 是 | 否 | 否 | 否 |
+| 泛型形参 `T` | 是 | 否 | 否 | 否 |
+| 嵌套 `Outer/Inner` | 是 | 否 | 否 | 否 |
 
-`*[]` constrains the outer rank and leaves the element unconstrained, so it
-matches `int[]`, `List<int>[]` and `int[][]`. Ordinary named patterns do not
-strip array layers. `*?` retains its full wildcard inside nullable evaluation,
-including reference types and `Nullable<GenericStruct<int>>`.
+`*[]` 约束外层维数而不约束元素，因此匹配 `int[]`、`List<int>[]` 和 `int[][]`。普通有名模式不剥离数组层。`*?` 在可空求值内部仍保持完整通配，包括引用类型及 `Nullable<GenericStruct<int>>`。
 
-## Structural suffixes
+## 结构后缀
 
-`[` and `?` must touch their type pattern; spaces inside array rank brackets
-are allowed. Tuple syntax means `System.ValueTuple`, including flattened Rest
-shapes, and requires at least two elements. Write `System.Tuple<...>` explicitly
-to match reference tuples. Parentheses also group Boolean type expressions.
+`[`、`?` 必须与类型模式邻接；数组维数方括号内部允许空格。元组语法表示 `System.ValueTuple`，包含展开的 Rest 形状，至少需要两个元素。引用元组必须显式写 `System.Tuple<...>`。括号也用于布尔类型表达式分组。
 
-For reference types, `T?` has the same CLR identity as `T`; for non-nullable
-value types it means `Nullable<T>`. Unknown type category remains `Unknown`.
-Arrays are reference types. `int?[]` means an array of nullable integers.
+引用类型的 `T?` 与 `T` 具有相同 CLR 身份；不可空值类型的 `T?` 表示 `Nullable<T>`。类型类别未知时结果仍为 `Unknown`。数组是引用类型。`int?[]` 表示可空整数数组。
 
-`+` uses a structural whitelist: a named target (wildcard names and generic
-clauses included), or a single nullable wrapper over a named target. Arrays,
-bare wildcards, tuples, Boolean expressions, variables, tasklike and nested or
-interleaved nullable targets are invalid (AN2010). Generic arguments inside a
-named target remain unrestricted (`List<int[]>+`); `int+?` remains valid.
-Assignable matching preserves generic arguments and does not add covariance
-or contravariance. A target that cannot be concretized uses a pattern walk
-over the inheritance closure, preserving missing-metadata diagnostics.
+`+` 使用结构白名单：有名目标（含通配名称及泛型子句），或有名目标外包一层可空修饰。数组、裸通配符、元组、布尔表达式、变量、tasklike，以及嵌套或交错的可空目标无效（AN2010）。有名目标内部的泛型实参不受此限制，如 `List<int[]>+`；`int+?` 仍合法。关系匹配保留泛型实参，不增加协变或逆变。无法具体化的目标在继承闭包上执行模式遍历，保留缺失元数据诊断。
 
-## Modifiers, ref kinds and parameters
+## 修饰符、引用分类与参数
 
-`async` is not a signature modifier in Standard, including property, getter and
-setter signatures. In the initial modifier position, a separate `async` token
-is diagnosed. Adjacent type-name continuations such as `async.Result`,
-`async*`, `async<>`, `async[]` and `async?`, and ordinary member names such as
-`method(int async())`, retain their normal identifier/pattern meanings.
+Standard 中 `async` 不是签名修饰符，属性/getter/setter 也如此。在起始修饰符位置，独立 `async` 记号会产生诊断。邻接的类型名后续部分，如 `async.Result`、`async*`、`async<>`、`async[]`、`async?`，以及 `method(int async())` 这类普通成员名，保持正常标识符/模式含义。
 
-Unmentioned dimensions do not constrain matching. Accessibility uses the C#
-phrases `private protected` and `protected internal`; alternatives use `|`.
-There is at most one positive accessibility group. Duplicate modifiers and
-`static` / `!static` conflicts are errors. Negation applies to the whole
-compound phrase, and cannot be combined with alternation.
+未提及维度不约束匹配。可见性使用 C# 短语 `private protected` 和 `protected internal`；备选用 `|` 连接。最多有一组正向可见性约束。重复修饰符及 `static`/`!static` 冲突是错误。否定作用于完整复合短语，不能与备选组合。
 
-Unannotated type uses accept every ref kind. `ref`, `out`, `in` and
-`ref readonly` match exactly; adjacent `!ref` matches by-value only. Whitespace
-between `!` and `ref` produces AN2005. Returns cannot use
-`out` or `in`. Empty parameter slots are wildcard parameters with exact count:
-`(int,)` has two slots, while `(..)` accepts any parameter count.
+未注解的类型使用位置接受任意引用分类。`ref`、`out`、`in`、`ref readonly` 精确匹配；邻接 `!ref` 只匹配按值传递。`!` 和 `ref` 之间有空白时产生 AN2005。返回值不能使用 `out`、`in`。空参数槽是精确数量中的通配参数：`(int,)` 有两个槽，`(..)` 则接受任意参数数量。
 
-## Return shapes, attributes and regex
+## 返回形状、特性与正则
 
-`tasklike` matches non-generic Task/ValueTask; `tasklike<T>` matches the generic
-result shape regardless of the compiler async flag. Historical async return
-sugar is removed. `MethodSignature.IsAsync` remains general backend metadata.
+`tasklike` 匹配非泛型 Task/ValueTask；`tasklike<T>` 匹配泛型结果形状，与编译器 async 标记无关。历史 async 返回简写已移除。`MethodSignature.IsAsync` 仍是通用后端元数据。
 
-The result clause must be adjacent: `tasklike<int>` is valid and
-`tasklike <int>` is rejected. `tasklike` remains a literal declaring-type
-name in member paths; its shape keyword is used in return/parameter,
-generic-argument and constructor/static-constructor declaring-type patterns.
-For a literal constructor declaring type named tasklike, use a qualified name
-such as `Example.tasklike`. Operator/conversion classification validates public special-name
-metadata without runtime-special, method-generic, vararg or params flags;
-parameter ref kinds must be by value or `in`. It then checks recognized
-names, static/instance, return shape and parameter count,
-including C# 14 instance assignment/increment operators. Ordinary `op_`
-methods remain in the `method` domain.
+结果子句必须邻接：`tasklike<int>` 合法，`tasklike <int>` 被拒绝。tasklike 在成员路径中仍是字面声明类型名；其形状关键字用于返回/参数、泛型实参以及实例/静态构造器声明类型模式。构造器的字面声明类型本来名为 tasklike 时，使用限定名，如 `Example.tasklike`。
 
-Attribute targets are `type`, `call`, `prop`, `para[n]` / `para n`,
-`para[*]` / `para *`, `ret`, `exec`, `any` and `*`. `exec` checks the current
-method and its associated property; `call` checks the method alone. For `prop`,
-ordinary methods return `NotMatched`, while missing accessor property metadata
-returns `Unknown`. Fully specified names use exact direct queries; wildcard,
-arity and other non-concrete arguments use type-pattern evaluation. Omitted
-generic clauses require zero arity in both query paths.
+运算符/转换分类要求 public special-name 元数据，不能带 runtime-special、方法泛型、vararg 或 params 标记；参数引用分类只能为按值或 `in`。随后检查已识别名称、static/instance、返回形状和参数数量，包括 C# 14 实例赋值/递增运算符。普通 `op_` 方法仍属于 `method` 域。
 
-Regex uses one culture-invariant signature format: spaced compound
-accessibility, ref prefixes, `, ` separators, `/` nested types and positional
-generic names. A sole formal parameter is `T`; multiple parameters are
-`T1..TN`, outer type slots first, then nested type and method slots. The async
-flag is omitted. A finite timeout is mandatory and yields `Unknown` on timeout.
+特性目标为 `type`、`call`、`prop`、`para[n]`/`para n`、`para[*]`/`para *`、`ret`、`exec`、`any` 和 `*`。`exec` 检查当前方法及其关联属性，`call` 只检查方法。`prop` 对普通方法返回 `NotMatched`；访问器缺少属性元数据时返回 `Unknown`。完整指定的名称走精确直接查询；通配、元数及其他非具体实参走类型模式求值。两条路径中省略泛型子句都要求零元数。
 
-Regex is a small language subset for signature matching. It retains character
-escapes/classes, ordinary and noncapturing groups, alternation, anchors and
-greedy/lazy quantifiers. Comments, all inline options, other special groups,
-backreferences and nested/subtracted classes are rejected during compilation
-with AN2012. Literal brackets inside classes require escapes. .NET syntax
-errors are compile-time AN3002 errors. This keeps delimiter scanning dependent
-only on escapes, ordinary classes and group depth; the finite timeout remains
-necessary for ordinary backtracking patterns. See the normative specification
-section 15 for the full subset.
+正则使用一种与区域性无关的签名格式：带空格的复合可见性、引用前缀、`, ` 分隔、`/` 嵌套类型，以及位置泛型名。唯一形参称为 `T`；多个为 `T1..TN`，先外层类型槽，再嵌套类型和方法槽。async 标记省略。必须设置有限超时，超时产生 `Unknown`。
 
-Open constructed declaring types name distinct remaining type parameters by
-first occurrence inside their actual arguments, including nested generic and
-array arguments, before numbering method parameters. Repeated uses share one
-name; closed arguments consume no positions.
+正则是用于签名匹配的小语言子集。保留字符转义/字符类、普通和非捕获分组、分支、锚点以及贪婪/懒惰量词。注释、所有内联选项、其他特殊分组、反向引用、嵌套/相减字符类在编译时以 AN2012 拒绝。字符类中的字面方括号要求转义。.NET 语法错误是编译期 AN3002。这样，分隔符扫描只依赖转义、普通字符类和分组深度；普通回溯模式仍需要有限超时。完整子集见正式规范第 15 节。
 
-Migration diagnostics AN4003 (compound accessibility), AN4004 (`tasklike<void>`)
-and AN4005 (long attribute target names) remain. AN2002's retired selector-mode
-entry point is removed; other diagnostic codes keep their numbers.
+开放构造声明类型按实际实参中首次出现的顺序，为不同的剩余类型形参命名，包括嵌套泛型和数组实参，然后再对方法形参编号。重复使用共享一个名称，闭合实参不占位置。
+
+保留迁移诊断 AN4003（复合可见性）、AN4004（`tasklike<void>`）和 AN4005（特性目标长名称）。AN2002 已退休的选择器模式入口移除；其他诊断码保持编号。
