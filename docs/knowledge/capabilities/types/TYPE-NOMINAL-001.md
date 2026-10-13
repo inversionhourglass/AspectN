@@ -1,0 +1,235 @@
+# TYPE-NOMINAL-001 名称、嵌套、程序集身份与名义关系
+
+<!-- aspectn-capability:v1
+{
+  "schema_version": 1,
+  "id": "TYPE-NOMINAL-001",
+  "title": "名称、嵌套、程序集身份与名义关系",
+  "category": "types",
+  "kind": "feature",
+  "profile": "feature-v1",
+  "norm_refs": [
+    {
+      "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+      "section": "7 / 12.2 / 12.3 / 12.4"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-07-31-aspectn-redesign-design.md",
+      "section": "8.1 / 8.4 / 8.5"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "S1",
+      "adapter": "core",
+      "input_mode": "neutral",
+      "entry_point": "CompileTypePattern / CompiledTypePattern.Match / StructuralTypeComparer",
+      "conditions": "NamePatternMatcherTests、MemberPathTests 和 AssignableRelationshipTargetTests 的名称/结构/关系 fixture",
+      "target": "working-tree",
+      "expected_behavior": "序数名称匹配；嵌套用 /；+ 仅合法结构目标，已知关系分支可支配未知",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261013-004"
+      ],
+      "unverified_notes": ""
+    },
+    {
+      "id": "S2",
+      "adapter": "cecil",
+      "input_mode": "reference",
+      "entry_point": "Mapper.MapType / IsAssignableTo",
+      "conditions": "CecilResolvedMetadataTests 和 CecilTypeSystemTests 的引用程序集、已解析定义、名义继承和缺失分支",
+      "target": "working-tree",
+      "expected_behavior": "解析后保留定义身份，缺失引用保留可知结构和未知；不引入 CLR variance",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261013-005"
+      ],
+      "unverified_notes": ""
+    },
+    {
+      "id": "S3",
+      "adapter": "reflection",
+      "input_mode": "native_member",
+      "entry_point": "Mapper / IsAssignableTo / TypePattern.Match",
+      "conditions": "ReflectionMappingTests 的名义继承、通配关系、组合元素/实参 + 与程序集不同形参",
+      "target": "working-tree",
+      "expected_behavior": "名义查询与完整 CLR 可赋值不同；组合 + 可表达局部类型关系，身份包含程序集",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261013-008"
+      ],
+      "unverified_notes": ""
+    },
+    {
+      "id": "S4",
+      "adapter": "roslyn",
+      "input_mode": "source_symbol",
+      "entry_point": "Mapper / IsAssignableTo",
+      "conditions": "RoslynMappingTests.TypeSystem_AssignabilityAndCapabilities_ReturnExpected；UnavailableAncestorTests 的已知接口/错误基类",
+      "target": "working-tree",
+      "expected_behavior": "保留已知接口关系；未满足且闭包不完整时 Unknown",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261013-007"
+      ],
+      "unverified_notes": ""
+    },
+    {
+      "id": "S5",
+      "adapter": "core",
+      "input_mode": "neutral",
+      "entry_point": "AspectNCompilation.Create",
+      "conditions": "BinderTests/LanguageDecisionTests 的数组关系目标、裸通配目标、命名空间泛型子句",
+      "target": "working-tree",
+      "expected_behavior": "绑定拒绝，无有效模式",
+      "contract_status": "excluded",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261013-004"
+      ],
+      "unverified_notes": "",
+      "exclusion": {
+        "reason_code": "explicit_exclusion",
+        "reason": "关系目标结构有明确白名单，命名空间不是泛型类型声明",
+        "decision_refs": [
+          {
+            "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+            "section": "3.2 / 12.2 / 12.4"
+          }
+        ],
+        "failure_behavior": "绑定拒绝，无有效模式"
+      }
+    }
+  ],
+  "invariant_checks": [
+    {
+      "invariant_id": "INVLOGIC",
+      "applicability": "applicable",
+      "condition_ref": {
+        "path": "docs/knowledge/profiles.json",
+        "section": "invariants/INVLOGIC"
+      },
+      "reason": "条目包含匹配或关系结果，遵循三态组合；具体覆盖按场景",
+      "review_status": "pending",
+      "reviewer": null,
+      "reviewed_on": null
+    },
+    {
+      "invariant_id": "INVPARITY",
+      "applicability": "applicable",
+      "condition_ref": {
+        "path": "docs/knowledge/profiles.json",
+        "section": "invariants/INVPARITY"
+      },
+      "reason": "涉及适配器映射或关系时只比较同等输入和所需可用事实，不能外推缺失后端行",
+      "review_status": "pending",
+      "reviewer": null,
+      "reviewed_on": null
+    },
+    {
+      "invariant_id": "INVMISSING",
+      "applicability": "applicable",
+      "condition_ref": {
+        "path": "docs/knowledge/profiles.json",
+        "section": "invariants/INVMISSING"
+      },
+      "reason": "候选所需事实或原生关联可能不可用，不能把占位值当作确定事实",
+      "review_status": "pending",
+      "reviewer": null,
+      "reviewed_on": null
+    },
+    {
+      "invariant_id": "INVCANCEL",
+      "applicability": "applicable",
+      "condition_ref": {
+        "path": "docs/knowledge/profiles.json",
+        "section": "invariants/INVCANCEL"
+      },
+      "reason": "条目纳入完整匹配或公开关系入口，其 CancellationToken 必须按横向契约传播",
+      "review_status": "pending",
+      "reviewer": null,
+      "reviewed_on": null
+    }
+  ],
+  "relations": [
+    {
+      "type": "depends_on",
+      "capability_id": "USE-ARRAY-001"
+    },
+    {
+      "type": "depends_on",
+      "capability_id": "GEN-IDENTITY-001"
+    },
+    {
+      "type": "depends_on",
+      "capability_id": "CROSS-AVAILABILITY-001"
+    }
+  ],
+  "open_findings": [],
+  "related_findings": []
+}
+-->
+
+## 摘要
+
+类型身份包含程序集、名称与声明结构；名称通配、模式匹配、身份相等和名义继承是不同操作。
+
+## 契约
+
+`*` 在一段中通配，`..` 在命名空间中跨零或多段，`/` 表示嵌套。省略命名空间不限命名空间，但显式单段有名模式不自动跨嵌套。`+` 查询候选自身与名义祖先闭包，允许已声明和运行时合成的关系，不包含数组元素或泛型变体转换。
+
+## 输入条件
+
+解析后的定义身份与尚未解析的引用身份不同。手工中立签名缺原生关联时可做结构判断；需要原生继承/特性数据时不能仅由显示文本恢复。
+
+## 分层能力
+
+核心比较模型结构，适配器提供原生闭包及解析后身份。转发/引用程序集按实际解析结果治理，不承诺任意显示名相同即跨程序集相等。Fody 独立映射身份另见 CROSS-COMPAT-001。
+
+## 阶段失败
+
+非法 + 目标 AN2010；命名空间泛型子句 AN2011。缺少关联/必需祖先可能 Unknown；已知匹配分支不被另一个未知分支掩盖。匹配不是完整运行时 IsAssignableFrom 的替代。
+
+## 例子与边界
+
+```text
+Company..*Service
+Outer/Inner
+System.IDisposable+
+Base+[]
+System.Collections.Generic.IEnumerable<object+>
+```
+
+`IEnumerable<object>+` 不表示泛型协变；将 `+` 放在实参中和放在整体类型后有不同约束。`int[]+` 被拒绝，模型数组方向关系使用 ITypeSystem 查询，参见 USE-ARRAY-001。
+
+## 规范依据
+
+语言第 7、12 节；架构第 8.1、8.4、8.5 节。
+
+## 实现与证据
+
+[名义关系测试](../../../../tests/AspectN.Reflection.Tests/ReflectionMappingTests.cs)、[Cecil 解析身份](../../../../tests/AspectN.Cecil.Tests/CecilResolvedMetadataTests.cs)、[未知祖先](../../../../tests/AspectN.Roslyn.Tests/UnavailableAncestorTests.cs)。场景仅覆盖所列输入。
+
+## 关联与缺口
+
+数组形状依 USE-ARRAY-001；泛型声明身份依 GEN-IDENTITY-001；未知闭包依 CROSS-AVAILABILITY-001。尚未证明所有程序集转发拓扑或自定义解析器组合。

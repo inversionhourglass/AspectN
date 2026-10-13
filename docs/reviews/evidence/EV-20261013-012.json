@@ -1,0 +1,847 @@
+{
+  "coverage_notes": "完整项目测试执行通过，证明范围限于 covered_assertions 的实际输入和方法断言。场景条件列明 source/PE/native/neutral、后端与环境；一份项目报告不自动覆盖全部能力。GEN-IDENTITY 的 Roslyn 闭合身份不外推闭合关系/同形重载，Fody 不能借三后端 fixture 推断未执行组合；兼容 smoke 不证明任意历史运行时或已发布包。H1 未重新执行。测试类名匹配只作定位，独立规范、断言含义与当前适用性须审查。",
+  "observed_output": "边界示例验证通过：56 项检查。",
+  "scenario_refs": [
+    {
+      "capability_id": "MEM-SELECTORS-001",
+      "scenario_id": "S5"
+    },
+    {
+      "capability_id": "SYN-GRAMMAR-001",
+      "scenario_id": "S3"
+    },
+    {
+      "capability_id": "USE-ARRAY-001",
+      "scenario_id": "S4"
+    }
+  ],
+  "raw_log": "artifacts/documentation-expansion/boundaries.log",
+  "id": "EV-20261013-012",
+  "test_counters": null,
+  "procedure": "dotnet run --project docs/usage/examples/MatchingBoundaries/MatchingBoundaries.csproj -c Release --no-restore",
+  "method": "automated",
+  "recorded_on": "2026-10-13T05:17:28.8731482Z",
+  "revalidation_conditions": "受影响实现、测试、规范含义、适配器/依赖身份、输入条件或环境变化时重新评估并追加证据；历史报告保留，不因提交自动续期。",
+  "code_state": {
+    "head": "25eb76fb8459c3c7c4ad793b4b0d931713d03200",
+    "dirty": true,
+    "files": [
+      {
+        "sha256": "d68afcda09220f55c0b7aebbf212fd14a05bbc0955e48386ebebcea7cacb4a77",
+        "path": ".editorconfig"
+      },
+      {
+        "sha256": "21511672e6680b86521f1d2d275e9fe2d914092073007c8be353f3202c38115a",
+        "path": "Directory.Build.props"
+      },
+      {
+        "sha256": "a0df07b7d4df78415d87666c16e30c665d285d0e39ed9d300c52aeb7a3837c9a",
+        "path": "Directory.Packages.props"
+      },
+      {
+        "sha256": "765ed4c4825ac8e02e770b7695a2c471bfc7185f964788bd850a4f79af9e03ce",
+        "path": "docs/language/array-shape.md"
+      },
+      {
+        "sha256": "75a093eee945c720e3b6809ca2ab3a16bbfd37ae6a66372059b5011b393e6f24",
+        "path": "docs/language/metadata-availability.md"
+      },
+      {
+        "sha256": "d59257ec48a4cfcfd2729a6bf71091a7a648c717a3b3dda350da75f45cadebb8",
+        "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md"
+      },
+      {
+        "sha256": "99b598fcbc1f8de66c0271e257367f2a5c83af8876bbededcfa99d2ae38a8081",
+        "path": "docs/superpowers/specs/2026-07-31-aspectn-redesign-design.md"
+      },
+      {
+        "sha256": "5e1e806c82351488ab4f4e79cbe9919371b498eacd533a8975e3d6a038858740",
+        "path": "docs/usage/examples/MatchingBoundaries/CandidateApi.cs"
+      },
+      {
+        "sha256": "f55cd21023eaa11d4c09b82fdbae44e4abf953bfb66bf30173878f7b7c227c15",
+        "path": "docs/usage/examples/MatchingBoundaries/MatchingBoundaries.csproj"
+      },
+      {
+        "sha256": "b0597e6d222e28fc77b5b98e8f264d2ed837574ef2cda23e9cff5d28317c6731",
+        "path": "docs/usage/examples/MatchingBoundaries/Program.cs"
+      },
+      {
+        "sha256": "6cd80ed6f7a93e76c20e47164e3bfedfddc1b42b33519b2cd2dee6febff4e836",
+        "path": "global.json"
+      },
+      {
+        "sha256": "e88e3e6bfd03488c9fe568a2602cf7caacb9b0d0667b1e7bf12ee88db0b57b9c",
+        "path": "src/AspectN.Cecil.Fody/AspectN.Cecil.Fody.csproj"
+      },
+      {
+        "sha256": "b7d1e7e858c1a60adc7a9554f0a7654262c4e7b78ad9990863a8436fdefb6992",
+        "path": "src/AspectN.Cecil/AspectN.Cecil.csproj"
+      },
+      {
+        "sha256": "ea283686906f022006bd69a3317bce2117cf97401137a2efbf3994b17e7179b7",
+        "path": "src/AspectN.Cecil/CecilMappingOptions.cs"
+      },
+      {
+        "sha256": "d07a316492d18fd4913f686ff643012c0cde20f116d4412c3b817c243d8f4893",
+        "path": "src/AspectN.Cecil/CecilSignatureMapper.cs"
+      },
+      {
+        "sha256": "94110b4f9e1ce3b32fe36c9698aafd6b7765dd90c4f7316e5c64546ee0c748e7",
+        "path": "src/AspectN.Cecil/CecilTypeSystem.cs"
+      },
+      {
+        "sha256": "8cee9d6c21e35b43be394b1c1f1e09bdf6ecad853cfb2fe850a6edaf404f105d",
+        "path": "src/AspectN.Cecil/Internal/CecilAccessibility.cs"
+      },
+      {
+        "sha256": "2fb897cb77fe165dd9b15ebe9d6e836452aa392663a0aaa8ffff28d3873e4011",
+        "path": "src/AspectN.Cecil/Internal/CecilAsyncDetector.cs"
+      },
+      {
+        "sha256": "9195d516d7aaa9b916840d2c6a1588dffbd8863a869b56e192b625259a27e8c5",
+        "path": "src/AspectN.Cecil/Internal/CecilMetadataReader.cs"
+      },
+      {
+        "sha256": "18fe0e2a273e14b73fdd6531aa11eca8980c4e20adb6f96fe9f075f14e7b0792",
+        "path": "src/AspectN.Cecil/Internal/CecilNativeTypeLimitGuard.cs"
+      },
+      {
+        "sha256": "b4ad2050d0de4d311b161e58866eabc8660147e81b0938e93ce8145717b59d06",
+        "path": "src/AspectN.Cecil/Internal/CecilNativeTypeMetadata.cs"
+      },
+      {
+        "sha256": "435d15818279bc83d54b3e7828a4fb1894f75c2d896fcf17de5a87fb3517fbf0",
+        "path": "src/AspectN.Cecil/Internal/CecilRefKindDetector.cs"
+      },
+      {
+        "sha256": "7a1094b95f767de7e2a1f2128a4cd56897d3ce1c0873c85956efa1462cfd2e77",
+        "path": "src/AspectN.Cecil/Internal/CecilResolver.cs"
+      },
+      {
+        "sha256": "89638ca19923a5463585ecc0b4311f624e8c705a735cb3310c19665a2cf3e0d2",
+        "path": "src/AspectN.Cecil/Internal/CecilTypeCache.cs"
+      },
+      {
+        "sha256": "bded874f62d6575258489a05b5b358dec51a54f78bede571596ba9e785ab3cef",
+        "path": "src/AspectN.Cecil/Internal/CecilTypeMapper.cs"
+      },
+      {
+        "sha256": "7069e5a46bd8c4c627661aca0c3d2ecfbf1320e23a439437ea55c439a3547a4c",
+        "path": "src/AspectN.Cecil/Internal/CecilTypeMapper.TypeForms.cs"
+      },
+      {
+        "sha256": "36ca6b77b929d13e0096165f2b42291f50895a3aca9aa05b21314987936bcb82",
+        "path": "src/AspectN.Cecil/Internal/UnqualifiedTypeComparer.cs"
+      },
+      {
+        "sha256": "3c3b422dddb1efeb0fc5b228608fd8682452b2a9507d4031894bce3c4dedadbd",
+        "path": "src/AspectN.Cecil/PublicAPI.Shipped.txt"
+      },
+      {
+        "sha256": "4a4800ed0519c8a45e849da34cfd7fa453975a0acc62f6c4f60d1e90e002cd4e",
+        "path": "src/AspectN.Cecil/PublicAPI.Unshipped.txt"
+      },
+      {
+        "sha256": "6dbb19ff4b7ce81a7b7d428aec66e8c5d95cbf5f70b6924e8d792c28d008d47f",
+        "path": "src/AspectN.Reflection/AspectN.Reflection.csproj"
+      },
+      {
+        "sha256": "a2f7b1963ba833b59742553cfadab20594c3c438ab26b028be51dcfb99e7c472",
+        "path": "src/AspectN.Reflection/Internal/ReflectionGenericContext.cs"
+      },
+      {
+        "sha256": "1a74cc8a9ed5bc93d43599e0db55bfc7382dc1fed7f51f1209006d32e8056abb",
+        "path": "src/AspectN.Reflection/Internal/ReflectionTypeCache.cs"
+      },
+      {
+        "sha256": "02b628ebbf2cbaf4fd7a0201e81573d73a8530d6655f69f7bfe54a235c25d849",
+        "path": "src/AspectN.Reflection/Internal/RuntimeTypeFacts.cs"
+      },
+      {
+        "sha256": "3c3b422dddb1efeb0fc5b228608fd8682452b2a9507d4031894bce3c4dedadbd",
+        "path": "src/AspectN.Reflection/PublicAPI.Shipped.txt"
+      },
+      {
+        "sha256": "0c43cc5f53832bbbb0f8c67dbcb2b34183265a6c7d2b472c9f05083096eea9de",
+        "path": "src/AspectN.Reflection/PublicAPI.Unshipped.txt"
+      },
+      {
+        "sha256": "2daafcac286f6c6398251567fe49ae526886184cb3e7e1938902a96deab4a88d",
+        "path": "src/AspectN.Reflection/ReflectionSignatureMapper.cs"
+      },
+      {
+        "sha256": "97e3c4de13150f635ae1862712e851803a6b10564a164624e8789bd9d93a33d8",
+        "path": "src/AspectN.Reflection/ReflectionSignatureMapper.Limits.cs"
+      },
+      {
+        "sha256": "4d3c29c21e9dc93cd80c14feb1c3a7bcb7f3ed256df1102ab829246771fc0ed5",
+        "path": "src/AspectN.Reflection/ReflectionSignatureMapper.TypeForms.cs"
+      },
+      {
+        "sha256": "5634ae70543e77cbbb43f4d35a9c2550d83b9602d747f5c34a034b35b645d746",
+        "path": "src/AspectN.Reflection/ReflectionTypeSystem.cs"
+      },
+      {
+        "sha256": "4d491b27c0e5fd4fec35151e80ad929a504a0668dff80c3c7eb9d34839bbdc76",
+        "path": "src/AspectN.Roslyn/AspectN.Roslyn.csproj"
+      },
+      {
+        "sha256": "3c3b422dddb1efeb0fc5b228608fd8682452b2a9507d4031894bce3c4dedadbd",
+        "path": "src/AspectN.Roslyn/PublicAPI.Shipped.txt"
+      },
+      {
+        "sha256": "7483ae0f3aba9c7a156eff7ad412608aff9512808a2407eb7cf8cdfc5e86e7c9",
+        "path": "src/AspectN.Roslyn/PublicAPI.Unshipped.txt"
+      },
+      {
+        "sha256": "ce594d67393e84a928bb5108902188f2f5f65d097ab400556af58a248eb59a17",
+        "path": "src/AspectN.Roslyn/RoslynSignatureMapper.cs"
+      },
+      {
+        "sha256": "db489ce6239eb4c94438fd46eea000061a8c8f1c69f3e9f015f1e4f486fb58c6",
+        "path": "src/AspectN.Roslyn/RoslynSignatureMapper.Limits.cs"
+      },
+      {
+        "sha256": "160ea62b354c2edd7f0754faf27c2def6cb57b36e6d27245b48d4d0ad1b2ea5f",
+        "path": "src/AspectN.Roslyn/RoslynSignatureMapper.TypeForms.cs"
+      },
+      {
+        "sha256": "9325137cca37f1a6c46fcad2b071436f06feb41833568e41405337a6d41c5aac",
+        "path": "src/AspectN.Roslyn/RoslynSyntaxExtensions.cs"
+      },
+      {
+        "sha256": "e1c78c7b67a157e16a09cae854b7b1a9e01fb50723a59f8058ec122501624884",
+        "path": "src/AspectN.Roslyn/RoslynTypeSystem.cs"
+      },
+      {
+        "sha256": "e07ca04e5e30610715a0e215f5250944c2454ac581bb9e6996a977ef2101b2fa",
+        "path": "src/AspectN/AspectN.csproj"
+      },
+      {
+        "sha256": "454efc7366be2def610a04b7b2a5e3ded19ff8cbbaf4eee43422894d96ec9226",
+        "path": "src/AspectN/AspectNCompilation.cs"
+      },
+      {
+        "sha256": "7cc62d2c34612588ddeebe3ef3478ff2f5ee7d8191371bfa1a5bf83f102cfdfd",
+        "path": "src/AspectN/AspectNCompilationOptions.cs"
+      },
+      {
+        "sha256": "4059ef914470572475b9627d83364ea30906bfdb6ac2ea21791de054b64556d2",
+        "path": "src/AspectN/AspectNEngine.cs"
+      },
+      {
+        "sha256": "dbcfe5e7569ac60a8beb9789e5f218a04d3b4135399e998acc4effa1bba2f0b3",
+        "path": "src/AspectN/AspectNEngineOptions.cs"
+      },
+      {
+        "sha256": "1a0593290828258752061cb2165517516a21516da0818d4433039b42fe83411e",
+        "path": "src/AspectN/AspectNLimitException.cs"
+      },
+      {
+        "sha256": "23167fd2e5b4c137488accc6f786e34729c615ab050aed514b16edd09077aefc",
+        "path": "src/AspectN/AspectNLimits.cs"
+      },
+      {
+        "sha256": "8b4863a3d92264bac691dc31f18205b31960c521cb3b26c26339a603636fe852",
+        "path": "src/AspectN/AspectNParser.cs"
+      },
+      {
+        "sha256": "919955b7256e9e90becd183382bd5ad995087d4d0c31181ce4312f7cb9b1b8f9",
+        "path": "src/AspectN/Binding/AttributeTargetRules.cs"
+      },
+      {
+        "sha256": "cfe0e322ef814894869aabfa569409e615787b0d817da0e8d3376234073de3c4",
+        "path": "src/AspectN/Binding/Binder.cs"
+      },
+      {
+        "sha256": "f1329427f376c5a7a8dba9ed3f6a51f3a4365ae00220c730a33b3d6f8549387c",
+        "path": "src/AspectN/Binding/Binder.MemberPaths.cs"
+      },
+      {
+        "sha256": "a5d52cf2977bd21dcb31afeb305eaec3a84e4e09eca605297fcaed93728b4be3",
+        "path": "src/AspectN/Binding/BoundExpression.cs"
+      },
+      {
+        "sha256": "48e5c3beb26a7403ab62f522bd510590566541e54ab780b11b8793bc1407d3ac",
+        "path": "src/AspectN/Binding/BoundNode.cs"
+      },
+      {
+        "sha256": "2ce06a21257610d7a30b844471b52f2da4ab916a74ebc35faec839d21a49657c",
+        "path": "src/AspectN/Binding/BoundSelector.cs"
+      },
+      {
+        "sha256": "756c531e47789316ca997bd2404bacaf3eb9d112e979a102352f1d896ed51667",
+        "path": "src/AspectN/Binding/BoundTypePattern.cs"
+      },
+      {
+        "sha256": "994ccca87be3c5593f24801e4f136ce7a11ff56c2ae714e6b9554c0841448278",
+        "path": "src/AspectN/Binding/VariableSymbol.cs"
+      },
+      {
+        "sha256": "1f187ffb9217eea0e225d01f8495c04a4907ed2919061a9bc9e209fa059cb574",
+        "path": "src/AspectN/Caching/CompiledPatternCache.cs"
+      },
+      {
+        "sha256": "0fa3525aa4f748f35ace85b8a7f314118e6902c21a5631d51555911aaf6f5188",
+        "path": "src/AspectN/CollectionSnapshot.cs"
+      },
+      {
+        "sha256": "8cd3b5a28cdff3797e2ecd18b5d5c8085d6bd6ab4a516d05506f92eb5efa9db8",
+        "path": "src/AspectN/CompiledMemberPattern.cs"
+      },
+      {
+        "sha256": "b9c65b93fe04808607122a0a5bb3526f89d9fad07f981459a36facaae2359797",
+        "path": "src/AspectN/CompiledPattern.cs"
+      },
+      {
+        "sha256": "0b75edef7fbd2400090c484edcaef227c971ba01652bce6d3b2b3b0e821b4897",
+        "path": "src/AspectN/CompiledTypePattern.cs"
+      },
+      {
+        "sha256": "7aa3f79a38f4b5d8c3d1956335efa3f6a17410808c2d5a93a6b276d200b8f8cf",
+        "path": "src/AspectN/Diagnostics/AspectNDiagnostic.cs"
+      },
+      {
+        "sha256": "605b69ed9c90c2c11545db9419a64e5381cd9719db68f781aa009f0c7e8b3f7f",
+        "path": "src/AspectN/Diagnostics/DiagnosticBag.cs"
+      },
+      {
+        "sha256": "2fef6a34e678ed33101bb832b8ebd12941ea27a8657361a12c37e3d748c7d39c",
+        "path": "src/AspectN/Diagnostics/DiagnosticCodes.cs"
+      },
+      {
+        "sha256": "c6d9d94b65313521675e43a16957b625b9f3f48d4be532bdf9ce93775f277a60",
+        "path": "src/AspectN/Diagnostics/DiagnosticSeverity.cs"
+      },
+      {
+        "sha256": "3d96df5a02fed67e0b3c5d19b14d8b2a01d3e3884f2d80e57fc909ba6a03a6a9",
+        "path": "src/AspectN/Diagnostics/DiagnosticSnapshot.cs"
+      },
+      {
+        "sha256": "f66bef2d08a4f0ccf9833d41599f1f21929f74469c21151c1dc68ea158a8e159",
+        "path": "src/AspectN/Evaluation/AttributePatternEvaluator.cs"
+      },
+      {
+        "sha256": "2f5a7067a4a05a0063e88a45a1c5b46b7ec34068e4115700119315c4f8c2022a",
+        "path": "src/AspectN/Evaluation/BindingEnvironment.cs"
+      },
+      {
+        "sha256": "62f256491f0315e69aed08c990152e24e826ccc645c6adffe470b1048b40d572",
+        "path": "src/AspectN/Evaluation/CanonicalSignatureFormatter.cs"
+      },
+      {
+        "sha256": "ede511ab582ec2e5b3520f3e5af734646b126bbc017cac644c6ea0ccc530a516",
+        "path": "src/AspectN/Evaluation/CanonicalSignatureUnavailableException.cs"
+      },
+      {
+        "sha256": "cf20a49413fc6eb35a38101a06fe042aa7fe0c4c900ba324dac66d3067751e0c",
+        "path": "src/AspectN/Evaluation/EvaluationContext.cs"
+      },
+      {
+        "sha256": "b5b3e981301c39e85eceb690da0363d3128a6341775ddc834a83ece09810903f",
+        "path": "src/AspectN/Evaluation/MatchLogic.cs"
+      },
+      {
+        "sha256": "e67c830bb3666f670b56190f398bcbde588c9477f86fe8092ae14256ebac415e",
+        "path": "src/AspectN/Evaluation/MatchResult.cs"
+      },
+      {
+        "sha256": "fa51b9544dacc5b252d715bb653dd260347851036d99297f6c37b756c189f262",
+        "path": "src/AspectN/Evaluation/MatchStatus.cs"
+      },
+      {
+        "sha256": "904c591d723d03a2fc3994667d1c2aeb00db25ee182de5f09bd00d7df5dba420",
+        "path": "src/AspectN/Evaluation/MemberPatternEvaluator.cs"
+      },
+      {
+        "sha256": "447687e45c832f54f6317724e4930c9d97a6c532a74293c12adf22f8c8b934b0",
+        "path": "src/AspectN/Evaluation/MetadataLimitGuard.cs"
+      },
+      {
+        "sha256": "2585faffb7c5cace8e820ae4363ccb2ddea86ffe29a43a649bd477730833ddce",
+        "path": "src/AspectN/Evaluation/MetadataQuery.cs"
+      },
+      {
+        "sha256": "f49618098f50219132af939eb6bdf210f94de63a271fddf580aba97c30cec0f0",
+        "path": "src/AspectN/Evaluation/ModifierMatcher.cs"
+      },
+      {
+        "sha256": "629856bb06f468e3d1bb524eba91a67bda39d26b7b027781f4d67a8ea1138ab9",
+        "path": "src/AspectN/Evaluation/NamePatternMatcher.cs"
+      },
+      {
+        "sha256": "34d0c9df26067215743f50e56fe3f334f223867b21dfb71b33a75296fdf842a8",
+        "path": "src/AspectN/Evaluation/RegexPatternEvaluator.cs"
+      },
+      {
+        "sha256": "c8e58d6b08fe4513aa8b515bdca1c3692bcf06101a2dcacdcc40def9a347462b",
+        "path": "src/AspectN/Evaluation/TypePatternEvaluator.cs"
+      },
+      {
+        "sha256": "2f0b2e77954890f4bb7afefc07cfc1efeaad98079aed6e68d8c3e5f3bf2f4569",
+        "path": "src/AspectN/Metadata/AssemblyIdentity.cs"
+      },
+      {
+        "sha256": "be5dbdc782f1d74406aedaf2c7e528e9653799fd34b899111bdfda0c12096524",
+        "path": "src/AspectN/Metadata/AttributeSignature.cs"
+      },
+      {
+        "sha256": "863be6b163d776b777368e7ab53ce9f823ab78f53815dfa7a074e63aaf07f150",
+        "path": "src/AspectN/Metadata/GenericParameterNamer.cs"
+      },
+      {
+        "sha256": "07f7141bfdfe99b70eb01c1f554d9575a41f387ec3110bf70098704eaf7eadde",
+        "path": "src/AspectN/Metadata/GenericParameterSignature.cs"
+      },
+      {
+        "sha256": "6dc1dbf260e3b13aaed7e1634df0269bea56fd87276b7094a4b5178765336639",
+        "path": "src/AspectN/Metadata/MetadataAvailability.cs"
+      },
+      {
+        "sha256": "dd1a0b02305912f0814874d56a7b2f5ab354a7cb68d548d70a3d25f0c61bf56a",
+        "path": "src/AspectN/Metadata/MetadataEnums.cs"
+      },
+      {
+        "sha256": "6729bb7aa86d501f7c4ba199b86e22ebb374c8e73312f9ea9fce41f7520df040",
+        "path": "src/AspectN/Metadata/MethodSignature.cs"
+      },
+      {
+        "sha256": "9b0e45d49c43571e275006d95339b932d5ac28245add200db3e01be61d7ff77e",
+        "path": "src/AspectN/Metadata/ParameterSignature.cs"
+      },
+      {
+        "sha256": "4aed5ff310ac90be55dbfb84a699241dfbc3cc5b14ad2c47f7b2830820b0c569",
+        "path": "src/AspectN/Metadata/PropertySignature.cs"
+      },
+      {
+        "sha256": "948652c93ba17acb119a3a23b3f906a9fce3d7c3f2ab8f40aee2e18e2fc6b82c",
+        "path": "src/AspectN/Metadata/SignatureReferenceComparer.cs"
+      },
+      {
+        "sha256": "29cf15506d5dd8abb837303d55e94ff2a86334b728d6d82cc7e311cbde2c612e",
+        "path": "src/AspectN/Metadata/TypeIdentity.cs"
+      },
+      {
+        "sha256": "0ac79df7a5d7fcf07549a59e6e9a8e104e97768a3dd187128b881f78ada1df56",
+        "path": "src/AspectN/Metadata/TypeSignature.cs"
+      },
+      {
+        "sha256": "bc79c83a9b92b8389c39e976033b024227622c331d9f67ef59ec7695aaba4dc5",
+        "path": "src/AspectN/Metadata/TypeUseSignature.cs"
+      },
+      {
+        "sha256": "9777ccc74dcdaab8f24386afc24835661407ee76e13026ade159b6364b213c81",
+        "path": "src/AspectN/NotNullWhenAttribute.cs"
+      },
+      {
+        "sha256": "08c21e7b9afdebde244be7b0d182e44e385a984a035f7970f7acc9404909ce59",
+        "path": "src/AspectN/Parsing/AspectNParseKind.cs"
+      },
+      {
+        "sha256": "283e5ca8612f877efb0bf78110536757d4b42278936e0db5fdad9c4322462ca8",
+        "path": "src/AspectN/Parsing/Lexer.cs"
+      },
+      {
+        "sha256": "178428c2e9a09d4107da335d5d21ccf978947264e54d42a801999fee8ea4401c",
+        "path": "src/AspectN/Parsing/Parser.cs"
+      },
+      {
+        "sha256": "3cd099e65f4d097c517fbeec84212ce0c83b1a0ef9c814a36b904df6ed97e0d9",
+        "path": "src/AspectN/Parsing/Parser.Selectors.cs"
+      },
+      {
+        "sha256": "e93734cb41e7b5efa4850aa8f96ebe2c5be4dee91820ea8a789ca2a45e94c23b",
+        "path": "src/AspectN/Parsing/ParserDepthGuard.cs"
+      },
+      {
+        "sha256": "72ae7f793457507f0293ecd65be971cbec49f83558297914a7aedc6585252db4",
+        "path": "src/AspectN/Parsing/SelectorParser.cs"
+      },
+      {
+        "sha256": "3e437d50fc394649a903e76575a61500e098ac3d4cbca6692539e1bbd6b2a3e2",
+        "path": "src/AspectN/Parsing/SelectorParser.MemberPaths.cs"
+      },
+      {
+        "sha256": "54e57fad82d33f8bcb392ce3087deb503379b63127b60e0ad780841a6f60f98a",
+        "path": "src/AspectN/Parsing/TypePatternParser.cs"
+      },
+      {
+        "sha256": "740d36ed31052dba7b51eb5c0389bcd3423ba6b77df338821d77ae79bd5bca82",
+        "path": "src/AspectN/Parsing/TypePatternSyntaxFacts.cs"
+      },
+      {
+        "sha256": "5917567ab4ae7defa59363c5206866b7e6877dc28f0caa12d45c0b4d441cf03d",
+        "path": "src/AspectN/Parsing/TypeStructureGuard.cs"
+      },
+      {
+        "sha256": "aacbc1bf1b5e2d73431d625cdf40383e08b82cbdd79190335171bb474ffd3b7e",
+        "path": "src/AspectN/Properties/AssemblyInfo.cs"
+      },
+      {
+        "sha256": "3c3b422dddb1efeb0fc5b228608fd8682452b2a9507d4031894bce3c4dedadbd",
+        "path": "src/AspectN/PublicAPI.Shipped.txt"
+      },
+      {
+        "sha256": "874ac087b6a0cf220e5d3a2fb8a24117f941b27b13082e9dd1f0f32fb69d9639",
+        "path": "src/AspectN/PublicAPI.Unshipped.txt"
+      },
+      {
+        "sha256": "f812f756d19b416c45141f35191723e047b6216f1117bff382d12ee05083f9ce",
+        "path": "src/AspectN/Syntax/AspectNSyntaxTree.cs"
+      },
+      {
+        "sha256": "5153548587f75681e56d8cb498c3ca8e8cd13ce4d2115d87d6e7cdb0208d26e9",
+        "path": "src/AspectN/Syntax/AttributeSignatureSyntax.cs"
+      },
+      {
+        "sha256": "31f881c64d3c18dc4fa2ec4a8a451ba4f4aae53eb25c0d9f9741e09507ecdfdc",
+        "path": "src/AspectN/Syntax/ExpressionSyntax.cs"
+      },
+      {
+        "sha256": "b5700acd437a7676740bfe601c1487e1c78b86fa4c37b0fd7aed5cfc28287a8a",
+        "path": "src/AspectN/Syntax/MemberPathSyntax.cs"
+      },
+      {
+        "sha256": "bdda5a03ccb62b844d6bab687aa8dd7122a67057de81fa37b1bd1668b148e857",
+        "path": "src/AspectN/Syntax/SelectorSyntax.cs"
+      },
+      {
+        "sha256": "92d51534997caa888539055d5df613de54557e57951984d488fb889d4b3efa63",
+        "path": "src/AspectN/Syntax/SignatureSyntax.cs"
+      },
+      {
+        "sha256": "44b6543b457f7f9da0491b2d6a6b9058c30a7a6e37922b0e73118c6324d01c75",
+        "path": "src/AspectN/Syntax/SyntaxKind.cs"
+      },
+      {
+        "sha256": "19837ddd26afbda69fe07ea35c6d4900881b20287b34f502115350817ae57d66",
+        "path": "src/AspectN/Syntax/SyntaxNode.cs"
+      },
+      {
+        "sha256": "e527f57c9f9a10dc323605a4a1ae56a64c063eee95a8f7c3933bd116f9adb561",
+        "path": "src/AspectN/Syntax/SyntaxToken.cs"
+      },
+      {
+        "sha256": "a17641355001882be84dd1e4eb65ad27f5409c4e77030331e57af172586f866e",
+        "path": "src/AspectN/Syntax/TypePatternSyntax.cs"
+      },
+      {
+        "sha256": "c9d4f4261991aa9616e607a9ca0bea55257be08015cbf054393c7ef9fd09425d",
+        "path": "src/AspectN/Text/SourceText.cs"
+      },
+      {
+        "sha256": "db17b215370bfd29752d5c5f3fc305962a0902bd7b0cc9ee64027ed09300f16d",
+        "path": "src/AspectN/Text/TextSpan.cs"
+      },
+      {
+        "sha256": "39865ae8e2833b27a277a9f20da484ed6360c9148a352300c19fb4edcc65e5ad",
+        "path": "src/AspectN/TypeSystem/AttributeTarget.cs"
+      },
+      {
+        "sha256": "0d630e233d177fcd42678313805d8ef610524b051d36e6bff3f4e9f99727e248",
+        "path": "src/AspectN/TypeSystem/InheritanceClosure.cs"
+      },
+      {
+        "sha256": "139df77e2ff6f7422281927719bf7017575c76f0798afd00b2a23076c3beb1f8",
+        "path": "src/AspectN/TypeSystem/ITypeSystem.cs"
+      },
+      {
+        "sha256": "e78f45ac902a07e97ee531715ec27ed99f17349866efe522b428bb5d885e0d5a",
+        "path": "src/AspectN/TypeSystem/StructuralTypeComparer.cs"
+      },
+      {
+        "sha256": "f010432a70e7cd5608d94c4ef1234f2eda83d65678c65a722b32660a04f1f689",
+        "path": "src/AspectN/TypeSystem/TypeRelationResult.cs"
+      },
+      {
+        "sha256": "d154211496f7f2b16e5a25cafff74c008b3fd9d115195a509333f2ca6e7996df",
+        "path": "src/AspectN/TypeSystem/TypeSystemCapabilities.cs"
+      },
+      {
+        "sha256": "aa6ec5ebea01328a329214c16c40895bbb11cd608d2b5d6857b4c6c27ecce7ac",
+        "path": "src/Shared/ArrayRelations.cs"
+      },
+      {
+        "sha256": "ec0a1a1227539bcc8fcd7c9cd29cde7be33faf545a246adde29d15cccf4a9f62",
+        "path": "src/Shared/AttributeAvailability.cs"
+      },
+      {
+        "sha256": "6c9310d06bca2f951eda5691b02867ce298da80dc91d435ee0010b833fc71df0",
+        "path": "src/Shared/FunctionPointerConventions.cs"
+      },
+      {
+        "sha256": "02280f841f81a263b42eae8eaf4b4bf8600da2ee14a68028aeeb97ad18901eea",
+        "path": "src/Shared/GenericOwnerIdentity.cs"
+      },
+      {
+        "sha256": "626085e9a0fa9505abd4dce7a4056708706f7bba1fda1a7dc2ac38844a3a57c9",
+        "path": "src/Shared/IterativeTypeMapping.cs"
+      },
+      {
+        "sha256": "44bfd122b5ed964fe90148fed8d5d33ec7b735b6a03c61bc510ae295edf69598",
+        "path": "src/Shared/IterativeTypeText.cs"
+      },
+      {
+        "sha256": "4f774643d0e3249d879e61c1b0a9435cf3d5a44b693f7af0cdad2b9ab925feb8",
+        "path": "src/Shared/MetadataEncodedAttributes.cs"
+      },
+      {
+        "sha256": "fa615cbdeabc46161fc3c0d7a39901bd53129dadfac53cc3ce0b277fa8ef2092",
+        "path": "src/Shared/NativeTypeLimitGuard.cs"
+      },
+      {
+        "sha256": "41585fd79274795633e917f8526885e96284b5cf39a35265d001e4d4d1640cb9",
+        "path": "src/Shared/OperatorMetadata.cs"
+      },
+      {
+        "sha256": "b5597776a60c82a00bb40b6683474aa363328313638703c57c779e794182725a",
+        "path": "src/Shared/UnqualifiedStructuralComparer.cs"
+      }
+    ]
+  },
+  "environment": {
+    "backend_scope": "boundaries",
+    "os": "Microsoft Windows NT 10.0.26200.0",
+    "sdk": "10.0.401",
+    "build_configuration": "Release",
+    "tfm": "net10.0",
+    "dependencies": [
+      "AspectN.Reflection/1.0.0",
+      "AspectN/1.0.0"
+    ],
+    "runtimes": [
+      "Microsoft.AspNetCore.All 2.1.30 [C:\\Program Files\\dotnet\\shared\\Microsoft.AspNetCore.All]",
+      "Microsoft.AspNetCore.App 2.1.30 [C:\\Program Files\\dotnet\\shared\\Microsoft.AspNetCore.App]",
+      "Microsoft.AspNetCore.App 3.1.32 [C:\\Program Files\\dotnet\\shared\\Microsoft.AspNetCore.App]",
+      "Microsoft.AspNetCore.App 5.0.17 [C:\\Program Files\\dotnet\\shared\\Microsoft.AspNetCore.App]",
+      "Microsoft.AspNetCore.App 6.0.21 [C:\\Program Files\\dotnet\\shared\\Microsoft.AspNetCore.App]",
+      "Microsoft.AspNetCore.App 6.0.36 [C:\\Program Files\\dotnet\\shared\\Microsoft.AspNetCore.App]",
+      "Microsoft.AspNetCore.App 7.0.12 [C:\\Program Files\\dotnet\\shared\\Microsoft.AspNetCore.App]",
+      "Microsoft.AspNetCore.App 7.0.20 [C:\\Program Files\\dotnet\\shared\\Microsoft.AspNetCore.App]",
+      "Microsoft.AspNetCore.App 8.0.31 [C:\\Program Files\\dotnet\\shared\\Microsoft.AspNetCore.App]",
+      "Microsoft.AspNetCore.App 9.0.2 [C:\\Program Files\\dotnet\\shared\\Microsoft.AspNetCore.App]",
+      "Microsoft.AspNetCore.App 10.0.12 [C:\\Program Files\\dotnet\\shared\\Microsoft.AspNetCore.App]",
+      "Microsoft.NETCore.App 2.0.7 [C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App]",
+      "Microsoft.NETCore.App 2.0.9 [C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App]",
+      "Microsoft.NETCore.App 2.1.30 [C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App]",
+      "Microsoft.NETCore.App 3.1.32 [C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App]",
+      "Microsoft.NETCore.App 5.0.17 [C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App]",
+      "Microsoft.NETCore.App 6.0.16 [C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App]",
+      "Microsoft.NETCore.App 6.0.21 [C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App]",
+      "Microsoft.NETCore.App 6.0.36 [C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App]",
+      "Microsoft.NETCore.App 7.0.12 [C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App]",
+      "Microsoft.NETCore.App 7.0.20 [C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App]",
+      "Microsoft.NETCore.App 8.0.21 [C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App]",
+      "Microsoft.NETCore.App 8.0.31 [C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App]",
+      "Microsoft.NETCore.App 9.0.2 [C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App]",
+      "Microsoft.NETCore.App 10.0.12 [C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App]",
+      "Microsoft.WindowsDesktop.App 3.1.32 [C:\\Program Files\\dotnet\\shared\\Microsoft.WindowsDesktop.App]",
+      "Microsoft.WindowsDesktop.App 5.0.17 [C:\\Program Files\\dotnet\\shared\\Microsoft.WindowsDesktop.App]",
+      "Microsoft.WindowsDesktop.App 6.0.21 [C:\\Program Files\\dotnet\\shared\\Microsoft.WindowsDesktop.App]",
+      "Microsoft.WindowsDesktop.App 6.0.36 [C:\\Program Files\\dotnet\\shared\\Microsoft.WindowsDesktop.App]",
+      "Microsoft.WindowsDesktop.App 7.0.12 [C:\\Program Files\\dotnet\\shared\\Microsoft.WindowsDesktop.App]",
+      "Microsoft.WindowsDesktop.App 7.0.20 [C:\\Program Files\\dotnet\\shared\\Microsoft.WindowsDesktop.App]",
+      "Microsoft.WindowsDesktop.App 8.0.31 [C:\\Program Files\\dotnet\\shared\\Microsoft.WindowsDesktop.App]",
+      "Microsoft.WindowsDesktop.App 9.0.2 [C:\\Program Files\\dotnet\\shared\\Microsoft.WindowsDesktop.App]",
+      "Microsoft.WindowsDesktop.App 10.0.12 [C:\\Program Files\\dotnet\\shared\\Microsoft.WindowsDesktop.App]"
+    ]
+  },
+  "result": "passed",
+  "started_on": "2026-10-13T05:17:24.2748945Z",
+  "dependency_scope": {
+    "paths": [
+      ".editorconfig",
+      "Directory.Build.props",
+      "Directory.Packages.props",
+      "docs/language/array-shape.md",
+      "docs/language/metadata-availability.md",
+      "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+      "docs/superpowers/specs/2026-07-31-aspectn-redesign-design.md",
+      "docs/usage/examples/MatchingBoundaries/CandidateApi.cs",
+      "docs/usage/examples/MatchingBoundaries/MatchingBoundaries.csproj",
+      "docs/usage/examples/MatchingBoundaries/Program.cs",
+      "global.json",
+      "src/AspectN.Cecil.Fody/AspectN.Cecil.Fody.csproj",
+      "src/AspectN.Cecil/AspectN.Cecil.csproj",
+      "src/AspectN.Cecil/CecilMappingOptions.cs",
+      "src/AspectN.Cecil/CecilSignatureMapper.cs",
+      "src/AspectN.Cecil/CecilTypeSystem.cs",
+      "src/AspectN.Cecil/Internal/CecilAccessibility.cs",
+      "src/AspectN.Cecil/Internal/CecilAsyncDetector.cs",
+      "src/AspectN.Cecil/Internal/CecilMetadataReader.cs",
+      "src/AspectN.Cecil/Internal/CecilNativeTypeLimitGuard.cs",
+      "src/AspectN.Cecil/Internal/CecilNativeTypeMetadata.cs",
+      "src/AspectN.Cecil/Internal/CecilRefKindDetector.cs",
+      "src/AspectN.Cecil/Internal/CecilResolver.cs",
+      "src/AspectN.Cecil/Internal/CecilTypeCache.cs",
+      "src/AspectN.Cecil/Internal/CecilTypeMapper.cs",
+      "src/AspectN.Cecil/Internal/CecilTypeMapper.TypeForms.cs",
+      "src/AspectN.Cecil/Internal/UnqualifiedTypeComparer.cs",
+      "src/AspectN.Cecil/PublicAPI.Shipped.txt",
+      "src/AspectN.Cecil/PublicAPI.Unshipped.txt",
+      "src/AspectN.Reflection/AspectN.Reflection.csproj",
+      "src/AspectN.Reflection/Internal/ReflectionGenericContext.cs",
+      "src/AspectN.Reflection/Internal/ReflectionTypeCache.cs",
+      "src/AspectN.Reflection/Internal/RuntimeTypeFacts.cs",
+      "src/AspectN.Reflection/PublicAPI.Shipped.txt",
+      "src/AspectN.Reflection/PublicAPI.Unshipped.txt",
+      "src/AspectN.Reflection/ReflectionSignatureMapper.cs",
+      "src/AspectN.Reflection/ReflectionSignatureMapper.Limits.cs",
+      "src/AspectN.Reflection/ReflectionSignatureMapper.TypeForms.cs",
+      "src/AspectN.Reflection/ReflectionTypeSystem.cs",
+      "src/AspectN.Roslyn/AspectN.Roslyn.csproj",
+      "src/AspectN.Roslyn/PublicAPI.Shipped.txt",
+      "src/AspectN.Roslyn/PublicAPI.Unshipped.txt",
+      "src/AspectN.Roslyn/RoslynSignatureMapper.cs",
+      "src/AspectN.Roslyn/RoslynSignatureMapper.Limits.cs",
+      "src/AspectN.Roslyn/RoslynSignatureMapper.TypeForms.cs",
+      "src/AspectN.Roslyn/RoslynSyntaxExtensions.cs",
+      "src/AspectN.Roslyn/RoslynTypeSystem.cs",
+      "src/AspectN/AspectN.csproj",
+      "src/AspectN/AspectNCompilation.cs",
+      "src/AspectN/AspectNCompilationOptions.cs",
+      "src/AspectN/AspectNEngine.cs",
+      "src/AspectN/AspectNEngineOptions.cs",
+      "src/AspectN/AspectNLimitException.cs",
+      "src/AspectN/AspectNLimits.cs",
+      "src/AspectN/AspectNParser.cs",
+      "src/AspectN/Binding/AttributeTargetRules.cs",
+      "src/AspectN/Binding/Binder.cs",
+      "src/AspectN/Binding/Binder.MemberPaths.cs",
+      "src/AspectN/Binding/BoundExpression.cs",
+      "src/AspectN/Binding/BoundNode.cs",
+      "src/AspectN/Binding/BoundSelector.cs",
+      "src/AspectN/Binding/BoundTypePattern.cs",
+      "src/AspectN/Binding/VariableSymbol.cs",
+      "src/AspectN/Caching/CompiledPatternCache.cs",
+      "src/AspectN/CollectionSnapshot.cs",
+      "src/AspectN/CompiledMemberPattern.cs",
+      "src/AspectN/CompiledPattern.cs",
+      "src/AspectN/CompiledTypePattern.cs",
+      "src/AspectN/Diagnostics/AspectNDiagnostic.cs",
+      "src/AspectN/Diagnostics/DiagnosticBag.cs",
+      "src/AspectN/Diagnostics/DiagnosticCodes.cs",
+      "src/AspectN/Diagnostics/DiagnosticSeverity.cs",
+      "src/AspectN/Diagnostics/DiagnosticSnapshot.cs",
+      "src/AspectN/Evaluation/AttributePatternEvaluator.cs",
+      "src/AspectN/Evaluation/BindingEnvironment.cs",
+      "src/AspectN/Evaluation/CanonicalSignatureFormatter.cs",
+      "src/AspectN/Evaluation/CanonicalSignatureUnavailableException.cs",
+      "src/AspectN/Evaluation/EvaluationContext.cs",
+      "src/AspectN/Evaluation/MatchLogic.cs",
+      "src/AspectN/Evaluation/MatchResult.cs",
+      "src/AspectN/Evaluation/MatchStatus.cs",
+      "src/AspectN/Evaluation/MemberPatternEvaluator.cs",
+      "src/AspectN/Evaluation/MetadataLimitGuard.cs",
+      "src/AspectN/Evaluation/MetadataQuery.cs",
+      "src/AspectN/Evaluation/ModifierMatcher.cs",
+      "src/AspectN/Evaluation/NamePatternMatcher.cs",
+      "src/AspectN/Evaluation/RegexPatternEvaluator.cs",
+      "src/AspectN/Evaluation/TypePatternEvaluator.cs",
+      "src/AspectN/Metadata/AssemblyIdentity.cs",
+      "src/AspectN/Metadata/AttributeSignature.cs",
+      "src/AspectN/Metadata/GenericParameterNamer.cs",
+      "src/AspectN/Metadata/GenericParameterSignature.cs",
+      "src/AspectN/Metadata/MetadataAvailability.cs",
+      "src/AspectN/Metadata/MetadataEnums.cs",
+      "src/AspectN/Metadata/MethodSignature.cs",
+      "src/AspectN/Metadata/ParameterSignature.cs",
+      "src/AspectN/Metadata/PropertySignature.cs",
+      "src/AspectN/Metadata/SignatureReferenceComparer.cs",
+      "src/AspectN/Metadata/TypeIdentity.cs",
+      "src/AspectN/Metadata/TypeSignature.cs",
+      "src/AspectN/Metadata/TypeUseSignature.cs",
+      "src/AspectN/NotNullWhenAttribute.cs",
+      "src/AspectN/Parsing/AspectNParseKind.cs",
+      "src/AspectN/Parsing/Lexer.cs",
+      "src/AspectN/Parsing/Parser.cs",
+      "src/AspectN/Parsing/Parser.Selectors.cs",
+      "src/AspectN/Parsing/ParserDepthGuard.cs",
+      "src/AspectN/Parsing/SelectorParser.cs",
+      "src/AspectN/Parsing/SelectorParser.MemberPaths.cs",
+      "src/AspectN/Parsing/TypePatternParser.cs",
+      "src/AspectN/Parsing/TypePatternSyntaxFacts.cs",
+      "src/AspectN/Parsing/TypeStructureGuard.cs",
+      "src/AspectN/Properties/AssemblyInfo.cs",
+      "src/AspectN/PublicAPI.Shipped.txt",
+      "src/AspectN/PublicAPI.Unshipped.txt",
+      "src/AspectN/Syntax/AspectNSyntaxTree.cs",
+      "src/AspectN/Syntax/AttributeSignatureSyntax.cs",
+      "src/AspectN/Syntax/ExpressionSyntax.cs",
+      "src/AspectN/Syntax/MemberPathSyntax.cs",
+      "src/AspectN/Syntax/SelectorSyntax.cs",
+      "src/AspectN/Syntax/SignatureSyntax.cs",
+      "src/AspectN/Syntax/SyntaxKind.cs",
+      "src/AspectN/Syntax/SyntaxNode.cs",
+      "src/AspectN/Syntax/SyntaxToken.cs",
+      "src/AspectN/Syntax/TypePatternSyntax.cs",
+      "src/AspectN/Text/SourceText.cs",
+      "src/AspectN/Text/TextSpan.cs",
+      "src/AspectN/TypeSystem/AttributeTarget.cs",
+      "src/AspectN/TypeSystem/InheritanceClosure.cs",
+      "src/AspectN/TypeSystem/ITypeSystem.cs",
+      "src/AspectN/TypeSystem/StructuralTypeComparer.cs",
+      "src/AspectN/TypeSystem/TypeRelationResult.cs",
+      "src/AspectN/TypeSystem/TypeSystemCapabilities.cs",
+      "src/Shared/ArrayRelations.cs",
+      "src/Shared/AttributeAvailability.cs",
+      "src/Shared/FunctionPointerConventions.cs",
+      "src/Shared/GenericOwnerIdentity.cs",
+      "src/Shared/IterativeTypeMapping.cs",
+      "src/Shared/IterativeTypeText.cs",
+      "src/Shared/MetadataEncodedAttributes.cs",
+      "src/Shared/NativeTypeLimitGuard.cs",
+      "src/Shared/OperatorMetadata.cs",
+      "src/Shared/UnqualifiedStructuralComparer.cs"
+    ],
+    "environment_keys": [
+      "backend_scope",
+      "build_configuration",
+      "dependencies",
+      "os",
+      "runtimes",
+      "sdk",
+      "tfm"
+    ]
+  },
+  "oracle_refs": [
+    {
+      "section": "3–21，仅各条目声明适用条款",
+      "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md"
+    },
+    {
+      "section": "5 / 8 / 9 / 12 / 13 / 14.2 / 16",
+      "path": "docs/superpowers/specs/2026-07-31-aspectn-redesign-design.md"
+    },
+    {
+      "section": "已批准元数据事实和输入前置条件",
+      "path": "docs/language/metadata-availability.md"
+    }
+  ],
+  "covered_assertions": [
+    {
+      "capability_id": "SYN-GRAMMAR-001",
+      "scenario_id": "S3",
+      "test_methods": [
+        "MatchingBoundaries.Program.cs/CompileFailure 的 field/event/params/scoped 断言"
+      ]
+    },
+    {
+      "capability_id": "MEM-SELECTORS-001",
+      "scenario_id": "S5",
+      "test_methods": [
+        "MatchingBoundaries.Program.cs/field 与 event CompileFailure"
+      ]
+    },
+    {
+      "capability_id": "USE-ARRAY-001",
+      "scenario_id": "S4",
+      "test_methods": [
+        "MatchingBoundaries.Program.cs/int[*] 编译拒绝且有诊断"
+      ]
+    }
+  ],
+  "schema_version": 1,
+  "raw_log_sha256": "2b47cce3b4437f75ad1a7efbe68dc5ea072f42df801096456be8ced659a8914c"
+}

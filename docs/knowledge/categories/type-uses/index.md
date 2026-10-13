@@ -1,8 +1,7 @@
-# 类型使用位置（USE）
+# 类型使用位置
 
-- [USE-REF-001：ByReference 与 RefKind](../../capabilities/type-uses/USE-REF-001.md)。引用标记和精确 ref/in/out 分类是独立事实；裸 by-ref Type 不足以猜测精确分类。核心维度有证据，后端完整分类和缺失事实场景仍需取证。
-- [USE-ARRAY-001：数组形状与维数](../../capabilities/type-uses/USE-ARRAY-001.md)。模型区分 Vector/General，DSL 按维数匹配，身份和方向关系分别核验。`int[*]` 的 DSL 排除有正式依据，新增示例已验证编译拒绝及诊断存在，未固定具体诊断码；不能外推完整 CLR 数组协变。
+- [USE-REF-001：ref-kind 与 by-reference 事实](../../capabilities/type-uses/USE-REF-001.md)。ByReference 和 RefKind 是两个可独立知道的事实；!ref 与精确 ref/out/in 消费不同信息。
+- [USE-ARRAY-001：数组形状、rank 模式与名义关系](../../capabilities/type-uses/USE-ARRAY-001.md)。模型保留 SZ Vector 与 non-SZ General，DSL [] 只约束 rank，不能用 regex 绕过形状限制。
+- [USE-SHAPES-001：可空、元组、任务类与不支持的类型形状](../../capabilities/type-uses/USE-SHAPES-001.md)。类型包装、源代码注解和运行时身份分层表达；模型能显示某个类型形状不代表 DSL 可按其结构筛选。
 
-未盘点主题：[台账](../../coverage.json) INV-0009（nullable、tuple、指针、函数指针和 custom modifier）、INV-0017（其他后端和模式）。未盘点不表示不支持。
-
-先读条目摘要，再按任务加载场景和正式依据。[盘点台账](../../coverage.json)记录当前缺口；状态以条目 JSON 场景为准。[返回入口](../../index.md)。
+先按问题选择一个条目，再加载其场景、依赖和规范；具体后端、输入模式、验证状态与缺口以条目为准。盘点来源见 [coverage.json](../../coverage.json)。建档不表示所有版本、输入或后端组合已经验证。

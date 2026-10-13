@@ -1,6 +1,6 @@
 # AspectN 知识库
 
-当前是五主题试点，不是全量支持矩阵。按任务先读一个分类/条目摘要，随后仅加载有关场景、依赖和规范。默认不加载历史讨论。
+当前已按九类建档，覆盖 17 条能力、76 个具体场景。按任务先读一个分类/条目摘要，随后仅加载有关场景、依赖和规范。默认不加载历史讨论；这些记录仍不代表全部 .NET/C# 功能或所有后端、版本、输入组合。
 
 ## 阅读路由
 
@@ -9,14 +9,16 @@
 - [类型使用位置](categories/type-uses/index.md)
 - [成员](categories/members/index.md)
 - [C# 与元数据表示](categories/csharp-metadata/index.md)
-- [属性记录](categories/attributes/index.md)
+- [特性记录](categories/attributes/index.md)
 - [解析与词法](categories/syntax/index.md)
 - [绑定与匹配](categories/semantics/index.md)
 - [横向契约](categories/cross-cutting/index.md)
 
 用户问题先查[使用指南](../usage/index.md)；改动/review 先查[审查流程](review/index.md)。[来源](sources.json)、[盘点](coverage.json)、[适用 profile](profiles.json)、[冲突](conflicts.md)按需读取。
 
-本轮交付、非作者 N/A 核验、证据范围修订和后续缺口见[试点审查记录](../reviews/2026-10-12-documentation-pilot.md)。
+[分类能力目录](generated/catalog.md)与[场景支持及验证矩阵](generated/support-matrix.md)由条目元数据生成，适合按范围查找。源条目是唯一状态依据，生成页不能替代规范及证据适用性审查。
+
+本轮扩展、非作者 N/A 核验及剩余缺口见[E 阶段审查记录](../reviews/2026-10-13-documentation-expansion.md)；首批五主题的历史结论保留在[试点审查记录](../reviews/2026-10-12-documentation-pilot.md)。
 
 ## 状态与依据
 

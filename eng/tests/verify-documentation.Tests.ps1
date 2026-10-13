@@ -90,7 +90,14 @@ $cases = @(
     @{Name='Blocking reason must be a string';Exit=1;Warning=$false;Change={param($r) Add-Finding $r 'open';Update-Finding $r {param($f) $f.blocking='pending';$f.blocking_reason=123}}},
     @{Name='Historical discussion exempt';Exit=0;Warning=$false;Change={param($r) Write-FixtureFile $r 'DOCUMENTATION-KNOWLEDGE-BASE-DESIGN.md' 'old [link](does-not-exist.md)'}},
     @{Name='Fenced example links ignored';Exit=0;Warning=$false;Change={param($r) $p=Join-Path $r 'docs/usage/index.md';[IO.File]::AppendAllText($p,"`n~~~md`n[example](absent.md)`n~~~")}},
-    @{Name='Capability directory move preserves ID';Exit=0;Warning=$false;Change={param($r) $p=Join-Path $r 'docs/knowledge/capabilities/other';[IO.Directory]::CreateDirectory($p)|Out-Null;Move-Item -LiteralPath (Join-Path $r 'docs/knowledge/capabilities/type-uses/USE-TEST-001.md') -Destination (Join-Path $p 'USE-TEST-001.md')}}
+    @{Name='Capability directory move preserves ID';Exit=0;Warning=$false;Change={param($r) $p=Join-Path $r 'docs/knowledge/capabilities/other';[IO.Directory]::CreateDirectory($p)|Out-Null;Move-Item -LiteralPath (Join-Path $r 'docs/knowledge/capabilities/type-uses/USE-TEST-001.md') -Destination (Join-Path $p 'USE-TEST-001.md')}},
+    @{Name='Strict verification rejects missing generated link';Exit=1;Warning=$false;Change={param($r) [IO.File]::AppendAllText((Join-Path $r 'docs/usage/index.md'),"`n[矩阵](../knowledge/generated/support-matrix.md)")}},
+    @{Name='Generation permits known missing output links';Exit=0;Warning=$false;Generation=$true;Change={param($r) [IO.File]::AppendAllText((Join-Path $r 'docs/usage/index.md'),"`n[矩阵](../knowledge/generated/support-matrix.md) [目录](../knowledge/generated/catalog.md)")}},
+    @{Name='Strict verification rejects stale generated links';Exit=1;Warning=$false;Change={param($r) Write-FixtureFile $r 'docs/knowledge/generated/support-matrix.md' '[旧链接](missing.md)'}},
+    @{Name='Generation permits stale output body';Exit=0;Warning=$false;Generation=$true;Change={param($r) Write-FixtureFile $r 'docs/knowledge/generated/support-matrix.md' '[旧链接](missing.md)'}},
+    @{Name='Generation rejects other broken links';Exit=1;Warning=$false;Generation=$true;Change={param($r) [IO.File]::AppendAllText((Join-Path $r 'docs/usage/index.md'),"`n[其他](../knowledge/generated/other.md)")}},
+    @{Name='Generation still checks metadata references';Exit=1;Warning=$false;Generation=$true;Change={param($r) Update-Capability $r {param($c) $c.norm_refs[0].path='docs/knowledge/generated/support-matrix.md'}}},
+    @{Name='Generation preserves Finding warnings';Exit=0;Warning=$true;Generation=$true;Change={param($r) Update-Capability $r {param($c) $c.open_findings=@('FND-20261012-999')}}}
 )
 $failures = [Collections.Generic.List[string]]::new()
 foreach ($case in $cases) {
@@ -98,7 +105,9 @@ foreach ($case in $cases) {
     try {
         New-Fixture $root
         & $case.Change $root
-        $output = & pwsh -NoProfile -File $verifier -RepositoryRoot $root -AsJson 2>&1
+        $arguments = @('-NoProfile','-File',$verifier,'-RepositoryRoot',$root,'-AsJson')
+        if ($case.Generation) { $arguments += '-ForGeneration' }
+        $output = & pwsh @arguments 2>&1
         $code = $LASTEXITCODE
         $result = $null
         try { $result = ($output -join "`n") | ConvertFrom-Json } catch { }

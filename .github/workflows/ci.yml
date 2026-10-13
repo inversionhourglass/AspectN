@@ -47,6 +47,14 @@ jobs:
         shell: pwsh
         run: ./eng/tests/verify-documentation.Tests.ps1
 
+      - name: 检查知识库派生资料
+        shell: pwsh
+        run: ./eng/generate-knowledge.ps1 -Check
+
+      - name: 测试知识库生成器
+        shell: pwsh
+        run: ./eng/tests/generate-knowledge.Tests.ps1
+
       - name: Verify formatting
         run: dotnet format AspectN.sln --verify-no-changes --no-restore
 

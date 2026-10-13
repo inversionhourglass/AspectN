@@ -87,11 +87,17 @@
         {
           "path": "docs/reviews/2026-10-13-documentation-feedback.md",
           "section": "影响范围与证据"
+        },
+        {
+          "section": "盘点与残余范围",
+          "path": "docs/reviews/2026-10-13-documentation-expansion.md"
         }
       ],
-      "assessment_status": "unassessed",
-      "capability_ids": [],
-      "notes": "H1 仍为历史接受风险；本次边界示例未执行该人工损坏输入，不改变真实可达性证据缺口。 说明、执行和范围见 docs/reviews/2026-10-13-documentation-feedback.md；状态仍为 unassessed。"
+      "assessment_status": "needs_evidence",
+      "capability_ids": [
+        "CROSS-INPUT-001"
+      ],
+      "notes": "已记录有效输入与 H1 接受风险；损坏对象没有容错承诺，真实程序集可达性仍未证明。 建档表示已分析所列范围，不等于全版本/全输入验证；见 docs/reviews/2026-10-13-documentation-expansion.md。"
     },
     {
       "id": "INV-0007",
@@ -104,11 +110,17 @@
         {
           "path": "docs/reviews/2026-10-13-documentation-feedback.md",
           "section": "影响范围与证据"
+        },
+        {
+          "section": "盘点与残余范围",
+          "path": "docs/reviews/2026-10-13-documentation-expansion.md"
         }
       ],
-      "assessment_status": "unassessed",
-      "capability_ids": [],
-      "notes": "本次补充 ! ref 邻接和排除语法的失败示例，未完成全部词法与解析诊断盘点。 说明、执行和范围见 docs/reviews/2026-10-13-documentation-feedback.md；状态仍为 unassessed。"
+      "assessment_status": "documented",
+      "capability_ids": [
+        "SYN-GRAMMAR-001"
+      ],
+      "notes": "核心解析、邻接、恢复及封闭语言按具体断言建档；不宣称任意字符串恢复路径穷举完成。 建档表示已分析所列范围，不等于全版本/全输入验证；见 docs/reviews/2026-10-13-documentation-expansion.md。"
     },
     {
       "id": "INV-0008",
@@ -121,11 +133,17 @@
         {
           "path": "docs/reviews/2026-10-13-documentation-feedback.md",
           "section": "影响范围与证据"
+        },
+        {
+          "section": "盘点与残余范围",
+          "path": "docs/reviews/2026-10-13-documentation-expansion.md"
         }
       ],
-      "assessment_status": "unassessed",
-      "capability_ids": [],
-      "notes": "本次补充具体名称零元数与任意元数示例，未完成泛型绑定和作用域全量盘点。 说明、执行和范围见 docs/reviews/2026-10-13-documentation-feedback.md；状态仍为 unassessed。"
+      "assessment_status": "documented",
+      "capability_ids": [
+        "GEN-BINDING-001"
+      ],
+      "notes": "泛型元数、变量声明/绑定/分支和反射定义已建档；各后端所有泛型组合仍不作全量验证声明。 建档表示已分析所列范围，不等于全版本/全输入验证；见 docs/reviews/2026-10-13-documentation-expansion.md。"
     },
     {
       "id": "INV-0009",
@@ -138,11 +156,17 @@
         {
           "path": "docs/reviews/2026-10-13-documentation-feedback.md",
           "section": "影响范围与证据"
+        },
+        {
+          "section": "盘点与残余范围",
+          "path": "docs/reviews/2026-10-13-documentation-expansion.md"
         }
       ],
-      "assessment_status": "unassessed",
-      "capability_ids": [],
-      "notes": "本次补充 string/string? 身份及普通指针表示示例，未完成元组、函数指针和自定义修饰符盘点。 说明、执行和范围见 docs/reviews/2026-10-13-documentation-feedback.md；状态仍为 unassessed。"
+      "assessment_status": "documented",
+      "capability_ids": [
+        "USE-SHAPES-001"
+      ],
+      "notes": "可空、元组、任务类、指针/函数指针及修饰符表示已分层；任意 CLI 修饰符链与源码注解筛选不新增承诺。 建档表示已分析所列范围，不等于全版本/全输入验证；见 docs/reviews/2026-10-13-documentation-expansion.md。"
     },
     {
       "id": "INV-0010",
@@ -155,11 +179,17 @@
         {
           "path": "docs/reviews/2026-10-13-documentation-feedback.md",
           "section": "影响范围与证据"
+        },
+        {
+          "section": "盘点与残余范围",
+          "path": "docs/reviews/2026-10-13-documentation-expansion.md"
         }
       ],
-      "assessment_status": "unassessed",
-      "capability_ids": [],
-      "notes": "本次解释字段/事件声明选择器排除及 params/scoped 边界，未完整评估全部选择器、访问器和生成成员。 说明、执行和范围见 docs/reviews/2026-10-13-documentation-feedback.md；状态仍为 unassessed。"
+      "assessment_status": "documented",
+      "capability_ids": [
+        "MEM-SELECTORS-001"
+      ],
+      "notes": "内置选择器、访问器、构造器、操作符及有效元数据分类边界已建档；不把可匹配等同可织入。 建档表示已分析所列范围，不等于全版本/全输入验证；见 docs/reviews/2026-10-13-documentation-expansion.md。"
     },
     {
       "id": "INV-0011",
@@ -168,11 +198,17 @@
         {
           "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
           "section": "14"
+        },
+        {
+          "section": "盘点与残余范围",
+          "path": "docs/reviews/2026-10-13-documentation-expansion.md"
         }
       ],
-      "assessment_status": "unassessed",
-      "capability_ids": [],
-      "notes": "尚未完整盘点；不代表不支持"
+      "assessment_status": "needs_evidence",
+      "capability_ids": [
+        "ATTR-TARGETS-001"
+      ],
+      "notes": "直接目标、真实记录/伪特性和缺失位置已建档；继承特性和旧位置名称排除尚未登记全部独立失败断言。 建档表示已分析所列范围，不等于全版本/全输入验证；见 docs/reviews/2026-10-13-documentation-expansion.md。"
     },
     {
       "id": "INV-0012",
@@ -185,11 +221,17 @@
         {
           "path": "docs/reviews/2026-10-13-documentation-feedback.md",
           "section": "影响范围与证据"
+        },
+        {
+          "section": "盘点与残余范围",
+          "path": "docs/reviews/2026-10-13-documentation-expansion.md"
         }
       ],
-      "assessment_status": "unassessed",
-      "capability_ids": [],
-      "notes": "本次验证环视表达式拒绝；没有据此证明完整正则子集、超时或规范文本边界。 说明、执行和范围见 docs/reviews/2026-10-13-documentation-feedback.md；状态仍为 unassessed。"
+      "assessment_status": "documented",
+      "capability_ids": [
+        "SEM-REGEX-001"
+      ],
+      "notes": "受限正则、规范文本、命名、超时与预算按执行用例建档；没有穷举任意正则输入。 建档表示已分析所列范围，不等于全版本/全输入验证；见 docs/reviews/2026-10-13-documentation-expansion.md。"
     },
     {
       "id": "INV-0013",
@@ -202,11 +244,18 @@
         {
           "path": "docs/reviews/2026-10-13-documentation-feedback.md",
           "section": "影响范围与证据"
+        },
+        {
+          "section": "盘点与残余范围",
+          "path": "docs/reviews/2026-10-13-documentation-expansion.md"
         }
       ],
-      "assessment_status": "unassessed",
-      "capability_ids": [],
-      "notes": "本次验证选定 Reflection 原生类型和中立签名的 65 层深度超限；取消、缓存和生命周期仍待专题盘点。 说明、执行和范围见 docs/reviews/2026-10-13-documentation-feedback.md；状态仍为 unassessed。"
+      "assessment_status": "documented",
+      "capability_ids": [
+        "CROSS-RESOURCES-001",
+        "CROSS-LIFETIME-001"
+      ],
+      "notes": "取消/深度/元数/文本预算和生命周期分条治理；GC 回归不承诺即时回收或精确内存数字。 建档表示已分析所列范围，不等于全版本/全输入验证；见 docs/reviews/2026-10-13-documentation-expansion.md。"
     },
     {
       "id": "INV-0014",
@@ -219,11 +268,17 @@
         {
           "path": "docs/reviews/2026-10-13-documentation-feedback.md",
           "section": "影响范围与证据"
+        },
+        {
+          "section": "盘点与残余范围",
+          "path": "docs/reviews/2026-10-13-documentation-expansion.md"
         }
       ],
-      "assessment_status": "unassessed",
-      "capability_ids": [],
-      "notes": "本次新增反射类型/方法查找示例并修订通用匹配定位；没有修改库公开 API、包依赖或兼容支持承诺。 说明、执行和范围见 docs/reviews/2026-10-13-documentation-feedback.md；状态仍为 unassessed。"
+      "assessment_status": "documented",
+      "capability_ids": [
+        "CROSS-COMPAT-001"
+      ],
+      "notes": "核心公开表面、Fody 身份及 Windows net10/net472 宿主上的实际 netstandard 资产已验证；Fody 兼容资产、历史依赖/发布版本及远程 Linux 新执行仍无证明。 建档表示已分析所列范围，不等于全版本/全输入验证；见 docs/reviews/2026-10-13-documentation-expansion.md。"
     },
     {
       "id": "INV-0015",
@@ -236,11 +291,17 @@
         {
           "path": "docs/reviews/2026-10-13-documentation-feedback.md",
           "section": "影响范围与证据"
+        },
+        {
+          "section": "盘点与残余范围",
+          "path": "docs/reviews/2026-10-13-documentation-expansion.md"
         }
       ],
-      "assessment_status": "unassessed",
-      "capability_ids": [],
-      "notes": "本次解释数组关系不等同完整 CLR 协变；尚未全面盘点名称、嵌套、程序集、转发与名义关系。 说明、执行和范围见 docs/reviews/2026-10-13-documentation-feedback.md；状态仍为 unassessed。"
+      "assessment_status": "documented",
+      "capability_ids": [
+        "TYPE-NOMINAL-001"
+      ],
+      "notes": "名称、嵌套、程序集、引用解析和名义关系已建档；没有覆盖全部转发拓扑或任意解析器组合。 建档表示已分析所列范围，不等于全版本/全输入验证；见 docs/reviews/2026-10-13-documentation-expansion.md。"
     },
     {
       "id": "INV-0016",
@@ -249,11 +310,17 @@
         {
           "path": "docs/language/metadata-availability.md",
           "section": "Roslyn 源码映射"
+        },
+        {
+          "section": "盘点与残余范围",
+          "path": "docs/reviews/2026-10-13-documentation-expansion.md"
         }
       ],
-      "assessment_status": "unassessed",
-      "capability_ids": [],
-      "notes": "尚未完整盘点；不代表不支持"
+      "assessment_status": "documented",
+      "capability_ids": [
+        "CSH-METADATA-001"
+      ],
+      "notes": "async/迭代器/partial 与源码/PE 差别按具体 fixture 建档；不外推所有编译器版本与生成成员。 建档表示已分析所列范围，不等于全版本/全输入验证；见 docs/reviews/2026-10-13-documentation-expansion.md。"
     },
     {
       "id": "INV-0017",
@@ -262,11 +329,19 @@
         {
           "path": "docs/superpowers/specs/2026-07-31-aspectn-redesign-design.md",
           "section": "9.1"
+        },
+        {
+          "section": "盘点与残余范围",
+          "path": "docs/reviews/2026-10-13-documentation-expansion.md"
         }
       ],
-      "assessment_status": "unassessed",
-      "capability_ids": [],
-      "notes": "尚未完整盘点；不代表不支持"
+      "assessment_status": "needs_evidence",
+      "capability_ids": [
+        "CROSS-COMPAT-001",
+        "USE-REF-001",
+        "CROSS-AVAILABILITY-001"
+      ],
+      "notes": "独立 Fody 当前测试已执行；ref interop 负例、Fody 的 netstandard 宿主和未列出的输入/版本组合继续保留具体缺口。 建档表示已分析所列范围，不等于全版本/全输入验证；见 docs/reviews/2026-10-13-documentation-expansion.md。"
     }
   ]
 }

@@ -22,6 +22,8 @@ AspectN 是面向 .NET 类型和可调用成员表达式的解析与匹配工具
 
 [使用指南](docs/usage/index.md)提供按任务组织的说明和可运行示例；[知识库](docs/knowledge/index.md)记录具体范围的契约、边界及审查证据。
 
+[场景支持与验证矩阵](docs/knowledge/generated/support-matrix.md)按九类汇总已建档范围，区分支持承诺与实际验证，不将缺少记录视为不支持。
+
 ```csharp
 using AspectN;
 using AspectN.Evaluation;

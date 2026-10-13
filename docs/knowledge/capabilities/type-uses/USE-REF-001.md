@@ -33,7 +33,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261012-001", "EV-20261013-002"
+        "EV-20261012-001",
+        "EV-20261013-002"
       ],
       "unverified_notes": ""
     },
@@ -41,81 +42,128 @@
       "id": "S2",
       "adapter": "reflection",
       "input_mode": "bare_type",
-      "entry_point": "Mapper.MapTypeUse",
-      "conditions": "单独 by-ref Type，缺少成员参数/返回上下文",
+      "entry_point": "Mapper.MapTypeUse / CompiledMemberPattern.Match",
+      "conditions": "ReflectionTypeUseTests：裸 Int32& 参数；将映射结果置入有效中立 Probe 方法，消费省略、!ref、精确四分类与已知类型不匹配",
       "target": "working-tree",
-      "expected_behavior": "保留 ByReference，不猜精确 RefKind；消费所需未知事实时按三态求值",
+      "expected_behavior": "ByReference 已知且精确 RefKind 不可用；省略注解 Matched，!ref NotMatched，精确分类 Unknown，已知类型失败 NotMatched",
       "contract_status": "supported",
-      "verification_status": "unverified",
+      "verification_status": "verified",
       "verification_methods": [
         "automated"
       ],
-      "evidence_ids": [],
-      "unverified_notes": "EV-20261013-001 已验证裸 Type 的 ByReference 已知、RefKind 不可用；尚未验证消费精确分类时的完整三态行为"
+      "evidence_ids": [
+        "EV-20261013-008"
+      ],
+      "unverified_notes": ""
     },
     {
       "id": "S3",
       "adapter": "cecil",
       "input_mode": "native_member",
       "entry_point": "Mapper.MapMethod",
-      "conditions": "有效原生成员参数/返回；interop flags 不单独证明 readonly",
+      "conditions": "CecilCallableMappingTests 的四类参数与 readonly 返回；InteropRefKindTests 的六个已发射有效 Int32 成员，当前依赖/环境",
       "target": "working-tree",
-      "expected_behavior": "成员上下文决定精确分类；需要相关 readonly/location 标记",
+      "expected_behavior": "成员元数据决定分类；[In] ref 与 [In,Out] ref 不猜 readonly；对应 readonly/location 标记保留参数与返回分类",
       "contract_status": "supported",
-      "verification_status": "unverified",
+      "verification_status": "verified",
       "verification_methods": [
         "automated"
       ],
-      "evidence_ids": [],
-      "unverified_notes": "执行报告和适用性尚未登记；不外推其他环境或输入"
+      "evidence_ids": [
+        "EV-20261013-005",
+        "EV-20261013-009"
+      ],
+      "unverified_notes": ""
     },
     {
       "id": "S4",
       "adapter": "roslyn",
       "input_mode": "source_symbol",
       "entry_point": "Mapper.MapMethod",
-      "conditions": "有效原生成员参数/返回；interop flags 不单独证明 readonly",
+      "conditions": "RoslynMappingTests 四类参数和 readonly 返回；InteropRefKindTests 的同源有效源码符号",
       "target": "working-tree",
-      "expected_behavior": "成员上下文决定精确分类；需要相关 readonly/location 标记",
+      "expected_behavior": "源码成员上下文保留四类分类；interop 标志不单独证明 readonly",
       "contract_status": "supported",
-      "verification_status": "unverified",
+      "verification_status": "verified",
       "verification_methods": [
         "automated"
       ],
-      "evidence_ids": [],
-      "unverified_notes": "执行报告和适用性尚未登记；不外推其他环境或输入"
+      "evidence_ids": [
+        "EV-20261013-007",
+        "EV-20261013-009"
+      ],
+      "unverified_notes": ""
     },
     {
       "id": "S5",
       "adapter": "reflection",
       "input_mode": "native_member",
       "entry_point": "Mapper.MapMethod",
-      "conditions": "有效原生成员参数/返回；interop flags 不单独证明 readonly",
+      "conditions": "ReflectionMappingTests.RefKindsAsyncAndSpecialMethods 与 ref 属性；InteropRefKindTests 同一程序集六个有效成员",
       "target": "working-tree",
-      "expected_behavior": "成员上下文决定精确分类；需要相关 readonly/location 标记",
+      "expected_behavior": "运行时成员上下文保留精确参数/返回分类；interop 方向标志不单独改变 readonly 分类",
       "contract_status": "supported",
-      "verification_status": "unverified",
+      "verification_status": "verified",
       "verification_methods": [
         "automated"
       ],
-      "evidence_ids": [],
-      "unverified_notes": "EV-20261013-001 仅补充有效 out/ref 成员和省略/精确/否定注解的示例；readonly/location 标记等完整分类仍未登记验证"
+      "evidence_ids": [
+        "EV-20261013-008",
+        "EV-20261013-009"
+      ],
+      "unverified_notes": ""
     },
     {
       "id": "S6",
       "adapter": "cecil_fody",
       "input_mode": "native_member",
       "entry_point": "Mapper.MapMethod",
-      "conditions": "Fody Cecil 身份的有效成员",
+      "conditions": "独立 Fody 测试程序集执行 CecilCallableMappingTests 的四类参数与 readonly 返回；只覆盖该 fixture",
       "target": "working-tree",
-      "expected_behavior": "遵循同一 ref 分类契约；本轮没有独立 Fody 证据",
+      "expected_behavior": "Fody Cecil 身份下参数 Ref/Out/In/RefReadOnly 和 readonly 返回保持；interop 负例单列未验证",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261013-006"
+      ],
+      "unverified_notes": ""
+    },
+    {
+      "id": "S7",
+      "adapter": "roslyn",
+      "input_mode": "pe_symbol",
+      "entry_point": "Mapper.MapMethod / CompiledMemberPattern.Match",
+      "conditions": "InteropRefKindTests 的导入 PE 视图：六个 Int32 参数方法；仅此 fixture",
+      "target": "working-tree",
+      "expected_behavior": "四分类与 interop 负例按实际成员标记保持；对应精确参数模式 Matched",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261013-009"
+      ],
+      "unverified_notes": ""
+    },
+    {
+      "id": "S8",
+      "adapter": "cecil_fody",
+      "input_mode": "native_member",
+      "entry_point": "Mapper.MapMethod",
+      "conditions": "有效 [In] ref/[In,Out] ref 的独立 Fody PE fixture；与 S6 的 C# 普通 ref 不同",
+      "target": "working-tree",
+      "expected_behavior": "方向标志不能单独证明 readonly；该特定 Fody 负例尚未独立执行",
       "contract_status": "supported",
       "verification_status": "unverified",
       "verification_methods": [
         "automated"
       ],
       "evidence_ids": [],
-      "unverified_notes": "执行报告和适用性尚未登记；不外推其他环境或输入"
+      "unverified_notes": "独立 Fody 套件验证四分类和返回；InteropRefKindTests 没有装入 Fody Cecil 身份，不能外推到这些负例"
     }
   ],
   "invariant_checks": [
@@ -157,15 +205,15 @@
     },
     {
       "invariant_id": "INVCANCEL",
-      "applicability": "not_applicable",
+      "applicability": "applicable",
       "condition_ref": {
         "path": "docs/knowledge/profiles.json",
         "section": "invariants/INVCANCEL"
       },
-      "reason": "本条目选定 Mapper.MapMethod/MapTypeUse 及 ref 值约束函数不声明取消；完整匹配入口另属横向取消",
-      "review_status": "confirmed",
-      "reviewer": "/root/documentation_pilot_review",
-      "reviewed_on": "2026-10-12"
+      "reason": "E 阶段 S2/S7 实际纳入 CompiledMemberPattern.Match，公开入口声明 CancellationToken；原仅 mapper/ref值函数的 N/A 条件不再覆盖整个条目",
+      "review_status": "pending",
+      "reviewer": null,
+      "reviewed_on": null
     }
   ],
   "relations": [
@@ -219,8 +267,8 @@ method(* Service.Get(ref int))：Ref 满足、None 不满足。!ref int 对 Ref 
 
 ## 关联与缺口
 
-核心 ref 维度已定位证据；原生成员、裸 Type 缺事实及 Fody 场景须分别执行验证。
+核心 ref 维度、裸 Type 消费和所列原生成员已追加 E 阶段证据。验证范围以各场景条件和报告断言入口为准，不能扩展到所有有效元数据组合。
 
-[边界示例](../../../usage/examples/MatchingBoundaries/Program.cs)和[新增证据](../../../reviews/evidence/EV-20261013-001.json)补充裸 Type 的映射事实、有效 out/ref 成员及部分表达式结果。S2 的缺事实三态求值与 S5 的完整 readonly 分类尚未覆盖，两者仍为 unverified。
+[边界示例](../../../usage/examples/MatchingBoundaries/Program.cs)和[新增证据](../../../reviews/evidence/EV-20261013-001.json)补充裸 Type 的映射事实、有效 out/ref 成员及部分表达式结果。上述旧报告仅是当时的部分覆盖；E 阶段 S2 的消费断言和 S3–S7 的指定 fixture 已追加新证据。S8 保留 Fody interop 负例的独立缺口。
 
-INVCANCEL 的 N/A 已由非作者按选定入口核验；其余适用性检查仍待核。[审查记录](../../../reviews/2026-10-12-documentation-pilot.md)保留范围与结果。
+原 INVCANCEL 的 N/A 与核验范围保存在[历史审查](../../../reviews/2026-10-12-documentation-pilot.md)。E 阶段纳入完整匹配入口后改为 applicable；本轮条件及审查见[扩展记录](../../../reviews/2026-10-13-documentation-expansion.md)。

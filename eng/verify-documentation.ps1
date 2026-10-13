@@ -2,7 +2,8 @@
 [CmdletBinding()]
 param(
     [string]$RepositoryRoot = (Join-Path $PSScriptRoot '..'),
-    [switch]$AsJson
+    [switch]$AsJson,
+    [switch]$ForGeneration
 )
 $ErrorActionPreference = 'Stop'
 $errors = [Collections.Generic.List[string]]::new()
@@ -166,6 +167,8 @@ function Test-MarkdownLinks($path) {
         $target = ($target -split '#',2)[0].Trim('<','>')
         if (!$target) { continue }
         $relative = [IO.Path]::GetRelativePath($root, [IO.Path]::GetFullPath((Join-Path ([IO.Path]::GetDirectoryName((Join-Path $root $path))) ([Uri]::UnescapeDataString($target))))).Replace('\','/')
+        # 生成前仅允许两个已知派生目标尚不存在；元数据引用仍按完整规则校验。
+        if ($ForGeneration -and $relative -cin @('docs/knowledge/generated/catalog.md','docs/knowledge/generated/support-matrix.md')) { continue }
         Resolve-RepoFile $relative $path | Out-Null
     }
 }
@@ -362,7 +365,11 @@ try {
         @(Find-Files 'docs/reviews/findings' '*.md')
         @($sourcesByPath.Values | Where-Object { $_.role -eq 'normative' -and $_.path.EndsWith('.md') } | ForEach-Object { $_.path })
     ) | Sort-Object -Unique
-    foreach ($path in $markdown) { if ([IO.File]::Exists((Join-Path $root $path))) { Test-MarkdownLinks $path } }
+    foreach ($path in $markdown) {
+        # 陈旧派生正文不能阻止重建；普通校验仍检查其全部链接。
+        if ($ForGeneration -and $path -cin @('docs/knowledge/generated/catalog.md','docs/knowledge/generated/support-matrix.md')) { continue }
+        if ([IO.File]::Exists((Join-Path $root $path))) { Test-MarkdownLinks $path }
+    }
 } catch { Add-Error 'validator' "Unexpected validator failure: $($_.Exception.Message) at line $($_.InvocationInfo.ScriptLineNumber)" }
 $result = @{ errors = @($errors.ToArray()); warnings = @($warnings.ToArray()); counts = $counts }
 if ($AsJson) { ConvertTo-Json -InputObject $result -Depth 10 }

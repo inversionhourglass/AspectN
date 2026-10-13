@@ -33,7 +33,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261012-001", "EV-20261013-002"
+        "EV-20261012-001",
+        "EV-20261013-002"
       ],
       "unverified_notes": ""
     },
@@ -41,49 +42,129 @@
       "id": "S2",
       "adapter": "cecil",
       "input_mode": "reference",
-      "entry_point": "Mapper / native relationship queries",
-      "conditions": "缺失定义、读取失败、不同源码/PE 可用事实，须按具体入口验证",
+      "entry_point": "Mapper / HasDirectAttribute / CompiledMemberPattern.Match",
+      "conditions": "CecilUnavailableMetadataTests 的未解析引用、Int32 引用形状、六类 resolver 失败和取消；CecilSignatureLimitTests 指定原生边界",
       "target": "working-tree",
-      "expected_behavior": "保留独立已知事实；所需事实缺失产生对应诊断，取消和超限不被伪装成缺事实",
+      "expected_behavior": "保留独立名称/形状；消费缺失定义事实 Unknown/AN3004；取消传播，指定深度/元数超限异常不伪装缺事实",
       "contract_status": "supported",
-      "verification_status": "unverified",
+      "verification_status": "verified",
       "verification_methods": [
         "automated"
       ],
-      "evidence_ids": [],
-      "unverified_notes": "执行报告和适用性尚未登记；不外推其他环境或输入"
+      "evidence_ids": [
+        "EV-20261013-005"
+      ],
+      "unverified_notes": ""
     },
     {
       "id": "S3",
       "adapter": "roslyn",
       "input_mode": "source_symbol",
-      "entry_point": "Mapper / native relationship queries",
-      "conditions": "缺失定义、读取失败、不同源码/PE 可用事实，须按具体入口验证",
+      "entry_point": "Mapper.MapType / IsAssignableTo",
+      "conditions": "UnavailableAncestorTests 的 C:Missing,I 源符号；SignatureLimitConformanceTests 的指定 Roslyn 结构/元数输入",
       "target": "working-tree",
-      "expected_behavior": "保留独立已知事实；所需事实缺失产生对应诊断，取消和超限不被伪装成缺事实",
+      "expected_behavior": "已知接口匹配不被未知基类掩盖；未满足关系 Unknown；取消传播；指定原生超限拒绝",
       "contract_status": "supported",
-      "verification_status": "unverified",
+      "verification_status": "verified",
       "verification_methods": [
         "automated"
       ],
-      "evidence_ids": [],
-      "unverified_notes": "执行报告和适用性尚未登记；不外推其他环境或输入"
+      "evidence_ids": [
+        "EV-20261013-007",
+        "EV-20261013-009"
+      ],
+      "unverified_notes": ""
     },
     {
       "id": "S4",
       "adapter": "reflection",
-      "input_mode": "reference",
-      "entry_point": "Mapper / native relationship queries",
-      "conditions": "缺失定义、读取失败、不同源码/PE 可用事实，须按具体入口验证",
+      "input_mode": "bare_type",
+      "entry_point": "Mapper.MapType / IsAssignableTo / GetInheritanceClosure",
+      "conditions": "ReflectionMappingTests 的 GetInterfaces 抛 TypeLoadException 的 TypeDelegator；ReflectionPartialClosureTests 的不可读接口与已知基类；不包含无法形成 Type 的缺依赖输入",
       "target": "working-tree",
-      "expected_behavior": "保留独立已知事实；所需事实缺失产生对应诊断，取消和超限不被伪装成缺事实",
+      "expected_behavior": "所需关系读取失败 Unknown/AN3004，已知基类匹配仍可决定结果；不承诺任意 MapMethod.Getter 异常都可恢复",
       "contract_status": "supported",
-      "verification_status": "unverified",
+      "verification_status": "verified",
       "verification_methods": [
         "automated"
       ],
-      "evidence_ids": [],
-      "unverified_notes": "执行报告和适用性尚未登记；不外推其他环境或输入"
+      "evidence_ids": [
+        "EV-20261013-008",
+        "EV-20261013-009"
+      ],
+      "unverified_notes": ""
+    },
+    {
+      "id": "S5",
+      "adapter": "cecil_fody",
+      "input_mode": "reference",
+      "entry_point": "Mapper / HasDirectAttribute / Match",
+      "conditions": "独立 Fody 测试程序集的 CecilUnavailableMetadataTests 和 CecilSignatureLimitTests",
+      "target": "working-tree",
+      "expected_behavior": "在 Fody Cecil 身份下核验同一已列引用/读取恢复、取消和原生边界输入",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261013-006"
+      ],
+      "unverified_notes": ""
+    },
+    {
+      "id": "S6",
+      "adapter": "cecil",
+      "input_mode": "detached",
+      "entry_point": "HasDirectAttribute",
+      "conditions": "AttributeAvailabilityTests 的手工有效 method/return/property/parameter 目标；Attributes/ReturnAttributes 不可用且带 AN3004",
+      "target": "working-tree",
+      "expected_behavior": "三后端分别返回 Unknown 并保留读取诊断；不要求存在原生关联，不代表完整事实签名一概 Unknown",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261013-009"
+      ],
+      "unverified_notes": ""
+    },
+    {
+      "id": "S7",
+      "adapter": "roslyn",
+      "input_mode": "detached",
+      "entry_point": "HasDirectAttribute",
+      "conditions": "AttributeAvailabilityTests 的手工有效 method/return/property/parameter 目标；Attributes/ReturnAttributes 不可用且带 AN3004",
+      "target": "working-tree",
+      "expected_behavior": "三后端分别返回 Unknown 并保留读取诊断；不要求存在原生关联，不代表完整事实签名一概 Unknown",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261013-009"
+      ],
+      "unverified_notes": ""
+    },
+    {
+      "id": "S8",
+      "adapter": "reflection",
+      "input_mode": "detached",
+      "entry_point": "HasDirectAttribute",
+      "conditions": "AttributeAvailabilityTests 的手工有效 method/return/property/parameter 目标；Attributes/ReturnAttributes 不可用且带 AN3004",
+      "target": "working-tree",
+      "expected_behavior": "三后端分别返回 Unknown 并保留读取诊断；不要求存在原生关联，不代表完整事实签名一概 Unknown",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261013-009"
+      ],
+      "unverified_notes": ""
     }
   ],
   "invariant_checks": [
@@ -185,8 +266,8 @@ Service.Run 返回 Int32 且只有 Accessibility 未知：method(public * Servic
 
 ## 关联与缺口
 
-试点验证中立查询和不可变性；原生读取失败、取消、超限和生命周期另待精确场景证据。H1 损坏 Cecil 输入保留未修复处置，不外推真实程序集风险。
+试点中立查询和不可变性保留历史证据；E 阶段为具体引用、源码祖先、Reflection 读取失败、Fody 和 detached 特性目标追加精确场景。生命周期另由 CROSS-LIFETIME-001 治理。H1 损坏 Cecil 输入保留未修复处置，不外推真实程序集风险。
 
-[边界示例](../../../usage/examples/MatchingBoundaries/Program.cs)验证已知空特性集合与不可用空占位值、参数位置构造约束，以及选定输入的原生/中立深度超限形态。[反馈记录](../../../reviews/2026-10-13-documentation-feedback.md)登记其范围；没有据此将 S2–S4 的读取失败、取消和生命周期宽场景标为已验证，也没有验证 H1。
+[边界示例](../../../usage/examples/MatchingBoundaries/Program.cs)验证已知空特性集合与不可用空占位值、参数位置构造约束，以及选定输入的原生/中立深度超限形态。[反馈记录](../../../reviews/2026-10-13-documentation-feedback.md)登记其范围；这些旧边界示例没有单独证明原宽场景，也没有验证 H1。E 阶段已将 S2–S4 条件明确为实际执行的具体输入，并按新增报告标记；没有保留隐含全源码/PE或任意读取失败的承诺。
 
-不变量适用性初始待核，核验主体须为非作者。
+范围和剩余输入缺口见[扩展记录](../../../reviews/2026-10-13-documentation-expansion.md)；不变量适用性由非作者按本轮实际入口核验。

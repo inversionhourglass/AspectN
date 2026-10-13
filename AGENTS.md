@@ -38,12 +38,12 @@ Markdown 说明文档必须使用中文，包括 README、用户指南、知识�
 
 ## Agent 专用说明
 
-### 文档与知识库试点
+### 文档与知识库维护
 
 用户说明从 `docs/usage/index.md` 读取。Agent 分析能力变更或执行审查时，从 `docs/knowledge/index.md` 按需加载受影响条目及其声明的依赖，再按 `docs/knowledge/review/index.md` 执行审查。已批准流程设计为 `docs/superpowers/specs/2026-10-12-aspectn-documentation-knowledge-base-design.md`。
 
-已建档试点能力的变更必须声明受影响能力/场景编号，并在同一可审查变更中同步知识库、用户受影响章节和证据，或给出具体无影响理由。未盘点范围更新 `docs/knowledge/coverage.json`，继续遵守现有规范和一致性测试要求。不能从缺少文档推断排除，也不能仅因存在测试源码就标记为已验证。实现、测试、契约或环境变化时重评估证据适用性，保留历史报告。
+已建档能力（包括 E 阶段扩展条目）的变更必须声明受影响能力/场景编号，并在同一可审查变更中同步知识库、用户受影响章节和证据，或给出具体无影响理由。未盘点范围更新 `docs/knowledge/coverage.json`，继续遵守现有规范和一致性测试要求。不能从缺少文档推断排除，也不能仅因存在测试源码就标记为已验证。实现、测试、契约或环境变化时重评估证据适用性，保留历史报告。
 
-运行 `pwsh -NoProfile -File eng/verify-documentation.ps1` 检查有关变更。Finding 引用初期仅告警；语义批准、N/A 理由及当前证据适用性仍需审查。新增或改动的试点 N/A 记录需要非作者核验主体和日期。全仓强制同步需通过准备闸门并由维护者确认；试点不是完整支持矩阵。
+运行 `pwsh -NoProfile -File eng/verify-documentation.ps1` 检查有关变更。修改能力或盘点资料后运行 `pwsh -NoProfile -File eng/generate-knowledge.ps1`，并用 `-Check` 核验派生目录与场景矩阵，不手工维护第二份状态。Finding 引用初期仅告警；语义批准、N/A 理由及当前证据适用性仍需审查。新增或改动的 N/A 记录需要非作者核验主体和日期。全仓强制同步需通过准备闸门并由维护者确认；九类已建档不表示所有功能、后端、输入或版本均已覆盖。
 
 在现有检出目录工作，不创建 Git worktree。保留既有未跟踪文件。未经明确授权，不发布程序包、推送分支、移除 Rougamo 子模块、修改相邻仓库或冻结的对照缓存。Rougamo 迁移和大版本发布属于独立任务。
