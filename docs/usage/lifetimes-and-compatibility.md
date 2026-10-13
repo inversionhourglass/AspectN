@@ -43,6 +43,21 @@ _ = pattern.Match(signature, typeSystem, cancellation.Token);
 // 抛 OperationCanceledException，不返回 Unknown。
 ```
 
+当前 Cecil/Fody 的直接关系 API 有一项[未修复的取消缺陷](../reviews/findings/FND-20261013-001.md)，范围是没有原生关联的中立签名：
+
+```csharp
+using var cecil = new AspectN.Cecil.CecilTypeSystem(
+    Mono.Cecil.ModuleDefinition.CreateModule("Example", Mono.Cecil.ModuleKind.Dll));
+var detached = new NamedTypeSignature(
+    new TypeIdentity(new AssemblyIdentity("Example"), "Example", "Detached", 0, AspectN.Metadata.TypeKind.Class));
+using var cancellation = new CancellationTokenSource();
+cancellation.Cancel();
+var closure = cecil.GetInheritanceClosure(detached, cancellation.Token);
+// 当前错误返回 Unknown/AN3001；契约要求抛 OperationCanceledException。
+```
+
+该异常路径与上面的编译模式 Match 入口不同。直接调用闭包 API 的代码，在修复前可先用 cancellation.Token.ThrowIfCancellationRequested() 处理预先取消；此措施只覆盖预先取消，不代替调用期间的取消支持。已有原生关联的候选和其他后端对照正常传播取消。
+
 结构最多64层含根；有效类型泛型元数最多64含外层，方法自身元数独立最多64。原生映射超限抛 AspectNLimitException，带 AN3005/AN3006；外部中立签名匹配超限则 Unknown 带相同诊断。解析和正则文本另有保护，不能把不同阶段统一为普通不匹配。[资源专题](../knowledge/capabilities/cross-cutting/CROSS-RESOURCES-001.md)和[具体代码例子](limits-and-pitfalls.md)说明阶段差别。
 
 ## 选择兼容资产和后端
@@ -58,3 +73,5 @@ AspectN.Cecil 与 AspectN.Cecil.Fody 面向不同强名称的 Mono.Cecil 程序�
 如果 Reflection 的 GetParameters 已因缺依赖失败，尚无参数 Type 给 Mapper；此时由调用方处理加载器异常。把 Cecil 的中立签名交给 Reflection，只能测试脱离原生关联的情况，不能替代同一加载失败路径。
 
 手工签名默认 Complete 表示已提供事实；Position 必须按声明从零连续排列。人工损坏 Cecil 对象的 H1 沿用既有接受风险，不新增通用容错能力。已有有效候选的未知事实则按所消费信息求值。[输入边界](../knowledge/capabilities/cross-cutting/CROSS-INPUT-001.md)与[可用性](../knowledge/capabilities/cross-cutting/CROSS-AVAILABILITY-001.md)分别说明。
+
+把映射方法交给新的 ReflectionTypeSystem 不会迁移原生关联。当前精确 attr(type MarkerAttribute) 可能 Unknown，而通配/复合查询仍按方法中已知的 TypeAttributes 返回确定结果。这一优先级[尚待裁决](../reviews/findings/FND-20261013-005.md)；依赖精确类型特性查询时，复用原上下文或用新上下文重新映射原生成员，不通过改写表达式规避 Unknown。

@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../Program.cs" Link="Program.cs" />
+    <ProjectReference Include="../../../../../src/AspectN.Cecil/AspectN.Cecil.csproj" />
+    <ProjectReference Include="../../../../../src/AspectN.Reflection/AspectN.Reflection.csproj" />
+    <ProjectReference Include="../../../../../src/AspectN.Roslyn/AspectN.Roslyn.csproj" />
+  </ItemGroup>
+</Project>

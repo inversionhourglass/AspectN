@@ -79,6 +79,24 @@
         ],
         "failure_behavior": "不能编译有效模式，并给变量作用域诊断"
       }
+    },
+    {
+      "id": "S4",
+      "adapter": "core",
+      "input_mode": "neutral",
+      "entry_point": "CompiledMemberPattern.Match",
+      "conditions": "有效外部MethodSignature：声明GenericParameters为2、非空GenericArguments仅1；完整两实参与无构造实参作对照",
+      "target": "working-tree",
+      "expected_behavior": "已知声明元数2不能被改写为1；一槽具体模式应NotMatched，两槽需缺实参时Unknown；当前一槽Matched、两槽NotMatched",
+      "contract_status": "supported",
+      "verification_status": "failed",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261013-017"
+      ],
+      "unverified_notes": "已执行确认与规范预期不同；问题尚未修复，不改写支持承诺。"
     }
   ],
   "invariant_checks": [
@@ -141,7 +159,9 @@
       "capability_id": "CROSS-LOGIC-001"
     }
   ],
-  "open_findings": [],
+  "open_findings": [
+    "FND-20261013-002"
+  ],
   "related_findings": []
 }
 -->
@@ -195,3 +215,5 @@ flowchart LR
 ## 关联与缺口
 
 GEN-IDENTITY-001 定义 CLR 声明身份，CROSS-LOGIC-001 定义结果三态；逻辑真值表不单独证明变量环境合并。未穷举所有后端/泛型约束组合。
+
+不完整外部泛型实参的已确认边界见S4及[泛型Finding](../../../reviews/findings/FND-20261013-002.md)。这不是H1原生必需字段为空，不将其改写为排除。

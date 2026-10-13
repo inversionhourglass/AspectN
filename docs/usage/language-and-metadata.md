@@ -61,7 +61,23 @@ int?                         // Nullable<int>
 method(tasklike<int> M())     // Task<int> 或 ValueTask<int> 返回形状
 ```
 
-普通返回 Task 的方法与 async 方法都能满足相同 tasklike 模式。IsAsync、迭代器及状态机记录是另一类事实；partial 方法实现和发射记录也可能有专门规则。方法体内局部函数的 yield 不说明外层是迭代器。
+普通返回 Task 的方法与 async 方法都能满足相同 tasklike 模式。IsAsync、迭代器及状态机记录是另一类事实。方法体内局部函数的 yield 不说明外层是迭代器。
+
+对 partial 方法，先明确取得的是源定义、源实现还是发射后的成员：
+
+```csharp
+public partial class Api
+{
+    public partial Task<int> Load();
+    public async partial Task<int> Load()
+    {
+        await Task.Yield();
+        return 1;
+    }
+}
+```
+
+当前已验证的编译环境中，该例的 Roslyn 源实现 IsAsync 为 true，源定义和 PE/Reflection/Cecil 视图为 false；编译器没有为该 partial 方法发射状态机特性。它们均可按 Task<int> 返回形状匹配 tasklike。需要分析源码中的 async 时，读取实现符号；需要查询状态机特性时，检查实际记录。不要以某一个视图的 IsAsync 推断其他视图的字段值或源码写法；[场景依据](../knowledge/capabilities/csharp-metadata/CSH-METADATA-001.md)限定了实际输入及版本。
 
 指针/函数指针可以映射为带规范显示名的不支持类型表示；这不提供结构化指针 DSL。params/scoped 方法可以按实际数组/ref 参数匹配，不能把这些 C# 关键词写成独立筛选修饰符。[类型形状](../knowledge/capabilities/type-uses/USE-SHAPES-001.md)、[源码与 PE](../knowledge/capabilities/csharp-metadata/CSH-METADATA-001.md)给出原因及当前后端条件。
 
@@ -77,6 +93,10 @@ getter(string Name) && attr(call MarkerAttribute)
 ```
 
 call 在访问器上表示访问器方法自身，prop 表示关联属性；exec 在访问器上包含方法和关联属性。查询不实例化对象、不应用继承特性规则。源码特性写法若被编码为元数据标志/其他表，不自动成为可匹配的真实 CA 记录；真实同类型 PE 记录仍可保留。[特性专题](../knowledge/capabilities/attributes/ATTR-TARGETS-001.md)详细区分这些情况。
+
+旧位置名 callable/property/parameter/return 会产生 AN4005，应分别改为 call/prop/para/ret。get/set 也不是特性位置；要筛选访问器上的直接特性，使用上例的 getter 或 setter 与 attr(call ...) 组合。
+
+当前有两项与上下文相关的已知边界：把同一映射方法交给新的 ReflectionTypeSystem 后，精确类型特性查询可能 Unknown，而通配/复合表达式仍读取嵌入记录，统一规则[尚待裁决](../reviews/findings/FND-20261013-005.md)；Roslyn PE 的读取编译若声明了同名 IsReadOnlyAttribute，返回特性的程序集身份可能失真，[该缺陷尚未修复](../reviews/findings/FND-20261013-004.md)。前者优先复用映射时的上下文，后者需要结合原生 PE 记录核对身份。
 
 ## 正则及错误处理
 

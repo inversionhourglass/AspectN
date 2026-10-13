@@ -3,12 +3,12 @@
 <!-- aspectn-usage:v1
 {
   "schema_version": 1,
-  "capability_ids": ["GEN-IDENTITY-001", "USE-REF-001", "USE-ARRAY-001", "CROSS-AVAILABILITY-001", "CROSS-LOGIC-001"],
+  "capability_ids": ["GEN-IDENTITY-001", "GEN-BINDING-001", "USE-REF-001", "USE-ARRAY-001", "ATTR-TARGETS-001", "SEM-REGEX-001", "CSH-METADATA-001", "CROSS-AVAILABILITY-001", "CROSS-LOGIC-001"],
   "inventory_refs": ["INV-0006", "INV-0007", "INV-0008", "INV-0009", "INV-0010", "INV-0012", "INV-0013", "INV-0015"]
 }
 -->
 
-本章区分三类问题：表达式无法表示的条件、输入缺少所需事实，以及超出实现资源上限。编译失败、匹配返回 Unknown 和映射抛异常发生在不同阶段，处理方式也不同。
+本章区分表达式无法表示的条件、输入缺少所需事实、超出实现资源上限，以及已确认但未修复的实现问题。编译失败、匹配返回 Unknown 和映射抛异常发生在不同阶段，处理方式也不同。
 
 下面的片段使用 `AspectN`、`AspectN.Metadata`、`AspectN.Reflection`、`AspectN.Evaluation` 命名空间，以及同一个引擎和类型系统：
 
@@ -230,4 +230,50 @@ H1 的人工损坏 Cecil 对象（缺 ReturnType/ElementType）仍保留异常�
 
 ## 10. 未知、未建档不等于不支持
 
-这些状态描述证据和盘点缺口，不据此新增排除承诺。不支持原因依[正式规范](../superpowers/specs/2026-07-31-aspectn-language-spec.md)和[架构范围](../superpowers/specs/2026-07-31-aspectn-redesign-design.md)；五主题的详细证据可从[知识库](../knowledge/index.md)按主题读取。
+这些状态描述证据和盘点缺口，不据此新增排除承诺。不支持原因依[正式规范](../superpowers/specs/2026-07-31-aspectn-language-spec.md)和[架构范围](../superpowers/specs/2026-07-31-aspectn-redesign-design.md)；九分类的详细证据可从[知识库](../knowledge/index.md)按主题读取。
+
+## 11. Inherited=true 不会给派生声明新增直接记录
+
+```csharp
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, Inherited = true)]
+public sealed class MarkerAttribute : Attribute { }
+
+[Marker]
+public class BaseApi
+{
+    [Marker] public virtual void Run() { }
+}
+
+public class DerivedApi : BaseApi
+{
+    public override void Run() { }
+}
+```
+
+运行时 Attribute.IsDefined(typeof(DerivedApi), typeof(MarkerAttribute), inherit: true) 为 true；使用 inherit: false 为 false。对 DerivedApi.Run 的方法查询也是如此。AspectN 的 attr(type MarkerAttribute) 与 attr(call MarkerAttribute) 查询直接记录，因此派生 override 候选得到 NotMatched；基类候选或显式补上 [Marker] 的派生声明得到 Matched。
+
+这属于已批准的查询范围，不是元数据丢失。需按 C# 特性继承规则查找时，由调用方执行原生继承查询；不要通过 + 类型关系语法假设 attr 也继承。具体[特性场景及四视图证据](../knowledge/capabilities/attributes/ATTR-TARGETS-001.md)区分继承排除和语法排除。
+
+## 12. 外部残缺泛型签名目前存在误判
+
+```csharp
+var partial = new NamedTypeSignature(
+    new TypeIdentity(new AssemblyIdentity("Review"), "Review", "Box", 2, AspectN.Metadata.TypeKind.Class),
+    [typeSystem.Mapper.MapType(typeof(int))]);
+// 声明元数是 2，却只提供 1 个构造实参；公开模型当前接受这个输入。
+```
+
+把 partial 放入方法返回槽后，当前 regex(.*) 错误返回 Matched/空诊断，结构类型模式 Review.Box<int, int> 则返回 Unknown/AN3001。声明形参有两个、实参只有一个的方法签名还会使 M<int> 错误 Matched、M<int,string> 错误 NotMatched。契约要求保持已知声明元数，所需实参缺失时返回 Unknown，而不能把残缺列表当成完整签名。
+
+这些是[未修复的实现缺陷](../reviews/findings/FND-20261013-002.md)，不构成“不支持外部签名”的排除。外部签名生产者应保留完整实参列表和准确的可用性信息；消费方在修复前不要把这些输入的确定结果用于判定。开放泛型定义的零实参与残缺构造输入不同，不能按上述规则直接拒绝开放定义。[可运行探针](../reviews/reproductions/2026-10-13-capability-boundaries/README.md)包含完整、开放和残缺三组对照。
+
+## 13. CLI 可以包含 C# 无法声明的返回类型重载
+
+```text
+int    M<T>(T value) where T : IDisposable
+string M<T>(T value) where T : IComparable
+```
+
+上例仅用于说明 CLI 签名，不能复制为 C# 重载声明。已发射、加载并实际调用的两个 PE 方法在 Cecil/Fody、Reflection 和 Roslyn PE 中，泛型声明形参被赋予相同 OwnerId，AreEqual 错误返回 Matched；它们应保持不同声明身份。
+
+[身份缺陷尚未修复](../reviews/findings/FND-20261013-003.md)。分析外国 IL 时，不要只凭该 OwnerId 或形参 AreEqual 合并方法；保留原生方法声明及返回签名以区分。已确认的影响限于类型相等查询，没有执行证据证明所有变量绑定或约束查询都会串用。

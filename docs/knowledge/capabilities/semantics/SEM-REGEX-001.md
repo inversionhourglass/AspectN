@@ -79,6 +79,24 @@
         ],
         "failure_behavior": "编译期 AN2012；无有效模式"
       }
+    },
+    {
+      "id": "S4",
+      "adapter": "core",
+      "input_mode": "neutral",
+      "entry_point": "CompiledMemberPattern.Match / CanonicalSignatureFormatter",
+      "conditions": "外部Box声明元数2但实参1，置于返回槽；方法声明形参2但构造实参1；完整构造、开放定义和结构选择器作对照",
+      "target": "working-tree",
+      "expected_behavior": "无法提供完整规范实参/位置槽位时应Unknown/AN3001；当前两种残缺签名的regex(.*)错误Matched且无诊断",
+      "contract_status": "supported",
+      "verification_status": "failed",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261013-017"
+      ],
+      "unverified_notes": "已执行确认与规范预期不同；问题尚未修复，不改写支持承诺。"
     }
   ],
   "invariant_checks": [
@@ -141,7 +159,9 @@
       "capability_id": "CROSS-RESOURCES-001"
     }
   ],
-  "open_findings": [],
+  "open_findings": [
+    "FND-20261013-002"
+  ],
   "related_findings": []
 }
 -->
@@ -187,3 +207,5 @@ regex((?=GetName))      // 环视被排除
 ## 关联与缺口
 
 泛型身份依 GEN-IDENTITY-001；限制/取消依 CROSS-RESOURCES-001。不承诺文本能区分所有 CLR 身份，更不承诺测试过所有任意正则输入。
+
+S4登记已复现的不完整泛型实参格式化问题；[关联Finding](../../../reviews/findings/FND-20261013-002.md)保留规范预期、实际结果和控制输入，不能用regex Matched证明该签名完整。

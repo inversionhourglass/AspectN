@@ -29,7 +29,9 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261012-002", "EV-20261013-003", "EV-20261013-009"
+        "EV-20261012-002",
+        "EV-20261013-003",
+        "EV-20261013-009"
       ],
       "unverified_notes": ""
     },
@@ -47,7 +49,9 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261012-002", "EV-20261013-003", "EV-20261013-009"
+        "EV-20261012-002",
+        "EV-20261013-003",
+        "EV-20261013-009"
       ],
       "unverified_notes": ""
     },
@@ -65,9 +69,83 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261012-002", "EV-20261013-003", "EV-20261013-009"
+        "EV-20261012-002",
+        "EV-20261013-003",
+        "EV-20261013-009"
       ],
       "unverified_notes": ""
+    },
+    {
+      "id": "S4",
+      "adapter": "cecil",
+      "input_mode": "native_member",
+      "entry_point": "Mapper.MapMethod / ITypeSystem.AreEqual",
+      "conditions": "结构完整、真实发射且CLR可加载/枚举/调用的两个M<T>(T)声明：返回int/string、约束IDisposable/IComparable；只比较所列原生视图",
+      "target": "working-tree",
+      "expected_behavior": "不同声明的形参身份应区分，AreEqual应NotMatched；当前OwnerId相同且AreEqual为Matched",
+      "contract_status": "supported",
+      "verification_status": "failed",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261013-017"
+      ],
+      "unverified_notes": "已执行确认与规范预期不同；问题尚未修复，不改写支持承诺。"
+    },
+    {
+      "id": "S5",
+      "adapter": "reflection",
+      "input_mode": "native_member",
+      "entry_point": "Mapper.MapMethod / ITypeSystem.AreEqual",
+      "conditions": "结构完整、真实发射且CLR可加载/枚举/调用的两个M<T>(T)声明：返回int/string、约束IDisposable/IComparable；只比较所列原生视图",
+      "target": "working-tree",
+      "expected_behavior": "不同声明的形参身份应区分，AreEqual应NotMatched；当前OwnerId相同且AreEqual为Matched",
+      "contract_status": "supported",
+      "verification_status": "failed",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261013-017"
+      ],
+      "unverified_notes": "已执行确认与规范预期不同；问题尚未修复，不改写支持承诺。"
+    },
+    {
+      "id": "S6",
+      "adapter": "roslyn",
+      "input_mode": "pe_symbol",
+      "entry_point": "Mapper.MapMethod / ITypeSystem.AreEqual",
+      "conditions": "结构完整、真实发射且CLR可加载/枚举/调用的两个M<T>(T)声明：返回int/string、约束IDisposable/IComparable；只比较所列原生视图",
+      "target": "working-tree",
+      "expected_behavior": "不同声明的形参身份应区分，AreEqual应NotMatched；当前OwnerId相同且AreEqual为Matched",
+      "contract_status": "supported",
+      "verification_status": "failed",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261013-017"
+      ],
+      "unverified_notes": "已执行确认与规范预期不同；问题尚未修复，不改写支持承诺。"
+    },
+    {
+      "id": "S7",
+      "adapter": "cecil_fody",
+      "input_mode": "native_member",
+      "entry_point": "Mapper.MapMethod / ITypeSystem.AreEqual",
+      "conditions": "结构完整、真实发射且CLR可加载/枚举/调用的两个M<T>(T)声明：返回int/string、约束IDisposable/IComparable；只比较所列原生视图",
+      "target": "working-tree",
+      "expected_behavior": "不同声明的形参身份应区分，AreEqual应NotMatched；当前OwnerId相同且AreEqual为Matched",
+      "contract_status": "supported",
+      "verification_status": "failed",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261013-017"
+      ],
+      "unverified_notes": "已执行确认与规范预期不同；问题尚未修复，不改写支持承诺。"
     }
   ],
   "invariant_checks": [
@@ -126,8 +204,12 @@
       "capability_id": "CROSS-LOGIC-001"
     }
   ],
-  "open_findings": [],
-  "related_findings": ["FND-20261012-001"]
+  "open_findings": [
+    "FND-20261013-003"
+  ],
+  "related_findings": [
+    "FND-20261012-001"
+  ]
 }
 -->
 
@@ -171,6 +253,8 @@ EV-20261012-003 仅补充 Reflection 最小示例中的闭合方法形参身份�
 
 ## 关联与缺口
 
-缺失解析、全部嵌套/vararg/版本组合和 Fody 不因这次 fixture 通过而验证。原生 arity 的完整测试另属资源限制盘点。
+S1–S3的fixture不覆盖缺失解析、全部嵌套/vararg/版本组合或Fody；S4–S7另列CLI重载的已执行范围，不能外推其他组合。原生arity的完整测试另属资源限制盘点。
 
 本轮非作者拒绝了最初的三态/取消 N/A，现改为 applicable；确认的是适用性，不能据此认为缺失事实或取消行为已经验证。[审查记录](../../../reviews/2026-10-12-documentation-pilot.md)保存初始候选与核验结果。
+
+仅返回类型不同的真实CLI重载已在S4–S7执行；[声明身份Finding](../../../reviews/findings/FND-20261013-003.md)记录当前碰撞。未运行Roslyn源码或额外变量/约束串用断言，不据此扩大观察影响。

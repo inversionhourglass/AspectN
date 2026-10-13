@@ -127,6 +127,78 @@
         "EV-20261013-009"
       ],
       "unverified_notes": ""
+    },
+    {
+      "id": "S6",
+      "adapter": "cecil",
+      "input_mode": "native_member",
+      "entry_point": "Mapper.MapMethod / IsAsync / attr / tasklike",
+      "conditions": "同PE的partial Async、AsyncIterator、显式MarkedAsync；原生成员；对照实际发射的状态机CA",
+      "target": "working-tree",
+      "expected_behavior": "未显式状态机CA的partial Async/AsyncIterator IsAsync为false，显式MarkedAsync为true；标记匹配按实际CA，Tasklike仅按返回形状",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261013-018"
+      ],
+      "unverified_notes": ""
+    },
+    {
+      "id": "S7",
+      "adapter": "reflection",
+      "input_mode": "native_member",
+      "entry_point": "Mapper.MapMethod / IsAsync / attr / tasklike",
+      "conditions": "同PE的partial Async、AsyncIterator、显式MarkedAsync；原生成员；对照实际发射的状态机CA",
+      "target": "working-tree",
+      "expected_behavior": "未显式状态机CA的partial Async/AsyncIterator IsAsync为false，显式MarkedAsync为true；标记匹配按实际CA，Tasklike仅按返回形状",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261013-018"
+      ],
+      "unverified_notes": ""
+    },
+    {
+      "id": "S8",
+      "adapter": "roslyn",
+      "input_mode": "source_symbol",
+      "entry_point": "Mapper.MapMethod / IsAsync / attr / tasklike",
+      "conditions": "同源partial Async、AsyncIterator、显式MarkedAsync；分别映射Roslyn源定义和PartialImplementationPart，对照原生IsAsync及直接记录",
+      "target": "working-tree",
+      "expected_behavior": "未显式标记时源定义IsAsync为false、源实现为true；显式MarkedAsync两者true；partial不补发射时省略的状态机记录，Tasklike仅按返回形状",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261013-018"
+      ],
+      "unverified_notes": ""
+    },
+    {
+      "id": "S9",
+      "adapter": "roslyn",
+      "input_mode": "pe_symbol",
+      "entry_point": "Mapper.MapMethod / IsAsync / attr / tasklike",
+      "conditions": "同PE的partial Async、AsyncIterator、显式MarkedAsync；Roslyn PE符号；对照实际发射的状态机CA",
+      "target": "working-tree",
+      "expected_behavior": "未显式状态机CA的partial Async/AsyncIterator IsAsync为false，显式MarkedAsync为true；标记匹配按实际CA，Tasklike仅按返回形状",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261013-018"
+      ],
+      "unverified_notes": ""
     }
   ],
   "invariant_checks": [
@@ -190,7 +262,9 @@
     }
   ],
   "open_findings": [],
-  "related_findings": []
+  "related_findings": [
+    "FND-20261013-004"
+  ]
 }
 -->
 
@@ -200,7 +274,7 @@ C# 源语法、编译器发射记录和后端能观察的符号不是同一层�
 
 ## 契约
 
-IsAsync 表示编译器声明的 async 方法/异步迭代器，与是否返回 Task 不等同。Roslyn 源码在类型存在时补 async/iterator/async-iterator 编译器 CA 记录；partial 按发射结果处理标记，显式记录仍保留。嵌套局部函数中的 yield 不改变外层方法的 iterator 属性。
+IsAsync保留具体输入视图可观察的async/异步迭代器信息，与是否返回Task不等同；partial源定义、源实现与发射PE可能不同，不承诺只凭字段恢复所有源码关键词。Roslyn 源码在类型存在时补 async/iterator/async-iterator 编译器 CA 记录；partial 按发射结果处理标记，显式记录仍保留。嵌套局部函数中的 yield 不改变外层方法的 iterator 属性。
 
 ## 输入条件
 
@@ -245,3 +319,5 @@ flowchart LR
 ## 关联与缺口
 
 实际特性位置依 ATTR-TARGETS-001，引用标志依 USE-REF-001。Fody 的源码/PE 一致性没有由这些三后端 fixture 自动证明；未覆盖任意编译器生成方法或所有 Roslyn 历史版本。
+
+本轮S6–S9实测partial视图：无显式状态机CA时，源实现IsAsync为true，但源定义及PE为false；直接标记记录与Tasklike分别按真实记录和返回形状匹配。Readonly返回CA身份遮蔽问题见[关联Finding](../../../reviews/findings/FND-20261013-004.md)。

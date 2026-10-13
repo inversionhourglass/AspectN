@@ -71,7 +71,8 @@
       ],
       "evidence_ids": [
         "EV-20261013-005",
-        "EV-20261013-009"
+        "EV-20261013-009",
+        "EV-20261013-015"
       ],
       "unverified_notes": ""
     },
@@ -120,7 +121,7 @@
       "entry_point": "Mapper.MapMethod",
       "conditions": "独立 Fody 测试程序集执行 CecilCallableMappingTests 的四类参数与 readonly 返回；只覆盖该 fixture",
       "target": "working-tree",
-      "expected_behavior": "Fody Cecil 身份下参数 Ref/Out/In/RefReadOnly 和 readonly 返回保持；interop 负例单列未验证",
+      "expected_behavior": "Fody Cecil 身份下参数 Ref/Out/In/RefReadOnly 和 readonly 返回保持；独立方向标志负例见S8",
       "contract_status": "supported",
       "verification_status": "verified",
       "verification_methods": [
@@ -153,17 +154,19 @@
       "id": "S8",
       "adapter": "cecil_fody",
       "input_mode": "native_member",
-      "entry_point": "Mapper.MapMethod",
-      "conditions": "有效 [In] ref/[In,Out] ref 的独立 Fody PE fixture；与 S6 的 C# 普通 ref 不同",
+      "entry_point": "Mapper.MapMethod / CompiledMemberPattern.Match",
+      "conditions": "CecilInteropRefKindTests 的真实C#发射Fody PE：[In] ref与[In,Out] ref各六个参数模式；实际原生In/Out/by-ref位先独立断言",
       "target": "working-tree",
-      "expected_behavior": "方向标志不能单独证明 readonly；该特定 Fody 负例尚未独立执行",
+      "expected_behavior": "映射RefKind.Ref；int/ref int匹配，out/in/ref readonly/!ref int不匹配，诊断为空；仅这两个fixture",
       "contract_status": "supported",
-      "verification_status": "unverified",
+      "verification_status": "verified",
       "verification_methods": [
         "automated"
       ],
-      "evidence_ids": [],
-      "unverified_notes": "独立 Fody 套件验证四分类和返回；InteropRefKindTests 没有装入 Fody Cecil 身份，不能外推到这些负例"
+      "evidence_ids": [
+        "EV-20261013-016"
+      ],
+      "unverified_notes": ""
     }
   ],
   "invariant_checks": [
@@ -269,6 +272,6 @@ method(* Service.Get(ref int))：Ref 满足、None 不满足。!ref int 对 Ref 
 
 核心 ref 维度、裸 Type 消费和所列原生成员已追加 E 阶段证据。验证范围以各场景条件和报告断言入口为准，不能扩展到所有有效元数据组合。
 
-[边界示例](../../../usage/examples/MatchingBoundaries/Program.cs)和[新增证据](../../../reviews/evidence/EV-20261013-001.json)补充裸 Type 的映射事实、有效 out/ref 成员及部分表达式结果。上述旧报告仅是当时的部分覆盖；E 阶段 S2 的消费断言和 S3–S7 的指定 fixture 已追加新证据。S8 保留 Fody interop 负例的独立缺口。
+[边界示例](../../../usage/examples/MatchingBoundaries/Program.cs)和[新增证据](../../../reviews/evidence/EV-20261013-001.json)补充裸 Type 的映射事实、有效 out/ref 成员及部分表达式结果。上述旧报告仅是当时的部分覆盖；E 阶段 S2 的消费断言和 S3–S7 的指定 fixture 已追加新证据。S8 已追加独立Fody方向标志证据；运行身份、12个模式及范围见[本轮审查](../../../reviews/2026-10-13-capability-evidence-and-review.md)。
 
 原 INVCANCEL 的 N/A 与核验范围保存在[历史审查](../../../reviews/2026-10-12-documentation-pilot.md)。E 阶段纳入完整匹配入口后改为 applicable；本轮条件及审查见[扩展记录](../../../reviews/2026-10-13-documentation-expansion.md)。

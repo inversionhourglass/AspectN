@@ -92,27 +92,182 @@
       "adapter": "core",
       "input_mode": "neutral",
       "entry_point": "CompileMemberExpression",
-      "conditions": "规范规定的继承特性语义、get/set 特性位置和长位置名称",
+      "conditions": "AttributeExclusionTests：get/set及callable/property/parameter/return旧位置名；参数含括号/空格、索引/通配写法，并执行支持语法对照",
       "target": "working-tree",
-      "expected_behavior": "没有继承 attr 语义；非法位置不能取得有效模式，长位置名附迁移诊断",
+      "expected_behavior": "get/set编译失败且有AN1001；旧位置名有AN4005、不能取得有效模式；短名及getter/setter与attr(call ...)组合可编译",
       "contract_status": "excluded",
-      "verification_status": "unverified",
+      "verification_status": "verified",
       "verification_methods": [
         "automated"
       ],
-      "evidence_ids": [],
-      "unverified_notes": "该具体输入尚无完整执行证据；不能外推已验证范围",
+      "evidence_ids": [
+        "EV-20261013-013"
+      ],
+      "unverified_notes": "",
       "exclusion": {
         "reason_code": "explicit_exclusion",
-        "reason": "直接记录保证后端数据同源；执行继承规则或实例化对象会引入另一套语义及副作用；访问器用选择器与 call 组合",
+        "reason": "Standard位置短名已固定；访问器自身用getter/setter选择器与call位置组合，旧长名只提供迁移诊断",
         "decision_refs": [
           {
             "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
             "section": "14"
           }
         ],
-        "failure_behavior": "没有继承 attr 语义；非法位置不能取得有效模式，长位置名附迁移诊断"
+        "failure_behavior": "get/set编译失败且有AN1001；旧位置名有AN4005、不能取得有效模式；短名及getter/setter与attr(call ...)组合可编译"
       }
+    },
+    {
+      "id": "S6",
+      "adapter": "cecil",
+      "input_mode": "native_member",
+      "entry_point": "Mapper.MapMethod / attr(type/call ...)",
+      "conditions": "AttributeInheritanceTests：同源/同PE的带标记基类、仅继承的override、显式直接标记的override；原生inherit:true均能看到标记，inherit:false独立证明直接记录",
+      "target": "working-tree",
+      "expected_behavior": "只继承且无直接记录时NotMatched；基类和显式标记派生类Matched，诊断为空；不把Inherited=true当作直接记录",
+      "contract_status": "excluded",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261013-014"
+      ],
+      "unverified_notes": "",
+      "exclusion": {
+        "reason_code": "explicit_exclusion",
+        "reason": "语言第14节只承诺直接CustomAttribute记录，不执行运行时特性继承规则；继承标志不改变直接记录位置",
+        "decision_refs": [
+          {
+            "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+            "section": "14"
+          }
+        ],
+        "failure_behavior": "表达式可编译；仅继承的声明类型/override方法在此fixture为NotMatched，不是编译失败或Unknown"
+      }
+    },
+    {
+      "id": "S7",
+      "adapter": "roslyn",
+      "input_mode": "source_symbol",
+      "entry_point": "Mapper.MapMethod / attr(type/call ...)",
+      "conditions": "AttributeInheritanceTests：同源/同PE的带标记基类、仅继承的override、显式直接标记的override；原生inherit:true均能看到标记，inherit:false独立证明直接记录",
+      "target": "working-tree",
+      "expected_behavior": "只继承且无直接记录时NotMatched；基类和显式标记派生类Matched，诊断为空；不把Inherited=true当作直接记录",
+      "contract_status": "excluded",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261013-014"
+      ],
+      "unverified_notes": "",
+      "exclusion": {
+        "reason_code": "explicit_exclusion",
+        "reason": "语言第14节只承诺直接CustomAttribute记录，不执行运行时特性继承规则；继承标志不改变直接记录位置",
+        "decision_refs": [
+          {
+            "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+            "section": "14"
+          }
+        ],
+        "failure_behavior": "表达式可编译；仅继承的声明类型/override方法在此fixture为NotMatched，不是编译失败或Unknown"
+      }
+    },
+    {
+      "id": "S8",
+      "adapter": "reflection",
+      "input_mode": "native_member",
+      "entry_point": "Mapper.MapMethod / attr(type/call ...)",
+      "conditions": "AttributeInheritanceTests：同源/同PE的带标记基类、仅继承的override、显式直接标记的override；原生inherit:true均能看到标记，inherit:false独立证明直接记录",
+      "target": "working-tree",
+      "expected_behavior": "只继承且无直接记录时NotMatched；基类和显式标记派生类Matched，诊断为空；不把Inherited=true当作直接记录",
+      "contract_status": "excluded",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261013-014"
+      ],
+      "unverified_notes": "",
+      "exclusion": {
+        "reason_code": "explicit_exclusion",
+        "reason": "语言第14节只承诺直接CustomAttribute记录，不执行运行时特性继承规则；继承标志不改变直接记录位置",
+        "decision_refs": [
+          {
+            "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+            "section": "14"
+          }
+        ],
+        "failure_behavior": "表达式可编译；仅继承的声明类型/override方法在此fixture为NotMatched，不是编译失败或Unknown"
+      }
+    },
+    {
+      "id": "S9",
+      "adapter": "roslyn",
+      "input_mode": "pe_symbol",
+      "entry_point": "Mapper.MapMethod / attr(type/call ...)",
+      "conditions": "AttributeInheritanceTests：同源/同PE的带标记基类、仅继承的override、显式直接标记的override；原生inherit:true均能看到标记，inherit:false独立证明直接记录",
+      "target": "working-tree",
+      "expected_behavior": "只继承且无直接记录时NotMatched；基类和显式标记派生类Matched，诊断为空；不把Inherited=true当作直接记录",
+      "contract_status": "excluded",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261013-014"
+      ],
+      "unverified_notes": "",
+      "exclusion": {
+        "reason_code": "explicit_exclusion",
+        "reason": "语言第14节只承诺直接CustomAttribute记录，不执行运行时特性继承规则；继承标志不改变直接记录位置",
+        "decision_refs": [
+          {
+            "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+            "section": "14"
+          }
+        ],
+        "failure_behavior": "表达式可编译；仅继承的声明类型/override方法在此fixture为NotMatched，不是编译失败或Unknown"
+      }
+    },
+    {
+      "id": "S10",
+      "adapter": "roslyn",
+      "input_mode": "pe_symbol",
+      "entry_point": "Mapper.MapMethod / ReturnAttributes / AreEqual",
+      "conditions": "只读返回有效PE；无错误的ShadowReader编译声明同名IsReadOnlyAttribute；与原Reflection/Cecil及普通Roslyn PE记录对照",
+      "target": "working-tree",
+      "expected_behavior": "应保留PE原CA类型的程序集身份；当前错误映射到ShadowReader，与实际标记类型AreEqual为NotMatched",
+      "contract_status": "supported",
+      "verification_status": "failed",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261013-017"
+      ],
+      "unverified_notes": "已执行确认与规范预期不同；问题尚未修复，不改写支持承诺。"
+    },
+    {
+      "id": "S11",
+      "adapter": "reflection",
+      "input_mode": "detached",
+      "entry_point": "CompiledMemberPattern.Match / attr(type ...)",
+      "conditions": "同一已映射候选TypeAttributes已知；原上下文与新ReflectionTypeSystem；分别精确、通配、复合表达式，带标记/已知空两种候选",
+      "target": "working-tree",
+      "expected_behavior": "实际新上下文精确表达式Unknown/AN3001，通配/复合消费嵌入事实得确定结果；是否应统一需维护者裁决",
+      "contract_status": "pending",
+      "verification_status": "unverified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261013-019"
+      ],
+      "unverified_notes": "已有实际观察，但缺少批准的语义裁决，尚不能登记为符合契约或产品违约。",
+      "pending_reason": "批准契约同时涉及直接查询所需原生关联与独立已知事实；这两条在类型特性精确快速路径中的优先级未明确，不自行新增容错承诺。"
     }
   ],
   "invariant_checks": [
@@ -179,7 +334,10 @@
       "capability_id": "MEM-SELECTORS-001"
     }
   ],
-  "open_findings": [],
+  "open_findings": [
+    "FND-20261013-004",
+    "FND-20261013-005"
+  ],
   "related_findings": []
 }
 -->
@@ -221,7 +379,7 @@ getter(string Name) && attr(call MarkerAttribute)
 
 ## 实现与证据
 
-[核心特性位置](../../../../tests/AspectN.Tests/Evaluation/AttributePatternTests.cs)、[真实记录一致性](../../../../tests/AspectN.Conformance.Tests/CustomAttributeRecordTests.cs)、[不实例化查询](../../../../tests/AspectN.Reflection.Tests/ReflectionMappingTests.cs)。S5 是已批准排除，尚未为全部名称/位置登记独立完整执行证据。
+[核心特性位置](../../../../tests/AspectN.Tests/Evaluation/AttributePatternTests.cs)、[真实记录一致性](../../../../tests/AspectN.Conformance.Tests/CustomAttributeRecordTests.cs)、[不实例化查询](../../../../tests/AspectN.Reflection.Tests/ReflectionMappingTests.cs)。S5的核心语法排除及S6–S9的特性继承排除已分别追加独立执行证据。新出现的PE记录身份问题和detached精确查询差异见S10/S11及关联Finding。
 
 ## 关联与缺口
 

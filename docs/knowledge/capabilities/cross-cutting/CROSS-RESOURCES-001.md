@@ -108,6 +108,42 @@
         "EV-20261013-006"
       ],
       "unverified_notes": ""
+    },
+    {
+      "id": "S6",
+      "adapter": "cecil",
+      "input_mode": "detached",
+      "entry_point": "ITypeSystem.GetInheritanceClosure",
+      "conditions": "正常空模块上下文、有效外部NamedTypeSignature、调用前已取消；关联候选/未取消输入及Reflection/Roslyn作对照",
+      "target": "working-tree",
+      "expected_behavior": "应传播OperationCanceledException；当前无关联提前返回Unknown/AN3001，取消未传播",
+      "contract_status": "supported",
+      "verification_status": "failed",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261013-017"
+      ],
+      "unverified_notes": "已执行确认与规范预期不同；问题尚未修复，不改写支持承诺。"
+    },
+    {
+      "id": "S7",
+      "adapter": "cecil_fody",
+      "input_mode": "detached",
+      "entry_point": "ITypeSystem.GetInheritanceClosure",
+      "conditions": "正常空模块上下文、有效外部NamedTypeSignature、调用前已取消；关联候选/未取消输入及Reflection/Roslyn作对照",
+      "target": "working-tree",
+      "expected_behavior": "应传播OperationCanceledException；当前无关联提前返回Unknown/AN3001，取消未传播",
+      "contract_status": "supported",
+      "verification_status": "failed",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261013-017"
+      ],
+      "unverified_notes": "已执行确认与规范预期不同；问题尚未修复，不改写支持承诺。"
     }
   ],
   "invariant_checks": [
@@ -170,7 +206,9 @@
       "capability_id": "CROSS-LOGIC-001"
     }
   ],
-  "open_findings": [],
+  "open_findings": [
+    "FND-20261013-001"
+  ],
   "related_findings": []
 }
 -->
@@ -218,3 +256,5 @@ int 根加64层数组总共65层；不能说“64个数组后缀仍在支持范�
 ## 关联与缺口
 
 CROSS-AVAILABILITY-001 处理事实缺失，SEM-REGEX-001 处理正则编译/超时。未穷举全部线程调度或GC时机；资源测试不等于性能基准结论。
+
+本轮新增detached继承闭包取消反例（S6/S7）：普通Cecil与Fody均出现已确认违约，见[取消Finding](../../../reviews/findings/FND-20261013-001.md)。原已关联候选的执行证据保持其限定范围。
