@@ -29,7 +29,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-004"
+        "EV-20261014-001"
       ],
       "unverified_notes": ""
     },
@@ -47,7 +47,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-008"
+        "EV-20261014-005"
       ],
       "unverified_notes": ""
     },
@@ -65,7 +65,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-004"
+        "EV-20261014-001"
       ],
       "unverified_notes": "",
       "exclusion": {
@@ -85,18 +85,19 @@
       "adapter": "core",
       "input_mode": "neutral",
       "entry_point": "CompiledMemberPattern.Match",
-      "conditions": "有效外部MethodSignature：声明GenericParameters为2、非空GenericArguments仅1；完整两实参与无构造实参作对照",
+      "conditions": "IncompleteGenericArgumentTests：声明/原始声明元数已知且当前槽位或实参残缺；完整、开放、嵌套总元数及既有无声明槽位实参表示作对照",
       "target": "working-tree",
-      "expected_behavior": "已知声明元数2不能被改写为1；一槽具体模式应NotMatched，两槽需缺实参时Unknown；当前一槽Matched、两槽NotMatched",
+      "expected_behavior": "保持已知声明元数；元数不符NotMatched，只约束已知元数可Matched，消费缺失实参Unknown/AN3001",
       "contract_status": "supported",
-      "verification_status": "failed",
+      "verification_status": "verified",
       "verification_methods": [
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-017"
+        "EV-20261014-001",
+        "EV-20261014-010"
       ],
-      "unverified_notes": "已执行确认与规范预期不同；问题尚未修复，不改写支持承诺。"
+      "unverified_notes": ""
     }
   ],
   "invariant_checks": [
@@ -159,10 +160,10 @@
       "capability_id": "CROSS-LOGIC-001"
     }
   ],
-  "open_findings": [
+  "open_findings": [],
+  "related_findings": [
     "FND-20261013-002"
-  ],
-  "related_findings": []
+  ]
 }
 -->
 
@@ -217,3 +218,5 @@ flowchart LR
 GEN-IDENTITY-001 定义 CLR 声明身份，CROSS-LOGIC-001 定义结果三态；逻辑真值表不单独证明变量环境合并。未穷举所有后端/泛型约束组合。
 
 不完整外部泛型实参的已确认边界见S4及[泛型Finding](../../../reviews/findings/FND-20261013-002.md)。这不是H1原生必需字段为空，不将其改写为排除。
+
+S4 的误判已修复：声明元数与所需实参完整性分别求值；原始声明有已知正元数时优先保留，完整实参且无声明槽位的既有外部表示仍可用。具体对照见 [IncompleteGenericArgumentTests](../../../../tests/AspectN.Tests/Evaluation/IncompleteGenericArgumentTests.cs)，历史失败保留在关联 Finding。

@@ -333,13 +333,13 @@ internal static partial class CecilTypeMapper
         }
 
         CecilNativeTypeLimitGuard.ValidateMethod(method);
-        // 参数形状参与 owner ID 以区分同名同元数的重载；构造规则与 Reflection、Roslyn 适配器一致。
+        // 原始声明的参数和返回形状共同区分CLI重载；不混入闭合查询上下文。
         var parameters = method.Parameters
             .Select(parameter => CanonicalParameterForm(parameter.ParameterType))
             .ToArray();
         return $"{MapIdentity(method.DeclaringType).FullMetadataName}.{method.Name}`" +
                MethodGenericArity(method) +
-               $"({string.Join(",", parameters)})";
+               $"({string.Join(",", parameters)})->{CanonicalParameterForm(method.ReturnType)}";
     }
 
     private static int MethodGenericArity(MethodReference method)

@@ -7,12 +7,21 @@ namespace AspectN.Metadata;
 // 变量重绑定静默 NotMatched）。匹配和规范签名共用此合成逻辑。
 internal static class GenericParameterNamer
 {
+    // 原始声明元数不受残缺构造实参数量影响；仅未提供声明形参的外部签名按实参推定。
+    public static int GetMethodArity(MethodSignature candidate) =>
+        candidate.OriginalDefinition is { GenericParameters.Count: > 0 } definition
+            ? definition.GenericParameters.Count
+            : candidate.GenericParameters.Count > 0 ? candidate.GenericParameters.Count : candidate.GenericArguments.Count;
+
     public static TypeSignature[] GetEffectiveMethodArguments(MethodSignature candidate)
     {
         if (candidate.GenericArguments.Count > AspectNLimits.MaximumGenericParameters ||
             candidate.GenericParameters.Count > AspectNLimits.MaximumGenericParameters)
             throw new AspectNLimitException(AspectNLimits.ArityFailure());
-        if (candidate.GenericArguments.Count > 0) return candidate.GenericArguments.ToArray();
+        if (candidate.GenericArguments.Count > 0)
+            return candidate.GenericArguments.Count == GetMethodArity(candidate)
+                ? candidate.GenericArguments.ToArray()
+                : Array.Empty<TypeSignature>();
 
         return candidate.GenericParameters
             .Select(parameter => (TypeSignature)new GenericParameterTypeSignature(parameter))

@@ -24,7 +24,8 @@ public sealed class AttributePatternTests
             (target.Kind != AttributeTargetKind.Parameter ||
              target.Parameter!.Position == 1));
 
-        var result = Match(source, Candidate(), typeSystem);
+        var result = Match(source, Candidate(availability: matchingTarget == AttributeTargetKind.Type
+            ? new MetadataAvailability(MetadataFacts.TypeAttributes) : null), typeSystem);
 
         Assert.Equal(MatchStatus.Matched, result.Status);
         Assert.All(
@@ -108,7 +109,7 @@ public sealed class AttributePatternTests
 
         var result = Match(
             "attr(type Example.InheritedAttribute)",
-            Candidate(),
+            Candidate(availability: new MetadataAvailability(MetadataFacts.TypeAttributes)),
             typeSystem);
 
         Assert.Equal(MatchStatus.NotMatched, result.Status);
@@ -433,7 +434,8 @@ public sealed class AttributePatternTests
         TypeSignature? returnType = null,
         IEnumerable<AttributeSignature>? attributes = null,
         IEnumerable<AttributeSignature>? propertyAttributes = null,
-        IEnumerable<AttributeSignature>? returnAttributes = null)
+        IEnumerable<AttributeSignature>? returnAttributes = null,
+        MetadataAvailability? availability = null)
     {
         var declaringType = Named("Example", "Service");
         var property = new PropertySignature(
@@ -467,7 +469,8 @@ public sealed class AttributePatternTests
             Array.Empty<TypeSignature>(),
             attributes ?? Array.Empty<AttributeSignature>(),
             returnAttributes ?? Array.Empty<AttributeSignature>(),
-            associatedProperty: property);
+            associatedProperty: property,
+            availability: availability);
     }
 
     [Fact]

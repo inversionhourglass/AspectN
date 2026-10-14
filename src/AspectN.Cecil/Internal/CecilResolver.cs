@@ -103,6 +103,7 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
         TypeSignature candidate,
         CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         if (!_mapper.TryGetTypeReference(candidate, out var reference) ||
             reference is null)
         {

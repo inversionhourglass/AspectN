@@ -33,7 +33,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-004"
+        "EV-20261014-001"
       ],
       "unverified_notes": ""
     },
@@ -51,7 +51,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-005"
+        "EV-20261014-002"
       ],
       "unverified_notes": ""
     },
@@ -69,7 +69,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-006"
+        "EV-20261014-003"
       ],
       "unverified_notes": ""
     },
@@ -87,7 +87,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-008"
+        "EV-20261014-005"
       ],
       "unverified_notes": ""
     },
@@ -105,7 +105,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-007"
+        "EV-20261014-004"
       ],
       "unverified_notes": ""
     }
@@ -222,3 +222,5 @@ using (var system = new AspectN.Cecil.CecilTypeSystem(module,
 原生关联缺失依 CROSS-AVAILABILITY-001；取消/限制依 CROSS-RESOURCES-001。没有承诺第三方Module/Compilation自身的任意并发行为或固定GC延迟。
 
 S4/S5 的执行证据只覆盖所列卸载/回收断言；没有在单次映射内部触发 GC 来独立验证依赖存活，也没有单独测试仍被持有的 Roslyn 适配器与 Compilation 的存活关系。正文的实现和生命周期要求不据此扩大 verified 范围。
+
+更换上下文不迁移原生关联，但无需该关联的完整已知 TypeAttributes 可独立消费；优先级及实际 Reflection 原/新上下文对照由 ATTR-TARGETS-001/S11–S13 和已批准可用性条款治理。该规则不保证已释放 Cecil 上下文入口可调用，也不扩张其他原生关系的脱离关联能力。

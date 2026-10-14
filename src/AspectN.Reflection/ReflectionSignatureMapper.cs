@@ -704,16 +704,20 @@ public sealed partial class ReflectionSignatureMapper
 
     private static string GetMethodOwnerId(MethodBase method)
     {
-        // owner ID 必须能区分同名同元数的重载，参数形状参与身份；
+        // owner ID 必须区分CLI参数或返回形状不同的原始声明；
         // 三个适配器按相同规则构造，跨适配器一致性由一致性测试快照保障。
         var parameters = method.GetParameters()
             .Select(CanonicalParameterForm)
             .ToArray();
+        var returned = method as MethodInfo;
+        var returnForm = returned is null ? "System.Void" : CanonicalParameterForm(returned.ReturnParameter);
         var owner = $"{MapMetadataName(RequiredDeclaringType(method))}." +
                $"{method.Name}`{method.GetGenericArguments().Length}" +
-               $"({string.Join(",", parameters)})";
+               $"({string.Join(",", parameters)})->{returnForm}";
         // 旧运行时不能读取调用约定时保留物理声明身份，避免仅约定不同的重载折叠。
-        return method.GetParameters().Any(parameter => RuntimeTypeFacts.MayHideFunctionPointer(parameter.ParameterType)) || parameters.Any(parameter =>
+        return method.GetParameters().Any(parameter => RuntimeTypeFacts.MayHideFunctionPointer(parameter.ParameterType)) ||
+            (returned is not null && RuntimeTypeFacts.MayHideFunctionPointer(returned.ReturnType)) ||
+            parameters.Append(returnForm).Any(parameter =>
             parameter.Contains("delegate*[unknown]") ||
             parameter.Contains("delegate*[unmanaged:unknown]"))
             ? $"{owner}#declaration:{method.Module.ModuleVersionId:N}/{method.MetadataToken:X8}"

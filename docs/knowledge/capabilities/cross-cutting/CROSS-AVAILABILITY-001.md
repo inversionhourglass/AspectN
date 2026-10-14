@@ -33,8 +33,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261012-001",
-        "EV-20261013-002"
+        "EV-20261014-001"
       ],
       "unverified_notes": ""
     },
@@ -52,7 +51,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-005"
+        "EV-20261014-002"
       ],
       "unverified_notes": ""
     },
@@ -70,8 +69,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-007",
-        "EV-20261013-009"
+        "EV-20261014-004",
+        "EV-20261014-006"
       ],
       "unverified_notes": ""
     },
@@ -89,8 +88,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-008",
-        "EV-20261013-009"
+        "EV-20261014-005",
+        "EV-20261014-006"
       ],
       "unverified_notes": ""
     },
@@ -108,7 +107,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-006"
+        "EV-20261014-003"
       ],
       "unverified_notes": ""
     },
@@ -126,7 +125,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-009"
+        "EV-20261014-006"
       ],
       "unverified_notes": ""
     },
@@ -144,7 +143,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-009"
+        "EV-20261014-006"
       ],
       "unverified_notes": ""
     },
@@ -162,7 +161,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-009"
+        "EV-20261014-006"
       ],
       "unverified_notes": ""
     }
@@ -271,3 +270,5 @@ Service.Run 返回 Int32 且只有 Accessibility 未知：method(public * Servic
 [边界示例](../../../usage/examples/MatchingBoundaries/Program.cs)验证已知空特性集合与不可用空占位值、参数位置构造约束，以及选定输入的原生/中立深度超限形态。[反馈记录](../../../reviews/2026-10-13-documentation-feedback.md)登记其范围；这些旧边界示例没有单独证明原宽场景，也没有验证 H1。E 阶段已将 S2–S4 条件明确为实际执行的具体输入，并按新增报告标记；没有保留隐含全源码/PE或任意读取失败的承诺。
 
 范围和剩余输入缺口见[扩展记录](../../../reviews/2026-10-13-documentation-expansion.md)；不变量适用性由非作者按本轮实际入口核验。
+
+类型特性完整快照的优先级已由维护者于2026-10-14裁决；完整已知事实、精确原生回退、无法枚举的缺列表模式分别见 ATTR-TARGETS-001/S11–S13。Roslyn PE 标记依赖缺失的 ReturnAttributes 不可用、独立 RefKind 仍可知见 ATTR-TARGETS-001/S14。直接 HasDirectAttribute API 的原生关联前置条件不因此改变。

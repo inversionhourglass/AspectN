@@ -79,11 +79,11 @@ public sealed unsafe class FunctionPointerMappingTests
         // 也不得退化为与无参方法相同的空括号形式；文本与 Cecil/Roslyn 逐字节一致。
         Assert.Equal(
             "AspectN.Reflection.Tests.FunctionPointerOwnerFixture.M`1(" +
-                $"delegate*[managed]<{FrameworkType("System.String")},{FrameworkType("System.Int32")}>)",
+                $"delegate*[managed]<{FrameworkType("System.String")},{FrameworkType("System.Int32")}>)->{FrameworkType("System.Void")}",
             first.Parameter.OwnerId);
         Assert.Equal(
             "AspectN.Reflection.Tests.FunctionPointerOwnerFixture.M`1(" +
-                $"delegate*[managed]<{FrameworkType("System.Int32")},{FrameworkType("System.Void")}>)",
+                $"delegate*[managed]<{FrameworkType("System.Int32")},{FrameworkType("System.Void")}>)->{FrameworkType("System.Void")}",
             second.Parameter.OwnerId);
         Assert.Equal(
             MatchStatus.NotMatched,
@@ -108,7 +108,7 @@ public sealed unsafe class FunctionPointerMappingTests
         //（delegate*[managed]<System.Int32> 是无参、返回 int 的函数指针，末位类型为返回类型）。
         Assert.Equal(
             "AspectN.Reflection.Tests.FunctionPointerOwnerFixture.M`1(" +
-                $"delegate*[managed]<{FrameworkType("System.Int32")}>*)",
+                $"delegate*[managed]<{FrameworkType("System.Int32")}>*)->{FrameworkType("System.Void")}",
             mapped.Parameter.OwnerId);
     }
 

@@ -12,6 +12,10 @@
     {
       "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
       "section": "14"
+    },
+    {
+      "section": "独立可用事实与所需查询（2026-10-14维护者裁决）",
+      "path": "docs/language/metadata-availability.md"
     }
   ],
   "scenarios": [
@@ -29,7 +33,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-004"
+        "EV-20261014-001"
       ],
       "unverified_notes": ""
     },
@@ -47,7 +51,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-009"
+        "EV-20261014-006"
       ],
       "unverified_notes": ""
     },
@@ -65,7 +69,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-009"
+        "EV-20261014-006"
       ],
       "unverified_notes": ""
     },
@@ -83,7 +87,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-009"
+        "EV-20261014-006"
       ],
       "unverified_notes": ""
     },
@@ -101,7 +105,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-013"
+        "EV-20261014-001"
       ],
       "unverified_notes": "",
       "exclusion": {
@@ -130,7 +134,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-014"
+        "EV-20261014-006"
       ],
       "unverified_notes": "",
       "exclusion": {
@@ -159,7 +163,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-014"
+        "EV-20261014-006"
       ],
       "unverified_notes": "",
       "exclusion": {
@@ -188,7 +192,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-014"
+        "EV-20261014-006"
       ],
       "unverified_notes": "",
       "exclusion": {
@@ -217,7 +221,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-014"
+        "EV-20261014-006"
       ],
       "unverified_notes": "",
       "exclusion": {
@@ -237,18 +241,19 @@
       "adapter": "roslyn",
       "input_mode": "pe_symbol",
       "entry_point": "Mapper.MapMethod / ReturnAttributes / AreEqual",
-      "conditions": "只读返回有效PE；无错误的ShadowReader编译声明同名IsReadOnlyAttribute；与原Reflection/Cecil及普通Roslyn PE记录对照",
+      "conditions": "ReadonlyReturnAttributeIdentityTests：真实普通/嵌入标记PE、无错误的同名读取者和多同名依赖，与原生Reflection返回CA和Cecil构造器Scope对照",
       "target": "working-tree",
-      "expected_behavior": "应保留PE原CA类型的程序集身份；当前错误映射到ShadowReader，与实际标记类型AreEqual为NotMatched",
+      "expected_behavior": "恢复原PE真实CA构造器所属的类型/程序集身份，不采用读取者同名类型；与实际标记AreEqual为Matched",
       "contract_status": "supported",
-      "verification_status": "failed",
+      "verification_status": "verified",
       "verification_methods": [
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-017"
+        "EV-20261014-006",
+        "EV-20261014-010"
       ],
-      "unverified_notes": "已执行确认与规范预期不同；问题尚未修复，不改写支持承诺。"
+      "unverified_notes": ""
     },
     {
       "id": "S11",
@@ -257,17 +262,71 @@
       "entry_point": "CompiledMemberPattern.Match / attr(type ...)",
       "conditions": "同一已映射候选TypeAttributes已知；原上下文与新ReflectionTypeSystem；分别精确、通配、复合表达式，带标记/已知空两种候选",
       "target": "working-tree",
-      "expected_behavior": "实际新上下文精确表达式Unknown/AN3001，通配/复合消费嵌入事实得确定结果；是否应统一需维护者裁决",
-      "contract_status": "pending",
-      "verification_status": "unverified",
+      "expected_behavior": "优先消费完整已知TypeAttributes，精确、通配、复合在原/新上下文均一致；带标记Matched、已知空NotMatched，诊断为空",
+      "contract_status": "supported",
+      "verification_status": "verified",
       "verification_methods": [
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-019"
+        "EV-20261014-006",
+        "EV-20261014-010"
       ],
-      "unverified_notes": "已有实际观察，但缺少批准的语义裁决，尚不能登记为符合契约或产品违约。",
-      "pending_reason": "批准契约同时涉及直接查询所需原生关联与独立已知事实；这两条在类型特性精确快速路径中的优先级未明确，不自行新增容错承诺。"
+      "unverified_notes": ""
+    },
+    {
+      "id": "S12",
+      "adapter": "reflection",
+      "input_mode": "native_member",
+      "entry_point": "CompiledMemberPattern.Match / attr(type ...)",
+      "conditions": "TypeAttributeContextTests：TypeAttributes不可用且有/无原生关联；带标记/无标记；具体精确模式；原诊断AN3004控制",
+      "target": "working-tree",
+      "expected_behavior": "先尝试原生直接查询，有关联可得Matched/NotMatched；无关联Unknown，保留所需事实原诊断",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261014-006"
+      ],
+      "unverified_notes": ""
+    },
+    {
+      "id": "S13",
+      "adapter": "reflection",
+      "input_mode": "native_member",
+      "entry_point": "CompiledMemberPattern.Match / attr(type ...)",
+      "conditions": "TypeAttributeContextTests：TypeAttributes不可用但原生关联仍在；通配或复合类型模式",
+      "target": "working-tree",
+      "expected_behavior": "现有接口不能枚举原生特性列表，所需事实仍不可用，返回Unknown/AN3001；不把占位空当无记录",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261014-006"
+      ],
+      "unverified_notes": ""
+    },
+    {
+      "id": "S14",
+      "adapter": "roslyn",
+      "input_mode": "pe_symbol",
+      "entry_point": "Mapper.MapMethod / ReturnAttributes / attr(ret ...)",
+      "conditions": "ReadonlyReturnAttributeIdentityTests：真实标记来自SelectedMarker，多个依赖声明同名类型；读取者提供/缺失实际标记依赖",
+      "target": "working-tree",
+      "expected_behavior": "按真实构造器作用域选类型；实际依赖缺失时ReturnAttributes不可用，需该事实的查询Unknown/AN3001，RefReadOnly及普通签名独立事实保留",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261014-006"
+      ],
+      "unverified_notes": ""
     }
   ],
   "invariant_checks": [
@@ -334,11 +393,11 @@
       "capability_id": "MEM-SELECTORS-001"
     }
   ],
-  "open_findings": [
+  "open_findings": [],
+  "related_findings": [
     "FND-20261013-004",
     "FND-20261013-005"
-  ],
-  "related_findings": []
+  ]
 }
 -->
 
@@ -379,8 +438,16 @@ getter(string Name) && attr(call MarkerAttribute)
 
 ## 实现与证据
 
-[核心特性位置](../../../../tests/AspectN.Tests/Evaluation/AttributePatternTests.cs)、[真实记录一致性](../../../../tests/AspectN.Conformance.Tests/CustomAttributeRecordTests.cs)、[不实例化查询](../../../../tests/AspectN.Reflection.Tests/ReflectionMappingTests.cs)。S5的核心语法排除及S6–S9的特性继承排除已分别追加独立执行证据。新出现的PE记录身份问题和detached精确查询差异见S10/S11及关联Finding。
+[核心特性位置](../../../../tests/AspectN.Tests/Evaluation/AttributePatternTests.cs)、[真实记录一致性](../../../../tests/AspectN.Conformance.Tests/CustomAttributeRecordTests.cs)、[不实例化查询](../../../../tests/AspectN.Reflection.Tests/ReflectionMappingTests.cs)。S5的核心语法排除及S6–S9的特性继承排除已分别追加独立执行证据。已修复的PE记录身份问题和已裁决的detached精确查询差异见S10/S11及关联Finding。
 
 ## 关联与缺口
 
 CROSS-AVAILABILITY-001 治理缺失事实，GEN-BINDING-001 治理泛型特性的绑定备选，MEM-SELECTORS-001 治理访问器域。Fody 的具体真实记录一致性未由三后端测试自动推出。
+
+## 已知事实、原生回退与 PE 记录身份
+
+已知完整 TypeAttributes 优先级来自维护者2026-10-14裁决；已知空也是事实，不能无条件转到原生快速路径。S11覆盖Reflection原/新上下文，不扩张直接后端 API 的脱离关联保证。
+
+所需列表不可用时，S12的具体精确模式可由 HasDirectAttribute 恢复一个存在性事实；S13的通配、变量、复合模式仍需列表，接口没有枚举入口，也不能任意拆分同记录组合条件。不可用空是占位值。
+
+Roslyn PE 隐藏 readonly 返回标记必须从原始 MethodDef、返回 Param 和 CA 构造器作用域恢复，不从读取 Compilation 任取同名类型。S10控制普通/嵌入标记及同名依赖；S14控制实际依赖缺失时 ReturnAttributes 不可用、RefReadOnly 等独立事实仍有效。具体[回归入口](../../../../tests/AspectN.Conformance.Tests/ReadonlyReturnAttributeIdentityTests.cs)与[类型特性上下文](../../../../tests/AspectN.Conformance.Tests/TypeAttributeContextTests.cs)按场景保存证据。

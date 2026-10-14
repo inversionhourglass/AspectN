@@ -96,7 +96,17 @@ call 在访问器上表示访问器方法自身，prop 表示关联属性；exec
 
 旧位置名 callable/property/parameter/return 会产生 AN4005，应分别改为 call/prop/para/ret。get/set 也不是特性位置；要筛选访问器上的直接特性，使用上例的 getter 或 setter 与 attr(call ...) 组合。
 
-当前有两项与上下文相关的已知边界：把同一映射方法交给新的 ReflectionTypeSystem 后，精确类型特性查询可能 Unknown，而通配/复合表达式仍读取嵌入记录，统一规则[尚待裁决](../reviews/findings/FND-20261013-005.md)；Roslyn PE 的读取编译若声明了同名 IsReadOnlyAttribute，返回特性的程序集身份可能失真，[该缺陷尚未修复](../reviews/findings/FND-20261013-004.md)。前者优先复用映射时的上下文，后者需要结合原生 PE 记录核对身份。
+类型特性查询优先使用方法签名中已知完整的 TypeAttributes，已知空列表也能证明没有直接记录。对同一带标记候选，下列三种查询在原 ReflectionTypeSystem 和新实例中均为 Matched；对已知空候选均为 NotMatched：
+
+```text
+attr(type MarkerAttribute)
+attr(type Marker*)
+attr(type (MarkerAttribute || MissingAttribute))
+```
+
+完整事实不依赖迁移原生关联。若 TypeAttributes 不可用，精确可具体化模式才可尝试原生直接查询；仍不可用则 Unknown。现有接口不能枚举列表，缺列表的通配/复合/变量查询也为 Unknown，不能据占位空列表认定没有记录。[特性场景](../knowledge/capabilities/attributes/ATTR-TARGETS-001.md)记录已批准规则及缺事实对照。
+
+Roslyn 导入 PE 的只读返回标记按原始 CustomAttribute 构造器作用域恢复类型身份；读取编译中的同名类型不会替换真实记录。若实际标记依赖无法解析，ReturnAttributes 标为不可用，需要该事实的查询 Unknown/AN3001；已知 RefReadOnly 分类和不消费特性的普通签名查询仍可使用。[回归证据](../../tests/AspectN.Conformance.Tests/ReadonlyReturnAttributeIdentityTests.cs)包含普通/嵌入标记、同名读取者、多依赖和缺失依赖控制。
 
 ## 正则及错误处理
 

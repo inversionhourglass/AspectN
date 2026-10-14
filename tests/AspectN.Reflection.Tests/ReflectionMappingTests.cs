@@ -49,7 +49,7 @@ public sealed class ReflectionMappingTests
             GenericParameterOwnerKind.Method,
             methodParameter.Parameter.OwnerKind);
         Assert.EndsWith(
-            ".Echo`1(!0,!!0)",
+            ".Echo`1(!0,!!0)->!!0",
             methodParameter.Parameter.OwnerId,
             StringComparison.Ordinal);
     }
@@ -366,7 +366,8 @@ public sealed class ReflectionMappingTests
     private static string ExtractParameterForm(string ownerId)
     {
         var open = ownerId.IndexOf('(');
-        return ownerId[(open + 1)..^1];
+        var close = ownerId.IndexOf(")->", StringComparison.Ordinal);
+        return ownerId[(open + 1)..close];
     }
 
     [Fact]
@@ -563,11 +564,11 @@ public sealed class ReflectionMappingTests
         // 开放构造类型（含方法泛型参数）保留实参，占位参数用规范形式 !!0 表示。
         Assert.Equal(
             "AspectN.Reflection.Tests.OpenConstructedOwner.M`1(" +
-                $"{FrameworkType($"System.Collections.Generic.Dictionary`2<!!0,{FrameworkType("System.Int32")}>")})",
+                $"{FrameworkType($"System.Collections.Generic.Dictionary`2<!!0,{FrameworkType("System.Int32")}>")})->{FrameworkType("System.Void")}",
             first.Parameter.OwnerId);
         Assert.Equal(
             "AspectN.Reflection.Tests.OpenConstructedOwner.M`1(" +
-                $"{FrameworkType($"System.Collections.Generic.Dictionary`2<!!0,{FrameworkType("System.String")}>")})",
+                $"{FrameworkType($"System.Collections.Generic.Dictionary`2<!!0,{FrameworkType("System.String")}>")})->{FrameworkType("System.Void")}",
             second.Parameter.OwnerId);
         Assert.Equal(
             MatchStatus.NotMatched,
@@ -594,10 +595,10 @@ public sealed class ReflectionMappingTests
         // .NET 的 GenericParameterPosition 是包含链扁平编号（T=0、U=1），
         // owner ID 与 Cecil/Roslyn 的规范形式逐字节一致。
         Assert.Equal(
-            "AspectN.Reflection.Tests.NestedParamOuter`1/NestedParamInner`1.M`1(!0)",
+            $"AspectN.Reflection.Tests.NestedParamOuter`1/NestedParamInner`1.M`1(!0)->{FrameworkType("System.Void")}",
             first.Parameter.OwnerId);
         Assert.Equal(
-            "AspectN.Reflection.Tests.NestedParamOuter`1/NestedParamInner`1.M`1(!1)",
+            $"AspectN.Reflection.Tests.NestedParamOuter`1/NestedParamInner`1.M`1(!1)->{FrameworkType("System.Void")}",
             second.Parameter.OwnerId);
         Assert.Equal(
             MatchStatus.NotMatched,

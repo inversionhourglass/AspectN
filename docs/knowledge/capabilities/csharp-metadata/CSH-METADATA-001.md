@@ -37,7 +37,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-009"
+        "EV-20261014-006"
       ],
       "unverified_notes": ""
     },
@@ -55,7 +55,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-009"
+        "EV-20261014-006"
       ],
       "unverified_notes": ""
     },
@@ -73,7 +73,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-009"
+        "EV-20261014-006"
       ],
       "unverified_notes": ""
     },
@@ -91,7 +91,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-009"
+        "EV-20261014-006"
       ],
       "unverified_notes": "",
       "exclusion": {
@@ -124,7 +124,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-009"
+        "EV-20261014-006"
       ],
       "unverified_notes": ""
     },
@@ -142,7 +142,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-018"
+        "EV-20261014-010"
       ],
       "unverified_notes": ""
     },
@@ -160,7 +160,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-018"
+        "EV-20261014-010"
       ],
       "unverified_notes": ""
     },
@@ -178,7 +178,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-018"
+        "EV-20261014-010"
       ],
       "unverified_notes": ""
     },
@@ -196,7 +196,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-018"
+        "EV-20261014-010"
       ],
       "unverified_notes": ""
     }
@@ -321,3 +321,5 @@ flowchart LR
 实际特性位置依 ATTR-TARGETS-001，引用标志依 USE-REF-001。Fody 的源码/PE 一致性没有由这些三后端 fixture 自动证明；未覆盖任意编译器生成方法或所有 Roslyn 历史版本。
 
 本轮S6–S9实测partial视图：无显式状态机CA时，源实现IsAsync为true，但源定义及PE为false；直接标记记录与Tasklike分别按真实记录和返回形状匹配。Readonly返回CA身份遮蔽问题见[关联Finding](../../../reviews/findings/FND-20261013-004.md)。
+
+Readonly 返回 PE 记录的同名读取者身份遮蔽已修复；真实构造器作用域和缺实际依赖的可用性边界由 ATTR-TARGETS-001/S10、S14 及回归证据治理。S6–S9 的 partial 视图控制在当前实现上重跑，原历史事实保持。

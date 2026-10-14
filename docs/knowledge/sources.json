@@ -37,7 +37,7 @@
       "id": "SRC-AVAILABILITY",
       "path": "docs/language/metadata-availability.md",
       "role": "normative",
-      "scope": "签名可用性、读取失败、by-ref 分类和限制",
+      "scope": "签名可用性、读取失败、by-ref 分类和限制；2026-10-14维护者批准的完整类型特性事实优先级",
       "target": "working-tree",
       "approval": "approved",
       "delegated_by": [
@@ -55,6 +55,10 @@
         {
           "path": "docs/language/metadata-availability.md",
           "section": "已批准状态或明确委托的适用条款"
+        },
+        {
+          "section": "维护者裁决与适用范围",
+          "path": "docs/reviews/2026-10-14-classified-review-fixes.md"
         }
       ]
     },

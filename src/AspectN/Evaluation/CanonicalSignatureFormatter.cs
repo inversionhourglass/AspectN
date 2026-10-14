@@ -44,10 +44,14 @@ internal static class CanonicalSignatureFormatter
     {
         if (candidate.GenericArguments.Count > 0)
         {
+            if (candidate.GenericArguments.Count != GenericParameterNamer.GetMethodArity(candidate))
+                throw new CanonicalSignatureUnavailableException("Constructed callable generic arguments are incomplete.");
             AppendTypeList(builder, candidate.GenericArguments, genericNames);
             return;
         }
 
+        if (candidate.GenericParameters.Count != GenericParameterNamer.GetMethodArity(candidate))
+            throw new CanonicalSignatureUnavailableException("Callable generic declaration slots are incomplete.");
         if (candidate.GenericParameters.Count == 0) return;
         builder.Append('<');
         for (var index = 0; index < candidate.GenericParameters.Count; index++)
@@ -119,6 +123,8 @@ internal static class CanonicalSignatureFormatter
         // 开放定义没有实参，回退到按声明链合成的位置形参，类型子句因此与
         // 使用位置共用同一套 T1..Tn 编号，不会出现一侧抹名一侧保名的分裂。
         var arguments = GenericParameterNamer.GetEffectiveTypeArguments(named);
+        if (arguments.Length != chain.Sum(identity => identity.GenericArity))
+            throw new CanonicalSignatureUnavailableException("Constructed type arguments are incomplete.");
         var argumentOffset = 0;
         for (var index = 0; index < chain.Count; index++)
         {

@@ -71,6 +71,16 @@ internal static class AttributePatternEvaluator
         {
             context.CancellationToken.ThrowIfCancellationRequested();
             var (availability, fact) = GetAvailability(target, candidate);
+            // 已知完整的声明类型特性由候选快照求值；缺失时仅具体查询可由原生接口恢复。
+            if (target.Kind == AttributeTargetKind.Type && hasConcreteAttributeType && !availability.IsKnown(fact))
+            {
+                var nativeResult = context.TypeSystem.HasDirectAttribute(target, attributeType!, context.CancellationToken);
+                context.AddDiagnostics(nativeResult.Diagnostics);
+                if (nativeResult.Status == MatchStatus.Unknown)
+                    MetadataQuery.Require(availability, fact, pattern, context);
+                status = MatchLogic.Or(status, nativeResult.Status);
+                continue;
+            }
             var metadataStatus = MetadataQuery.Require(availability, fact, pattern, context);
             if (target.Kind == AttributeTargetKind.Property)
                 metadataStatus = MatchLogic.And(metadataStatus,
@@ -82,7 +92,7 @@ internal static class AttributePatternEvaluator
                     EvaluationContext.RetainAlternative(matchedTargetBranches, context.Fork(), metadataStatus);
                 continue;
             }
-            if (hasConcreteAttributeType)
+            if (hasConcreteAttributeType && target.Kind != AttributeTargetKind.Type)
             {
                 var result = context.TypeSystem.HasDirectAttribute(
                     target,
@@ -112,7 +122,8 @@ internal static class AttributePatternEvaluator
 
             context.MergeDiagnosticsFrom(branch);
             status = MatchLogic.Or(status, targetStatus);
-            EvaluationContext.RetainAlternative(matchedTargetBranches!, branch, targetStatus);
+            if (matchedTargetBranches is not null)
+                EvaluationContext.RetainAlternative(matchedTargetBranches, branch, targetStatus);
         }
 
         if (matchedTargetBranches is not null)

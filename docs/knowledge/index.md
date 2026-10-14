@@ -1,6 +1,6 @@
 # AspectN 知识库
 
-当前已按九类建档，覆盖 17 条能力、94 个具体场景。按任务先读一个分类/条目摘要，随后仅加载有关场景、依赖和规范。默认不加载历史讨论；这些记录仍不代表全部 .NET/C# 功能或所有后端、版本、输入组合。
+当前已按九类建档，覆盖 17 条能力、97 个具体场景。按任务先读一个分类/条目摘要，随后仅加载有关场景、依赖和规范。默认不加载历史讨论；这些记录仍不代表全部 .NET/C# 功能或所有后端、版本、输入组合。
 
 ## 阅读路由
 
@@ -39,4 +39,6 @@
 
 [字段说明](format.md)和[模板](templates/capability.md)供新增记录使用；[最终设计](../superpowers/specs/2026-10-12-aspectn-documentation-knowledge-base-design.md)定义治理规则。
 
-[本轮证据补齐与分类审查](../reviews/2026-10-13-capability-evidence-and-review.md)登记新场景、未修复Finding和待裁决边界；历史E阶段记录保持原结论与计数。
+[本轮证据补齐与分类审查](../reviews/2026-10-13-capability-evidence-and-review.md)保存当时新场景、未修复Finding和待裁决边界；历史E阶段记录保持原结论与计数。
+
+[五项修复与当前验证](../reviews/2026-10-14-classified-review-fixes.md)落实类型特性维护者裁决、更新当前场景证据并保留原始审查及失败报告。

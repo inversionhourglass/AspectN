@@ -64,9 +64,9 @@ public sealed class RoslynMappingTests
             typeSystem.Mapper.MapType(stringOverload.TypeParameters[0]));
 
         // 嵌套类型的构造实参按包含链逐层编入 owner ID，与 Reflection/Cecil 逐字节一致。
-        Assert.Equal($"Owner.M`1({SourceType($"Outer`1<{FrameworkType("System.Int32")}>/Inner", compilation.AssemblyName!)})", first.Parameter.OwnerId);
+        Assert.Equal($"Owner.M`1({SourceType($"Outer`1<{FrameworkType("System.Int32")}>/Inner", compilation.AssemblyName!)})->{FrameworkType("System.Void")}", first.Parameter.OwnerId);
         Assert.Equal(
-            $"Owner.M`1({SourceType($"Outer`1<{FrameworkType("System.String")}>/Inner", compilation.AssemblyName!)})",
+            $"Owner.M`1({SourceType($"Outer`1<{FrameworkType("System.String")}>/Inner", compilation.AssemblyName!)})->{FrameworkType("System.Void")}",
             second.Parameter.OwnerId);
         Assert.Equal(
             MatchStatus.NotMatched,
@@ -183,8 +183,8 @@ public sealed class RoslynMappingTests
 
         // Roslyn 的 Ordinal 相对声明类型，必须加包含链元数偏移，
         // 与 Reflection/Cecil 的 ECMA 扁平编号逐字节一致（T=!0、U=!1）。
-        Assert.Equal("Outer`1/Inner`1.M`1(!0)", ownerIds[0]);
-        Assert.Equal("Outer`1/Inner`1.M`1(!1)", ownerIds[1]);
+        Assert.Equal($"Outer`1/Inner`1.M`1(!0)->{FrameworkType("System.Void")}", ownerIds[0]);
+        Assert.Equal($"Outer`1/Inner`1.M`1(!1)->{FrameworkType("System.Void")}", ownerIds[1]);
         Assert.Equal(
             MatchStatus.NotMatched,
             typeSystem.AreEqual(mapped[0], mapped[1]).Status);
@@ -214,8 +214,8 @@ public sealed class RoslynMappingTests
             typeSystem.Mapper.MapType(refOverload.TypeParameters[0]));
 
         // ref 方式以 & 后缀编入规范身份，与 Reflection/Cecil 的元数据形状一致。
-        Assert.Equal("Fixtures.OwnerProbe.M`1(!!0)", first.Parameter.OwnerId);
-        Assert.Equal("Fixtures.OwnerProbe.M`1(!!0&)", second.Parameter.OwnerId);
+        Assert.Equal($"Fixtures.OwnerProbe.M`1(!!0)->{FrameworkType("System.Void")}", first.Parameter.OwnerId);
+        Assert.Equal($"Fixtures.OwnerProbe.M`1(!!0&)->{FrameworkType("System.Void")}", second.Parameter.OwnerId);
         Assert.Equal(
             MatchStatus.NotMatched,
             typeSystem.AreEqual(first, second).Status);
@@ -602,11 +602,11 @@ public sealed class RoslynMappingTests
         // 与 Cecil/Reflection 逐字节一致的统一文本；仅调用约定不同的重载必须区分。
         Assert.Equal(
             "FunctionPointerProbe.Convert`1(" +
-            $"delegate*[cdecl]<{FrameworkType("System.Int32")},!!0>,{FrameworkType("System.Int32")})",
+            $"delegate*[cdecl]<{FrameworkType("System.Int32")},!!0>,{FrameworkType("System.Int32")})->!!0",
             cdecl.Parameter.OwnerId);
         Assert.Equal(
             "FunctionPointerProbe.Convert`1(" +
-            $"delegate*[managed]<{FrameworkType("System.Int32")},!!0>,{FrameworkType("System.Int32")})",
+            $"delegate*[managed]<{FrameworkType("System.Int32")},!!0>,{FrameworkType("System.Int32")})->!!0",
             managed.Parameter.OwnerId);
         Assert.Equal(
             MatchStatus.NotMatched,
@@ -654,11 +654,11 @@ public sealed class RoslynMappingTests
         // RefKind；只读性不同的重载不得折叠，且文本与 Cecil 一致（!!0& 带 &）。
         Assert.Equal(
             "RefReturnProbe.Convert`1(" +
-            $"delegate*[managed]<{FrameworkType("System.Int32")}&,!!0&>,{FrameworkType("System.Int32")})",
+            $"delegate*[managed]<{FrameworkType("System.Int32")}&,!!0&>,{FrameworkType("System.Int32")})->!!0",
             refReadonlyReturn.Parameter.OwnerId);
         Assert.Equal(
             "RefReturnProbe.Convert`1(" +
-            $"delegate*[managed]<{FrameworkType("System.Int32")}&,!!0>,{FrameworkType("System.Int32")})",
+            $"delegate*[managed]<{FrameworkType("System.Int32")}&,!!0>,{FrameworkType("System.Int32")})->!!0",
             plainReturn.Parameter.OwnerId);
         Assert.Equal(
             MatchStatus.NotMatched,

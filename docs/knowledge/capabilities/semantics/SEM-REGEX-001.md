@@ -29,7 +29,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-004"
+        "EV-20261014-001"
       ],
       "unverified_notes": ""
     },
@@ -47,7 +47,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-008"
+        "EV-20261014-005"
       ],
       "unverified_notes": ""
     },
@@ -65,7 +65,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-004"
+        "EV-20261014-001"
       ],
       "unverified_notes": "",
       "exclusion": {
@@ -85,18 +85,19 @@
       "adapter": "core",
       "input_mode": "neutral",
       "entry_point": "CompiledMemberPattern.Match / CanonicalSignatureFormatter",
-      "conditions": "外部Box声明元数2但实参1，置于返回槽；方法声明形参2但构造实参1；完整构造、开放定义和结构选择器作对照",
+      "conditions": "IncompleteGenericArgumentTests：外部类型实参少于/多于声明元数，方法实参少于声明元数，嵌套有效元数；原始方法声明已知但当前槽位缺失；完整/开放/旧表示控制",
       "target": "working-tree",
-      "expected_behavior": "无法提供完整规范实参/位置槽位时应Unknown/AN3001；当前两种残缺签名的regex(.*)错误Matched且无诊断",
+      "expected_behavior": "无法提供完整规范实参或声明槽位时Unknown/AN3001；完整构造和具备完整可编号槽位的开放方法保留格式化",
       "contract_status": "supported",
-      "verification_status": "failed",
+      "verification_status": "verified",
       "verification_methods": [
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261013-017"
+        "EV-20261014-001",
+        "EV-20261014-010"
       ],
-      "unverified_notes": "已执行确认与规范预期不同；问题尚未修复，不改写支持承诺。"
+      "unverified_notes": ""
     }
   ],
   "invariant_checks": [
@@ -159,10 +160,10 @@
       "capability_id": "CROSS-RESOURCES-001"
     }
   ],
-  "open_findings": [
+  "open_findings": [],
+  "related_findings": [
     "FND-20261013-002"
-  ],
-  "related_findings": []
+  ]
 }
 -->
 
@@ -209,3 +210,5 @@ regex((?=GetName))      // 环视被排除
 泛型身份依 GEN-IDENTITY-001；限制/取消依 CROSS-RESOURCES-001。不承诺文本能区分所有 CLR 身份，更不承诺测试过所有任意正则输入。
 
 S4登记已复现的不完整泛型实参格式化问题；[关联Finding](../../../reviews/findings/FND-20261013-002.md)保留规范预期、实际结果和控制输入，不能用regex Matched证明该签名完整。
+
+S4 的残缺构造误格式化已修复：实际实参数量不符声明元数或无法提供原始声明所需完整槽位时，regex 为 Unknown/AN3001。完整构造、合法开放方法、嵌套类型总元数及旧外部表示保留执行控制，见 [IncompleteGenericArgumentTests](../../../../tests/AspectN.Tests/Evaluation/IncompleteGenericArgumentTests.cs)。

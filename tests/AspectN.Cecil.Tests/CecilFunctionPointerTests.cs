@@ -98,23 +98,23 @@ public sealed class CecilFunctionPointerTests
         // 重载也必须区分；ref readonly 的 modreq 不得使泛型参数退化为按名编码。
         Assert.Equal(
             "AspectN.Cecil.Tests.Fixtures.FunctionPointerFixture.Convert`1(" +
-            $"delegate*[cdecl]<{intForm},!!0>,{intForm})",
+            $"delegate*[cdecl]<{intForm},!!0>,{intForm})->!!0",
             ownerIds[0]);
         Assert.Equal(
             "AspectN.Cecil.Tests.Fixtures.FunctionPointerFixture.Convert`1(" +
-            $"delegate*[managed]<{intForm}&,!!0&>,{intForm})",
+            $"delegate*[managed]<{intForm}&,!!0&>,{intForm})->!!0",
             ownerIds[1]);
         Assert.Equal(
             "AspectN.Cecil.Tests.Fixtures.FunctionPointerFixture.Convert`1(" +
-            $"delegate*[managed]<{intForm}&,!!0>,{intForm})",
+            $"delegate*[managed]<{intForm}&,!!0>,{intForm})->!!0",
             ownerIds[2]);
         Assert.Equal(
             "AspectN.Cecil.Tests.Fixtures.FunctionPointerFixture.Convert`1(" +
-            $"delegate*[managed]<{intForm},!!0>,{intForm})",
+            $"delegate*[managed]<{intForm},!!0>,{intForm})->!!0",
             ownerIds[3]);
         Assert.Equal(
             "AspectN.Cecil.Tests.Fixtures.FunctionPointerFixture.Convert`1(" +
-            $"delegate*[managed]<{stringForm},!!0>,{stringForm})",
+            $"delegate*[managed]<{stringForm},!!0>,{stringForm})->!!0",
             ownerIds[4]);
         Assert.All(
             mapped,

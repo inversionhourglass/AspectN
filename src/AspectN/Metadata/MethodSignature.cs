@@ -92,6 +92,7 @@ public sealed class MethodSignature(
         _returnAttributes;
 
     /// <summary>Gets the declaring type attributes.</summary>
+    /// <remarks>Member type-attribute expressions use this complete snapshot when TypeAttributes is known in Availability, including known empty collections.</remarks>
     public IReadOnlyList<AttributeSignature> TypeAttributes =>
         _typeAttributes;
 

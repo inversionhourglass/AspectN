@@ -12,13 +12,17 @@
         {
           "path": "docs/reviews/2026-10-13-capability-evidence-and-review.md",
           "section": "分类审查与残余范围"
+        },
+        {
+          "section": "知识库与证据适用性 / 残余范围",
+          "path": "docs/reviews/2026-10-14-classified-review-fixes.md"
         }
       ],
       "assessment_status": "reviewed",
       "capability_ids": [
         "GEN-IDENTITY-001"
       ],
-      "notes": "本轮已审查声明/闭合上下文；真实返回类型不同CLI重载存在FND-20261013-003，新增原生视图失败场景，不外推Roslyn源码或约束串用。"
+      "notes": "2026-10-14修复真实CLI返回重载身份碰撞，GEN-IDENTITY/S4–S7分别有当前Cecil/Fody、Reflection、Roslyn PE证据；闭合返回形状控制为所列fixture，不外推任意修饰符/变量串用。"
     },
     {
       "id": "INV-0002",
@@ -65,13 +69,17 @@
         {
           "path": "docs/reviews/2026-10-13-capability-evidence-and-review.md",
           "section": "分类审查与残余范围"
+        },
+        {
+          "section": "知识库与证据适用性 / 残余范围",
+          "path": "docs/reviews/2026-10-14-classified-review-fixes.md"
         }
       ],
       "assessment_status": "reviewed",
       "capability_ids": [
         "CROSS-AVAILABILITY-001"
       ],
-      "notes": "缺事实与取消边界已审查；detached闭包取消违约见FND-20261013-001；已知类型特性/新上下文路径优先级待FND-20261013-005裁决。"
+      "notes": "2026-10-14修复detached闭包取消；完整已知TypeAttributes优先级已获维护者批准并实现，缺列表精确回退/非具体Unknown和PE缺标记依赖分别有场景。"
     },
     {
       "id": "INV-0005",
@@ -153,13 +161,17 @@
         {
           "path": "docs/reviews/2026-10-13-capability-evidence-and-review.md",
           "section": "分类审查与残余范围"
+        },
+        {
+          "section": "知识库与证据适用性 / 残余范围",
+          "path": "docs/reviews/2026-10-14-classified-review-fixes.md"
         }
       ],
       "assessment_status": "reviewed",
       "capability_ids": [
         "GEN-BINDING-001"
       ],
-      "notes": "变量/声明元数已审查；不完整非空方法实参误写元数的执行反例见FND-20261013-002，不将公开外部不完整模型改成H1排除。"
+      "notes": "2026-10-14修复不完整泛型实参改写声明元数；原始正元数、当前残缺槽位、完整/开放/旧外部表示均有当前核心回归。"
     },
     {
       "id": "INV-0009",
@@ -226,13 +238,17 @@
         {
           "path": "docs/reviews/2026-10-13-capability-evidence-and-review.md",
           "section": "分类审查与残余范围"
+        },
+        {
+          "section": "知识库与证据适用性 / 残余范围",
+          "path": "docs/reviews/2026-10-14-classified-review-fixes.md"
         }
       ],
       "assessment_status": "reviewed",
       "capability_ids": [
         "ATTR-TARGETS-001"
       ],
-      "notes": "旧长位置名/get/set与继承排除已分阶段补证；同名读者造成Roslyn PE真实返回CA身份失真已确认，detached精确查询差异待裁决；均有独立Finding，不虚构全组合通过。 2026-10-13由/root/core_capability_review接手并完成限定最终复核；范围、证据与残余限制见本轮审查记录。"
+      "notes": "2026-10-14修复Roslyn PE返回CA同名读取者身份失真；类型特性优先级已裁决，新增ATTR/S12–S14区分精确原生回退、缺列表和实际标记依赖缺失。旧语法/继承排除仍按四视图实际证据，不外推Fody全部CA组合。"
     },
     {
       "id": "INV-0012",
@@ -253,13 +269,17 @@
         {
           "path": "docs/reviews/2026-10-13-capability-evidence-and-review.md",
           "section": "分类审查与残余范围"
+        },
+        {
+          "section": "知识库与证据适用性 / 残余范围",
+          "path": "docs/reviews/2026-10-14-classified-review-fixes.md"
         }
       ],
       "assessment_status": "reviewed",
       "capability_ids": [
         "SEM-REGEX-001"
       ],
-      "notes": "正则子集与资源范围已审查；残缺泛型实参格式化反例见FND-20261013-002，旧有限子集/超时证据仍适用于已执行输入。"
+      "notes": "2026-10-14修复残缺泛型规范格式化，SEM-REGEX/S4及旧子集/超时/预算用例在当前代码快照重跑；不推断任意正则输入均覆盖。"
     },
     {
       "id": "INV-0013",
@@ -280,6 +300,10 @@
         {
           "path": "docs/reviews/2026-10-13-capability-evidence-and-review.md",
           "section": "分类审查与残余范围"
+        },
+        {
+          "section": "知识库与证据适用性 / 残余范围",
+          "path": "docs/reviews/2026-10-14-classified-review-fixes.md"
         }
       ],
       "assessment_status": "reviewed",
@@ -287,7 +311,7 @@
         "CROSS-RESOURCES-001",
         "CROSS-LIFETIME-001"
       ],
-      "notes": "取消/资源/生命周期已审查；无关联闭包提前返回吞掉取消见FND-20261013-001，不影响原生关联候选的原限定通过范围；不承诺所有GC时机。"
+      "notes": "2026-10-14修复无关联闭包吞预先取消，Cecil/Fody分别验证；完整已知类型特性可消费独立快照，其他原生关系仍需关联；不承诺全部GC时机或线程调度。"
     },
     {
       "id": "INV-0014",
@@ -350,13 +374,17 @@
         {
           "path": "docs/reviews/2026-10-13-capability-evidence-and-review.md",
           "section": "分类审查与残余范围"
+        },
+        {
+          "section": "知识库与证据适用性 / 残余范围",
+          "path": "docs/reviews/2026-10-14-classified-review-fixes.md"
         }
       ],
       "assessment_status": "reviewed",
       "capability_ids": [
         "CSH-METADATA-001"
       ],
-      "notes": "新增partial源定义/实现/PE的IsAsync原生对照，真实记录和tasklike分别治理；只读返回标记身份遮蔽见FND-20261013-004；原元数据审查者因配额中断；主代理完成复现后，已由另一位非作者完成终审。 2026-10-13由/root/core_capability_review接手并完成限定最终复核；范围、证据与残余限制见本轮审查记录。"
+      "notes": "partial源定义/实现/PE原生IsAsync、实际记录与tasklike控制在当前代码重跑；只读返回CA身份遮蔽已修复，实际缺失标记依赖另列ATTR/S14。"
     },
     {
       "id": "INV-0017",

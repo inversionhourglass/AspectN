@@ -125,7 +125,7 @@ public sealed class CecilTypeMappingTests
         Assert.Equal(
             GenericParameterOwnerKind.Method,
             methodParameter.Parameter.OwnerKind);
-        Assert.Equal("Example.Box`1.Map`1()", methodParameter.Parameter.OwnerId);
+        Assert.Equal($"Example.Box`1.Map`1()->{FrameworkType("System.Void")}", methodParameter.Parameter.OwnerId);
         Assert.Equal(0, methodParameter.Parameter.Position);
     }
 
@@ -167,9 +167,9 @@ public sealed class CecilTypeMappingTests
         var second = Assert.IsType<GenericParameterTypeSignature>(
             typeSystem.Mapper.MapType(doubleParameter.GenericParameters[0]));
 
-        Assert.Equal("Example.Overloads.Map`1(!!0)", first.Parameter.OwnerId);
+        Assert.Equal($"Example.Overloads.Map`1(!!0)->{FrameworkType("System.Void")}", first.Parameter.OwnerId);
         Assert.Equal(
-            $"Example.Overloads.Map`1(!!0,{FrameworkType("System.Int32")})",
+            $"Example.Overloads.Map`1(!!0,{FrameworkType("System.Int32")})->{FrameworkType("System.Void")}",
             second.Parameter.OwnerId);
         Assert.Equal(
             MatchStatus.NotMatched,
@@ -303,10 +303,10 @@ public sealed class CecilTypeMappingTests
         // 嵌套声明的类型参数按 ECMA 扁平编号编码（外层 T=!0、内层 U=!1），
         // 三个适配器对同一形状产出逐字节一致的 owner ID。
         Assert.Equal(
-            "AspectN.Cecil.Tests.NestedParamOuter`1/NestedParamInner`1.M`1(!0)",
+            $"AspectN.Cecil.Tests.NestedParamOuter`1/NestedParamInner`1.M`1(!0)->{FrameworkType("System.Void")}",
             ownerIds[0]);
         Assert.Equal(
-            "AspectN.Cecil.Tests.NestedParamOuter`1/NestedParamInner`1.M`1(!1)",
+            $"AspectN.Cecil.Tests.NestedParamOuter`1/NestedParamInner`1.M`1(!1)->{FrameworkType("System.Void")}",
             ownerIds[1]);
         Assert.Equal(
             MatchStatus.NotMatched,

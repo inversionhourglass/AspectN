@@ -8,7 +8,7 @@
 }
 -->
 
-本章区分表达式无法表示的条件、输入缺少所需事实、超出实现资源上限，以及已确认但未修复的实现问题。编译失败、匹配返回 Unknown 和映射抛异常发生在不同阶段，处理方式也不同。
+本章区分表达式无法表示的条件、输入缺少所需事实、超出实现资源上限，以及已修复问题的历史记录。编译失败、匹配返回 Unknown 和映射抛异常发生在不同阶段，处理方式也不同。
 
 下面的片段使用 `AspectN`、`AspectN.Metadata`、`AspectN.Reflection`、`AspectN.Evaluation` 命名空间，以及同一个引擎和类型系统：
 
@@ -254,18 +254,27 @@ public class DerivedApi : BaseApi
 
 这属于已批准的查询范围，不是元数据丢失。需按 C# 特性继承规则查找时，由调用方执行原生继承查询；不要通过 + 类型关系语法假设 attr 也继承。具体[特性场景及四视图证据](../knowledge/capabilities/attributes/ATTR-TARGETS-001.md)区分继承排除和语法排除。
 
-## 12. 外部残缺泛型签名目前存在误判
+## 12. 残缺泛型签名按所需事实求值
 
 ```csharp
 var partial = new NamedTypeSignature(
     new TypeIdentity(new AssemblyIdentity("Review"), "Review", "Box", 2, AspectN.Metadata.TypeKind.Class),
     [typeSystem.Mapper.MapType(typeof(int))]);
-// 声明元数是 2，却只提供 1 个构造实参；公开模型当前接受这个输入。
+// 声明元数是 2，却只提供 1 个构造实参；公开模型接受这个输入。
 ```
 
-把 partial 放入方法返回槽后，当前 regex(.*) 错误返回 Matched/空诊断，结构类型模式 Review.Box<int, int> 则返回 Unknown/AN3001。声明形参有两个、实参只有一个的方法签名还会使 M<int> 错误 Matched、M<int,string> 错误 NotMatched。契约要求保持已知声明元数，所需实参缺失时返回 Unknown，而不能把残缺列表当成完整签名。
+把 partial 放入方法返回槽后，`regex(.*)` 与需要两个具体实参的结构模式 `Review.Box<int, int>` 都返回 Unknown/AN3001，不能把残缺实参列表格式化成完整签名。仅约束已知元数的模式 `Review.Box<,>` 可得 Matched；已知元数不符可直接得 NotMatched。
 
-这些是[未修复的实现缺陷](../reviews/findings/FND-20261013-002.md)，不构成“不支持外部签名”的排除。外部签名生产者应保留完整实参列表和准确的可用性信息；消费方在修复前不要把这些输入的确定结果用于判定。开放泛型定义的零实参与残缺构造输入不同，不能按上述规则直接拒绝开放定义。[可运行探针](../reviews/reproductions/2026-10-13-capability-boundaries/README.md)包含完整、开放和残缺三组对照。
+同理，方法声明形参有两个、构造实参只有一个时：
+
+| 表达式 | 结果 | 原因 |
+| --- | --- | --- |
+| `method(* M<int>(..))` | NotMatched | 声明元数 2 与模式元数 1 不符 |
+| `method(* M<int,string>(..))` | Unknown/AN3001 | 元数相符，但缺少所需构造实参 |
+| `method(* M<,>(..))` | Matched | 仅要求已知的两槽元数，不消费具体实参 |
+| `regex(.*)` | Unknown/AN3001 | 无法提供完整规范签名 |
+
+这个[历史误判已修复](../reviews/findings/FND-20261013-002.md)，不是“不支持外部签名”的排除。外部生产者应保留准确声明、完整实参和可用性；有原始声明时也不能凭当前残缺槽位改写已知元数。开放定义的零构造实参与残缺构造输入不同：有完整声明槽位的开放方法可以格式化，缺少可编号形参事实的外部开放类型仍可能 Unknown。[回归测试](../../tests/AspectN.Tests/Evaluation/IncompleteGenericArgumentTests.cs)和[原探针](../reviews/reproductions/2026-10-13-capability-boundaries/README.md)保留完整、开放、残缺输入及原始声明对照。
 
 ## 13. CLI 可以包含 C# 无法声明的返回类型重载
 
@@ -274,6 +283,6 @@ int    M<T>(T value) where T : IDisposable
 string M<T>(T value) where T : IComparable
 ```
 
-上例仅用于说明 CLI 签名，不能复制为 C# 重载声明。已发射、加载并实际调用的两个 PE 方法在 Cecil/Fody、Reflection 和 Roslyn PE 中，泛型声明形参被赋予相同 OwnerId，AreEqual 错误返回 Matched；它们应保持不同声明身份。
+上例说明 CLI 签名，不能复制为 C# 重载声明。当前实现将原始声明的返回形状纳入方法声明者身份；真实发射、加载并调用的两个 PE 方法，在 Cecil/Fody、Reflection 和 Roslyn PE 中保持不同泛型形参 OwnerId，AreEqual 为 NotMatched。[历史碰撞及修复证据](../reviews/findings/FND-20261013-003.md)保留原始事实。
 
-[身份缺陷尚未修复](../reviews/findings/FND-20261013-003.md)。分析外国 IL 时，不要只凭该 OwnerId 或形参 AreEqual 合并方法；保留原生方法声明及返回签名以区分。已确认的影响限于类型相等查询，没有执行证据证明所有变量绑定或约束查询都会串用。
+闭合声明类型也不会改写方法形参的声明身份，返回值与约束查询仍使用各自的闭合上下文。OwnerId 的字符串编码是实现细节，不承诺旧文本永久稳定；使用结构身份比较，避免按显示文本合并声明。已执行的返回形状控制见[跨后端回归](../../tests/AspectN.Conformance.Tests/ReturnShapeOwnerIdentityTests.cs)，不由此推断所有变量绑定或任意 CLI 修饰符组合已验证。

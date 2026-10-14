@@ -201,6 +201,7 @@ public sealed partial class RoslynSignatureMapper
                 methodSymbol,
                 methodSymbol.ConstructedFrom);
         var associatedProperty = methodSymbol.AssociatedSymbol as IPropertySymbol;
+        var returnAttributes = MapReturnAttributes(methodSymbol, out var returnAvailability);
 
         return new MethodSignature(
             methodSymbol.Name,
@@ -226,7 +227,7 @@ public sealed partial class RoslynSignatureMapper
                 ? methodSymbol.TypeArguments.Select(MapType).ToArray()
                 : Array.Empty<TypeSignature>(),
             MapMethodAttributes(methodSymbol),
-            MapReturnAttributes(methodSymbol),
+            returnAttributes,
             // 声明类型特性：attr(type ...) 通配/复合查询需要（对应旧 Shared 的 AttributeSignatures.Types）。
             MapAttributes(
                 methodSymbol.ContainingType.GetAttributes(),
@@ -236,7 +237,8 @@ public sealed partial class RoslynSignatureMapper
                 : null,
             associatedProperty is null
                 ? null
-                : MapProperty(associatedProperty));
+                : MapProperty(associatedProperty),
+            availability: returnAvailability);
     }
 
     private PropertySignature MapPropertyCore(IPropertySymbol propertySymbol)
@@ -312,13 +314,26 @@ public sealed partial class RoslynSignatureMapper
         return AddCompilerAttribute(attributes, marker, AttributeTargetKind.Parameter, parameter.Ordinal);
     }
 
-    private AttributeSignature[] MapReturnAttributes(IMethodSymbol method)
+    private AttributeSignature[] MapReturnAttributes(IMethodSymbol method, out MetadataAvailability availability)
     {
+        availability = MetadataAvailability.Complete;
         var attributes = MapAttributes(method.GetReturnTypeAttributes(), AttributeTargetKind.Return);
-        // PE 的 readonly ref 分类由真实 IsReadOnlyAttribute 记录确定，但 GetReturnTypeAttributes 会隐藏它。
-        return method.ReturnsByRefReadonly
-            ? AddCompilerAttribute(attributes, "System.Runtime.CompilerServices.IsReadOnlyAttribute", AttributeTargetKind.Return)
-            : attributes;
+        if (!method.ReturnsByRefReadonly) return attributes;
+        var definition = method.OriginalDefinition;
+        var metadata = definition.ContainingModule.GetMetadata();
+        if (metadata is null)
+            return AddCompilerAttribute(attributes, "System.Runtime.CompilerServices.IsReadOnlyAttribute", AttributeTargetKind.Return);
+        try
+        {
+            // Roslyn隐藏PE readonly返回记录；准确MethodDef和真实构造器Scope恢复其类型身份。
+            return MapPeReturnAttributes(definition, metadata.GetMetadataReader(), attributes, out availability);
+        }
+        catch (Exception exception) when (exception is BadImageFormatException or ArgumentException or InvalidOperationException)
+        {
+            availability = ReturnAttributeUnavailable(AspectN.Diagnostics.DiagnosticCodes.ResolutionFailure,
+                "The PE return attributes could not be read.");
+            return attributes;
+        }
     }
 
     private AttributeSignature[] AddCompilerAttribute(AttributeSignature[] attributes, string? name,
@@ -578,7 +593,7 @@ public sealed partial class RoslynSignatureMapper
     private string GetMethodOwnerId(IMethodSymbol method)
     {
         var definition = method.OriginalDefinition;
-        // 参数形状（含 ref 方式的 & 后缀）参与 owner ID 以区分重载；
+        // 原始声明的参数和返回形状（含ref方式的&后缀）共同区分CLI重载；
         // 构造规则与 Reflection、Cecil 适配器保持一致。
         var parameters = definition.Parameters
             .Select(parameter => CanonicalParameterForm(parameter.Type) +
@@ -588,7 +603,8 @@ public sealed partial class RoslynSignatureMapper
             .ToArray();
         return $"{MapIdentity(definition.ContainingType).FullMetadataName}." +
                $"{definition.Name}`{definition.Arity}" +
-               $"({string.Join(",", parameters)})";
+               $"({string.Join(",", parameters)})->{CanonicalParameterForm(definition.ReturnType)}" +
+               (definition.RefKind == Microsoft.CodeAnalysis.RefKind.None ? string.Empty : "&");
     }
 
     private string CanonicalParameterForm(ITypeSymbol type, bool qualifyAssembly = true)

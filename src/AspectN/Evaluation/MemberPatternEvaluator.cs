@@ -251,9 +251,7 @@ internal static class MemberPatternEvaluator
         BoundNode owner,
         EvaluationContext context)
     {
-        var arity = candidate.GenericArguments.Count > 0
-            ? candidate.GenericArguments.Count
-            : candidate.GenericParameters.Count;
+        var arity = GenericParameterNamer.GetMethodArity(candidate);
         if (pattern is null)
         {
             return arity == 0
