@@ -16,6 +16,10 @@
     {
       "path": "docs/superpowers/specs/2026-07-31-aspectn-redesign-design.md",
       "section": "8.1 / 8.4 / 8.5"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+      "section": "21"
     }
   ],
   "scenarios": [
@@ -119,6 +123,24 @@
         ],
         "failure_behavior": "绑定拒绝，无有效模式"
       }
+    },
+    {
+      "id": "S6",
+      "adapter": "core",
+      "input_mode": "neutral",
+      "entry_point": "CompiledTypePattern.Match / CompiledMemberPattern.Match / GetInheritanceClosure",
+      "conditions": "InheritanceClosureLimitTests：受控第三方闭包返回公共构造器建立的结构合法中立祖先；实参深度、包含链深度、声明/实参/包含链元数超限；正常祖先两种顺序、后续变量筛选、否定、成员返回槽、原闭包诊断与取消对照",
+      "target": "working-tree",
+      "expected_behavior": "超限祖先不进入实际求值或绑定，Unknown/AN3005或AN3006与直接输入一致；继续其他祖先并保留未知备选，正常匹配可使最终Matched且限制诊断保留；64边界及具体目标后端路径保持原行为",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261021-002"
+      ],
+      "unverified_notes": "此场景验证核心消费第三方闭包，不证明内置适配器会生成超限祖先，也不证明循环或无限输入的行为。"
     }
   ],
   "invariant_checks": [
@@ -186,7 +208,9 @@
     }
   ],
   "open_findings": [],
-  "related_findings": []
+  "related_findings": [
+    "FND-20261021-002"
+  ]
 }
 -->
 
@@ -209,6 +233,8 @@
 ## 阶段失败
 
 非法 + 目标 AN2010；命名空间泛型子句 AN2011。缺少关联/必需祖先可能 Unknown；已知匹配分支不被另一个未知分支掩盖。匹配不是完整运行时 IsAssignableFrom 的替代。
+
+S6 限定核心消费第三方中立闭包：祖先超过结构深度或有效元数上限时为 Unknown/AN3005或AN3006，保留诊断并继续其他祖先；正常匹配仍可支配未知，未确定的绑定备选在后续合取中保留。检查先于实际模式求值，因此即使只看名称或绑定一个实参就能结束，也不能绕过上限。参见 [C05 修复记录](../../../reviews/2026-10-21-c05-inheritance-closure-limits.md)。
 
 ## 例子与边界
 

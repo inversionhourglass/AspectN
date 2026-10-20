@@ -1,0 +1,226 @@
+{
+  "schema_version": 1,
+  "id": "EV-20261021-002",
+  "method": "automated",
+  "scenario_refs": [
+    {
+      "capability_id": "CROSS-RESOURCES-001",
+      "scenario_id": "S1"
+    },
+    {
+      "capability_id": "TYPE-NOMINAL-001",
+      "scenario_id": "S6"
+    }
+  ],
+  "oracle_refs": [
+    {
+      "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+      "section": "21"
+    },
+    {
+      "path": "docs/reviews/2026-10-21-c05-inheritance-closure-limits.md",
+      "section": "范围与根因 / 修复与控制"
+    }
+  ],
+  "procedure": "dotnet test tests/AspectN.Tests/AspectN.Tests.csproj -c Release --no-restore --disable-build-servers -m:1 --filter FullyQualifiedName~InheritanceClosureLimitTests --logger trx --results-directory artifacts/c05-fix/green -v:minimal\ndotnet build AspectN.sln -c Release --no-restore --disable-build-servers -m:1 -v:minimal\ndotnet test AspectN.sln -c Release --no-build --no-restore -m:1 --logger trx --results-directory artifacts/c05-fix/final -v:minimal\ndotnet format AspectN.sln --verify-no-changes --no-restore --verbosity quiet\npwsh -NoProfile -File eng/generate-knowledge.ps1\npwsh -NoProfile -File eng/generate-knowledge.ps1 -Check\npwsh -NoProfile -File eng/verify-documentation.ps1",
+  "result": "passed",
+  "recorded_on": "2026-10-21",
+  "environment": {
+    "os": "Windows",
+    "sdk": "10.0.401",
+    "runtime": "10.0.12",
+    "cecil": "0.11.5",
+    "fody_helpers": "6.8.1",
+    "roslyn": "4.12.0",
+    "compatibility_targets": [
+      "net472",
+      "net10.0，加载netstandard2.0资产"
+    ],
+    "notes": "当前Windows及已列依赖版本；新增用例针对核心消费受控第三方中立闭包，不证明内置适配器会返回超限图。完整矩阵在允许VSTest本地通信的沙箱外运行。"
+  },
+  "code_state": {
+    "head": "90c4e94a017ed09570a1a78ddd8e10caaa898075",
+    "dirty": true,
+    "files": [
+      {
+        "path": "src/AspectN/Evaluation/TypePatternEvaluator.cs",
+        "sha256": "4b3206e91dee1d211f256e4b35f3e4ccae2f926487eb81717c62b5301846b3f9"
+      },
+      {
+        "path": "src/AspectN/Evaluation/MetadataLimitGuard.cs",
+        "sha256": "447687e45c832f54f6317724e4930c9d97a6c532a74293c12adf22f8c8b934b0"
+      },
+      {
+        "path": "src/AspectN/Evaluation/EvaluationContext.cs",
+        "sha256": "cf20a49413fc6eb35a38101a06fe042aa7fe0c4c900ba324dac66d3067751e0c"
+      },
+      {
+        "path": "src/AspectN/Evaluation/BindingEnvironment.cs",
+        "sha256": "2f5a7067a4a05a0063e88a45a1c5b46b7ec34068e4115700119315c4f8c2022a"
+      },
+      {
+        "path": "src/AspectN/Evaluation/MatchLogic.cs",
+        "sha256": "b5b3e981301c39e85eceb690da0363d3128a6341775ddc834a83ece09810903f"
+      },
+      {
+        "path": "src/AspectN/CompiledTypePattern.cs",
+        "sha256": "0b75edef7fbd2400090c484edcaef227c971ba01652bce6d3b2b3b0e821b4897"
+      },
+      {
+        "path": "src/AspectN/CompiledMemberPattern.cs",
+        "sha256": "8cd3b5a28cdff3797e2ecd18b5d5c8085d6bd6ab4a516d05506f92eb5efa9db8"
+      },
+      {
+        "path": "src/AspectN/Metadata/GenericParameterNamer.cs",
+        "sha256": "1a81bb1bc5736f80e6d8c826d8c8eb36883133ebb56fd0a1a80cd07d6414dada"
+      },
+      {
+        "path": "src/AspectN/Metadata/GenericSignatureValidation.cs",
+        "sha256": "29611465a8b14f913d7c2c77044bfd4f90ec68d8f985dfd689b14ef7e55f6530"
+      },
+      {
+        "path": "src/AspectN/Metadata/TypeSignature.cs",
+        "sha256": "4caff90ba0fb2853ff8eaa540c9b7f1367c9d0dc963bd01c8588571ab3467a12"
+      },
+      {
+        "path": "src/AspectN/AspectNLimits.cs",
+        "sha256": "23167fd2e5b4c137488accc6f786e34729c615ab050aed514b16edd09077aefc"
+      },
+      {
+        "path": "tests/AspectN.Tests/Evaluation/InheritanceClosureLimitTests.cs",
+        "sha256": "5d8b76065f30555218b33b6a4c78181217c6039dc514bb490ec28235041ac375"
+      },
+      {
+        "path": "tests/AspectN.Tests/TestDoubles/StubTypeSystem.cs",
+        "sha256": "64a141d4882e7f3716f38591d0329d481ec2d9baf87c6f296cd8e5f9f14504e8"
+      },
+      {
+        "path": "Directory.Build.props",
+        "sha256": "21511672e6680b86521f1d2d275e9fe2d914092073007c8be353f3202c38115a"
+      },
+      {
+        "path": "Directory.Packages.props",
+        "sha256": "a0df07b7d4df78415d87666c16e30c665d285d0e39ed9d300c52aeb7a3837c9a"
+      },
+      {
+        "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+        "sha256": "0e4edd9a139229189e31a72d87b1a60a29371d385b2b9cc042d411ff16b06de6"
+      }
+    ]
+  },
+  "dependency_scope": {
+    "paths": [
+      "src/AspectN/Evaluation/TypePatternEvaluator.cs",
+      "src/AspectN/Evaluation/MetadataLimitGuard.cs",
+      "src/AspectN/Evaluation/EvaluationContext.cs",
+      "src/AspectN/Evaluation/BindingEnvironment.cs",
+      "src/AspectN/Evaluation/MatchLogic.cs",
+      "src/AspectN/CompiledTypePattern.cs",
+      "src/AspectN/CompiledMemberPattern.cs",
+      "src/AspectN/Metadata/GenericParameterNamer.cs",
+      "src/AspectN/Metadata/GenericSignatureValidation.cs",
+      "src/AspectN/Metadata/TypeSignature.cs",
+      "src/AspectN/AspectNLimits.cs",
+      "tests/AspectN.Tests/Evaluation/InheritanceClosureLimitTests.cs",
+      "tests/AspectN.Tests/TestDoubles/StubTypeSystem.cs",
+      "Directory.Build.props",
+      "Directory.Packages.props",
+      "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md"
+    ],
+    "environment_keys": [
+      "sdk",
+      "runtime",
+      "cecil",
+      "fody_helpers",
+      "roslyn",
+      "compatibility_targets"
+    ]
+  },
+  "revalidation_conditions": "祖先模式遍历、MetadataLimitGuard、Unknown备选/变量绑定合并、诊断、类型签名合成或规范第21节变化时重跑；编译器/运行时与测试依赖变化时重评估矩阵。不将当前有限闭包证明扩展为循环、无限输入或所有第三方实现的保证。",
+  "observations": {
+    "red": "基线90c4e94上最终修正fixture的27项用例为20失败7通过；构造实参深度错误Matched、包含链深度错误NotMatched、包含链元数AspectNLimitException外抛，正常分支组合缺失限制诊断。通过项为64边界和控制路径。未以编译失败或错误fixture断言作为最终红灯证据。",
+    "scope": "CROSS-RESOURCES/S1新增逐祖先检查；TYPE-NOMINAL/S6单列第三方有限中立闭包。27项覆盖五类上限、直接/闭包、正常祖先两种顺序、后续变量备选、否定、成员返回槽、原闭包诊断、诊断去重、取得闭包后取消及具体目标后端路径。",
+    "limitations": "不变更公开API、限制数值或语言契约；不证明内置适配器会生成超限祖先，不新增循环/无限输入、任意第三方或性能承诺。C06/C07未处理。既有矩阵重跑不扩大旧证据范围。",
+    "focused": {
+      "total": 27,
+      "passed": 27,
+      "failed": 0,
+      "skipped": 0
+    },
+    "final": {
+      "total": 2013,
+      "passed": 2013,
+      "failed": 0,
+      "skipped": 0,
+      "projects": [
+        {
+          "project": "AspectN.Tests",
+          "target": "net10.0",
+          "total": 1160,
+          "passed": 1160,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.Cecil.Tests",
+          "target": "net10.0",
+          "total": 184,
+          "passed": 184,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.Reflection.Tests",
+          "target": "net10.0",
+          "total": 109,
+          "passed": 109,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.Roslyn.Tests",
+          "target": "net10.0",
+          "total": 28,
+          "passed": 28,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.Conformance.Tests",
+          "target": "net10.0",
+          "total": 331,
+          "passed": 331,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.NetFramework.Tests",
+          "target": "net472",
+          "total": 7,
+          "passed": 7,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.NetFramework.Tests",
+          "target": "net10.0",
+          "total": 8,
+          "passed": 8,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.Cecil.Fody.Tests",
+          "target": "net10.0",
+          "total": 186,
+          "passed": 186,
+          "failed": 0,
+          "not_executed": 0
+        }
+      ],
+      "build": "Release，零警告、零错误",
+      "format": "verify-no-changes通过",
+      "logs": "artifacts/c05-fix/final（本地忽略目录）"
+    }
+  }
+}

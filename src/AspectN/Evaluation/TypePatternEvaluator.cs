@@ -387,7 +387,12 @@ internal static class TypePatternEvaluator
         {
             cancellationToken.ThrowIfCancellationRequested();
             var branch = context.Fork();
-            var branchStatus = Evaluate(pattern.TargetType, ancestor, branch);
+            // 后端返回的中立祖先也受限制；超限时保留未知备选，不求值或绑定其内部结构。
+            var failure = MetadataLimitGuard.GetFailure(ancestor, cancellationToken);
+            if (failure is not null) branch.AddDiagnostic(failure);
+            var branchStatus = failure is null
+                ? Evaluate(pattern.TargetType, ancestor, branch)
+                : MatchStatus.Unknown;
             context.MergeDiagnosticsFrom(branch);
             status = MatchLogic.Or(status, branchStatus);
             EvaluationContext.RetainAlternative(alternatives, branch, branchStatus);

@@ -3,7 +3,7 @@
 <!-- aspectn-usage:v1
 {
   "schema_version": 1,
-  "capability_ids": ["GEN-IDENTITY-001", "GEN-BINDING-001", "USE-REF-001", "USE-ARRAY-001", "ATTR-TARGETS-001", "SEM-REGEX-001", "CSH-METADATA-001", "CROSS-AVAILABILITY-001", "CROSS-LOGIC-001"],
+  "capability_ids": ["GEN-IDENTITY-001", "GEN-BINDING-001", "USE-REF-001", "USE-ARRAY-001", "ATTR-TARGETS-001", "SEM-REGEX-001", "CSH-METADATA-001", "CROSS-AVAILABILITY-001", "CROSS-LOGIC-001", "CROSS-RESOURCES-001", "TYPE-NOMINAL-001"],
   "inventory_refs": ["INV-0006", "INV-0007", "INV-0008", "INV-0009", "INV-0010", "INV-0012", "INV-0013", "INV-0015"]
 }
 -->
@@ -194,6 +194,8 @@ Console.WriteLine(result.Status); // Unknown，附 AN3005
 ```
 
 原生映射深度超限抛异常；已构造中立签名的匹配返回 Unknown。元数超限对应 AN3006。不要把超限当作普通元数据缺失，也不要自设解析深度、正则超时或规范文本阈值；完整约定见[规范第 21 节](../superpowers/specs/2026-07-31-aspectn-language-spec.md)。
+
+自定义 `ITypeSystem` 为含变量或通配目标的 `+` 模式返回祖先时，每个祖先也经过深度和元数检查。例如 `Box<$T>+` 遇到总结构深度 65 的祖先，不会绑定其超限实参，而是保留 Unknown/AN3005 并继续其他祖先。另一个正常祖先确定匹配时，最终仍为 Matched，限制诊断也保留；没有确定匹配时保留 Unknown。相同规则适用于成员返回/参数中的关系模式，详见 [C05 回归记录](../reviews/2026-10-21-c05-inheritance-closure-limits.md)。
 
 ## 9. 空集合、未知事实与人工损坏输入
 

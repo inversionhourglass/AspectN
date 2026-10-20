@@ -24,16 +24,17 @@
       "adapter": "core",
       "input_mode": "neutral",
       "entry_point": "Parse/Compile / CompiledPattern.Match",
-      "conditions": "InputDepthTests、SignatureLimitTests、RegexPatternTests 和 MemberPathTests 的实际边界及取消 fixture",
+      "conditions": "InputDepthTests、SignatureLimitTests、RegexPatternTests 和 MemberPathTests 的实际边界及取消 fixture；InheritanceClosureLimitTests 的第三方祖先深度/元数、64边界、正常分支顺序和Unknown绑定备选",
       "target": "working-tree",
-      "expected_behavior": "结构深度64含根、类型有效元数64和方法自身元数64；解析/编译给诊断，外部中立匹配超限 Unknown；取消传播",
+      "expected_behavior": "结构深度64含根、类型有效元数64和方法自身元数64；解析/编译给诊断，外部中立匹配超限 Unknown；取消传播；核心闭包模式遍历对每个祖先先检查限制，超限为Unknown并保留诊断和备选，继续其他祖先，确定匹配仍为Matched",
       "contract_status": "supported",
       "verification_status": "verified",
       "verification_methods": [
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-001"
+        "EV-20261014-001",
+        "EV-20261021-002"
       ],
       "unverified_notes": ""
     },
@@ -210,7 +211,8 @@
   ],
   "open_findings": [],
   "related_findings": [
-    "FND-20261013-001"
+    "FND-20261013-001",
+    "FND-20261021-002"
   ]
 }
 -->
@@ -230,6 +232,8 @@
 ## 分层能力
 
 适配器在递归关联、缓存键和位置实参合成前检查原生深度/元数；核心在匹配前检查外部中立输入；格式化器追加前检查预算并遵守取消，正则超时随后才开始。
+
+核心对第三方闭包返回的每个祖先也先运行限制检查。超限祖先不进入模式求值或变量绑定，只保留 Unknown 备选及原限制诊断，再继续其他祖先。正常匹配分支可使结果为 Matched，限制诊断仍保留；后续合取不能因过滤掉某个已知绑定而丢失未知备选。S1 的新增回归与 TYPE-NOMINAL-001/S6 共用 [InheritanceClosureLimitTests](../../../../tests/AspectN.Tests/Evaluation/InheritanceClosureLimitTests.cs)，不推断内置适配器会返回这些图。
 
 ## 阶段失败
 

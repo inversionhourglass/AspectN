@@ -8,7 +8,7 @@
 
 | 能力 | 范围入口 | 场景数 |
 | --- | --- | --- |
-| [TYPE-NOMINAL-001](../capabilities/types/TYPE-NOMINAL-001.md) | 名称、嵌套、程序集身份与名义关系 | 5 |
+| [TYPE-NOMINAL-001](../capabilities/types/TYPE-NOMINAL-001.md) | 名称、嵌套、程序集身份与名义关系 | 6 |
 
 ## 泛型
 
