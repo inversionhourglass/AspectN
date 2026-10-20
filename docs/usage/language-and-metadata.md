@@ -94,6 +94,20 @@ getter(string Name) && attr(call MarkerAttribute)
 
 call 在访问器上表示访问器方法自身，prop 表示关联属性；exec 在访问器上包含方法和关联属性。查询不实例化对象、不应用继承特性规则。源码特性写法若被编码为元数据标志/其他表，不自动成为可匹配的真实 CA 记录；真实同类型 PE 记录仍可保留。[特性专题](../knowledge/capabilities/attributes/ATTR-TARGETS-001.md)详细区分这些情况。
 
+泛型形参声明也可以携带特性，下面是合法的 C#：
+
+```csharp
+[AttributeUsage(AttributeTargets.GenericParameter)]
+public sealed class MarkerAttribute : Attribute { }
+
+public class G<[Marker] T>
+{
+    public void M<[Marker] U>() { }
+}
+```
+
+这里的特性分别属于 `T`、`U` 的声明。将原生泛型形参映射为 `TypeSignature` 后，可以用 `HasDirectAttribute(AttributeTarget.ForType(parameter), marker)` 查询其自身记录；已知有标记为 Matched，已知无标记为 NotMatched。声明记录或原生关联不可用时仍为 Unknown。`attr(type MarkerAttribute)` 查询成员的声明类型 `G<T>`，不会转而查询 `T` 或 `U`，也不会因为形参有标记就命中。
+
 旧位置名 callable/property/parameter/return 会产生 AN4005，应分别改为 call/prop/para/ret。get/set 也不是特性位置；要筛选访问器上的直接特性，使用上例的 getter 或 setter 与 attr(call ...) 组合。
 
 类型特性查询优先使用方法签名中已知完整的 TypeAttributes，已知空列表也能证明没有直接记录。对同一带标记候选，下列三种查询在原 ReflectionTypeSystem 和新实例中均为 Matched；对已知空候选均为 NotMatched：

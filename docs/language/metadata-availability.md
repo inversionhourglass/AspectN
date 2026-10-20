@@ -19,6 +19,8 @@ Roslyn 源码映射补充编译器的 async、iterator 和 async-iterator 状态
 
 Cecil 引用中已有的类型形状、名称、参数和泛型元数，无需解析定义即可使用。方法定义无法解析时，方法种类、可见性、async 标记、直接特性、返回特性和关联属性均不可用。声明类型的特性独立解析。参数定义元数据也标为不可用。使用方必须先检查 `Availability.IsKnown(...)` 才能解释占位值；不可用的空特性列表不能证明不存在特性。
 
+直接 `HasDirectAttribute(AttributeTarget.ForType(...), ...)` 可以查询类型或方法泛型形参声明自身的特性记录。Cecil 对属于类型/方法定义的泛型形参直接读取其 `CustomAttributes`，不要求形参解析为 `TypeDefinition`；存在所查特性记录为 Matched，已知空列表为 NotMatched。仅有引用所属的泛型槽位、拿不到声明记录时仍为 Unknown/AN3004；缺少原生关联时仍为 Unknown/AN3001。缓存分别保留声明与引用的原生关联，映射顺序不改变各自可用事实。读取与类型映射保留现有可恢复异常通道，取消继续传播。此直接 API 不改变成员表达式中 `attr(type ...)` 的声明类型目标。
+
 引用形状与精确引用分类独立：Cecil 签名可保留已知的引用标记，但 `ref`、`out`、`in`、`ref readonly` 之间的区别未知。`ByReference` 已知时可使用 `TypeUseSignature.IsByReference`。`!ref` 消费该标记；精确 ref 修饰符还需要精确分类。没有成员定义元数据时，`CecilSignatureMapper.MapTypeUse` 保留标记，不猜测精确分类。
 
 求值只请求选择器实际消费的事实。

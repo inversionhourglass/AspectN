@@ -42,16 +42,17 @@
       "adapter": "cecil",
       "input_mode": "reference",
       "entry_point": "Mapper / HasDirectAttribute / CompiledMemberPattern.Match",
-      "conditions": "CecilUnavailableMetadataTests 的未解析引用、Int32 引用形状、六类 resolver 失败和取消；CecilSignatureLimitTests 指定原生边界",
+      "conditions": "CecilUnavailableMetadataTests 的未解析引用、Int32 引用形状、六类 resolver 失败和取消；CecilSignatureLimitTests 指定原生边界；CecilGenericParameterAttributeTests 的未解析 TypeReference 所属泛型槽位对照",
       "target": "working-tree",
-      "expected_behavior": "保留独立名称/形状；消费缺失定义事实 Unknown/AN3004；取消传播，指定深度/元数超限异常不伪装缺事实",
+      "expected_behavior": "保留独立名称/形状；消费缺失定义事实 Unknown/AN3004；取消传播，指定深度/元数超限异常不伪装缺事实；不能将引用槽位的占位空特性列表当作已知空，仍为 Unknown/AN3004",
       "contract_status": "supported",
       "verification_status": "verified",
       "verification_methods": [
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-002"
+        "EV-20261014-002",
+        "EV-20261021-001"
       ],
       "unverified_notes": ""
     },
@@ -98,16 +99,17 @@
       "adapter": "cecil_fody",
       "input_mode": "reference",
       "entry_point": "Mapper / HasDirectAttribute / Match",
-      "conditions": "独立 Fody 测试程序集的 CecilUnavailableMetadataTests 和 CecilSignatureLimitTests",
+      "conditions": "独立 Fody 测试程序集的 CecilUnavailableMetadataTests 和 CecilSignatureLimitTests；CecilGenericParameterAttributeTests 的未解析 TypeReference 所属泛型槽位对照",
       "target": "working-tree",
-      "expected_behavior": "在 Fody Cecil 身份下核验同一已列引用/读取恢复、取消和原生边界输入",
+      "expected_behavior": "在 Fody Cecil 身份下核验同一已列引用/读取恢复、取消和原生边界输入；不能将引用槽位的占位空特性列表当作已知空，仍为 Unknown/AN3004",
       "contract_status": "supported",
       "verification_status": "verified",
       "verification_methods": [
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-003"
+        "EV-20261014-003",
+        "EV-20261021-001"
       ],
       "unverified_notes": ""
     },
@@ -224,7 +226,8 @@
   ],
   "open_findings": [],
   "related_findings": [
-    "FND-20261011-001"
+    "FND-20261011-001",
+    "FND-20261021-001"
   ]
 }
 -->
@@ -272,3 +275,5 @@ Service.Run 返回 Int32 且只有 Accessibility 未知：method(public * Servic
 范围和剩余输入缺口见[扩展记录](../../../reviews/2026-10-13-documentation-expansion.md)；不变量适用性由非作者按本轮实际入口核验。
 
 类型特性完整快照的优先级已由维护者于2026-10-14裁决；完整已知事实、精确原生回退、无法枚举的缺列表模式分别见 ATTR-TARGETS-001/S11–S13。Roslyn PE 标记依赖缺失的 ReturnAttributes 不可用、独立 RefKind 仍可知见 ATTR-TARGETS-001/S14。直接 HasDirectAttribute API 的原生关联前置条件不因此改变。
+
+C04 修复后，Cecil/Fody 已知泛型形参声明记录按 ATTR-TARGETS-001/S2、S15 查询；引用上的占位泛型槽位仍不能证明没有特性，S2、S5 保留 Unknown/AN3004 控制。缺少原生关联仍为 AN3001，预先取消继续抛出取消异常。[修复记录](../../../reviews/2026-10-21-c04-generic-parameter-attributes.md)限定了声明记录与引用输入的边界。

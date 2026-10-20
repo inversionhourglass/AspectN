@@ -42,16 +42,17 @@
       "adapter": "cecil",
       "input_mode": "native_member",
       "entry_point": "Mapper / attr / HasDirectAttribute",
-      "conditions": "AttributeMetadataConformanceTests、CustomAttributeRecordTests、MetadataConsistencyTests 的同源/PE fixture；不含 Fody",
+      "conditions": "AttributeMetadataConformanceTests、CustomAttributeRecordTests、MetadataConsistencyTests 的同源/PE fixture；不含 Fody；GenericParameterAttributeTests 的类型/方法泛型形参有、无直接记录及声明类型 DSL 目标对照",
       "target": "working-tree",
-      "expected_behavior": "真实 CustomAttribute 记录跨视图保留；编码标志形成的伪特性排除，真实同类型记录仍保留；查询不实例化对象",
+      "expected_behavior": "真实 CustomAttribute 记录跨视图保留；编码标志形成的伪特性排除，真实同类型记录仍保留；查询不实例化对象；泛型形参直接 API 读取其自身声明记录，有标记 Matched、已知空 NotMatched，不借用所属类型/方法的特性",
       "contract_status": "supported",
       "verification_status": "verified",
       "verification_methods": [
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-006"
+        "EV-20261014-006",
+        "EV-20261021-001"
       ],
       "unverified_notes": ""
     },
@@ -60,16 +61,17 @@
       "adapter": "roslyn",
       "input_mode": "source_symbol",
       "entry_point": "Mapper / attr / HasDirectAttribute",
-      "conditions": "AttributeMetadataConformanceTests、CustomAttributeRecordTests、MetadataConsistencyTests 的同源/PE fixture；不含 Fody",
+      "conditions": "AttributeMetadataConformanceTests、CustomAttributeRecordTests、MetadataConsistencyTests 的同源/PE fixture；不含 Fody；GenericParameterAttributeTests 的类型/方法泛型形参有、无直接记录及声明类型 DSL 目标对照",
       "target": "working-tree",
-      "expected_behavior": "真实 CustomAttribute 记录跨视图保留；编码标志形成的伪特性排除，真实同类型记录仍保留；查询不实例化对象",
+      "expected_behavior": "真实 CustomAttribute 记录跨视图保留；编码标志形成的伪特性排除，真实同类型记录仍保留；查询不实例化对象；泛型形参直接 API 读取其自身声明记录，有标记 Matched、已知空 NotMatched，不借用所属类型/方法的特性",
       "contract_status": "supported",
       "verification_status": "verified",
       "verification_methods": [
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-006"
+        "EV-20261014-006",
+        "EV-20261021-001"
       ],
       "unverified_notes": ""
     },
@@ -78,16 +80,17 @@
       "adapter": "reflection",
       "input_mode": "native_member",
       "entry_point": "Mapper / attr / HasDirectAttribute",
-      "conditions": "AttributeMetadataConformanceTests、CustomAttributeRecordTests、MetadataConsistencyTests 的同源/PE fixture；不含 Fody",
+      "conditions": "AttributeMetadataConformanceTests、CustomAttributeRecordTests、MetadataConsistencyTests 的同源/PE fixture；不含 Fody；GenericParameterAttributeTests 的类型/方法泛型形参有、无直接记录及声明类型 DSL 目标对照",
       "target": "working-tree",
-      "expected_behavior": "真实 CustomAttribute 记录跨视图保留；编码标志形成的伪特性排除，真实同类型记录仍保留；查询不实例化对象",
+      "expected_behavior": "真实 CustomAttribute 记录跨视图保留；编码标志形成的伪特性排除，真实同类型记录仍保留；查询不实例化对象；泛型形参直接 API 读取其自身声明记录，有标记 Matched、已知空 NotMatched，不借用所属类型/方法的特性",
       "contract_status": "supported",
       "verification_status": "verified",
       "verification_methods": [
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-006"
+        "EV-20261014-006",
+        "EV-20261021-001"
       ],
       "unverified_notes": ""
     },
@@ -327,6 +330,42 @@
         "EV-20261014-006"
       ],
       "unverified_notes": ""
+    },
+    {
+      "id": "S15",
+      "adapter": "cecil_fody",
+      "input_mode": "native_member",
+      "entry_point": "Mapper / HasDirectAttribute",
+      "conditions": "独立 Fody 测试程序集中的 CecilGenericParameterAttributeTests：真实类型/方法泛型形参声明，有标记/已知空，所属类型及方法均有标记，特性构造器抛异常",
+      "target": "working-tree",
+      "expected_behavior": "直接 API 查询形参自身记录，有标记 Matched、已知空 NotMatched，诊断为空且不实例化特性；不借用所属声明的标记",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261021-001"
+      ],
+      "unverified_notes": "仅此泛型形参声明场景，不外推其他 Fody 特性组合"
+    },
+    {
+      "id": "S16",
+      "adapter": "roslyn",
+      "input_mode": "pe_symbol",
+      "entry_point": "Mapper / HasDirectAttribute / attr(type ...)",
+      "conditions": "GenericParameterAttributeTests：同一源码发射 PE 后导入 Roslyn，类型/方法泛型形参有、无标记；仅形参带标记的声明类型 DSL 对照",
+      "target": "working-tree",
+      "expected_behavior": "直接 API 查询形参自身记录，有标记 Matched、已知空 NotMatched，诊断为空且不实例化特性；不借用所属声明的标记；DSL type 仍指成员声明类型",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261021-001"
+      ],
+      "unverified_notes": ""
     }
   ],
   "invariant_checks": [
@@ -396,7 +435,8 @@
   "open_findings": [],
   "related_findings": [
     "FND-20261013-004",
-    "FND-20261013-005"
+    "FND-20261013-005",
+    "FND-20261021-001"
   ]
 }
 -->
@@ -443,6 +483,8 @@ getter(string Name) && attr(call MarkerAttribute)
 ## 关联与缺口
 
 CROSS-AVAILABILITY-001 治理缺失事实，GEN-BINDING-001 治理泛型特性的绑定备选，MEM-SELECTORS-001 治理访问器域。Fody 的具体真实记录一致性未由三后端测试自动推出。
+
+类型和方法的泛型形参声明可作为 `HasDirectAttribute(AttributeTarget.ForType(...), ...)` 的直接目标；有标记 Matched、已知空 NotMatched。Cecil 直接读取形参声明的记录，所属类型/方法上的标记不能替代形参记录；引用与声明分别保留原生关联，先后映射顺序不改变各自事实。S2–S4 与 S16 用同一编译输入覆盖 Cecil、Reflection、Roslyn 源码/PE，S15 单独运行 Fody 身份下的真实声明；这些证据不外推 Fody 的其他特性组合。`attr(type ...)` 仍选择成员的声明类型，未新增泛型形参 DSL 位置。具体回归见 [GenericParameterAttributeTests](../../../../tests/AspectN.Conformance.Tests/GenericParameterAttributeTests.cs) 和 [Cecil/Fody 回归](../../../../tests/AspectN.Cecil.Tests/CecilGenericParameterAttributeTests.cs)。
 
 ## 已知事实、原生回退与 PE 记录身份
 

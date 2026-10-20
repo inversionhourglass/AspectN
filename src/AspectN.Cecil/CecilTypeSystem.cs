@@ -201,8 +201,17 @@ public sealed class CecilTypeSystem : ITypeSystem, IDisposable
         if (reference is ArrayType or PointerType or FunctionPointerType or PinnedType or SentinelType)
             return Array.Empty<AttributeSignature>();
         return CecilMetadataReader.Read(() =>
-            (reference as TypeDefinition ?? reference.Resolve())?.CustomAttributes
+        {
+            // 引用上的泛型槽位不保证携带声明记录；只有声明所属的形参可直接读取。
+            var attributes = reference switch
+            {
+                GenericParameter { Owner: TypeDefinition or MethodDefinition } parameter => parameter.CustomAttributes,
+                GenericParameter => null,
+                _ => (reference as TypeDefinition ?? reference.Resolve())?.CustomAttributes
+            };
+            return attributes?
                 .Select(attribute => new AttributeSignature(Mapper.MapType(attribute.AttributeType), AttributeTargetKind.Type))
-                .ToArray(), reference.FullName, MetadataFacts.Attributes, out availability);
+                .ToArray();
+        }, reference.FullName, MetadataFacts.Attributes, out availability);
     }
 }

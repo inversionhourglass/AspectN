@@ -229,6 +229,9 @@ internal readonly struct CecilTypeCacheKey : IEquatable<CecilTypeCacheKey>
                     break;
                 case GenericParameter parameter:
                     builder.Append("parameter:");
+                    // 声明形参与引用占位的可用事实不同，不能共用反向原生关联。
+                    builder.Append(parameter.Owner is TypeDefinition or MethodDefinition);
+                    builder.Append(':');
                     builder.Append(parameter.Type);
                     builder.Append(':');
                     builder.Append(GetOwnerIdentity(parameter));

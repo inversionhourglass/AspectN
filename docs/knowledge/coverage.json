@@ -79,7 +79,7 @@
       "capability_ids": [
         "CROSS-AVAILABILITY-001"
       ],
-      "notes": "2026-10-14修复detached闭包取消；完整已知TypeAttributes优先级已获维护者批准并实现，缺列表精确回退/非具体Unknown和PE缺标记依赖分别有场景。"
+      "notes": "2026-10-14修复detached闭包取消；完整已知TypeAttributes优先级已获维护者批准并实现，缺列表精确回退/非具体Unknown和PE缺标记依赖分别有场景。 2026-10-21在CROSS-AVAILABILITY/S2、S5补充泛型引用槽位的未知事实对照；声明已知空与引用缺记录分开处理。"
     },
     {
       "id": "INV-0005",
@@ -248,7 +248,7 @@
       "capability_ids": [
         "ATTR-TARGETS-001"
       ],
-      "notes": "2026-10-14修复Roslyn PE返回CA同名读取者身份失真；类型特性优先级已裁决，新增ATTR/S12–S14区分精确原生回退、缺列表和实际标记依赖缺失。旧语法/继承排除仍按四视图实际证据，不外推Fody全部CA组合。"
+      "notes": "2026-10-14修复Roslyn PE返回CA同名读取者身份失真；类型特性优先级已裁决，新增ATTR/S12–S14区分精确原生回退、缺列表和实际标记依赖缺失。旧语法/继承排除仍按四视图实际证据，不外推Fody全部CA组合。 2026-10-21修复C04：ATTR/S2–S4及S15/S16补充类型/方法泛型形参声明直接特性；包含Fody独立程序集及Roslyn PE，不扩大DSL目标。"
     },
     {
       "id": "INV-0012",
