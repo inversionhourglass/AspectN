@@ -254,27 +254,31 @@ public class DerivedApi : BaseApi
 
 这属于已批准的查询范围，不是元数据丢失。需按 C# 特性继承规则查找时，由调用方执行原生继承查询；不要通过 + 类型关系语法假设 attr 也继承。具体[特性场景及四视图证据](../knowledge/capabilities/attributes/ATTR-TARGETS-001.md)区分继承排除和语法排除。
 
-## 12. 残缺泛型签名按所需事实求值
+## 12. 手工泛型签名必须具有合法槽位结构
 
 ```csharp
-var partial = new NamedTypeSignature(
+var invalid = new NamedTypeSignature(
     new TypeIdentity(new AssemblyIdentity("Review"), "Review", "Box", 2, AspectN.Metadata.TypeKind.Class),
     [typeSystem.Mapper.MapType(typeof(int))]);
-// 声明元数是 2，却只提供 1 个构造实参；公开模型接受这个输入。
+// 声明元数是 2，却只提供 1 个实参；构造时抛 ArgumentException，参数名为 typeArguments。
 ```
 
-把 partial 放入方法返回槽后，`regex(.*)` 与需要两个具体实参的结构模式 `Review.Box<int, int>` 都返回 Unknown/AN3001，不能把残缺实参列表格式化成完整签名。仅约束已知元数的模式 `Review.Box<,>` 可得 Matched；已知元数不符可直接得 NotMatched。
+非空实参列表必须与类型的有效总元数一致，嵌套类型包括外层槽位。例如 `Outer<T>/Inner<U>` 的构造需要两个实参。零元数类型不能携带实参，列表中不能包含 null。
 
-同理，方法声明形参有两个、构造实参只有一个时：
+以下两种输入合法：
 
-| 表达式 | 结果 | 原因 |
-| --- | --- | --- |
-| `method(* M<int>(..))` | NotMatched | 声明元数 2 与模式元数 1 不符 |
-| `method(* M<int,string>(..))` | Unknown/AN3001 | 元数相符，但缺少所需构造实参 |
-| `method(* M<,>(..))` | Matched | 仅要求已知的两槽元数，不消费具体实参 |
-| `regex(.*)` | Unknown/AN3001 | 无法提供完整规范签名 |
+```csharp
+var identity = new TypeIdentity(new AssemblyIdentity("Review"), "Review", "Box", 2, AspectN.Metadata.TypeKind.Class);
+var definition = new NamedTypeSignature(identity); // 空实参列表表示泛型定义。
+var closed = new NamedTypeSignature(identity,
+    [typeSystem.Mapper.MapType(typeof(int)), typeSystem.Mapper.MapType(typeof(string))], definition);
+```
 
-这个[历史误判已修复](../reviews/findings/FND-20261013-002.md)，不是“不支持外部签名”的排除。外部生产者应保留准确声明、完整实参和可用性；有原始声明时也不能凭当前残缺槽位改写已知元数。开放定义的零构造实参与残缺构造输入不同：有完整声明槽位的开放方法可以格式化，缺少可编号形参事实的外部开放类型仍可能 Unknown。[回归测试](../../tests/AspectN.Tests/Evaluation/IncompleteGenericArgumentTests.cs)和[原探针](../reviews/reproductions/2026-10-13-capability-boundaries/README.md)保留完整、开放、残缺输入及原始声明对照。
+`Box<int,T>` 同样合法：它有两个实参槽，第二槽是泛型形参节点。方法也遵循完整槽位要求：声明两个形参却只提供一个构造实参会在构造时抛异常；提供原始定义时，当前槽位必须与其元数一致。没有声明槽位及原始定义的方法签名，可由实参列表自身确定元数。
+
+构造器只检查结构一致性，无法替代后端验证类型声明是否存在或泛型约束是否满足。类型事实无法恢复时，可以在完整槽位中放入 `UnsupportedTypeSignature`；需要该事实的查询仍可能返回 Unknown。泛型定义缺少格式化所需的声明上下文时，也仍可能 Unknown。
+
+此规则来自 [2026-10-20 维护者裁决](../reviews/2026-10-20-c02-generic-signature-validation.md)，取代旧的残缺列表求值规则。[构造回归](../../tests/AspectN.Tests/Metadata/GenericSignatureValidationTests.cs)与[合法输入匹配对照](../../tests/AspectN.Tests/Evaluation/IncompleteGenericArgumentTests.cs)可独立重跑；[旧 Finding](../reviews/findings/FND-20261013-002.md)保留当时观察。
 
 ## 13. CLI 可以包含 C# 无法声明的返回类型重载
 

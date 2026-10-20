@@ -34,14 +34,15 @@ public sealed class NullableTupleTasklikeTests
     }
 
     [Theory]
-    [InlineData("System.Threading.Tasks", "Task", TypeKind.Class, 1, "tasklike<*>")]
-    [InlineData("System", "ValueTuple", TypeKind.Struct, 3, "(*,*,*)")]
-    public void Match_IncompleteGenericArguments_RemainsUnknown(
+    [InlineData("System.Threading.Tasks", "Task", TypeKind.Class, 1, "tasklike<int>")]
+    [InlineData("System", "ValueTuple", TypeKind.Struct, 3, "(int,int,int)")]
+    public void Match_UnavailableGenericArgument_RemainsUnknown(
         string @namespace, string name, TypeKind kind, int arity, string source)
     {
         var candidate = new NamedTypeSignature(new TypeIdentity(
             new AssemblyIdentity("Example.Assembly"), @namespace, name, arity, kind),
-            new TypeSignature[] { Named("System", "Int32", TypeKind.Struct), Named("System", "String") });
+            Enumerable.Repeat<TypeSignature>(Named("System", "Int32", TypeKind.Struct), arity - 1)
+                .Append(new UnsupportedTypeSignature("missing", "metadata unavailable")));
 
         Assert.Equal(MatchStatus.Unknown, Match(source, candidate).Status);
     }

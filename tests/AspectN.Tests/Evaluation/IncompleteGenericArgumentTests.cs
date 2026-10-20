@@ -7,10 +7,6 @@ namespace AspectN.Tests.Evaluation;
 public sealed class IncompleteGenericArgumentTests
 {
     [Theory]
-    [InlineData(1, "method(* M<int>(..))", MatchStatus.NotMatched)]
-    [InlineData(1, "method(* M<int,string>(..))", MatchStatus.Unknown)]
-    [InlineData(1, "method(* M<,>(..))", MatchStatus.Matched)]
-    [InlineData(1, "regex(.*)", MatchStatus.Unknown)]
     [InlineData(2, "method(* M<int>(..))", MatchStatus.NotMatched)]
     [InlineData(2, "method(* M<int,string>(..))", MatchStatus.Matched)]
     [InlineData(2, "regex(.*)", MatchStatus.Matched)]
@@ -30,10 +26,7 @@ public sealed class IncompleteGenericArgumentTests
     }
 
     [Theory]
-    [InlineData(false, 1, MatchStatus.Unknown)]
     [InlineData(false, 2, MatchStatus.Matched)]
-    [InlineData(false, 3, MatchStatus.Unknown)]
-    [InlineData(true, 1, MatchStatus.Unknown)]
     [InlineData(true, 2, MatchStatus.Matched)]
     public void Match_RegexTypeArguments_RequiresCompleteConstruction(bool nested, int argumentCount, MatchStatus expected)
     {
@@ -47,22 +40,20 @@ public sealed class IncompleteGenericArgumentTests
     }
 
     [Fact]
-    public void Match_IncompleteType_KnownArityDoesNotConsumeMissingArguments()
+    public void Match_TypeDefinition_PreservesFormalArguments()
     {
         var type = new NamedTypeSignature(
-            new TypeIdentity(new AssemblyIdentity("Example"), "Example", "Box", 2, TypeKind.Class), [Int()]);
+            new TypeIdentity(new AssemblyIdentity("Example"), "Example", "Box", 2, TypeKind.Class));
         var engine = new AspectNEngine();
         Assert.True(engine.CompileTypePattern("Example.Box<,>").TryGetTypePattern(out var arity));
         Assert.True(engine.CompileTypePattern("Example.Box<int,string>").TryGetTypePattern(out var arguments));
 
         Assert.Equal(MatchStatus.Matched, arity.Match(type, new StubTypeSystem()).Status);
-        Assert.Equal(MatchStatus.Unknown, arguments.Match(type, new StubTypeSystem()).Status);
+        Assert.Equal(MatchStatus.NotMatched, arguments.Match(type, new StubTypeSystem()).Status);
     }
 
-    [Theory]
-    [InlineData(0)]
-    [InlineData(1)]
-    public void Match_OriginalDeclarationWithMissingCurrentSlots_ReturnsUnknown(int slots)
+    [Fact]
+    public void Match_OriginalDeclarationWithCompleteCurrentSlots_FormatsDefinition()
     {
         var assembly = new AssemblyIdentity("Example");
         GenericParameterSignature[] parameters =
@@ -72,10 +63,10 @@ public sealed class IncompleteGenericArgumentTests
         ];
         var definition = Method(Int(), parameters);
         var candidate = new MethodSignature("M", MethodKind.OrdinaryMethod, Accessibility.Public, true, false,
-            definition.DeclaringType, definition.ReturnType, [], parameters.Take(slots), [], [], [],
+            definition.DeclaringType, definition.ReturnType, [], parameters, [], [], [],
             originalDefinition: definition);
 
-        AssertResult("regex(.*)", candidate, MatchStatus.Unknown);
+        AssertResult("regex(.*)", candidate, MatchStatus.Matched);
         AssertResult("method(* M<,>(..))", candidate, MatchStatus.Matched);
     }
 
@@ -86,22 +77,18 @@ public sealed class IncompleteGenericArgumentTests
         AssertResult("regex(.*)", Method(Int(), [], Arguments(2)), MatchStatus.Matched);
     }
 
-    [Fact]
-    public void Match_EmptyOriginalSlots_DoNotEraseCurrentDeclaration()
+    [Theory]
+    [InlineData(false, MatchStatus.Matched)]
+    [InlineData(true, MatchStatus.NotMatched)]
+    public void Match_RepeatedVariable_UsesCompleteGenericArguments(bool different, MatchStatus expected)
     {
-        var declaration = Method(Int());
-        var assembly = new AssemblyIdentity("Example");
-        GenericParameterSignature[] parameters =
-        [
-            new("T", GenericParameterOwnerKind.Method, "Example.Owner::M", assembly, 0),
-            new("U", GenericParameterOwnerKind.Method, "Example.Owner::M", assembly, 1)
-        ];
-        var candidate = new MethodSignature("M", MethodKind.OrdinaryMethod, Accessibility.Public, true, false,
-            declaration.DeclaringType, declaration.ReturnType, [], parameters, Arguments(2), [], [], [],
-            originalDefinition: declaration);
-
-        AssertResult("method(* M<int,string>(..))", candidate, MatchStatus.Matched);
-        AssertResult("regex(.*)", candidate, MatchStatus.Matched);
+        var box = new TypeIdentity(new AssemblyIdentity("Example"), "Example", "Box", 2, TypeKind.Class);
+        var first = new NamedTypeSignature(box, [Int(), String()]);
+        var second = new NamedTypeSignature(box, [Int(), different ? Int() : String()]);
+        var carrier = new NamedTypeSignature(
+            new TypeIdentity(box.Assembly, "Example", "Carrier", 2, TypeKind.Class), [first, second]);
+        Assert.True(new AspectNEngine().CompileTypePattern("Example.Carrier<$T,$T>").TryGetTypePattern(out var pattern));
+        Assert.Equal(expected, pattern.Match(carrier, new StubTypeSystem()).Status);
     }
 
 

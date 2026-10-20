@@ -14,6 +14,10 @@
         {
           "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
           "section": "已批准状态或明确委托的适用条款"
+        },
+        {
+          "path": "docs/reviews/2026-10-20-c02-generic-signature-validation.md",
+          "section": "维护者裁决与取代范围"
         }
       ]
     },

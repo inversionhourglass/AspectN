@@ -84,18 +84,17 @@
       "id": "S4",
       "adapter": "core",
       "input_mode": "neutral",
-      "entry_point": "CompiledMemberPattern.Match",
-      "conditions": "IncompleteGenericArgumentTests：声明/原始声明元数已知且当前槽位或实参残缺；完整、开放、嵌套总元数及既有无声明槽位实参表示作对照",
+      "entry_point": "NamedTypeSignature / MethodSignature 构造；CompiledPattern.Match",
+      "conditions": "GenericSignatureValidationTests、IncompleteGenericArgumentTests：构造时校验实参/声明/原始定义元数，包含嵌套总元数、null及方法声明槽位；完整定义、开放/闭合构造及重复变量匹配作对照",
       "target": "working-tree",
-      "expected_behavior": "保持已知声明元数；元数不符NotMatched，只约束已知元数可Matched，消费缺失实参Unknown/AN3001",
+      "expected_behavior": "槽位结构非法在构造时抛ArgumentException；合法定义和完整开放/闭合构造仍可匹配；无声明及原始定义的方法由实参确定元数",
       "contract_status": "supported",
       "verification_status": "verified",
       "verification_methods": [
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-001",
-        "EV-20261014-010"
+        "EV-20261020-002"
       ],
       "unverified_notes": ""
     }
@@ -162,7 +161,8 @@
   ],
   "open_findings": [],
   "related_findings": [
-    "FND-20261013-002"
+    "FND-20261013-002",
+    "FND-20261020-002"
   ]
 }
 -->
@@ -177,7 +177,7 @@
 
 ## 输入条件
 
-泛型定义和构造类型都可作为候选；定义中的实际位置参数由模型确定。需要比较类型相等的变量操作依赖 ITypeSystem，未知不等同不相等。
+泛型定义和槽位完整的构造类型都可作为候选；定义中的实际位置参数由模型确定。非空实参数量必须匹配声明元数，类型包含外层参数；原始定义不得与当前槽位矛盾。需要比较类型相等的变量操作依赖 ITypeSystem，未知不等同不相等。
 
 ## 分层能力
 
@@ -185,7 +185,7 @@ Binder 验证声明位置和可见作用域；Evaluator 每次匹配使用独立
 
 ## 阶段失败
 
-未声明引用、首次否定声明、泛型声明参数内否定变量或 OR 分支外首次使用会产生编译诊断。实例实参数量不完整在需要该事实时 Unknown，不能补猜形参。
+未声明引用、首次否定声明、泛型声明参数内否定变量或 OR 分支外首次使用会产生编译诊断。结构不合法的泛型签名在构造时抛 ArgumentException；完整槽位内的类型事实不可用仍按所需事实求值，不保证所有查询均为 Unknown。
 
 ## 例子与边界
 
@@ -217,6 +217,6 @@ flowchart LR
 
 GEN-IDENTITY-001 定义 CLR 声明身份，CROSS-LOGIC-001 定义结果三态；逻辑真值表不单独证明变量环境合并。未穷举所有后端/泛型约束组合。
 
-不完整外部泛型实参的已确认边界见S4及[泛型Finding](../../../reviews/findings/FND-20261013-002.md)。这不是H1原生必需字段为空，不将其改写为排除。
+S4 现按 [2026-10-20 维护者裁决](../../../reviews/2026-10-20-c02-generic-signature-validation.md)在构造边界拒绝槽位结构非法的输入。[旧 Finding](../../../reviews/findings/FND-20261013-002.md)保留当时按缺失事实处理的历史结论，该结论不再定义当前输入范围。此为本次明确裁决，并非以修复缺陷为由自行将 supported 改为 excluded；H1 处置保持原范围。
 
-S4 的误判已修复：声明元数与所需实参完整性分别求值；原始声明有已知正元数时优先保留，完整实参且无声明槽位的既有外部表示仍可用。具体对照见 [IncompleteGenericArgumentTests](../../../../tests/AspectN.Tests/Evaluation/IncompleteGenericArgumentTests.cs)，历史失败保留在关联 Finding。
+[构造回归](../../../../tests/AspectN.Tests/Metadata/GenericSignatureValidationTests.cs)、[合法匹配对照](../../../../tests/AspectN.Tests/Evaluation/IncompleteGenericArgumentTests.cs)和[真实后端构造](../../../../tests/AspectN.Conformance.Tests/GenericSignatureConstructionTests.cs)记录当前证据；没有声明槽位及原始定义的方法仍可由完整实参列表确定元数。

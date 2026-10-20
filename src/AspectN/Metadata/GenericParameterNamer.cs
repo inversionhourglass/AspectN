@@ -7,7 +7,7 @@ namespace AspectN.Metadata;
 // 变量重绑定静默 NotMatched）。匹配和规范签名共用此合成逻辑。
 internal static class GenericParameterNamer
 {
-    // 原始声明元数不受残缺构造实参数量影响；仅未提供声明形参的外部签名按实参推定。
+    // 元数来自原始定义或当前声明；省略两者的外部构造签名按完整实参推定。
     public static int GetMethodArity(MethodSignature candidate) =>
         candidate.OriginalDefinition is { GenericParameters.Count: > 0 } definition
             ? definition.GenericParameters.Count

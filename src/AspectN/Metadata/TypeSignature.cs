@@ -12,15 +12,17 @@ public abstract class TypeSignature(TypeSignatureKind kind)
 
 /// <summary>Represents metadata for a named type signature.</summary>
 /// <param name="identity">Specifies the identity.</param>
-/// <param name="typeArguments">Specifies the type arguments.</param>
-/// <param name="originalDefinition">Specifies the original definition.</param>
+/// <param name="typeArguments">Specifies all arguments, including containing-type slots, or an empty collection for a definition.</param>
+/// <param name="originalDefinition">Specifies an unconstructed definition with the same identity.</param>
+/// <exception cref="ArgumentNullException">The identity is null.</exception>
+/// <exception cref="ArgumentException">An argument is null, a nonempty argument list does not match the total generic arity, or the original definition is inconsistent.</exception>
 public sealed class NamedTypeSignature(
     TypeIdentity identity,
     IEnumerable<TypeSignature>? typeArguments = null,
     NamedTypeSignature? originalDefinition = null) : TypeSignature(TypeSignatureKind.Named)
 {
-    private readonly ReadOnlyCollection<TypeSignature> _typeArguments = new ReadOnlyCollection<TypeSignature>(
-            (typeArguments ?? Array.Empty<TypeSignature>()).ToArray());
+    private readonly ReadOnlyCollection<TypeSignature> _typeArguments =
+        GenericSignatureValidation.CopyTypeArguments(identity, typeArguments, originalDefinition);
 
     /// <summary>Gets the type identity.</summary>
     public TypeIdentity Identity { get; } = identity ?? throw new ArgumentNullException(nameof(identity));

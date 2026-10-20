@@ -1,0 +1,244 @@
+{
+  "schema_version": 1,
+  "id": "EV-20261020-002",
+  "method": "automated",
+  "scenario_refs": [
+    {
+      "capability_id": "GEN-BINDING-001",
+      "scenario_id": "S4"
+    },
+    {
+      "capability_id": "SEM-REGEX-001",
+      "scenario_id": "S4"
+    },
+    {
+      "capability_id": "USE-SHAPES-001",
+      "scenario_id": "S1"
+    }
+  ],
+  "oracle_refs": [
+    {
+      "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+      "section": "13.1 中立泛型签名的构造不变量"
+    },
+    {
+      "path": "docs/reviews/2026-10-20-c02-generic-signature-validation.md",
+      "section": "维护者裁决与取代范围"
+    }
+  ],
+  "procedure": "dotnet build AspectN.sln -c Release --no-restore --disable-build-servers -m:1 -v:minimal\ndotnet test AspectN.sln -c Release --no-build --no-restore -m:1 --logger trx --results-directory artifacts/c02-fix/final -v:minimal\ndotnet format AspectN.sln --verify-no-changes --no-restore --verbosity quiet\npwsh -NoProfile -File eng/generate-knowledge.ps1\npwsh -NoProfile -File eng/generate-knowledge.ps1 -Check\npwsh -NoProfile -File eng/verify-documentation.ps1",
+  "result": "passed",
+  "recorded_on": "2026-10-20",
+  "environment": {
+    "os": "Windows",
+    "sdk": "10.0.401",
+    "runtime": "10.0.12",
+    "cecil": "0.11.5",
+    "fody_helpers": "6.8.1",
+    "roslyn": "4.12.0",
+    "compatibility_targets": [
+      "net472",
+      "net10.0，加载netstandard2.0资产"
+    ],
+    "notes": "使用既有还原依赖；测试在可建立VSTest通信的沙箱外运行，不外推其他后端版本。"
+  },
+  "code_state": {
+    "head": "062afa7756708df4d25fe934e7ea384dc5b9addf",
+    "dirty": true,
+    "files": [
+      {
+        "path": "src/AspectN/Metadata/GenericSignatureValidation.cs",
+        "sha256": "29611465a8b14f913d7c2c77044bfd4f90ec68d8f985dfd689b14ef7e55f6530"
+      },
+      {
+        "path": "src/AspectN/Metadata/TypeSignature.cs",
+        "sha256": "4caff90ba0fb2853ff8eaa540c9b7f1367c9d0dc963bd01c8588571ab3467a12"
+      },
+      {
+        "path": "src/AspectN/Metadata/MethodSignature.cs",
+        "sha256": "501c784a54ae890d116ecec6b51488c66dd41ecd61be25a975428a843b74c561"
+      },
+      {
+        "path": "src/AspectN/Metadata/GenericParameterNamer.cs",
+        "sha256": "1a81bb1bc5736f80e6d8c826d8c8eb36883133ebb56fd0a1a80cd07d6414dada"
+      },
+      {
+        "path": "src/AspectN/CollectionSnapshot.cs",
+        "sha256": "0fa3525aa4f748f35ace85b8a7f314118e6902c21a5631d51555911aaf6f5188"
+      },
+      {
+        "path": "tests/AspectN.Tests/Metadata/GenericSignatureValidationTests.cs",
+        "sha256": "b3f556ccd4384e4c96cdc45dabe47157fd1caefa88fdec57777c00c572cb2438"
+      },
+      {
+        "path": "tests/AspectN.Tests/Evaluation/IncompleteGenericArgumentTests.cs",
+        "sha256": "a3b38fe729c62e160745177d2623bcf985c706ced48a2fadd7c0a76dd9f4e4f3"
+      },
+      {
+        "path": "tests/AspectN.Tests/Evaluation/GenericPatternTests.cs",
+        "sha256": "36a211ae07cbeec73ffd5e14bc3c2ae6b19c5ae9e8cd8331e73db78ce85b774e"
+      },
+      {
+        "path": "tests/AspectN.Tests/Evaluation/NullableTupleTasklikeTests.cs",
+        "sha256": "f9645f6ffc3fb77ee486393e710b16224904980fa2cad3b98055392f214614f6"
+      },
+      {
+        "path": "tests/AspectN.Tests/Evaluation/TupleShapeTests.cs",
+        "sha256": "01dffd43b147080e67476075bc8946d9aba9e77c15fdb6eefe0296ebda14ebf9"
+      },
+      {
+        "path": "tests/AspectN.Tests/Fuzz/SignatureLimitTests.cs",
+        "sha256": "8018324bf3abb3711be3c0bd4825be6ae2d55fe43c967e8d031610781fe4cb54"
+      },
+      {
+        "path": "tests/AspectN.Conformance.Tests/GenericSignatureConstructionTests.cs",
+        "sha256": "4409da6ec34104e5da639582f748270e2220dfa7a33cc9b278165e36a769341e"
+      },
+      {
+        "path": "src/AspectN.Cecil/CecilSignatureMapper.cs",
+        "sha256": "d07a316492d18fd4913f686ff643012c0cde20f116d4412c3b817c243d8f4893"
+      },
+      {
+        "path": "src/AspectN.Cecil/Internal/CecilTypeMapper.cs",
+        "sha256": "71044cb0b77042b8c6b11e9bb3c84fbc1ee5bed5076c31a2c1be2628328c7c6c"
+      },
+      {
+        "path": "src/AspectN.Roslyn/RoslynSignatureMapper.cs",
+        "sha256": "3002bc3332df219496cebc6b7b33f7f8f64337463a2d6814af0506860c6667c5"
+      },
+      {
+        "path": "src/AspectN.Reflection/ReflectionSignatureMapper.cs",
+        "sha256": "1c5d61ef409c4d61428f65a77b52bc80b9037f55010a890f4f2d83396519a689"
+      },
+      {
+        "path": "Directory.Build.props",
+        "sha256": "21511672e6680b86521f1d2d275e9fe2d914092073007c8be353f3202c38115a"
+      },
+      {
+        "path": "Directory.Packages.props",
+        "sha256": "a0df07b7d4df78415d87666c16e30c665d285d0e39ed9d300c52aeb7a3837c9a"
+      },
+      {
+        "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+        "sha256": "972fbd05034357113b6ae8785de7fcb7e5e5722c458f11cc22591310a965b68c"
+      },
+      {
+        "path": "docs/language/metadata-availability.md",
+        "sha256": "86fca88eecb4265d41e9a2fd9cdacbbf4258fef62dc325d9bf4ad30c50586e18"
+      }
+    ]
+  },
+  "dependency_scope": {
+    "paths": [
+      "src/AspectN/Metadata/GenericSignatureValidation.cs",
+      "src/AspectN/Metadata/TypeSignature.cs",
+      "src/AspectN/Metadata/MethodSignature.cs",
+      "src/AspectN/Metadata/GenericParameterNamer.cs",
+      "src/AspectN/CollectionSnapshot.cs",
+      "tests/AspectN.Tests/Metadata/GenericSignatureValidationTests.cs",
+      "tests/AspectN.Tests/Evaluation/IncompleteGenericArgumentTests.cs",
+      "tests/AspectN.Tests/Evaluation/GenericPatternTests.cs",
+      "tests/AspectN.Tests/Evaluation/NullableTupleTasklikeTests.cs",
+      "tests/AspectN.Tests/Evaluation/TupleShapeTests.cs",
+      "tests/AspectN.Tests/Fuzz/SignatureLimitTests.cs",
+      "tests/AspectN.Conformance.Tests/GenericSignatureConstructionTests.cs",
+      "src/AspectN.Cecil/CecilSignatureMapper.cs",
+      "src/AspectN.Cecil/Internal/CecilTypeMapper.cs",
+      "src/AspectN.Roslyn/RoslynSignatureMapper.cs",
+      "src/AspectN.Reflection/ReflectionSignatureMapper.cs",
+      "Directory.Build.props",
+      "Directory.Packages.props",
+      "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+      "docs/language/metadata-availability.md"
+    ],
+    "environment_keys": [
+      "sdk",
+      "runtime",
+      "cecil",
+      "fody_helpers",
+      "roslyn",
+      "compatibility_targets"
+    ]
+  },
+  "revalidation_conditions": "泛型构造校验、快照、声明/原始定义表示、所列测试或语言13.1契约变化时重验；后端或运行时版本变化重评真实映射证据。",
+  "observations": {
+    "red": "17项构造测试中的初始16项在旧实现为14失败2通过；失败均为未抛异常。随后补充极端嵌套元数无溢出控制。",
+    "scope": "C02结构非法输入构造拒绝；完整开放/闭合/嵌套构造与重复变量匹配，以及完整槽位事实缺口三态控制。真实编译对照执行Cecil、Reflection、Roslyn源码及PE。",
+    "limitations": "不验证声明存在或所有CLR实参/约束合法性；不扩大H1裁决；独立审查者沙箱测试超时不计通过。",
+    "final": {
+      "total": 1768.0,
+      "passed": 1768,
+      "failed": 0,
+      "skipped": 0,
+      "projects": [
+        {
+          "project": "AspectN.Tests",
+          "target": "net10.0",
+          "total": 957,
+          "passed": 957,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.Cecil.Tests",
+          "target": "net10.0",
+          "total": 173,
+          "passed": 173,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.Reflection.Tests",
+          "target": "net10.0",
+          "total": 109,
+          "passed": 109,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.Roslyn.Tests",
+          "target": "net10.0",
+          "total": 28,
+          "passed": 28,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.Conformance.Tests",
+          "target": "net10.0",
+          "total": 311,
+          "passed": 311,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.NetFramework.Tests",
+          "target": "net472",
+          "total": 7,
+          "passed": 7,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.NetFramework.Tests",
+          "target": "net10.0",
+          "total": 8,
+          "passed": 8,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.Cecil.Fody.Tests",
+          "target": "net10.0",
+          "total": 175,
+          "passed": 175,
+          "failed": 0,
+          "not_executed": 0
+        }
+      ],
+      "build": "Release，零警告、零错误",
+      "format": "verify-no-changes通过",
+      "logs": "artifacts/c02-fix/final（本机忽略目录）"
+    }
+  }
+}

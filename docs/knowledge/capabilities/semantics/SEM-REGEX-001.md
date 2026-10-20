@@ -84,18 +84,17 @@
       "id": "S4",
       "adapter": "core",
       "input_mode": "neutral",
-      "entry_point": "CompiledMemberPattern.Match / CanonicalSignatureFormatter",
-      "conditions": "IncompleteGenericArgumentTests：外部类型实参少于/多于声明元数，方法实参少于声明元数，嵌套有效元数；原始方法声明已知但当前槽位缺失；完整/开放/旧表示控制",
+      "entry_point": "NamedTypeSignature / MethodSignature 构造；CompiledMemberPattern.Match / CanonicalSignatureFormatter",
+      "conditions": "GenericSignatureValidationTests拒绝残缺结构；IncompleteGenericArgumentTests和GenericSignatureConstructionTests覆盖合法定义、完整闭合/开放构造及嵌套类型格式化",
       "target": "working-tree",
-      "expected_behavior": "无法提供完整规范实参或声明槽位时Unknown/AN3001；完整构造和具备完整可编号槽位的开放方法保留格式化",
+      "expected_behavior": "槽位结构非法在构造时抛ArgumentException，不进入regex；合法完整构造保留格式化，缺少可编号声明上下文等类型事实仍为Unknown/AN3001",
       "contract_status": "supported",
       "verification_status": "verified",
       "verification_methods": [
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-001",
-        "EV-20261014-010"
+        "EV-20261020-002"
       ],
       "unverified_notes": ""
     }
@@ -162,7 +161,8 @@
   ],
   "open_findings": [],
   "related_findings": [
-    "FND-20261013-002"
+    "FND-20261013-002",
+    "FND-20261020-002"
   ]
 }
 -->
@@ -209,6 +209,6 @@ regex((?=GetName))      // 环视被排除
 
 泛型身份依 GEN-IDENTITY-001；限制/取消依 CROSS-RESOURCES-001。不承诺文本能区分所有 CLR 身份，更不承诺测试过所有任意正则输入。
 
-S4登记已复现的不完整泛型实参格式化问题；[关联Finding](../../../reviews/findings/FND-20261013-002.md)保留规范预期、实际结果和控制输入，不能用regex Matched证明该签名完整。
+S4 当前遵循[构造校验裁决](../../../reviews/2026-10-20-c02-generic-signature-validation.md)：元数或槽位矛盾在构造时拒绝，不再送入 regex 求 Unknown。[旧 Finding](../../../reviews/findings/FND-20261013-002.md)保留当时观察与预期，但相应输入契约已被本次裁决取代。
 
-S4 的残缺构造误格式化已修复：实际实参数量不符声明元数或无法提供原始声明所需完整槽位时，regex 为 Unknown/AN3001。完整构造、合法开放方法、嵌套类型总元数及旧外部表示保留执行控制，见 [IncompleteGenericArgumentTests](../../../../tests/AspectN.Tests/Evaluation/IncompleteGenericArgumentTests.cs)。
+合法定义、完整闭合/开放构造及嵌套类型的当前对照见 [IncompleteGenericArgumentTests](../../../../tests/AspectN.Tests/Evaluation/IncompleteGenericArgumentTests.cs)和[真实后端回归](../../../../tests/AspectN.Conformance.Tests/GenericSignatureConstructionTests.cs)。无法提供可编号声明上下文、遇到不支持类型形状等事实缺口仍遵守既有 Unknown 规则；不是任何完整槽位都能保证规范文本可用。

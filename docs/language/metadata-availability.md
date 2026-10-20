@@ -6,6 +6,8 @@ Roslyn 源码映射补充编译器的 async、iterator 和 async-iterator 状态
 
 方法和属性的参数集合按声明顺序建立快照。每个 `ParameterSignature.Position` 必须等于其从零开始的列表索引。构造器以 `ArgumentException` 拒绝 null 项、乱序位置、重复及间隙，不重排调用方提供的元数据。
 
+泛型实参的槽位结构也在构造时验证，遵循[语言第 13.1 节](../superpowers/specs/2026-07-31-aspectn-language-spec.md#131-元数)及 [2026-10-20 维护者裁决](../reviews/2026-10-20-c02-generic-signature-validation.md)。声明元数与非空实参列表数量不符，属于结构非法，抛 `ArgumentException`；不通过 `MetadataAvailability` 将它改写为未知事实。合法定义允许空实参列表；完整槽位中无法恢复的类型事实仍可用 `UnsupportedTypeSignature` 表示。
+
 原生映射支持最多 64 层类型结构（根为第一层）、最多 64 个有效类型泛型形参（含外层类型）和独立的最多 64 个方法泛型形参。超限输入在展开前抛出带 AN3005（深度）或 AN3006（元数）的 `AspectNLimitException`。该异常穿过元数据恢复流程传播；超出支持上限不是元数据事实不可用。匹配外部构造的超限中立签名时返回 Unknown 和对应诊断。`AspectNLimits` 公开两个上限。
 
 | 签名 | 适用事实 |

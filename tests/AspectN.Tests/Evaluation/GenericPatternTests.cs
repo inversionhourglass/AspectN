@@ -73,17 +73,7 @@ public sealed class GenericPatternTests
     public void Match_ConstructedType_UsesEffectiveArgumentsNotDefinitionParameters()
     {
         var definitionIdentity = Identity("Example", "Box", 1);
-        var definition = new NamedTypeSignature(
-            definitionIdentity,
-            [
-                new GenericParameterTypeSignature(
-                    new GenericParameterSignature(
-                        "T",
-                        GenericParameterOwnerKind.Type,
-                        "Example.Box`1",
-                        new AssemblyIdentity("Example.Assembly"),
-                        0))
-            ]);
+        var definition = new NamedTypeSignature(definitionIdentity);
         var constructed = new NamedTypeSignature(
             definitionIdentity,
             [Named("System", "String")],

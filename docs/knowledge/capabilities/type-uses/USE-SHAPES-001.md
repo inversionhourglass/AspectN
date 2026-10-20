@@ -20,7 +20,7 @@
       "adapter": "core",
       "input_mode": "neutral",
       "entry_point": "CompiledTypePattern.Match",
-      "conditions": "NullableTupleTasklikeTests 和 TupleShapeTests 的中立可空、长 ValueTuple、Task/ValueTask、开放定义/不完整实参",
+      "conditions": "NullableTupleTasklikeTests 和 TupleShapeTests 的中立可空、长 ValueTuple、Task/ValueTask、开放定义、完整槽位中的不可用类型事实及非法Rest构造拒绝",
       "target": "working-tree",
       "expected_behavior": "引用 ? 保持身份；值类型 ? 包装 Nullable；元组只接受 ValueTuple 并归一 Rest；tasklike 按返回形状；不完整事实保持 Unknown",
       "contract_status": "supported",
@@ -29,7 +29,7 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-001"
+        "EV-20261020-002"
       ],
       "unverified_notes": ""
     },
@@ -198,7 +198,7 @@
 
 ## 输入条件
 
-候选类别或泛型实参不完整时按所需事实求值。开放定义的形式参数不同于缺少部分实参的损坏构造签名。
+候选类别或完整泛型槽位中的类型事实不可用时按所需事实求值。开放定义保留形式参数；缺少部分实参、零元数却带实参的结构不合法签名按[2026-10-20 裁决](../../../reviews/2026-10-20-c02-generic-signature-validation.md)在构造时拒绝。
 
 ## 分层能力
 

@@ -11,15 +11,16 @@ namespace AspectN.Metadata;
 /// <param name="declaringType">Specifies the declaring type.</param>
 /// <param name="returnType">Specifies the return type.</param>
 /// <param name="parameters">Specifies parameters in declaration order; each position must equal its list index.</param>
-/// <param name="genericParameters">Specifies the generic parameters.</param>
-/// <param name="genericArguments">Specifies the generic arguments.</param>
+/// <param name="genericParameters">Specifies method declaration slots in order, or an empty collection for a construction.</param>
+/// <param name="genericArguments">Specifies a complete construction, or an empty collection for a definition. Without declaration slots or an original definition, the arguments determine arity.</param>
 /// <param name="attributes">Specifies the attributes.</param>
 /// <param name="returnAttributes">Specifies the return attributes.</param>
 /// <param name="typeAttributes">Specifies the declaring type attributes.</param>
-/// <param name="originalDefinition">Specifies the original definition.</param>
+/// <param name="originalDefinition">Specifies an unconstructed method definition whose arity agrees with the current slots.</param>
 /// <param name="associatedProperty">Specifies the associated property.</param>
 /// <param name="availability">Identifies facts whose values could not be read.</param>
-/// <exception cref="ArgumentException">A parameter is null or its position does not equal its list index.</exception>
+/// <exception cref="ArgumentNullException">A required name, type, or collection is null.</exception>
+/// <exception cref="ArgumentException">A parameter is null or has an invalid position, a generic slot is null, generic slot counts are inconsistent, or the original definition is constructed.</exception>
 public sealed class MethodSignature(
     string name,
     MethodKind kind,
@@ -40,10 +41,8 @@ public sealed class MethodSignature(
 {
     private readonly IReadOnlyList<AttributeSignature> _attributes = new ReadOnlyCollection<AttributeSignature>(
             CollectionSnapshot.Copy(attributes, nameof(attributes)));
-    private readonly IReadOnlyList<TypeSignature> _genericArguments = new ReadOnlyCollection<TypeSignature>(
-            CollectionSnapshot.Copy(genericArguments, nameof(genericArguments)));
-    private readonly IReadOnlyList<GenericParameterSignature> _genericParameters = new ReadOnlyCollection<GenericParameterSignature>(
-            CollectionSnapshot.Copy(genericParameters, nameof(genericParameters)));
+    private readonly (IReadOnlyList<GenericParameterSignature> Parameters, IReadOnlyList<TypeSignature> Arguments) _generics =
+        GenericSignatureValidation.CopyMethodGenerics(genericParameters, genericArguments, originalDefinition);
     private readonly IReadOnlyList<ParameterSignature> _parameters = new ReadOnlyCollection<ParameterSignature>(
             CollectionSnapshot.CopyParameters(parameters, nameof(parameters)));
     private readonly IReadOnlyList<AttributeSignature> _returnAttributes = new ReadOnlyCollection<AttributeSignature>(
@@ -79,10 +78,10 @@ public sealed class MethodSignature(
 
     /// <summary>Gets the generic parameters.</summary>
     public IReadOnlyList<GenericParameterSignature> GenericParameters =>
-        _genericParameters;
+        _generics.Parameters;
 
     /// <summary>Gets the generic arguments.</summary>
-    public IReadOnlyList<TypeSignature> GenericArguments => _genericArguments;
+    public IReadOnlyList<TypeSignature> GenericArguments => _generics.Arguments;
 
     /// <summary>Gets the attributes.</summary>
     public IReadOnlyList<AttributeSignature> Attributes => _attributes;

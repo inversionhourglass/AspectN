@@ -53,7 +53,7 @@ public sealed class SignatureLimitTests
     [InlineData(true)]
     public void Match_TooManyActualTypeArguments_CannotBypassLimit(bool regex)
     {
-        var candidate = new NamedTypeSignature(Named("Many").Identity, Enumerable.Repeat(Named("Int32"), 65));
+        var candidate = new NamedTypeSignature(Named("Many", 65).Identity, Enumerable.Repeat(Named("Int32"), 65));
         var result = regex ? MatchMethod("regex(.)", Method([], [], candidate)) : MatchType("*", candidate);
 
         AssertResult(result, MatchStatus.Unknown, "AN3006");
