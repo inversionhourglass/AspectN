@@ -246,7 +246,8 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
     // 以及 SZ 向量数组的五个泛型集合接口（实参与元素精确一致）；多维数组不实现泛型集合接口。
     private IEnumerable<TypeSignature> EnumerateArrayRelations(ArrayType array)
     {
-        var module = array.Module;
+        // 游离数组没有所属模块，固定关系仍可使用当前映射上下文的核心库身份。
+        var module = array.Module ?? _mapper.Module;
         yield return _mapper.MapType(
             SyntheticReference(module, "System", "Array"));
         yield return _mapper.MapType(

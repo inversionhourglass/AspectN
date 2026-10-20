@@ -50,17 +50,18 @@
       "id": "S2",
       "adapter": "cecil",
       "input_mode": "reference",
-      "entry_point": "Mapper.MapType / IsAssignableTo",
-      "conditions": "CecilResolvedMetadataTests 和 CecilTypeSystemTests 的引用程序集、已解析定义、名义继承和缺失分支",
+      "entry_point": "Mapper.MapType / IsAssignableTo / GetInheritanceClosure",
+      "conditions": "CecilResolvedMetadataTests 和 CecilTypeSystemTests 的引用程序集、已解析定义、名义继承和缺失分支；CecilDetachedArrayTests：公共构造且元素非空的游离/未解析元素/正常Int32引用，Vector、非SZ一维和二维数组；固定关系、闭包、五个泛型接口的同/异元素、原Module优先和预先取消",
       "target": "working-tree",
-      "expected_behavior": "解析后保留定义身份，缺失引用保留可知结构和未知；不引入 CLR variance",
+      "expected_behavior": "解析后保留定义身份，缺失引用保留可知结构和未知；不引入 CLR variance；数组自身Module存在时优先使用，否则回退映射上下文；不依赖元素定义解析即可保留8个固定关系，Vector另含5个精确元素泛型接口；General不合成泛型接口，取消传播",
       "contract_status": "supported",
       "verification_status": "verified",
       "verification_methods": [
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-002"
+        "EV-20261014-002",
+        "EV-20261021-004"
       ],
       "unverified_notes": ""
     },
@@ -218,6 +219,24 @@
         "EV-20261021-003"
       ],
       "unverified_notes": "仅列出的字段与输入组合；不外推Fody或任意第三方实现。"
+    },
+    {
+      "id": "S11",
+      "adapter": "cecil_fody",
+      "input_mode": "reference",
+      "entry_point": "Mapper.MapType / IsAssignableTo / GetInheritanceClosure",
+      "conditions": "CecilDetachedArrayTests：公共构造且元素非空的游离/未解析元素/正常Int32引用，Vector、非SZ一维和二维数组；固定关系、闭包、五个泛型接口的同/异元素、原Module优先和预先取消",
+      "target": "working-tree",
+      "expected_behavior": "数组自身Module存在时优先使用，否则回退映射上下文；不依赖元素定义解析即可保留8个固定关系，Vector另含5个精确元素泛型接口；General不合成泛型接口，取消传播",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261021-004"
+      ],
+      "unverified_notes": "限定当前Cecil身份及公共构造引用；未证明真实PE自然丢失Module，不等于中立签名脱离原生关联。"
     }
   ],
   "invariant_checks": [
@@ -287,7 +306,8 @@
   "open_findings": [],
   "related_findings": [
     "FND-20261021-002",
-    "FND-20261021-003"
+    "FND-20261021-003",
+    "FND-20261021-004"
   ]
 }
 -->
@@ -335,6 +355,8 @@ System.Collections.Generic.IEnumerable<object+>
 [名义关系测试](../../../../tests/AspectN.Reflection.Tests/ReflectionMappingTests.cs)、[Cecil 解析身份](../../../../tests/AspectN.Cecil.Tests/CecilResolvedMetadataTests.cs)、[未知祖先](../../../../tests/AspectN.Roslyn.Tests/UnavailableAncestorTests.cs)。场景仅覆盖所列输入。
 
 ## 关联与缺口
+
+C07 的原生数组 Module 回退及固定关系由 S2 的普通 Cecil 输入与 S11 的 Fody 输入分别验证。元素引用未解析不影响不依赖其定义的数组关系；没有把原生引用无 Module 写成中立签名无关联，也不外推真实 PE 来源。[修复记录](../../../reviews/2026-10-21-c07-detached-cecil-arrays.md)保留边界。
 
 非限定关系查询契约见 `ITypeSystem.IsAssignableTo` 的公开 XML 和[后端实现指南](../../../usage/backend-implementation.md)。S1 的记录型后端只核对核心传参，S7–S10 分别验证四视图的现有查询行为；不将这些查询规则应用到严格 `AreEqual`，也不据此声称任意第三方已验证。
 

@@ -230,6 +230,8 @@ _ = new MethodSignature(mapped.Name, mapped.Kind, mapped.Accessibility,
 
 H1 的人工损坏 Cecil 对象（缺 ReturnType/ElementType）仍保留异常，维护者决定不增加容错或改成 Unknown；尚未证明真实程序集可达。[历史处置](../reviews/findings/FND-20261011-001.md)保留条件和证据缺口。完整可运行示例不包含 H1，不把其他正常输入的验证当作 H1 已修复。
 
+公开构造的 Cecil 数组若 ElementType 非空、但引用自身没有 Module，经过当前 Mapper 映射后仍可查询固定数组关系：使用数组自带模块，缺失时回退当前 Cecil 上下文。元素类型定义不可解析不妨碍判断它属于 System.Array/Object；Vector 的泛型集合接口仍要求相同元素，General 数组不因此获得这些接口。[C07 回归记录](../reviews/2026-10-21-c07-detached-cecil-arrays.md)分别验证普通 Cecil 和 Fody，不将该输入等同于损坏 ElementType 或无原生关联的中立签名。
+
 ## 10. 未知、未建档不等于不支持
 
 这些状态描述证据和盘点缺口，不据此新增排除承诺。不支持原因依[正式规范](../superpowers/specs/2026-07-31-aspectn-language-spec.md)和[架构范围](../superpowers/specs/2026-07-31-aspectn-redesign-design.md)；九分类的详细证据可从[知识库](../knowledge/index.md)按主题读取。

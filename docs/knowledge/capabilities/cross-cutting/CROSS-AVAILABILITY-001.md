@@ -41,10 +41,10 @@
       "id": "S2",
       "adapter": "cecil",
       "input_mode": "reference",
-      "entry_point": "Mapper / HasDirectAttribute / CompiledMemberPattern.Match",
-      "conditions": "CecilUnavailableMetadataTests 的未解析引用、Int32 引用形状、六类 resolver 失败和取消；CecilSignatureLimitTests 指定原生边界；CecilGenericParameterAttributeTests 的未解析 TypeReference 所属泛型槽位对照",
+      "entry_point": "Mapper / HasDirectAttribute / CompiledMemberPattern.Match / IsAssignableTo / GetInheritanceClosure",
+      "conditions": "CecilUnavailableMetadataTests 的未解析引用、Int32 引用形状、六类 resolver 失败和取消；CecilSignatureLimitTests 指定原生边界；CecilGenericParameterAttributeTests 的未解析 TypeReference 所属泛型槽位对照；CecilDetachedArrayTests：公共构造且元素非空的游离/未解析元素/正常Int32引用，Vector、非SZ一维和二维数组；固定关系、闭包、五个泛型接口的同/异元素、原Module优先和预先取消",
       "target": "working-tree",
-      "expected_behavior": "保留独立名称/形状；消费缺失定义事实 Unknown/AN3004；取消传播，指定深度/元数超限异常不伪装缺事实；不能将引用槽位的占位空特性列表当作已知空，仍为 Unknown/AN3004",
+      "expected_behavior": "保留独立名称/形状；消费缺失定义事实 Unknown/AN3004；取消传播，指定深度/元数超限异常不伪装缺事实；不能将引用槽位的占位空特性列表当作已知空，仍为 Unknown/AN3004；元素未解析不影响已知固定数组关系，游离原生数组可用当前Module合成，不扩大为损坏ElementType恢复",
       "contract_status": "supported",
       "verification_status": "verified",
       "verification_methods": [
@@ -52,7 +52,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-002",
-        "EV-20261021-001"
+        "EV-20261021-001",
+        "EV-20261021-004"
       ],
       "unverified_notes": ""
     },
@@ -98,10 +99,10 @@
       "id": "S5",
       "adapter": "cecil_fody",
       "input_mode": "reference",
-      "entry_point": "Mapper / HasDirectAttribute / Match",
-      "conditions": "独立 Fody 测试程序集的 CecilUnavailableMetadataTests 和 CecilSignatureLimitTests；CecilGenericParameterAttributeTests 的未解析 TypeReference 所属泛型槽位对照",
+      "entry_point": "Mapper / HasDirectAttribute / Match / IsAssignableTo / GetInheritanceClosure",
+      "conditions": "独立 Fody 测试程序集的 CecilUnavailableMetadataTests 和 CecilSignatureLimitTests；CecilGenericParameterAttributeTests 的未解析 TypeReference 所属泛型槽位对照；CecilDetachedArrayTests：公共构造且元素非空的游离/未解析元素/正常Int32引用，Vector、非SZ一维和二维数组；固定关系、闭包、五个泛型接口的同/异元素、原Module优先和预先取消",
       "target": "working-tree",
-      "expected_behavior": "在 Fody Cecil 身份下核验同一已列引用/读取恢复、取消和原生边界输入；不能将引用槽位的占位空特性列表当作已知空，仍为 Unknown/AN3004",
+      "expected_behavior": "在 Fody Cecil 身份下核验同一已列引用/读取恢复、取消和原生边界输入；不能将引用槽位的占位空特性列表当作已知空，仍为 Unknown/AN3004；元素未解析不影响已知固定数组关系，游离原生数组可用当前Module合成，不扩大为损坏ElementType恢复",
       "contract_status": "supported",
       "verification_status": "verified",
       "verification_methods": [
@@ -109,7 +110,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-003",
-        "EV-20261021-001"
+        "EV-20261021-001",
+        "EV-20261021-004"
       ],
       "unverified_notes": ""
     },
@@ -227,7 +229,8 @@
   "open_findings": [],
   "related_findings": [
     "FND-20261011-001",
-    "FND-20261021-001"
+    "FND-20261021-001",
+    "FND-20261021-004"
   ]
 }
 -->
@@ -267,6 +270,8 @@ Service.Run 返回 Int32 且只有 Accessibility 未知：method(public * Servic
 实现与回归入口：[MetadataAvailabilityTests.cs](../../../../tests/AspectN.Tests/Evaluation/MetadataAvailabilityTests.cs)。当前证据按元数据 evidence_ids 定位，未验证范围见每个场景。
 
 ## 关联与缺口
+
+S2/S5 的 C07 组合分别核验普通 Cecil/Fody：已映射原生数组缺少 Module 时使用上下文，保留已知固定数组关系；不需要元素定义解析，不放宽 General/Vector 或元素实参约束。参见 USE-ARRAY-001/S5、S6；H1 与缺少原生关联的中立输入仍各按原范围处理。
 
 试点中立查询和不可变性保留历史证据；E 阶段为具体引用、源码祖先、Reflection 读取失败、Fody 和 detached 特性目标追加精确场景。生命周期另由 CROSS-LIFETIME-001 治理。H1 损坏 Cecil 输入保留未修复处置，不外推真实程序集风险。
 

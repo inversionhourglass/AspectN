@@ -8,7 +8,7 @@
 
 | 能力 | 范围入口 | 场景数 |
 | --- | --- | --- |
-| [TYPE-NOMINAL-001](../capabilities/types/TYPE-NOMINAL-001.md) | 名称、嵌套、程序集身份与名义关系 | 10 |
+| [TYPE-NOMINAL-001](../capabilities/types/TYPE-NOMINAL-001.md) | 名称、嵌套、程序集身份与名义关系 | 11 |
 
 ## 泛型
 
@@ -21,7 +21,7 @@
 
 | 能力 | 范围入口 | 场景数 |
 | --- | --- | --- |
-| [USE-ARRAY-001](../capabilities/type-uses/USE-ARRAY-001.md) | 数组形状、rank 模式与名义关系 | 4 |
+| [USE-ARRAY-001](../capabilities/type-uses/USE-ARRAY-001.md) | 数组形状、rank 模式与名义关系 | 6 |
 | [USE-REF-001](../capabilities/type-uses/USE-REF-001.md) | ref-kind 与 by-reference 事实 | 8 |
 | [USE-SHAPES-001](../capabilities/type-uses/USE-SHAPES-001.md) | 可空、元组、任务类与不支持的类型形状 | 5 |
 

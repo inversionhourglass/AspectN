@@ -105,6 +105,42 @@
         ],
         "failure_behavior": "编译产生诊断而无有效模式；新增示例验证该失败形态，没有固定具体诊断码"
       }
+    },
+    {
+      "id": "S5",
+      "adapter": "cecil",
+      "input_mode": "reference",
+      "entry_point": "Mapper.MapType / IsAssignableTo / GetInheritanceClosure",
+      "conditions": "CecilDetachedArrayTests：公共构造且元素非空的游离/未解析元素/正常Int32引用，Vector、非SZ一维和二维数组；固定关系、闭包、五个泛型接口的同/异元素、原Module优先和预先取消",
+      "target": "working-tree",
+      "expected_behavior": "数组自身Module存在时优先使用，否则回退映射上下文；不依赖元素定义解析即可保留8个固定关系，Vector另含5个精确元素泛型接口；General不合成泛型接口，取消传播",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261021-004"
+      ],
+      "unverified_notes": "限定当前Cecil身份及公共构造引用；未证明真实PE自然丢失Module，不等于中立签名脱离原生关联。"
+    },
+    {
+      "id": "S6",
+      "adapter": "cecil_fody",
+      "input_mode": "reference",
+      "entry_point": "Mapper.MapType / IsAssignableTo / GetInheritanceClosure",
+      "conditions": "CecilDetachedArrayTests：公共构造且元素非空的游离/未解析元素/正常Int32引用，Vector、非SZ一维和二维数组；固定关系、闭包、五个泛型接口的同/异元素、原Module优先和预先取消",
+      "target": "working-tree",
+      "expected_behavior": "数组自身Module存在时优先使用，否则回退映射上下文；不依赖元素定义解析即可保留8个固定关系，Vector另含5个精确元素泛型接口；General不合成泛型接口，取消传播",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261021-004"
+      ],
+      "unverified_notes": "限定当前Cecil身份及公共构造引用；未证明真实PE自然丢失Module，不等于中立签名脱离原生关联。"
     }
   ],
   "invariant_checks": [
@@ -164,7 +200,9 @@
     }
   ],
   "open_findings": [],
-  "related_findings": []
+  "related_findings": [
+    "FND-20261021-004"
+  ]
 }
 -->
 
@@ -203,6 +241,8 @@ int[]→int[*] 为 Matched，int[*]→int[] 为 NotMatched；AreEqual 区别两�
 实现与回归入口：[ArrayShapeModelTests.cs](../../../../tests/AspectN.Conformance.Tests/ArrayShapeModelTests.cs)。当前证据按元数据 evidence_ids 定位，未验证范围见每个场景。
 
 ## 关联与缺口
+
+S5/S6 分别验证普通 Cecil 和 Fody 的公共构造数组引用，含无 Module、元素未解析与正常模块引用。固定关系使用数组自带或当前上下文 Module，原模块优先；这不是 S1–S3 的真实 IL fixture 扩张。具体[回归入口](../../../../tests/AspectN.Cecil.Tests/CecilDetachedArrayTests.cs)保留形状/元素约束及取消对照。
 
 Fody、Roslyn source 数组及资源/取消专门场景不在本轮 IL fixture 证据内。
 
