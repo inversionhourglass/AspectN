@@ -11,6 +11,19 @@ namespace AspectN.NetFramework.Tests;
 public sealed class CompatibilityAssetTests
 {
     [Fact]
+    public void Reflection_CustomModifierOverloads_SeparateGenericDeclarations()
+    {
+        var assembly = System.Reflection.Assembly.Load(AspectN.Tests.Shared.CustomModifierOwnerFixture.CreateImage());
+        var methods = assembly.GetType("Example.Owner")!.GetMethods().Where(method => method.Name == "M").ToArray();
+        Assert.Equal(2, methods.Length);
+        Assert.Empty(methods[0].ReturnParameter.GetRequiredCustomModifiers());
+        Assert.Single(methods[1].ReturnParameter.GetRequiredCustomModifiers());
+        var system = new Reflection.ReflectionTypeSystem();
+        var variables = methods.Select(method => system.Mapper.MapType(method.GetGenericArguments()[0])).ToArray();
+        Assert.Equal(MatchStatus.NotMatched, system.AreEqual(variables[0], variables[1]).Status);
+    }
+
+    [Fact]
     public void LoadedAssets_AllAdaptersActuallyUseNetstandard20()
     {
         foreach (var type in new[] { typeof(AspectNEngine), typeof(Cecil.CecilTypeSystem),

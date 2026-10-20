@@ -73,10 +73,10 @@
       "id": "S4",
       "adapter": "cecil",
       "input_mode": "native_member",
-      "entry_point": "Mapper.MapMethod / ITypeSystem.AreEqual",
-      "conditions": "结构完整、真实发射且CLR可加载/枚举/调用的两个M<T>(T)声明：返回int/string、约束IDisposable/IComparable；只比较所列原生视图",
+      "entry_point": "Mapper.MapMethod / ITypeSystem.AreEqual；Mapper.MapType / IsAssignableTo（关联后的原生方法形参）",
+      "conditions": "结构完整、真实发射且CLR可加载/枚举/调用的两个M<T>(T)声明：返回int/string、约束IDisposable/IComparable；只比较所列原生视图；补充 CustomModifierOwnerIdentityTests/CecilCustomModifierOwnerIdentityTests 的有序自定义修饰符及所列嵌套位置 fixture，版本范围见 EV-20261020-001",
       "target": "working-tree",
-      "expected_behavior": "不同真实声明保持不同OwnerId，方法泛型形参AreEqual为NotMatched；不由该fixture推出其他变量/约束串用影响",
+      "expected_behavior": "不同真实声明保持不同OwnerId，方法泛型形参AreEqual为NotMatched；不由该fixture推出其他变量/约束串用影响；修饰符重载保持不同声明，IDisposable/IComparable 约束互不串用，C01 readonly 返回模式不误用另一重载约束",
       "contract_status": "supported",
       "verification_status": "verified",
       "verification_methods": [
@@ -85,7 +85,8 @@
       "evidence_ids": [
         "EV-20261014-002",
         "EV-20261014-006",
-        "EV-20261014-010"
+        "EV-20261014-010",
+        "EV-20261020-001"
       ],
       "unverified_notes": ""
     },
@@ -93,10 +94,10 @@
       "id": "S5",
       "adapter": "reflection",
       "input_mode": "native_member",
-      "entry_point": "Mapper.MapMethod / ITypeSystem.AreEqual",
-      "conditions": "结构完整、真实发射且CLR可加载/枚举/调用的两个M<T>(T)声明：返回int/string、约束IDisposable/IComparable；只比较所列原生视图",
+      "entry_point": "Mapper.MapMethod / ITypeSystem.AreEqual；Mapper.MapType / IsAssignableTo（关联后的原生方法形参）",
+      "conditions": "结构完整、真实发射且CLR可加载/枚举/调用的两个M<T>(T)声明：返回int/string、约束IDisposable/IComparable；只比较所列原生视图；补充 CustomModifierOwnerIdentityTests/CecilCustomModifierOwnerIdentityTests 的有序自定义修饰符及所列嵌套位置 fixture，版本范围见 EV-20261020-001；MLC7 普通/根单修饰符跨视图控制及混排/嵌套重载的物理身份控制，不声称恢复旧宿主全部嵌套信息",
       "target": "working-tree",
-      "expected_behavior": "不同真实声明保持不同OwnerId，方法泛型形参AreEqual为NotMatched；不由该fixture推出其他变量/约束串用影响",
+      "expected_behavior": "不同真实声明保持不同OwnerId，方法泛型形参AreEqual为NotMatched；不由该fixture推出其他变量/约束串用影响；修饰符重载保持不同声明，IDisposable/IComparable 约束互不串用",
       "contract_status": "supported",
       "verification_status": "verified",
       "verification_methods": [
@@ -104,7 +105,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-006",
-        "EV-20261014-010"
+        "EV-20261014-010",
+        "EV-20261020-001"
       ],
       "unverified_notes": ""
     },
@@ -112,10 +114,10 @@
       "id": "S6",
       "adapter": "roslyn",
       "input_mode": "pe_symbol",
-      "entry_point": "Mapper.MapMethod / ITypeSystem.AreEqual",
-      "conditions": "结构完整、真实发射且CLR可加载/枚举/调用的两个M<T>(T)声明：返回int/string、约束IDisposable/IComparable；只比较所列原生视图",
+      "entry_point": "Mapper.MapMethod / ITypeSystem.AreEqual；Mapper.MapType / IsAssignableTo（关联后的原生方法形参）",
+      "conditions": "结构完整、真实发射且CLR可加载/枚举/调用的两个M<T>(T)声明：返回int/string、约束IDisposable/IComparable；只比较所列原生视图；补充 CustomModifierOwnerIdentityTests/CecilCustomModifierOwnerIdentityTests 的有序自定义修饰符及所列嵌套位置 fixture，版本范围见 EV-20261020-001",
       "target": "working-tree",
-      "expected_behavior": "不同真实声明保持不同OwnerId，方法泛型形参AreEqual为NotMatched；不由该fixture推出其他变量/约束串用影响",
+      "expected_behavior": "不同真实声明保持不同OwnerId，方法泛型形参AreEqual为NotMatched；不由该fixture推出其他变量/约束串用影响；修饰符重载保持不同声明，IDisposable/IComparable 约束互不串用",
       "contract_status": "supported",
       "verification_status": "verified",
       "verification_methods": [
@@ -123,7 +125,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-006",
-        "EV-20261014-010"
+        "EV-20261014-010",
+        "EV-20261020-001"
       ],
       "unverified_notes": ""
     },
@@ -131,10 +134,10 @@
       "id": "S7",
       "adapter": "cecil_fody",
       "input_mode": "native_member",
-      "entry_point": "Mapper.MapMethod / ITypeSystem.AreEqual",
-      "conditions": "结构完整、真实发射且CLR可加载/枚举/调用的两个M<T>(T)声明：返回int/string、约束IDisposable/IComparable；只比较所列原生视图",
+      "entry_point": "Mapper.MapMethod / ITypeSystem.AreEqual；Mapper.MapType / IsAssignableTo（关联后的原生方法形参）",
+      "conditions": "结构完整、真实发射且CLR可加载/枚举/调用的两个M<T>(T)声明：返回int/string、约束IDisposable/IComparable；只比较所列原生视图；补充 CustomModifierOwnerIdentityTests/CecilCustomModifierOwnerIdentityTests 的有序自定义修饰符及所列嵌套位置 fixture，版本范围见 EV-20261020-001",
       "target": "working-tree",
-      "expected_behavior": "不同真实声明保持不同OwnerId，方法泛型形参AreEqual为NotMatched；不由该fixture推出其他变量/约束串用影响",
+      "expected_behavior": "不同真实声明保持不同OwnerId，方法泛型形参AreEqual为NotMatched；不由该fixture推出其他变量/约束串用影响；修饰符重载保持不同声明，IDisposable/IComparable 约束互不串用，C01 readonly 返回模式不误用另一重载约束",
       "contract_status": "supported",
       "verification_status": "verified",
       "verification_methods": [
@@ -142,7 +145,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-003",
-        "EV-20261014-010"
+        "EV-20261014-010",
+        "EV-20261020-001"
       ],
       "unverified_notes": ""
     }
@@ -206,7 +210,8 @@
   "open_findings": [],
   "related_findings": [
     "FND-20261012-001",
-    "FND-20261013-003"
+    "FND-20261013-003",
+    "FND-20261020-001"
   ]
 }
 -->
@@ -258,3 +263,5 @@ S1–S3的fixture不覆盖缺失解析、全部嵌套/vararg/版本组合或Fody
 仅返回类型不同的真实CLI重载已在S4–S7执行；[声明身份Finding](../../../reviews/findings/FND-20261013-003.md)记录2026-10-13历史碰撞及当前修复。未运行Roslyn源码或额外变量/约束串用断言，不据此扩大观察影响。
 
 S4–S7 的返回类型重载身份碰撞已修复，三个适配器将原始返回形状纳入声明区分；Fody 有独立实际加载/调用回归。新增 [ReturnShapeOwnerIdentityTests](../../../../tests/AspectN.Conformance.Tests/ReturnShapeOwnerIdentityTests.cs) 控制闭合声明类型返回 T / List<T[]>、ref V / ref readonly V /函数指针返回形状；这些是所列 fixture 的补充证据，不承诺编码文本稳定或任意返回修饰符组合。
+
+2026-10-20 补充修复 C01：声明身份独立保留有序 `modreq/modopt` 及结构位置，覆盖返回/参数根、ref 元素、数组元素、泛型实参、指针及函数指针内部 fixture；相同显示形状不再导致不同声明约束串用。Cecil/Fody 另执行原 readonly 返回表达式的误匹配回归。[修复记录](../../../reviews/2026-10-20-c01-custom-modifier-identity.md)与 [Finding](../../../reviews/findings/FND-20261020-001.md)说明范围、反证及回退限制。MLC7 只能提供部分根事实，不据该宿主的通过结果声称完整恢复嵌套修饰符或所有跨视图身份文本一致。

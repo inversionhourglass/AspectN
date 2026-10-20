@@ -596,15 +596,13 @@ public sealed partial class RoslynSignatureMapper
         // 原始声明的参数和返回形状（含ref方式的&后缀）共同区分CLI重载；
         // 构造规则与 Reflection、Cecil 适配器保持一致。
         var parameters = definition.Parameters
-            .Select(parameter => CanonicalParameterForm(parameter.Type) +
-                (parameter.RefKind == Microsoft.CodeAnalysis.RefKind.None
-                    ? string.Empty
-                    : "&"))
+            .Select(parameter => DeclarationParameterForm(parameter.Type, parameter.RefKind,
+                parameter.CustomModifiers, parameter.RefCustomModifiers))
             .ToArray();
         return $"{MapIdentity(definition.ContainingType).FullMetadataName}." +
                $"{definition.Name}`{definition.Arity}" +
-               $"({string.Join(",", parameters)})->{CanonicalParameterForm(definition.ReturnType)}" +
-               (definition.RefKind == Microsoft.CodeAnalysis.RefKind.None ? string.Empty : "&");
+               $"({string.Join(",", parameters)})->{DeclarationParameterForm(definition.ReturnType,
+                   definition.RefKind, definition.ReturnTypeCustomModifiers, definition.RefCustomModifiers)}";
     }
 
     private string CanonicalParameterForm(ITypeSymbol type, bool qualifyAssembly = true)

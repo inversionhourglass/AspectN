@@ -182,6 +182,28 @@ internal static class RuntimeTypeFacts
         }
     }
 
+    internal static bool TryGetCustomModifiers(Type type, out Type[] required, out Type[] optional)
+    {
+        required = optional = Type.EmptyTypes;
+        try
+        {
+#if NETSTANDARD2_0
+            if (_GetRequiredCustomModifiers?.Invoke(type, null) is not Type[] requiredTypes ||
+                _GetOptionalCustomModifiers?.Invoke(type, null) is not Type[] optionalTypes) return false;
+            required = requiredTypes;
+            optional = optionalTypes;
+#else
+            required = type.GetRequiredCustomModifiers();
+            optional = type.GetOptionalCustomModifiers();
+#endif
+            return true;
+        }
+        catch (Exception exception) when (exception is NotSupportedException or TargetInvocationException)
+        {
+            return false;
+        }
+    }
+
     internal static string CallingConvention(Type type, bool isModified)
     {
         try

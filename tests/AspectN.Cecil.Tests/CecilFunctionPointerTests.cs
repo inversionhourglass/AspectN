@@ -100,10 +100,12 @@ public sealed class CecilFunctionPointerTests
             "AspectN.Cecil.Tests.Fixtures.FunctionPointerFixture.Convert`1(" +
             $"delegate*[cdecl]<{intForm},!!0>,{intForm})->!!0",
             ownerIds[0]);
-        Assert.Equal(
+        Assert.StartsWith(
             "AspectN.Cecil.Tests.Fixtures.FunctionPointerFixture.Convert`1(" +
-            $"delegate*[managed]<{intForm}&,!!0&>,{intForm})->!!0",
+            $"delegate*[managed]<{intForm}&,!!0&>#mods[",
             ownerIds[1]);
+        Assert.Contains(FrameworkType("System.Runtime.InteropServices.InAttribute"), ownerIds[1]);
+        Assert.EndsWith($"],{intForm})->!!0", ownerIds[1]);
         Assert.Equal(
             "AspectN.Cecil.Tests.Fixtures.FunctionPointerFixture.Convert`1(" +
             $"delegate*[managed]<{intForm}&,!!0>,{intForm})->!!0",
@@ -139,7 +141,7 @@ public sealed class CecilFunctionPointerTests
         var refReadonlyReturnIndex = Array.FindIndex(
             mapped,
             signature => signature.Parameter.OwnerId.Contains(
-                $"delegate*[managed]<{intForm}&,!!0&>,",
+                $"delegate*[managed]<{intForm}&,!!0&>#mods[",
                 StringComparison.Ordinal));
         Assert.True(
             cdeclIndex >= 0 &&

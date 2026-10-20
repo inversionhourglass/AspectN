@@ -5,6 +5,7 @@
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\Shared\CustomModifierOwnerFixture.cs" Link="SharedTests\CustomModifierOwnerFixture.cs" />
     <ProjectReference Include="..\..\src\AspectN.Cecil\AspectN.Cecil.csproj" />
     <ProjectReference Include="..\..\src\AspectN.Reflection\AspectN.Reflection.csproj" />
     <ProjectReference Include="..\..\src\AspectN.Roslyn\AspectN.Roslyn.csproj" />

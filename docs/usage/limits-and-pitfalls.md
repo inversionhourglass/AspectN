@@ -286,3 +286,5 @@ string M<T>(T value) where T : IComparable
 上例说明 CLI 签名，不能复制为 C# 重载声明。当前实现将原始声明的返回形状纳入方法声明者身份；真实发射、加载并调用的两个 PE 方法，在 Cecil/Fody、Reflection 和 Roslyn PE 中保持不同泛型形参 OwnerId，AreEqual 为 NotMatched。[历史碰撞及修复证据](../reviews/findings/FND-20261013-003.md)保留原始事实。
 
 闭合声明类型也不会改写方法形参的声明身份，返回值与约束查询仍使用各自的闭合上下文。OwnerId 的字符串编码是实现细节，不承诺旧文本永久稳定；使用结构身份比较，避免按显示文本合并声明。已执行的返回形状控制见[跨后端回归](../../tests/AspectN.Conformance.Tests/ReturnShapeOwnerIdentityTests.cs)，不由此推断所有变量绑定或任意 CLI 修饰符组合已验证。
+
+返回/参数中的 `modreq/modopt` 也参与声明身份。例如，IL 工具可以生成同名、同参数的 `ref T` / `ref readonly T` 方法；它们的 `T` 属于不同声明，不能共用约束。当前回归覆盖修饰符种类、类型、顺序和所列嵌套位置，Cecil/Fody 的 readonly 返回模式不再借用另一重载的 `IDisposable` 约束。具体范围见 [C01 修复记录](../reviews/2026-10-20-c01-custom-modifier-identity.md)；这不增加 C# 重载语法，也不承诺遍历所有 CLI 生产者或版本组合。

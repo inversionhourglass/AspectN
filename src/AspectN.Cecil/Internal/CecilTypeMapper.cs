@@ -335,11 +335,11 @@ internal static partial class CecilTypeMapper
         CecilNativeTypeLimitGuard.ValidateMethod(method);
         // 原始声明的参数和返回形状共同区分CLI重载；不混入闭合查询上下文。
         var parameters = method.Parameters
-            .Select(parameter => CanonicalParameterForm(parameter.ParameterType))
+            .Select(parameter => DeclarationParameterForm(parameter.ParameterType))
             .ToArray();
         return $"{MapIdentity(method.DeclaringType).FullMetadataName}.{method.Name}`" +
                MethodGenericArity(method) +
-               $"({string.Join(",", parameters)})->{CanonicalParameterForm(method.ReturnType)}";
+               $"({string.Join(",", parameters)})->{DeclarationParameterForm(method.ReturnType)}";
     }
 
     private static int MethodGenericArity(MethodReference method)
@@ -359,8 +359,8 @@ internal static partial class CecilTypeMapper
         var isVarArg = (method.CallingConvention & ~MethodCallingConvention.Generic) == MethodCallingConvention.VarArg;
         var parameters = method.Parameters
             .TakeWhile(parameter => !isVarArg || parameter.ParameterType is not SentinelType)
-            .Select(parameter => CanonicalParameterForm(parameter.ParameterType)).ToArray();
-        var returnType = CanonicalParameterForm(method.ReturnType);
+            .Select(parameter => DeclarationParameterForm(parameter.ParameterType)).ToArray();
+        var returnType = DeclarationParameterForm(method.ReturnType);
         bool Matches(MethodDefinition candidate)
         {
             if (candidate.Name != method.Name || candidate.GenericParameters.Count != MethodGenericArity(method) ||
@@ -368,8 +368,8 @@ internal static partial class CecilTypeMapper
                 (candidate.CallingConvention & ~MethodCallingConvention.Generic) !=
                 (method.CallingConvention & ~MethodCallingConvention.Generic)) return false;
             CecilNativeTypeLimitGuard.ValidateMethod(candidate);
-            return candidate.Parameters.Select(parameter => CanonicalParameterForm(parameter.ParameterType)).SequenceEqual(parameters) &&
-                CanonicalParameterForm(candidate.ReturnType) == returnType;
+            return candidate.Parameters.Select(parameter => DeclarationParameterForm(parameter.ParameterType)).SequenceEqual(parameters) &&
+                DeclarationParameterForm(candidate.ReturnType) == returnType;
         }
         // 原生解析负责继承链查找，但必须验证其结果包含正确的参数程序集身份。
         var resolved = method.Resolve();

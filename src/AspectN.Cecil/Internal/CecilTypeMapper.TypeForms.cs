@@ -7,6 +7,43 @@ internal static partial class CecilTypeMapper
 {
     internal static string CanonicalTypeText(TypeReference type) => CanonicalParameterForm(type, qualifyAssembly: false);
 
+    private static string DeclarationParameterForm(TypeReference type)
+    {
+        return GenericOwnerIdentity.WithCustomModifiers(CanonicalParameterForm(type), DeclarationModifiers(type, string.Empty));
+    }
+
+    private static IEnumerable<string> DeclarationModifiers(TypeReference type, string path)
+    {
+        while (type is IModifierType modifier)
+        {
+            yield return GenericOwnerIdentity.CustomModifier(path, type is OptionalModifierType,
+                CanonicalParameterForm(modifier.ModifierType));
+            type = modifier.ElementType;
+        }
+        // 只遍历声明签名树，不跟随泛型形参的 owner 回到同一方法。
+        switch (type)
+        {
+            case ByReferenceType reference:
+                foreach (var entry in DeclarationModifiers(reference.ElementType, path + "/ref")) yield return entry;
+                break;
+            case PointerType pointer:
+                foreach (var entry in DeclarationModifiers(pointer.ElementType, path + "/pointer")) yield return entry;
+                break;
+            case ArrayType array:
+                foreach (var entry in DeclarationModifiers(array.ElementType, path + "/element")) yield return entry;
+                break;
+            case GenericInstanceType generic:
+                for (var index = 0; index < generic.GenericArguments.Count; index++)
+                    foreach (var entry in DeclarationModifiers(generic.GenericArguments[index], path + "/arg:" + index)) yield return entry;
+                break;
+            case FunctionPointerType function:
+                foreach (var entry in DeclarationModifiers(function.ReturnType, path + "/return")) yield return entry;
+                for (var index = 0; index < function.Parameters.Count; index++)
+                    foreach (var entry in DeclarationModifiers(function.Parameters[index].ParameterType, path + "/parameter:" + index)) yield return entry;
+                break;
+        }
+    }
+
     private static IEnumerable<TypeTextPart<TypeReference>> TypeFormParts(TypeReference type, bool qualified, bool modified)
     {
         switch (type)

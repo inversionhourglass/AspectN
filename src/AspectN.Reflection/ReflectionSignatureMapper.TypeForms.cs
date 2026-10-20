@@ -5,6 +5,114 @@ namespace AspectN.Reflection;
 
 public sealed partial class ReflectionSignatureMapper
 {
+    private static IReadOnlyList<string>[]? DeclarationModifiers(System.Reflection.MethodBase method)
+    {
+        try
+        {
+            // Reflection 的两个 modifier API 分离 required/optional，且同类顺序与元数据相反。
+            // 读取原始签名才能保留混排、嵌套位置，并兼容没有 modified Type API 的旧宿主。
+            return MethodCustomModifierReader.Read(method.Module.ResolveSignature(method.MetadataToken), token =>
+                CanonicalParameterForm(method.Module.ResolveType(token,
+                    method.DeclaringType?.GetGenericArguments(), method.GetGenericArguments())));
+        }
+        catch (Exception exception) when (exception is NotSupportedException or InvalidOperationException or ArgumentException or BadImageFormatException)
+        {
+            // MLC 等宿主仍可能提供完整 modified 结构；仅在顺序无法恢复时退回物理身份。
+            return UnambiguousDeclarationModifiers(method);
+        }
+    }
+
+    private static IReadOnlyList<string>[]? UnambiguousDeclarationModifiers(System.Reflection.MethodBase method)
+    {
+        var result = ReadUnambiguousDeclarationModifiers(method, out var rootOnly);
+        if (result is null || !rootOnly) return result;
+        // 旧版 MLC 只能读根修饰符。可读形状无法区分同名重载时，保留物理声明身份。
+        var shape = DeclarationShape(method, result);
+        try
+        {
+            foreach (var candidate in RequiredDeclaringType(method).GetMethods(System.Reflection.BindingFlags.Public |
+                         System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance |
+                         System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.DeclaredOnly))
+            {
+                if (candidate.MetadataToken == method.MetadataToken || candidate.Name != method.Name ||
+                    candidate.GetGenericArguments().Length != method.GetGenericArguments().Length ||
+                    candidate.GetParameters().Length != method.GetParameters().Length) continue;
+                ValidateMethod(candidate);
+                var other = ReadUnambiguousDeclarationModifiers(candidate, out _);
+                if (other is not null && Enumerable.SequenceEqual(DeclarationShape(candidate, other), shape)) return null;
+            }
+        }
+        catch (Exception exception) when (exception is TypeLoadException or System.Reflection.ReflectionTypeLoadException or
+            IOException or BadImageFormatException or NotSupportedException or InvalidOperationException or ArgumentException or
+            AspectNLimitException)
+        {
+            // 排歧所需的兄弟声明不可读，不应使当前完整候选的映射失败；改用物理身份。
+            return null;
+        }
+        return result;
+    }
+
+    private static string[] DeclarationShape(System.Reflection.MethodBase method, IReadOnlyList<string>[] modifiers)
+    {
+        var result = method.GetParameters().Select((parameter, index) => GenericOwnerIdentity.WithCustomModifiers(
+            CanonicalParameterForm(parameter), modifiers[index + 1]));
+        return result.Prepend(method is System.Reflection.MethodInfo info ? GenericOwnerIdentity.WithCustomModifiers(
+            CanonicalParameterForm(info.ReturnParameter), modifiers[0]) : "System.Void").ToArray();
+    }
+
+    private static IReadOnlyList<string>[]? ReadUnambiguousDeclarationModifiers(System.Reflection.MethodBase method, out bool rootOnly)
+    {
+        rootOnly = false;
+        var parameters = method.GetParameters();
+        var result = new IReadOnlyList<string>[parameters.Length + 1];
+        for (var index = 0; index < result.Length; index++)
+        {
+            var parameter = index == 0 ? (method as System.Reflection.MethodInfo)?.ReturnParameter : parameters[index - 1];
+            var entries = new List<string>();
+            result[index] = entries;
+            if (parameter is null) continue;
+            var type = RuntimeTypeFacts.GetParameterType(parameter, out var modified);
+            if (modified)
+            {
+                if (!TryCollectDeclarationModifiers(type, string.Empty, entries)) return null;
+                continue;
+            }
+            rootOnly = true;
+            var required = parameter.GetRequiredCustomModifiers();
+            var optional = parameter.GetOptionalCustomModifiers();
+            if (required.Length + optional.Length > 1) return null;
+            foreach (var modifier in required) entries.Add(GenericOwnerIdentity.CustomModifier(string.Empty, false, CanonicalParameterForm(modifier)));
+            foreach (var modifier in optional) entries.Add(GenericOwnerIdentity.CustomModifier(string.Empty, true, CanonicalParameterForm(modifier)));
+        }
+        return result;
+    }
+
+    private static bool TryCollectDeclarationModifiers(Type type, string path, List<string> entries)
+    {
+        if (!RuntimeTypeFacts.TryGetCustomModifiers(type, out var required, out var optional) ||
+            required.Length + optional.Length > 1) return false;
+        // 单个修饰符没有顺序歧义；多个修饰符的分组 API 不能证明原始混排。
+        foreach (var modifier in required) entries.Add(GenericOwnerIdentity.CustomModifier(path, false, CanonicalParameterForm(modifier)));
+        foreach (var modifier in optional) entries.Add(GenericOwnerIdentity.CustomModifier(path, true, CanonicalParameterForm(modifier)));
+        if (type.HasElementType)
+            return TryCollectDeclarationModifiers(RequiredElementType(type),
+                path + (type.IsByRef ? "/ref" : type.IsPointer ? "/pointer" : "/element"), entries);
+        if (RuntimeTypeFacts.IsFunctionPointer(type))
+        {
+            if (!TryCollectDeclarationModifiers(RuntimeTypeFacts.GetFunctionPointerReturnType(type), path + "/return", entries)) return false;
+            var parameters = RuntimeTypeFacts.GetFunctionPointerParameterTypes(type);
+            for (var index = 0; index < parameters.Length; index++)
+                if (!TryCollectDeclarationModifiers(parameters[index], path + "/parameter:" + index, entries)) return false;
+        }
+        else if (type.IsGenericType && !type.IsGenericTypeDefinition)
+        {
+            var arguments = type.GetGenericArguments();
+            for (var index = 0; index < arguments.Length; index++)
+                if (!TryCollectDeclarationModifiers(arguments[index], path + "/arg:" + index, entries)) return false;
+        }
+        return true;
+    }
+
     private static IEnumerable<TypeTextPart<Type>> TypeFormParts(Type type, bool qualified, bool modified)
     {
         if (type.IsGenericParameter)

@@ -652,10 +652,12 @@ public sealed class RoslynMappingTests
 
         // ref readonly 返回在符号上报 ReturnsByRef=false/RefKind=In，& 的判定必须走
         // RefKind；只读性不同的重载不得折叠，且文本与 Cecil 一致（!!0& 带 &）。
-        Assert.Equal(
+        Assert.StartsWith(
             "RefReturnProbe.Convert`1(" +
-            $"delegate*[managed]<{FrameworkType("System.Int32")}&,!!0&>,{FrameworkType("System.Int32")})->!!0",
+            $"delegate*[managed]<{FrameworkType("System.Int32")}&,!!0&>#mods[",
             refReadonlyReturn.Parameter.OwnerId);
+        Assert.Contains(FrameworkType("System.Runtime.InteropServices.InAttribute"), refReadonlyReturn.Parameter.OwnerId);
+        Assert.EndsWith($"],{FrameworkType("System.Int32")})->!!0", refReadonlyReturn.Parameter.OwnerId);
         Assert.Equal(
             "RefReturnProbe.Convert`1(" +
             $"delegate*[managed]<{FrameworkType("System.Int32")}&,!!0>,{FrameworkType("System.Int32")})->!!0",

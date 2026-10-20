@@ -1,0 +1,289 @@
+{
+  "schema_version": 1,
+  "id": "EV-20261020-001",
+  "method": "automated",
+  "scenario_refs": [
+    {
+      "capability_id": "GEN-IDENTITY-001",
+      "scenario_id": "S4"
+    },
+    {
+      "capability_id": "GEN-IDENTITY-001",
+      "scenario_id": "S5"
+    },
+    {
+      "capability_id": "GEN-IDENTITY-001",
+      "scenario_id": "S6"
+    },
+    {
+      "capability_id": "GEN-IDENTITY-001",
+      "scenario_id": "S7"
+    }
+  ],
+  "oracle_refs": [
+    {
+      "path": "docs/superpowers/specs/2026-07-31-aspectn-redesign-design.md",
+      "section": "8.1 / 8.4"
+    },
+    {
+      "path": "docs/reviews/2026-10-20-c01-custom-modifier-identity.md",
+      "section": "根因与修复 / 回归与证据"
+    }
+  ],
+  "procedure": "dotnet build AspectN.sln -c Release --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -v:minimal\ndotnet test AspectN.sln -c Release --no-build --no-restore -m:1 -nr:false -v:minimal --logger trx --results-directory artifacts/c01-fix/final-verified\ndotnet format AspectN.sln --verify-no-changes --no-restore --verbosity quiet\npwsh -NoProfile -File eng/verify-documentation.ps1\npwsh -NoProfile -File eng/generate-knowledge.ps1 -Check",
+  "result": "passed",
+  "recorded_on": "2026-10-20",
+  "environment": {
+    "os": "Windows",
+    "sdk": "10.0.401",
+    "runtime": "10.0.12",
+    "cecil": "0.11.5",
+    "fody_helpers": "6.8.1",
+    "roslyn": "4.12.0",
+    "metadata_load_context": "7.0.0",
+    "compatibility_targets": [
+      "net472",
+      "net10.0，加载netstandard2.0资产"
+    ],
+    "notes": "net472是目标执行记录，不代表穷举历史CLR；测试在沙箱外运行以建立运行器通信管道，依赖使用既有还原缓存。"
+  },
+  "code_state": {
+    "head": "fac5f0b26afa8a408381788c8c748956c9daf698",
+    "dirty": true,
+    "files": [
+      {
+        "path": "src/Shared/GenericOwnerIdentity.cs",
+        "sha256": "b686173e4579c1608e17eba8a648cf5ca70f597f7bf7fbb9fc7c9fbdb8686796"
+      },
+      {
+        "path": "src/AspectN.Cecil/Internal/CecilTypeMapper.cs",
+        "sha256": "71044cb0b77042b8c6b11e9bb3c84fbc1ee5bed5076c31a2c1be2628328c7c6c"
+      },
+      {
+        "path": "src/AspectN.Cecil/Internal/CecilTypeMapper.TypeForms.cs",
+        "sha256": "e9f0c199e0b9f82f1d9a841c77776afd061325c9c3b37d353dc34a32ad9ddfc5"
+      },
+      {
+        "path": "src/AspectN.Reflection/ReflectionSignatureMapper.cs",
+        "sha256": "1c5d61ef409c4d61428f65a77b52bc80b9037f55010a890f4f2d83396519a689"
+      },
+      {
+        "path": "src/AspectN.Reflection/ReflectionSignatureMapper.TypeForms.cs",
+        "sha256": "de3b05de56f78a8de00b50deef69a115e033a353f702708bea17530f8e8ddf50"
+      },
+      {
+        "path": "src/AspectN.Reflection/Internal/RuntimeTypeFacts.cs",
+        "sha256": "69ca6d7c61a27bad2e0779e72123a16d6dad9db81cec1d37b46e3c3231157d55"
+      },
+      {
+        "path": "src/AspectN.Reflection/Internal/MethodCustomModifierReader.cs",
+        "sha256": "a43baa8f697d9dd9a266ff9406b01c17352df865e2579ea4da4b0a578a7e7a23"
+      },
+      {
+        "path": "src/AspectN.Roslyn/RoslynSignatureMapper.cs",
+        "sha256": "3002bc3332df219496cebc6b7b33f7f8f64337463a2d6814af0506860c6667c5"
+      },
+      {
+        "path": "src/AspectN.Roslyn/RoslynSignatureMapper.TypeForms.cs",
+        "sha256": "219b42cc0e4c2fcb2fbea8c999463c3b3fc103de8be136b2dbf96188354facf4"
+      },
+      {
+        "path": "src/AspectN.Reflection/ReflectionSignatureMapper.Limits.cs",
+        "sha256": "97e3c4de13150f635ae1862712e851803a6b10564a164624e8789bd9d93a33d8"
+      },
+      {
+        "path": "src/AspectN.Cecil/Internal/CecilNativeTypeLimitGuard.cs",
+        "sha256": "18fe0e2a273e14b73fdd6531aa11eca8980c4e20adb6f96fe9f075f14e7b0792"
+      },
+      {
+        "path": "src/Shared/NativeTypeLimitGuard.cs",
+        "sha256": "fa615cbdeabc46161fc3c0d7a39901bd53129dadfac53cc3ce0b277fa8ef2092"
+      },
+      {
+        "path": "src/Shared/IterativeTypeText.cs",
+        "sha256": "44bfd122b5ed964fe90148fed8d5d33ec7b735b6a03c61bc510ae295edf69598"
+      },
+      {
+        "path": "tests/Shared/CustomModifierOwnerFixture.cs",
+        "sha256": "4f35c10e6e9b799c22c5f5943008de7edf21f11dfa3aab882462140878dc32d3"
+      },
+      {
+        "path": "tests/AspectN.Cecil.Tests/CecilCustomModifierOwnerIdentityTests.cs",
+        "sha256": "70299266c0c9aa0d0b9dd125a40977a6428218e1dd4d3a6df21533b21bdd3e3a"
+      },
+      {
+        "path": "tests/AspectN.Conformance.Tests/CustomModifierOwnerIdentityTests.cs",
+        "sha256": "dfc421cccec0410418c4f1d78139c9878c9761c39aecab44e522eb5e3ce76c01"
+      },
+      {
+        "path": "tests/AspectN.NetFramework.Tests/CompatibilityAssetTests.cs",
+        "sha256": "949308ce6bd7a798f4a34d72207d0aeb1b0b6317c25db6a1c66c068d8dc70f63"
+      },
+      {
+        "path": "tests/AspectN.Cecil.Tests/CecilFunctionPointerTests.cs",
+        "sha256": "cb920899dad37d18a318aa1ffa8e8a4c394cccffe428d9b71735a10c01ca56a6"
+      },
+      {
+        "path": "tests/AspectN.Roslyn.Tests/RoslynMappingTests.cs",
+        "sha256": "9544bafd2d2ed758b704876055daec9e236b423c82fe0b85b73e8b95b8dca15e"
+      },
+      {
+        "path": "tests/AspectN.Cecil.Tests/AspectN.Cecil.Tests.csproj",
+        "sha256": "8dee85df7c8e58d7982c86db41c1b6f58628eaae22a8094b2b4631960dbdd2d8"
+      },
+      {
+        "path": "tests/AspectN.Cecil.Fody.Tests/AspectN.Cecil.Fody.Tests.csproj",
+        "sha256": "cbd60bfcbbb15da4ae57114b1e74584d205e78b8490ec89497d133958e7204e2"
+      },
+      {
+        "path": "tests/AspectN.Conformance.Tests/AspectN.Conformance.Tests.csproj",
+        "sha256": "92584fd3aad07f292a4b6a60ade4405ec87d5d573b3d0d16333c8f18f9af1781"
+      },
+      {
+        "path": "tests/AspectN.NetFramework.Tests/AspectN.NetFramework.Tests.csproj",
+        "sha256": "b8319378b74628b419afc126ba5c7ec0a5276b5e8585a624e4074a73d6745ffc"
+      },
+      {
+        "path": "Directory.Build.props",
+        "sha256": "21511672e6680b86521f1d2d275e9fe2d914092073007c8be353f3202c38115a"
+      },
+      {
+        "path": "Directory.Packages.props",
+        "sha256": "a0df07b7d4df78415d87666c16e30c665d285d0e39ed9d300c52aeb7a3837c9a"
+      },
+      {
+        "path": "docs/superpowers/specs/2026-07-31-aspectn-redesign-design.md",
+        "sha256": "99b598fcbc1f8de66c0271e257367f2a5c83af8876bbededcfa99d2ae38a8081"
+      },
+      {
+        "path": "docs/language/generic-parameter-identity.md",
+        "sha256": "558b3f4e22c8a3757c7859417467c2a31b2e8b3f02aad23cc184fc4cb9e0d620"
+      }
+    ]
+  },
+  "dependency_scope": {
+    "paths": [
+      "src/Shared/GenericOwnerIdentity.cs",
+      "src/AspectN.Cecil/Internal/CecilTypeMapper.cs",
+      "src/AspectN.Cecil/Internal/CecilTypeMapper.TypeForms.cs",
+      "src/AspectN.Reflection/ReflectionSignatureMapper.cs",
+      "src/AspectN.Reflection/ReflectionSignatureMapper.TypeForms.cs",
+      "src/AspectN.Reflection/Internal/RuntimeTypeFacts.cs",
+      "src/AspectN.Reflection/Internal/MethodCustomModifierReader.cs",
+      "src/AspectN.Roslyn/RoslynSignatureMapper.cs",
+      "src/AspectN.Roslyn/RoslynSignatureMapper.TypeForms.cs",
+      "src/AspectN.Reflection/ReflectionSignatureMapper.Limits.cs",
+      "src/AspectN.Cecil/Internal/CecilNativeTypeLimitGuard.cs",
+      "src/Shared/NativeTypeLimitGuard.cs",
+      "src/Shared/IterativeTypeText.cs",
+      "tests/Shared/CustomModifierOwnerFixture.cs",
+      "tests/AspectN.Cecil.Tests/CecilCustomModifierOwnerIdentityTests.cs",
+      "tests/AspectN.Conformance.Tests/CustomModifierOwnerIdentityTests.cs",
+      "tests/AspectN.NetFramework.Tests/CompatibilityAssetTests.cs",
+      "tests/AspectN.Cecil.Tests/CecilFunctionPointerTests.cs",
+      "tests/AspectN.Roslyn.Tests/RoslynMappingTests.cs",
+      "tests/AspectN.Cecil.Tests/AspectN.Cecil.Tests.csproj",
+      "tests/AspectN.Cecil.Fody.Tests/AspectN.Cecil.Fody.Tests.csproj",
+      "tests/AspectN.Conformance.Tests/AspectN.Conformance.Tests.csproj",
+      "tests/AspectN.NetFramework.Tests/AspectN.NetFramework.Tests.csproj",
+      "Directory.Build.props",
+      "Directory.Packages.props",
+      "docs/superpowers/specs/2026-07-31-aspectn-redesign-design.md",
+      "docs/language/generic-parameter-identity.md"
+    ],
+    "environment_keys": [
+      "dotnet_sdk",
+      "dotnet_runtime",
+      "CecilVersion",
+      "FodyHelpersVersion",
+      "RoslynVersion",
+      "metadata_load_context_version"
+    ]
+  },
+  "revalidation_conditions": "身份编码、签名解码、声明解析、缓存、native limits、相关测试/编译配置/依赖版本或规范变化时重新执行；旧宿主的根信息不能外推为完整嵌套信息。",
+  "observed_data": {
+    "build_warnings": 0,
+    "build_errors": 0,
+    "full_matrix": [
+      {
+        "file": "Administrator_LAPTOP-ERQOPF47_2026-10-20_15_20_23_net10.0.trx",
+        "assembly": "D:\\Code\\Hourglass\\AspectN\\tests\\AspectN.Tests\\bin\\Release\\net10.0\\AspectN.Tests.dll",
+        "total": 947,
+        "passed": 947,
+        "failed": 0,
+        "not_executed": 0,
+        "sha256": "72ab1e3a1a3ad64963144746fc55aa03ea8c59afd947314fad690297a0c1174e"
+      },
+      {
+        "file": "Administrator_LAPTOP-ERQOPF47_2026-10-20_15_20_25_net10.0.trx",
+        "assembly": "D:\\Code\\Hourglass\\AspectN\\tests\\AspectN.Cecil.Tests\\bin\\Release\\net10.0\\AspectN.Cecil.Tests.dll",
+        "total": 173,
+        "passed": 173,
+        "failed": 0,
+        "not_executed": 0,
+        "sha256": "4c1268b34941355fc388aa41e1ab11e84e6d2554a674c9a1a2942ed3270f004a"
+      },
+      {
+        "file": "Administrator_LAPTOP-ERQOPF47_2026-10-20_15_20_27_net10.0.trx",
+        "assembly": "D:\\Code\\Hourglass\\AspectN\\tests\\AspectN.Reflection.Tests\\bin\\Release\\net10.0\\AspectN.Reflection.Tests.dll",
+        "total": 109,
+        "passed": 109,
+        "failed": 0,
+        "not_executed": 0,
+        "sha256": "fc0b2c9732474c5a638c09d1fe0963d94de4528dfe805a771aedfbbbd6901f24"
+      },
+      {
+        "file": "Administrator_LAPTOP-ERQOPF47_2026-10-20_15_20_28_net10.0.trx",
+        "assembly": "D:\\Code\\Hourglass\\AspectN\\tests\\AspectN.Roslyn.Tests\\bin\\Release\\net10.0\\AspectN.Roslyn.Tests.dll",
+        "total": 28,
+        "passed": 28,
+        "failed": 0,
+        "not_executed": 0,
+        "sha256": "9b9993c9355b09361b29b5c634457454a56bde1fd0bff8bc127e7851870bcbc0"
+      },
+      {
+        "file": "Administrator_LAPTOP-ERQOPF47_2026-10-20_15_20_31_net10.0.trx",
+        "assembly": "D:\\Code\\Hourglass\\AspectN\\tests\\AspectN.Conformance.Tests\\bin\\Release\\net10.0\\AspectN.Conformance.Tests.dll",
+        "total": 308,
+        "passed": 308,
+        "failed": 0,
+        "not_executed": 0,
+        "sha256": "913b6c85432ccbb337e3f0b36b944c1df2652081983032da736182aa408db099"
+      },
+      {
+        "file": "Administrator_LAPTOP-ERQOPF47_2026-10-20_15_20_56_net472.trx",
+        "assembly": "D:\\Code\\Hourglass\\AspectN\\tests\\AspectN.NetFramework.Tests\\bin\\Release\\net472\\AspectN.NetFramework.Tests.dll",
+        "total": 7,
+        "passed": 7,
+        "failed": 0,
+        "not_executed": 0,
+        "sha256": "65516feb2592611973171f98a0f087672baec6f0ce7535b98ec2119dc1971504"
+      },
+      {
+        "file": "Administrator_LAPTOP-ERQOPF47_2026-10-20_15_20_58_net10.0.trx",
+        "assembly": "D:\\Code\\Hourglass\\AspectN\\tests\\AspectN.NetFramework.Tests\\bin\\Release\\net10.0\\AspectN.NetFramework.Tests.dll",
+        "total": 8,
+        "passed": 8,
+        "failed": 0,
+        "not_executed": 0,
+        "sha256": "78e11f398b41e7ba4347310cc00db23546eded60b7483e883f388edc63d3fc7c"
+      },
+      {
+        "file": "Administrator_LAPTOP-ERQOPF47_2026-10-20_15_20_59_net10.0.trx",
+        "assembly": "D:\\Code\\Hourglass\\AspectN\\tests\\AspectN.Cecil.Fody.Tests\\bin\\Release\\net10.0\\AspectN.Cecil.Fody.Tests.dll",
+        "total": 175,
+        "passed": 175,
+        "failed": 0,
+        "not_executed": 0,
+        "sha256": "fcef0ab7a6be3a9919138dc09572c8565299a36f5dda023921aa7963c74118d8"
+      }
+    ],
+    "total": 1755,
+    "passed": 1755,
+    "failed": 0,
+    "red": "原实现conformance5项和Fody5项身份碰撞失败；首版有序/嵌套补充4项失败；MLC跨视图回归1项先失败再修复；MLC兄弟重载缺失依赖控制先抛FileNotFound再补保护",
+    "focused": "此前C01与既有声明身份聚焦32项通过；最终完整矩阵包含这些回归及新增兄弟读取控制，全部通过",
+    "scope": "三端保留所列根/ref/array/generic/pointer/function位置有序modifier；Cecil/Fody九组实际调用及约束/MemberRef/DSL控制；Reflection MLC7根无歧义信息跨视图一致及mixed/array/generic不合并；旧宿主physical回退不保证复杂声明跨视图相同文本",
+    "logs": "TRX保留在忽略的artifacts/c01-fix/final-verified；此处记录计数及哈希，不把本机日志冒充随Git发布的证据文件。可从本次提交测试源码独立重跑。"
+  }
+}
