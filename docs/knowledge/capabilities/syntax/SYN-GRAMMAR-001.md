@@ -20,7 +20,7 @@
       "adapter": "core",
       "input_mode": "neutral",
       "entry_point": "AspectNParser / AspectNEngine.Compile*",
-      "conditions": "Lexer/LexerLiteral、SelectorParser、TypePatternParser、ParserRecovery 的已执行输入；仅核心解析与绑定",
+      "conditions": "Lexer/LexerLiteral、SelectorParser、TypePatternParser、ParserRecovery及ModifierBoundaryTests的已执行输入；包含修饰符/连续类型名称、否定、复合权限与备选后的类型槽；仅核心解析与绑定",
       "target": "working-tree",
       "expected_behavior": "关键字和名称区分大小写；邻接规则保留；恢复给诊断但不能把有错误编译当作有效模式",
       "contract_status": "supported",
@@ -29,7 +29,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-001"
+        "EV-20261014-001",
+        "EV-20261020-003"
       ],
       "unverified_notes": ""
     },
@@ -149,7 +150,7 @@
     }
   ],
   "open_findings": [],
-  "related_findings": []
+  "related_findings": ["FND-20261020-003"]
 }
 -->
 
@@ -160,6 +161,8 @@
 ## 契约
 
 关键字小写、序数比较。布尔优先级为 !、&&、||，分组可以改变顺序。`.`、`..`、`/`、泛型 `<`、数组 `[`、可空 `?` 与名称的邻接有明确规则。没有扩展注册表或第二语言模式。
+
+修饰符识别先保留连续类型模式：`static*` 不等于 `static *`，`!static*` 不等于 `!static *`。正向/否定、复合权限的第二个词、访问性备选后的词均不能截断类型名称。方法及属性共用解析规则；`public|internal`、`private protected *` 等原有修饰符形式保持有效。
 
 ## 输入条件
 
@@ -191,6 +194,8 @@ var invalid = engine.CompileMemberExpression("vendor.select(*)");
 ## 实现与证据
 
 [解析测试](../../../../tests/AspectN.Tests/Parsing/SelectorParserTests.cs)、[封闭语言测试](../../../../tests/AspectN.Tests/Binding/ClosedLanguageTests.cs)及[边界示例](../../../usage/examples/MatchingBoundaries/Program.cs)。场景证据只证明已执行输入，不证明任意恢复路径都完成审查。
+
+S1 的修饰符边界回归见 [ModifierBoundaryTests](../../../../tests/AspectN.Tests/Parsing/ModifierBoundaryTests.cs)。[C03 修复记录](../../../reviews/2026-10-20-c03-modifier-boundaries.md)另列真实后端匹配对照，其通过不扩大本条目只覆盖解析/绑定的入口范围或四项 N/A；[Finding](../../../reviews/findings/FND-20261020-003.md)记录原始误解析及修复。
 
 ## 关联与缺口
 

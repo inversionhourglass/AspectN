@@ -4,6 +4,7 @@
 {
   "schema_version": 1,
   "capability_ids": [
+    "SYN-GRAMMAR-001",
     "GEN-IDENTITY-001",
     "USE-REF-001",
     "USE-ARRAY-001",
@@ -32,6 +33,22 @@
 | `System.Collections.Generic.IEnumerable<string>`+ | 声明的类型关系模式 |
 
 选择器/属性/regex 尚未逐能力建档，精确定义依[规范 §6–15](../superpowers/specs/2026-07-31-aspectn-language-spec.md)，不按示例猜测全部适用域。
+
+## 修饰符与类型名称的边界
+
+名称中的 `*` 与前后字符连续组成名称模式，不能因前缀恰好是关键字而拆开：
+
+| 表达式 | 含义 |
+| --- | --- |
+| `method(static* Run())` | 返回类型名称以 static 开头，不限制方法是否静态 |
+| `method(static * Run())` | 静态方法，返回类型任意 |
+| `method(static static* Run())` | 静态方法，返回类型名称以 static 开头 |
+| `method(!static* Run())` | 返回类型不匹配 static 前缀模式，不表示“非静态方法” |
+| `method(!static * Run())` | 非静态方法，返回类型任意 |
+
+例如普通 C# 类型 `staticWidget` 可由 `static*` 匹配；不能因此选中返回 string 的静态方法。`public*`、`private*`、`protected*`、`internal*` 同理。`private protected*` 表示 private 修饰符及 protected 前缀返回类型；完整复合访问性应写 `private protected *`。`public|internal private*` 的备选权限不会消费返回类型前缀。
+
+该边界也适用于属性选择器、限定名、嵌套路径、泛型及相邻类型后缀；`public|internal` 和 `(private protected)|public` 等修饰符写法继续可用。详见[词法与邻接条目](../knowledge/capabilities/syntax/SYN-GRAMMAR-001.md)。
 
 ## 泛型
 

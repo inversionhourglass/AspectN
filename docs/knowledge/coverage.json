@@ -140,7 +140,7 @@
       "capability_ids": [
         "SYN-GRAMMAR-001"
       ],
-      "notes": "核心解析、邻接、恢复及封闭语言按具体断言建档；不宣称任意字符串恢复路径穷举完成。 建档表示已分析所列范围，不等于全版本/全输入验证；见 docs/reviews/2026-10-13-documentation-expansion.md。"
+      "notes": "核心解析、邻接、恢复及封闭语言按具体断言建档；2026-10-20补充C03修饰符/连续类型名称、否定、复合权限和备选后的类型槽回归。SYN-GRAMMAR/S1保留解析/绑定入口范围，不宣称任意字符串恢复路径穷举完成；历史盘点见 docs/reviews/2026-10-13-documentation-expansion.md。"
     },
     {
       "id": "INV-0008",

@@ -99,7 +99,7 @@
 
 | 能力/场景 | 后端/输入 | 目标 | 入口、条件与预期 | 契约 | 验证 | 证据与缺口 |
 | --- | --- | --- | --- | --- | --- | --- |
-| [SYN-GRAMMAR-001/S1](../capabilities/syntax/SYN-GRAMMAR-001.md) | 核心/中立输入 | working-tree | 入口：AspectNParser / AspectNEngine.Compile&#42;<br>条件：Lexer/LexerLiteral、SelectorParser、TypePatternParser、ParserRecovery 的已执行输入；仅核心解析与绑定<br>预期：关键字和名称区分大小写；邻接规则保留；恢复给诊断但不能把有错误编译当作有效模式 | 支持 | 已验证 | [EV-20261014-001](../../reviews/evidence/EV-20261014-001.json) |
+| [SYN-GRAMMAR-001/S1](../capabilities/syntax/SYN-GRAMMAR-001.md) | 核心/中立输入 | working-tree | 入口：AspectNParser / AspectNEngine.Compile&#42;<br>条件：Lexer/LexerLiteral、SelectorParser、TypePatternParser、ParserRecovery及ModifierBoundaryTests的已执行输入；包含修饰符/连续类型名称、否定、复合权限与备选后的类型槽；仅核心解析与绑定<br>预期：关键字和名称区分大小写；邻接规则保留；恢复给诊断但不能把有错误编译当作有效模式 | 支持 | 已验证 | [EV-20261014-001](../../reviews/evidence/EV-20261014-001.json)，[EV-20261020-003](../../reviews/evidence/EV-20261020-003.json) |
 | [SYN-GRAMMAR-001/S2](../capabilities/syntax/SYN-GRAMMAR-001.md) | 核心/中立输入 | working-tree | 入口：CompileMemberExpression<br>条件：ClosedLanguageTests 的未限定与限定自定义选择器<br>预期：AN2001；无有效成员模式 | 排除<br>原因：语言契约封闭，没有注册自定义选择器或谓词的扩展接口<br>阶段表现：AN2001；无有效成员模式 | 已验证 | [EV-20261014-001](../../reviews/evidence/EV-20261014-001.json) |
 | [SYN-GRAMMAR-001/S3](../capabilities/syntax/SYN-GRAMMAR-001.md) | 核心/中立输入 | working-tree | 入口：CompileMemberExpression<br>条件：边界项目中的 field/event/params/scoped 表达式<br>预期：编译失败且有诊断；不固定全部具体码 | 排除<br>原因：Standard 选择器集合及参数注解不包含这些独立条件；元数据或 C# 接受不自动形成 DSL 语法<br>阶段表现：编译失败且有诊断；不固定全部具体码 | 已验证 | [EV-20261014-009](../../reviews/evidence/EV-20261014-009.json) |
 
@@ -156,7 +156,7 @@
 | INV-0004 | 元数据可用性与阶段失败 | 已审查 | 2026-10-14修复detached闭包取消；完整已知TypeAttributes优先级已获维护者批准并实现，缺列表精确回退/非具体Unknown和PE缺标记依赖分别有场景。 |
 | INV-0005 | 三态运算与诊断 | 已审查 | 已建档；证据范围由场景和报告确定 |
 | INV-0006 | 损坏 Cecil 对象输入与 H1 裁决 | 待补证据 | 已记录有效输入与 H1 接受风险；损坏对象没有容错承诺，真实程序集可达性仍未证明。 建档表示已分析所列范围，不等于全版本/全输入验证；见 docs/reviews/2026-10-13-documentation-expansion.md。 |
-| INV-0007 | 词法、邻接与语法诊断 | 已审查 | 核心解析、邻接、恢复及封闭语言按具体断言建档；不宣称任意字符串恢复路径穷举完成。 建档表示已分析所列范围，不等于全版本/全输入验证；见 docs/reviews/2026-10-13-documentation-expansion.md。 |
+| INV-0007 | 词法、邻接与语法诊断 | 已审查 | 核心解析、邻接、恢复及封闭语言按具体断言建档；2026-10-20补充C03修饰符/连续类型名称、否定、复合权限和备选后的类型槽回归。SYN-GRAMMAR/S1保留解析/绑定入口范围，不宣称任意字符串恢复路径穷举完成；历史盘点见 docs/reviews/2026-10-13-documentation-expansion.md。 |
 | INV-0008 | 泛型元数、变量绑定与作用域 | 已审查 | 2026-10-20维护者裁决取代残缺列表求值规则：泛型槽位结构非法在构造时拒绝；GEN-BINDING/S4记录类型包含链、方法声明/原始定义、完整开放/闭合构造和重复变量当前回归，历史结果保持原值。 |
 | INV-0009 | 可空类型、元组、指针、函数指针与自定义修饰符 | 已审查 | 可空、元组、任务类、指针/函数指针及修饰符表示已分层；任意 CLI 修饰符链与源码注解筛选不新增承诺。 建档表示已分析所列范围，不等于全版本/全输入验证；见 docs/reviews/2026-10-13-documentation-expansion.md。 |
 | INV-0010 | 选择器、访问器与生成成员 | 已审查 | 内置选择器、访问器、构造器、操作符及有效元数据分类边界已建档；不把可匹配等同可织入。 建档表示已分析所列范围，不等于全版本/全输入验证；见 docs/reviews/2026-10-13-documentation-expansion.md。 2026-10-13由/root/core&#95;capability&#95;review接手并完成限定最终复核；范围、证据与残余限制见本轮审查记录。 |

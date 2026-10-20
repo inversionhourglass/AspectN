@@ -1,0 +1,191 @@
+{
+  "schema_version": 1,
+  "id": "EV-20261020-003",
+  "method": "automated",
+  "scenario_refs": [
+    {
+      "capability_id": "SYN-GRAMMAR-001",
+      "scenario_id": "S1"
+    }
+  ],
+  "oracle_refs": [
+    {
+      "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+      "section": "3.2 / 3.4"
+    },
+    {
+      "path": "docs/reviews/2026-10-20-c03-modifier-boundaries.md",
+      "section": "范围与确认 / 根因与修复"
+    }
+  ],
+  "procedure": "dotnet build AspectN.sln -c Release --no-restore --disable-build-servers -m:1 -v:minimal\ndotnet test AspectN.sln -c Release --no-build --no-restore -m:1 --logger trx --results-directory artifacts/c03-fix/final -v:minimal\ndotnet format AspectN.sln --verify-no-changes --no-restore --verbosity quiet\npwsh -NoProfile -File eng/generate-knowledge.ps1\npwsh -NoProfile -File eng/generate-knowledge.ps1 -Check\npwsh -NoProfile -File eng/verify-documentation.ps1",
+  "result": "passed",
+  "recorded_on": "2026-10-21",
+  "environment": {
+    "os": "Windows",
+    "sdk": "10.0.401",
+    "runtime": "10.0.12",
+    "cecil": "0.11.5",
+    "fody_helpers": "6.8.1",
+    "roslyn": "4.12.0",
+    "compatibility_targets": [
+      "net472",
+      "net10.0，加载netstandard2.0资产"
+    ],
+    "notes": "本次使用既有还原缓存；C03为核心语法修复，不新增后端能力或版本承诺；测试在可建立VSTest通信的沙箱外运行。"
+  },
+  "code_state": {
+    "head": "cd70db182aaf638e7db7d5921f4ab0186caac469",
+    "dirty": true,
+    "files": [
+      {
+        "path": "src/AspectN/Parsing/SelectorParser.cs",
+        "sha256": "2401d502cce51ff0e403a7ae9d0d8406cb6510b260f4b915c47d571b86aa9988"
+      },
+      {
+        "path": "src/AspectN/Parsing/Parser.Selectors.cs",
+        "sha256": "3cd099e65f4d097c517fbeec84212ce0c83b1a0ef9c814a36b904df6ed97e0d9"
+      },
+      {
+        "path": "src/AspectN/Parsing/TypePatternSyntaxFacts.cs",
+        "sha256": "740d36ed31052dba7b51eb5c0389bcd3423ba6b77df338821d77ae79bd5bca82"
+      },
+      {
+        "path": "src/AspectN/Parsing/Lexer.cs",
+        "sha256": "283e5ca8612f877efb0bf78110536757d4b42278936e0db5fdad9c4322462ca8"
+      },
+      {
+        "path": "src/AspectN/Parsing/TypePatternParser.cs",
+        "sha256": "54e57fad82d33f8bcb392ce3087deb503379b63127b60e0ad780841a6f60f98a"
+      },
+      {
+        "path": "tests/AspectN.Tests/Parsing/ModifierBoundaryTests.cs",
+        "sha256": "febf8ec58e913c800390a1ee94b0d378a66d41f135653dffaf8a08b602487c69"
+      },
+      {
+        "path": "tests/AspectN.Conformance.Tests/ModifierNameBoundaryTests.cs",
+        "sha256": "940aa532056f754f7553cdf1a89fcf1e298b6037e7803da34437b13a3c1f7008"
+      },
+      {
+        "path": "tests/AspectN.Conformance.Tests/ReviewFixture.cs",
+        "sha256": "e949925be048832fbfb2a0733b8215efb029dae82437020f0b8cc10f2a6e0bf7"
+      },
+      {
+        "path": "Directory.Build.props",
+        "sha256": "21511672e6680b86521f1d2d275e9fe2d914092073007c8be353f3202c38115a"
+      },
+      {
+        "path": "Directory.Packages.props",
+        "sha256": "a0df07b7d4df78415d87666c16e30c665d285d0e39ed9d300c52aeb7a3837c9a"
+      },
+      {
+        "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+        "sha256": "0e4edd9a139229189e31a72d87b1a60a29371d385b2b9cc042d411ff16b06de6"
+      }
+    ]
+  },
+  "dependency_scope": {
+    "paths": [
+      "src/AspectN/Parsing/SelectorParser.cs",
+      "src/AspectN/Parsing/Parser.Selectors.cs",
+      "src/AspectN/Parsing/TypePatternSyntaxFacts.cs",
+      "src/AspectN/Parsing/Lexer.cs",
+      "src/AspectN/Parsing/TypePatternParser.cs",
+      "tests/AspectN.Tests/Parsing/ModifierBoundaryTests.cs",
+      "tests/AspectN.Conformance.Tests/ModifierNameBoundaryTests.cs",
+      "tests/AspectN.Conformance.Tests/ReviewFixture.cs",
+      "Directory.Build.props",
+      "Directory.Packages.props",
+      "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md"
+    ],
+    "environment_keys": [
+      "sdk",
+      "runtime",
+      "cecil",
+      "fody_helpers",
+      "roslyn",
+      "compatibility_targets"
+    ]
+  },
+  "revalidation_conditions": "修饰符、名称邻接、Lexer记号/跨度、前瞻或类型槽解析、所列回归及语言3.2/3.4规则变化时重验。测试后端或运行时版本变化时重新评估实际匹配对照。",
+  "observations": {
+    "red": "旧实现176项解析/绑定边界断言142失败34通过，15项实际类型匹配用例全部失败。后者失败发生在模式编译或首个后端断言，未把未执行后端计作失败。",
+    "scope": "SYN-GRAMMAR/S1正式证据只覆盖解析与绑定。另有五种普通C#关键字前缀类型的15项用例，修复后遍历Cecil、Reflection、Roslyn源码/PE，验证180次实际匹配，不改变该条目N/A范围。",
+    "limitations": "不穷举所有字符串恢复路径，不扩大其他语言、ref注解或后端版本范围；C04-C07未处理。",
+    "final": {
+      "total": 1959.0,
+      "passed": 1959.0,
+      "failed": 0,
+      "skipped": 0,
+      "projects": [
+        {
+          "project": "AspectN.Tests",
+          "target": "net10.0",
+          "total": 1133,
+          "passed": 1133,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.Cecil.Tests",
+          "target": "net10.0",
+          "total": 173,
+          "passed": 173,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.Reflection.Tests",
+          "target": "net10.0",
+          "total": 109,
+          "passed": 109,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.Roslyn.Tests",
+          "target": "net10.0",
+          "total": 28,
+          "passed": 28,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.Conformance.Tests",
+          "target": "net10.0",
+          "total": 326,
+          "passed": 326,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.NetFramework.Tests",
+          "target": "net472",
+          "total": 7,
+          "passed": 7,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.NetFramework.Tests",
+          "target": "net10.0",
+          "total": 8,
+          "passed": 8,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.Cecil.Fody.Tests",
+          "target": "net10.0",
+          "total": 175,
+          "passed": 175,
+          "failed": 0,
+          "not_executed": 0
+        }
+      ],
+      "build": "Release，零警告、零错误",
+      "format": "verify-no-changes通过",
+      "logs": "artifacts/c03-fix/final（本机忽略目录）"
+    }
+  }
+}

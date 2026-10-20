@@ -279,12 +279,7 @@ internal sealed partial class SelectorParser(Parser parser)
         if (Current.Kind == SyntaxKind.IdentifierToken &&
             Current.Text == "async")
         {
-            var following = _parser.PeekSelectorTokens(2)[1];
-            if (following.Span.Start == Current.Span.End &&
-                (TypePatternSyntaxFacts.IsNamePart(following) || following.Kind is
-                    SyntaxKind.DotToken or SyntaxKind.DotDotToken or SyntaxKind.SlashToken or
-                    SyntaxKind.LessThanToken or SyntaxKind.OpenBracketToken or SyntaxKind.QuestionToken or SyntaxKind.PlusToken))
-                return;
+            if (HasTypePatternContinuation()) return;
             ReportUnexpected(
                 Current,
                 "type ('async' is not supported in Standard)");
@@ -304,6 +299,18 @@ internal sealed partial class SelectorParser(Parser parser)
         return new PropertySignatureSyntax(parts);
     }
 
+    // 连续名称、限定/嵌套路径、泛型及类型后缀优先属于完整类型模式，不能截成修饰符。
+    private bool HasTypePatternContinuation(int offset = 0)
+    {
+        var tokens = _parser.PeekSelectorTokens(offset + 2);
+        var keyword = tokens[offset];
+        var following = tokens[offset + 1];
+        return following.Span.Start == keyword.Span.End &&
+               (TypePatternSyntaxFacts.IsNamePart(following) || following.Kind is
+                   SyntaxKind.DotToken or SyntaxKind.DotDotToken or SyntaxKind.SlashToken or
+                   SyntaxKind.LessThanToken or SyntaxKind.OpenBracketToken or SyntaxKind.QuestionToken or SyntaxKind.PlusToken);
+    }
+
     private List<ModifierSyntax> ParseModifiers()
     {
         var modifiers = new List<ModifierSyntax>();
@@ -312,10 +319,10 @@ internal sealed partial class SelectorParser(Parser parser)
             if (Current.Kind == SyntaxKind.BangToken)
             {
                 var following = _parser.PeekSelectorTokens(2)[1];
-                if (!IsModifier(following.Text) &&
-                    !TryGetCompoundAccessibilityReplacement(following.Text, out _))
+                if (HasTypePatternContinuation(1) ||
+                    !IsModifier(following.Text) && !TryGetCompoundAccessibilityReplacement(following.Text, out _))
                 {
-                    // Otherwise ! starts the return type pattern, e.g. !int.
+                    // 否则 ! 属于返回类型模式，例如 !int、!static*。
                     break;
                 }
 
@@ -343,7 +350,7 @@ internal sealed partial class SelectorParser(Parser parser)
                 tokens.Add(NextToken());
                 // 否定作用于完整 accessibility 短语，复合访问修饰符必须整体消费，不能拆成两条约束。
                 if (Current.Kind == SyntaxKind.IdentifierToken &&
-                    IsCompoundAccessibilityPair(tokens[1].Text, Current.Text))
+                    IsCompoundAccessibilityPair(tokens[1].Text, Current.Text) && !HasTypePatternContinuation())
                 {
                     tokens.Add(NextToken());
                 }
@@ -376,7 +383,7 @@ internal sealed partial class SelectorParser(Parser parser)
                 }
             }
 
-            if (Current.Kind != SyntaxKind.IdentifierToken)
+            if (Current.Kind != SyntaxKind.IdentifierToken || HasTypePatternContinuation())
             {
                 break;
             }
@@ -399,7 +406,7 @@ internal sealed partial class SelectorParser(Parser parser)
 
             var modifierTokens = new List<SyntaxToken> { NextToken() };
             if (Current.Kind == SyntaxKind.IdentifierToken &&
-                IsCompoundAccessibilityPair(modifierTokens[0].Text, Current.Text))
+                IsCompoundAccessibilityPair(modifierTokens[0].Text, Current.Text) && !HasTypePatternContinuation())
             {
                 modifierTokens.Add(NextToken());
             }
@@ -440,11 +447,11 @@ internal sealed partial class SelectorParser(Parser parser)
             }
 
             if (Current.Kind == SyntaxKind.IdentifierToken &&
-                IsSingleAccessibility(Current.Text))
+                IsSingleAccessibility(Current.Text) && !HasTypePatternContinuation())
             {
                 modifierTokens.Add(NextToken());
                 if (Current.Kind == SyntaxKind.IdentifierToken &&
-                    IsSingleAccessibility(Current.Text))
+                    IsSingleAccessibility(Current.Text) && !HasTypePatternContinuation())
                 {
                     // 两个权限词只有构成合法复合权限（如 private protected）才谈得上“加括号”，
                     // 否则是漏写 | 的多选。
