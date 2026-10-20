@@ -16,6 +16,10 @@
     {
       "path": "docs/superpowers/specs/2026-07-31-aspectn-redesign-design.md",
       "section": "5 / 14.2 / 16"
+    },
+    {
+      "path": "src/AspectN/TypeSystem/ITypeSystem.cs",
+      "section": "AreEqual / IsAssignableTo / HasDirectAttribute"
     }
   ],
   "scenarios": [
@@ -90,6 +94,24 @@
         "EV-20261014-008"
       ],
       "unverified_notes": ""
+    },
+    {
+      "id": "S5",
+      "adapter": "core",
+      "input_mode": "neutral",
+      "entry_point": "ITypeSystem XML API / CompiledPattern.Match",
+      "conditions": "核心QueryTargetContractTests的记录型第三方后端；公开XML编译及后端实现指南复核；不新增公开比较器",
+      "target": "working-tree",
+      "expected_behavior": "具体关系/精确特性目标按公开契约传递空程序集和Unknown kind，省略命名空间不限；递归结构保留，AreEqual仍严格；生产源码仅补XML注释",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261021-003"
+      ],
+      "unverified_notes": "记录型后端仅证明核心传参，不验证任意第三方匹配实现；文档一致性另经独立复核。"
     }
   ],
   "invariant_checks": [
@@ -153,7 +175,9 @@
     }
   ],
   "open_findings": [],
-  "related_findings": []
+  "related_findings": [
+    "FND-20261021-003"
+  ]
 }
 -->
 
@@ -196,5 +220,7 @@
 [兼容资产测试](../../../../tests/AspectN.NetFramework.Tests/CompatibilityAssetTests.cs)、[Fody身份测试](../../../../tests/AspectN.Cecil.Fody.Tests/FodyCecilIdentityTests.cs)、[核心公开API](../../../../tests/AspectN.Tests/PublicApiTests.cs)。
 
 ## 关联与缺口
+
+S5 补全公开 `ITypeSystem` 的查询侧契约与第三方接入指南。生产源码只更新 XML，未新增公开比较器或改变 API 形状/运行逻辑。记录型后端测试证明核心传参，四视图查询行为证据另见 TYPE-NOMINAL-001/S7–S10、ATTR-TARGETS-001/S17–S20，不外推到任意第三方实现。
 
 本轮Windows证据不代表远端Linux CI已经运行；未新增已发布版本或任意历史依赖版本的证明。Fody的netstandard运行资产、其他宿主版本留待专门矩阵场景。

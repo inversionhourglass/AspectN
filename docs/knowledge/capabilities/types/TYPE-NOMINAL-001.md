@@ -20,6 +20,10 @@
     {
       "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
       "section": "21"
+    },
+    {
+      "path": "src/AspectN/TypeSystem/ITypeSystem.cs",
+      "section": "AreEqual / IsAssignableTo / HasDirectAttribute"
     }
   ],
   "scenarios": [
@@ -28,7 +32,7 @@
       "adapter": "core",
       "input_mode": "neutral",
       "entry_point": "CompileTypePattern / CompiledTypePattern.Match / StructuralTypeComparer",
-      "conditions": "NamePatternMatcherTests、MemberPathTests 和 AssignableRelationshipTargetTests 的名称/结构/关系 fixture",
+      "conditions": "NamePatternMatcherTests、MemberPathTests 和 AssignableRelationshipTargetTests 的名称/结构/关系 fixture；核心QueryTargetContractTests记录关系查询目标的非限定身份及递归结构",
       "target": "working-tree",
       "expected_behavior": "序数名称匹配；嵌套用 /；+ 仅合法结构目标，已知关系分支可支配未知",
       "contract_status": "supported",
@@ -37,7 +41,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-001"
+        "EV-20261014-001",
+        "EV-20261021-003"
       ],
       "unverified_notes": ""
     },
@@ -141,6 +146,78 @@
         "EV-20261021-002"
       ],
       "unverified_notes": "此场景验证核心消费第三方闭包，不证明内置适配器会生成超限祖先，也不证明循环或无限输入的行为。"
+    },
+    {
+      "id": "S7",
+      "adapter": "cecil",
+      "input_mode": "native_member",
+      "entry_point": "IsAssignableTo / AreEqual / CompiledTypePattern.Match",
+      "conditions": "QueryTargetContractTests 的同源真实程序集：非限定字段、指定完整程序集及错误版本/命名空间/种类/名称、泛型元数/实参、数组实参rank/shape与严格相等控制；嵌套包含链和精确/通配关系模式对照",
+      "target": "working-tree",
+      "expected_behavior": "查询侧空程序集名/空命名空间/Unknown kind分别不限；指定字段及递归结构保留约束；不符合条件NotMatched，正例Matched，AreEqual保持对称严格，诊断为空",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261021-003"
+      ],
+      "unverified_notes": "仅列出的字段与输入组合；不外推Fody或任意第三方实现。"
+    },
+    {
+      "id": "S8",
+      "adapter": "reflection",
+      "input_mode": "native_member",
+      "entry_point": "IsAssignableTo / AreEqual / CompiledTypePattern.Match",
+      "conditions": "QueryTargetContractTests 的同源真实程序集：非限定字段、指定完整程序集及错误版本/命名空间/种类/名称、泛型元数/实参、数组实参rank/shape与严格相等控制；嵌套包含链和精确/通配关系模式对照",
+      "target": "working-tree",
+      "expected_behavior": "查询侧空程序集名/空命名空间/Unknown kind分别不限；指定字段及递归结构保留约束；不符合条件NotMatched，正例Matched，AreEqual保持对称严格，诊断为空",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261021-003"
+      ],
+      "unverified_notes": "仅列出的字段与输入组合；不外推Fody或任意第三方实现。"
+    },
+    {
+      "id": "S9",
+      "adapter": "roslyn",
+      "input_mode": "source_symbol",
+      "entry_point": "IsAssignableTo / AreEqual / CompiledTypePattern.Match",
+      "conditions": "QueryTargetContractTests 的同源真实程序集：非限定字段、指定完整程序集及错误版本/命名空间/种类/名称、泛型元数/实参、数组实参rank/shape与严格相等控制；嵌套包含链和精确/通配关系模式对照",
+      "target": "working-tree",
+      "expected_behavior": "查询侧空程序集名/空命名空间/Unknown kind分别不限；指定字段及递归结构保留约束；不符合条件NotMatched，正例Matched，AreEqual保持对称严格，诊断为空",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261021-003"
+      ],
+      "unverified_notes": "仅列出的字段与输入组合；不外推Fody或任意第三方实现。"
+    },
+    {
+      "id": "S10",
+      "adapter": "roslyn",
+      "input_mode": "pe_symbol",
+      "entry_point": "IsAssignableTo / AreEqual / CompiledTypePattern.Match",
+      "conditions": "QueryTargetContractTests 的同源真实程序集：非限定字段、指定完整程序集及错误版本/命名空间/种类/名称、泛型元数/实参、数组实参rank/shape与严格相等控制；嵌套包含链和精确/通配关系模式对照",
+      "target": "working-tree",
+      "expected_behavior": "查询侧空程序集名/空命名空间/Unknown kind分别不限；指定字段及递归结构保留约束；不符合条件NotMatched，正例Matched，AreEqual保持对称严格，诊断为空",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261021-003"
+      ],
+      "unverified_notes": "仅列出的字段与输入组合；不外推Fody或任意第三方实现。"
     }
   ],
   "invariant_checks": [
@@ -209,7 +286,8 @@
   ],
   "open_findings": [],
   "related_findings": [
-    "FND-20261021-002"
+    "FND-20261021-002",
+    "FND-20261021-003"
   ]
 }
 -->
@@ -257,5 +335,7 @@ System.Collections.Generic.IEnumerable<object+>
 [名义关系测试](../../../../tests/AspectN.Reflection.Tests/ReflectionMappingTests.cs)、[Cecil 解析身份](../../../../tests/AspectN.Cecil.Tests/CecilResolvedMetadataTests.cs)、[未知祖先](../../../../tests/AspectN.Roslyn.Tests/UnavailableAncestorTests.cs)。场景仅覆盖所列输入。
 
 ## 关联与缺口
+
+非限定关系查询契约见 `ITypeSystem.IsAssignableTo` 的公开 XML 和[后端实现指南](../../../usage/backend-implementation.md)。S1 的记录型后端只核对核心传参，S7–S10 分别验证四视图的现有查询行为；不将这些查询规则应用到严格 `AreEqual`，也不据此声称任意第三方已验证。
 
 数组形状依 USE-ARRAY-001；泛型声明身份依 GEN-IDENTITY-001；未知闭包依 CROSS-AVAILABILITY-001。尚未证明所有程序集转发拓扑或自定义解析器组合。

@@ -1,0 +1,261 @@
+{
+  "schema_version": 1,
+  "id": "EV-20261021-003",
+  "method": "automated",
+  "scenario_refs": [
+    {
+      "capability_id": "TYPE-NOMINAL-001",
+      "scenario_id": "S1"
+    },
+    {
+      "capability_id": "TYPE-NOMINAL-001",
+      "scenario_id": "S7"
+    },
+    {
+      "capability_id": "TYPE-NOMINAL-001",
+      "scenario_id": "S8"
+    },
+    {
+      "capability_id": "TYPE-NOMINAL-001",
+      "scenario_id": "S9"
+    },
+    {
+      "capability_id": "TYPE-NOMINAL-001",
+      "scenario_id": "S10"
+    },
+    {
+      "capability_id": "ATTR-TARGETS-001",
+      "scenario_id": "S1"
+    },
+    {
+      "capability_id": "ATTR-TARGETS-001",
+      "scenario_id": "S17"
+    },
+    {
+      "capability_id": "ATTR-TARGETS-001",
+      "scenario_id": "S18"
+    },
+    {
+      "capability_id": "ATTR-TARGETS-001",
+      "scenario_id": "S19"
+    },
+    {
+      "capability_id": "ATTR-TARGETS-001",
+      "scenario_id": "S20"
+    },
+    {
+      "capability_id": "CROSS-COMPAT-001",
+      "scenario_id": "S5"
+    }
+  ],
+  "oracle_refs": [
+    {
+      "path": "src/AspectN/TypeSystem/ITypeSystem.cs",
+      "section": "AreEqual / IsAssignableTo / HasDirectAttribute"
+    },
+    {
+      "path": "docs/reviews/2026-10-21-c06-query-target-contract.md",
+      "section": "维护者确认与范围"
+    }
+  ],
+  "procedure": "dotnet build AspectN.sln -c Release --no-restore --disable-build-servers -m:1 -v:minimal\ndotnet test AspectN.sln -c Release --no-build --no-restore -m:1 --logger trx --results-directory artifacts/c06-fix/final -v:minimal\ndotnet format AspectN.sln --verify-no-changes --no-restore --verbosity quiet\npwsh -NoProfile -File eng/generate-knowledge.ps1\npwsh -NoProfile -File eng/generate-knowledge.ps1 -Check\npwsh -NoProfile -File eng/verify-documentation.ps1",
+  "result": "passed",
+  "recorded_on": "2026-10-21",
+  "environment": {
+    "os": "Windows",
+    "sdk": "10.0.401",
+    "runtime": "10.0.12",
+    "cecil": "0.11.5",
+    "fody_helpers": "6.8.1",
+    "roslyn": "4.12.0",
+    "compatibility_targets": [
+      "net472",
+      "net10.0，加载netstandard2.0资产"
+    ],
+    "notes": "当前Windows及已列依赖；核心记录型后端证明传参，真实同源Cecil/Reflection/Roslyn源码PE证明现有查询行为。不是第三方公共测试套件或新增Fody查询矩阵；VSTest在允许本地通信的沙箱外运行。"
+  },
+  "code_state": {
+    "head": "5c0fd16cf5b5ed9365833135298a274d7ea649dc",
+    "dirty": true,
+    "files": [
+      {
+        "path": "src/AspectN/TypeSystem/ITypeSystem.cs",
+        "sha256": "28e1b534b5257798ea4c3d3ca95b554fc19c347495f2c6e5bc6a4707501e2bca"
+      },
+      {
+        "path": "src/AspectN/Evaluation/TypePatternEvaluator.cs",
+        "sha256": "4b3206e91dee1d211f256e4b35f3e4ccae2f926487eb81717c62b5301846b3f9"
+      },
+      {
+        "path": "src/AspectN/Evaluation/AttributePatternEvaluator.cs",
+        "sha256": "d1c2062300afcfdf7612d282a9cab6931d910a13d4ce83d1a878651e186973e4"
+      },
+      {
+        "path": "src/AspectN/TypeSystem/StructuralTypeComparer.cs",
+        "sha256": "e78f45ac902a07e97ee531715ec27ed99f17349866efe522b428bb5d885e0d5a"
+      },
+      {
+        "path": "src/AspectN/Metadata/TypeIdentity.cs",
+        "sha256": "29cf15506d5dd8abb837303d55e94ff2a86334b728d6d82cc7e311cbde2c612e"
+      },
+      {
+        "path": "src/AspectN/Metadata/AssemblyIdentity.cs",
+        "sha256": "2f0b2e77954890f4bb7afefc07cfc1efeaad98079aed6e68d8c3e5f3bf2f4569"
+      },
+      {
+        "path": "src/Shared/UnqualifiedStructuralComparer.cs",
+        "sha256": "b5597776a60c82a00bb40b6683474aa363328313638703c57c779e794182725a"
+      },
+      {
+        "path": "src/AspectN.Cecil/Internal/UnqualifiedTypeComparer.cs",
+        "sha256": "36ca6b77b929d13e0096165f2b42291f50895a3aca9aa05b21314987936bcb82"
+      },
+      {
+        "path": "src/AspectN.Cecil/CecilTypeSystem.cs",
+        "sha256": "abeed98c017aad39fee914c3ae52fef22555989f5edf469c8c8e5ba75f195f3b"
+      },
+      {
+        "path": "src/AspectN.Reflection/ReflectionTypeSystem.cs",
+        "sha256": "5634ae70543e77cbbb43f4d35a9c2550d83b9602d747f5c34a034b35b645d746"
+      },
+      {
+        "path": "src/AspectN.Roslyn/RoslynTypeSystem.cs",
+        "sha256": "e1c78c7b67a157e16a09cae854b7b1a9e01fb50723a59f8058ec122501624884"
+      },
+      {
+        "path": "tests/AspectN.Tests/TypeSystem/QueryTargetContractTests.cs",
+        "sha256": "862e51d990806bd9bc722fb2ce0d76d03b29c7420c562c840411109a6829ab80"
+      },
+      {
+        "path": "tests/AspectN.Conformance.Tests/QueryTargetContractTests.cs",
+        "sha256": "9b1c72ae30509c25dfe0c59a5673c68bded5a50b51251228344645ae185e7a5d"
+      },
+      {
+        "path": "tests/AspectN.Conformance.Tests/ReviewFixture.cs",
+        "sha256": "e949925be048832fbfb2a0733b8215efb029dae82437020f0b8cc10f2a6e0bf7"
+      },
+      {
+        "path": "docs/usage/backend-implementation.md",
+        "sha256": "346a554c9145d77111321f200ba4a7d0d512b29e925e2d3bb9167acae67cc306"
+      },
+      {
+        "path": "Directory.Build.props",
+        "sha256": "21511672e6680b86521f1d2d275e9fe2d914092073007c8be353f3202c38115a"
+      },
+      {
+        "path": "Directory.Packages.props",
+        "sha256": "a0df07b7d4df78415d87666c16e30c665d285d0e39ed9d300c52aeb7a3837c9a"
+      }
+    ]
+  },
+  "dependency_scope": {
+    "paths": [
+      "src/AspectN/TypeSystem/ITypeSystem.cs",
+      "src/AspectN/Evaluation/TypePatternEvaluator.cs",
+      "src/AspectN/Evaluation/AttributePatternEvaluator.cs",
+      "src/AspectN/TypeSystem/StructuralTypeComparer.cs",
+      "src/AspectN/Metadata/TypeIdentity.cs",
+      "src/AspectN/Metadata/AssemblyIdentity.cs",
+      "src/Shared/UnqualifiedStructuralComparer.cs",
+      "src/AspectN.Cecil/Internal/UnqualifiedTypeComparer.cs",
+      "src/AspectN.Cecil/CecilTypeSystem.cs",
+      "src/AspectN.Reflection/ReflectionTypeSystem.cs",
+      "src/AspectN.Roslyn/RoslynTypeSystem.cs",
+      "tests/AspectN.Tests/TypeSystem/QueryTargetContractTests.cs",
+      "tests/AspectN.Conformance.Tests/QueryTargetContractTests.cs",
+      "tests/AspectN.Conformance.Tests/ReviewFixture.cs",
+      "docs/usage/backend-implementation.md",
+      "Directory.Build.props",
+      "Directory.Packages.props"
+    ],
+    "environment_keys": [
+      "sdk",
+      "runtime",
+      "cecil",
+      "fody_helpers",
+      "roslyn",
+      "compatibility_targets"
+    ]
+  },
+  "revalidation_conditions": "ITypeSystem查询契约、核心目标具体化/特性点查询、查询比较规则、严格相等、相关后端或fixture及版本变化时，重跑对应契约测试并核对XML/指南。源代码生产diff仅XML注释的结论随变更范围重审，不视为其他版本保证。",
+  "observations": {
+    "baseline": "新增27项在生产XML修改前已通过：核心5项、一致性22项。本轮关闭公开契约说明缺口，没有产品红灯，不宣称改变了内置运行行为。",
+    "scope": "TYPE-NOMINAL/S1和ATTR/S1仅新增核心传参证据；TYPE-NOMINAL/S7-S10、ATTR/S17-S20分别限定Cecil、Reflection、Roslyn源码和PE；CROSS-COMPAT/S5登记公开XML及记录型第三方后端。明确字段、递归结构和双向严格AreEqual都有控制。",
+    "limitations": "不新增公开比较器或修改运行逻辑；不证明任意第三方实现正确，不新增Fody特性/关系输入行或跨版本承诺。C07未处理。旧证据保持原有范围。",
+    "final": {
+      "total": 2040,
+      "passed": 2040,
+      "failed": 0,
+      "skipped": 0,
+      "projects": [
+        {
+          "project": "AspectN.Tests",
+          "target": "net10.0",
+          "total": 1165,
+          "passed": 1165,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.Cecil.Tests",
+          "target": "net10.0",
+          "total": 184,
+          "passed": 184,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.Reflection.Tests",
+          "target": "net10.0",
+          "total": 109,
+          "passed": 109,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.Roslyn.Tests",
+          "target": "net10.0",
+          "total": 28,
+          "passed": 28,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.Conformance.Tests",
+          "target": "net10.0",
+          "total": 353,
+          "passed": 353,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.NetFramework.Tests",
+          "target": "net472",
+          "total": 7,
+          "passed": 7,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.NetFramework.Tests",
+          "target": "net10.0",
+          "total": 8,
+          "passed": 8,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.Cecil.Fody.Tests",
+          "target": "net10.0",
+          "total": 186,
+          "passed": 186,
+          "failed": 0,
+          "not_executed": 0
+        }
+      ],
+      "build": "Release，零警告、零错误",
+      "format": "verify-no-changes通过",
+      "logs": "artifacts/c06-fix/final（本地忽略目录）"
+    }
+  }
+}

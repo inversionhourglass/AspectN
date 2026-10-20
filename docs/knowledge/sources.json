@@ -142,6 +142,22 @@
       "approval": "historical",
       "delegated_by": [],
       "supersedes": []
+    },
+    {
+      "id": "SRC-TYPE-SYSTEM-QUERY",
+      "path": "src/AspectN/TypeSystem/ITypeSystem.cs",
+      "role": "normative",
+      "scope": "C06确认的ITypeSystem查询侧非限定规则与AreEqual严格相等；仅补现有契约，不新增公开比较器或改变运行逻辑",
+      "target": "working-tree",
+      "approval": "approved",
+      "delegated_by": [],
+      "supersedes": [],
+      "approval_refs": [
+        {
+          "path": "docs/reviews/2026-10-21-c06-query-target-contract.md",
+          "section": "维护者确认与范围"
+        }
+      ]
     }
   ]
 }

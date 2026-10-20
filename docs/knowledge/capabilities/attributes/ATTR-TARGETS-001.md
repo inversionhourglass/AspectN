@@ -16,6 +16,10 @@
     {
       "section": "独立可用事实与所需查询（2026-10-14维护者裁决）",
       "path": "docs/language/metadata-availability.md"
+    },
+    {
+      "path": "src/AspectN/TypeSystem/ITypeSystem.cs",
+      "section": "AreEqual / IsAssignableTo / HasDirectAttribute"
     }
   ],
   "scenarios": [
@@ -24,7 +28,7 @@
       "adapter": "core",
       "input_mode": "neutral",
       "entry_point": "CompiledMemberPattern.Match / HasDirectAttribute",
-      "conditions": "AttributePatternTests 的 type/call/prop/para/ret/exec/any 与泛型特性中立输入",
+      "conditions": "AttributePatternTests 的 type/call/prop/para/ret/exec/any 与泛型特性中立输入；核心QueryTargetContractTests记录精确特性查询传参",
       "target": "working-tree",
       "expected_behavior": "只查询直接目标；call 不包含属性位置，exec 对访问器包含关联属性；不可用位置不当作空",
       "contract_status": "supported",
@@ -33,7 +37,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-001"
+        "EV-20261014-001",
+        "EV-20261021-003"
       ],
       "unverified_notes": ""
     },
@@ -366,6 +371,78 @@
         "EV-20261021-001"
       ],
       "unverified_notes": ""
+    },
+    {
+      "id": "S17",
+      "adapter": "cecil",
+      "input_mode": "native_member",
+      "entry_point": "HasDirectAttribute / AreEqual / attr(call ...)",
+      "conditions": "QueryTargetContractTests 的同源真实程序集：非限定字段、指定完整程序集及错误版本/命名空间/种类/名称、泛型元数/实参、数组实参rank/shape与严格相等控制；精确/通配特性模式对照",
+      "target": "working-tree",
+      "expected_behavior": "查询侧空程序集名/空命名空间/Unknown kind分别不限；指定字段及递归结构保留约束；不符合条件NotMatched，正例Matched，AreEqual保持对称严格，诊断为空",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261021-003"
+      ],
+      "unverified_notes": "仅列出的字段与输入组合；不外推Fody或任意第三方实现。"
+    },
+    {
+      "id": "S18",
+      "adapter": "reflection",
+      "input_mode": "native_member",
+      "entry_point": "HasDirectAttribute / AreEqual / attr(call ...)",
+      "conditions": "QueryTargetContractTests 的同源真实程序集：非限定字段、指定完整程序集及错误版本/命名空间/种类/名称、泛型元数/实参、数组实参rank/shape与严格相等控制；精确/通配特性模式对照",
+      "target": "working-tree",
+      "expected_behavior": "查询侧空程序集名/空命名空间/Unknown kind分别不限；指定字段及递归结构保留约束；不符合条件NotMatched，正例Matched，AreEqual保持对称严格，诊断为空",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261021-003"
+      ],
+      "unverified_notes": "仅列出的字段与输入组合；不外推Fody或任意第三方实现。"
+    },
+    {
+      "id": "S19",
+      "adapter": "roslyn",
+      "input_mode": "source_symbol",
+      "entry_point": "HasDirectAttribute / AreEqual / attr(call ...)",
+      "conditions": "QueryTargetContractTests 的同源真实程序集：非限定字段、指定完整程序集及错误版本/命名空间/种类/名称、泛型元数/实参、数组实参rank/shape与严格相等控制；精确/通配特性模式对照",
+      "target": "working-tree",
+      "expected_behavior": "查询侧空程序集名/空命名空间/Unknown kind分别不限；指定字段及递归结构保留约束；不符合条件NotMatched，正例Matched，AreEqual保持对称严格，诊断为空",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261021-003"
+      ],
+      "unverified_notes": "仅列出的字段与输入组合；不外推Fody或任意第三方实现。"
+    },
+    {
+      "id": "S20",
+      "adapter": "roslyn",
+      "input_mode": "pe_symbol",
+      "entry_point": "HasDirectAttribute / AreEqual / attr(call ...)",
+      "conditions": "QueryTargetContractTests 的同源真实程序集：非限定字段、指定完整程序集及错误版本/命名空间/种类/名称、泛型元数/实参、数组实参rank/shape与严格相等控制；精确/通配特性模式对照",
+      "target": "working-tree",
+      "expected_behavior": "查询侧空程序集名/空命名空间/Unknown kind分别不限；指定字段及递归结构保留约束；不符合条件NotMatched，正例Matched，AreEqual保持对称严格，诊断为空",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261021-003"
+      ],
+      "unverified_notes": "仅列出的字段与输入组合；不外推Fody或任意第三方实现。"
     }
   ],
   "invariant_checks": [
@@ -436,7 +513,8 @@
   "related_findings": [
     "FND-20261013-004",
     "FND-20261013-005",
-    "FND-20261021-001"
+    "FND-20261021-001",
+    "FND-20261021-003"
   ]
 }
 -->
@@ -481,6 +559,8 @@ getter(string Name) && attr(call MarkerAttribute)
 [核心特性位置](../../../../tests/AspectN.Tests/Evaluation/AttributePatternTests.cs)、[真实记录一致性](../../../../tests/AspectN.Conformance.Tests/CustomAttributeRecordTests.cs)、[不实例化查询](../../../../tests/AspectN.Reflection.Tests/ReflectionMappingTests.cs)。S5的核心语法排除及S6–S9的特性继承排除已分别追加独立执行证据。已修复的PE记录身份问题和已裁决的detached精确查询差异见S10/S11及关联Finding。
 
 ## 关联与缺口
+
+精确特性的 `HasDirectAttribute.attributeType` 是有方向的查询目标，字段不限及递归结构规则见公开 XML 和[后端实现指南](../../../usage/backend-implementation.md)。S17–S20 将四视图的直接查询、明确限定字段和严格相等控制单独登记；S1 的记录型后端只核对核心传参，不替代第三方匹配实现验证。
 
 CROSS-AVAILABILITY-001 治理缺失事实，GEN-BINDING-001 治理泛型特性的绑定备选，MEM-SELECTORS-001 治理访问器域。Fody 的具体真实记录一致性未由三后端测试自动推出。
 

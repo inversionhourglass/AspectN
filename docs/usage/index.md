@@ -25,6 +25,7 @@ AspectN 是通用的 .NET 类型和成员匹配工具。它将元数据映射为
 
 - [快速开始](quick-start.md)：编译、映射、匹配，以及可运行的五主题示例。
 - [选择适配器](adapters.md)：Cecil/Fody、Roslyn、Reflection 及上下文。
+- [实现自定义后端](backend-implementation.md)：查询目标、严格相等和接入验收。
 - [编写匹配表达式](matching.md)：选择器、泛型、ref 和数组。
 - [语言功能与元数据边界](language-and-metadata.md)：名称、变量、成员、类型包装、特性和正则表达式。
 - [结果与诊断](results-and-diagnostics.md)：三态、缺失信息和调用方策略。

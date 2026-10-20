@@ -7,7 +7,10 @@
     "GEN-IDENTITY-001",
     "USE-REF-001",
     "USE-ARRAY-001",
-    "CROSS-AVAILABILITY-001"
+    "CROSS-AVAILABILITY-001",
+    "TYPE-NOMINAL-001",
+    "ATTR-TARGETS-001",
+    "CROSS-COMPAT-001"
   ],
   "inventory_refs": [
     "INV-0013",
@@ -32,3 +35,5 @@ Cecil 与 Cecil.Fody 同 API 但不同强名称依赖，不能同时引用。Ros
 程序集加载失败可能发生在 Reflection 能得到 Type 之前；这与在已有对象上读取失败不同。把 Cecil 中立签名交给 Reflection 是 detached 关联场景，不能假称验证了 Reflection 原生读取故障。
 
 本轮跨后端证据只覆盖[数组](../knowledge/capabilities/type-uses/USE-ARRAY-001.md)和[泛型 fixture](../knowledge/capabilities/generics/GEN-IDENTITY-001.md)所列模式。源码/PE、依赖版本和 Fody 各自有缺口，不从一项通过扩大承诺。
+
+自行实现 `ITypeSystem` 时，`IsAssignableTo.target` 与 `HasDirectAttribute.attributeType` 可能是部分限定的查询条件；空程序集名、空命名空间和 Unknown kind 在查询侧表示相应字段不限，`AreEqual` 仍严格比较身份。[后端实现指南](backend-implementation.md)说明递归结构、明确限定字段和验收用例。
