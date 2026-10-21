@@ -29,7 +29,7 @@ foreach (var candidate in new[] { typeof(string), typeof(int) })
 // Matched、NotMatched。
 ```
 
-引擎缓存属于实例；匹配的变量环境和诊断属于每次求值。模式的并发隔离不表示任意第三方 ModuleDefinition 或 Compilation 可以按任意方式并发修改。后台工具可以复用编译模式，在自己的候选遍历逻辑中处理结果。
+引擎缓存属于实例，键包含源码、解析种类、RegexTimeout、变量模式和两个捕获预算。Declaration 的唯一槽位事实缓存、Capture 的动态环境/预算和诊断都属于每次 Match；后续候选与并发匹配互不消耗额度。模式的并发隔离不表示任意第三方 ModuleDefinition 或 Compilation 可以按任意方式并发修改。后台工具可以复用编译模式，在自己的候选遍历逻辑中处理结果。
 
 CecilTypeSystem 释放后，受守卫的入口可能抛 ObjectDisposedException。使用外部 module 时明确选择 LeaveOpen；Reflection 弱关联不永久锁住可收集程序集，但仍需让当前查询所需原生对象存活。不同后端之间传递中立签名，不会自动建立另一后端的原生关联。[生命周期专题](../knowledge/capabilities/cross-cutting/CROSS-LIFETIME-001.md)给出各后端证据和限制。
 

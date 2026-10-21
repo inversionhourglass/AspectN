@@ -192,7 +192,7 @@ public sealed class InheritanceClosureLimitTests
     private static MatchResult Match(string source, TypeSignature candidate, ITypeSystem backend,
         CancellationToken cancellationToken = default)
     {
-        Assert.True(new AspectNEngine().CompileTypePattern(source).TryGetTypePattern(out var pattern));
+        Assert.True(new AspectNEngine().CompileTypePattern(source, new AspectNCompilationOptions(null, GenericVariableMode.Capture)).TryGetTypePattern(out var pattern));
         return pattern.Match(candidate, backend, cancellationToken);
     }
 

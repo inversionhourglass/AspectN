@@ -45,7 +45,7 @@ public sealed class CompiledPatternTests
     [Fact]
     public async Task Match_ConcurrentCandidates_DoNotShareVariableBindings()
     {
-        var pattern = CompileTypePattern("Box<$T> && Box<$T>");
+        var pattern = CompileTypePattern("Box<$T> && Box<$T>", GenericVariableMode.Capture);
         var typeSystem = new StubTypeSystem();
         var first = Box(Named("First"));
         var second = Box(Named("Second"));
@@ -66,7 +66,7 @@ public sealed class CompiledPatternTests
     [Fact]
     public async Task Match_ConcurrentUnknowns_DoNotShareDiagnostics()
     {
-        var pattern = CompileTypePattern("Box<$T> && Box<$T>");
+        var pattern = CompileTypePattern("Box<$T> && Box<$T>", GenericVariableMode.Capture);
         var typeSystem = new StubTypeSystem();
         var unsupported = new UnsupportedTypeSignature(
             "delegate*<void>",
@@ -86,10 +86,10 @@ public sealed class CompiledPatternTests
             });
     }
 
-    private static CompiledTypePattern CompileTypePattern(string source)
+    private static CompiledTypePattern CompileTypePattern(string source, GenericVariableMode mode = GenericVariableMode.Declaration)
     {
         var compilation = AspectNCompilation.Create(
-            AspectNParser.ParseTypePattern(source));
+            AspectNParser.ParseTypePattern(source), new AspectNCompilationOptions(null, mode));
         Assert.True(compilation.TryGetTypePattern(out var pattern));
         return pattern!;
     }

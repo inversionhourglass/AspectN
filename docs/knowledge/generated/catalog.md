@@ -8,13 +8,13 @@
 
 | 能力 | 范围入口 | 场景数 |
 | --- | --- | --- |
-| [TYPE-NOMINAL-001](../capabilities/types/TYPE-NOMINAL-001.md) | 名称、嵌套、程序集身份与名义关系 | 11 |
+| [TYPE-NOMINAL-001](../capabilities/types/TYPE-NOMINAL-001.md) | 名称、嵌套、程序集身份与名义关系 | 12 |
 
 ## 泛型
 
 | 能力 | 范围入口 | 场景数 |
 | --- | --- | --- |
-| [GEN-BINDING-001](../capabilities/generics/GEN-BINDING-001.md) | 泛型元数、模式变量与作用域 | 4 |
+| [GEN-BINDING-001](../capabilities/generics/GEN-BINDING-001.md) | 泛型元数、模式变量与作用域 | 11 |
 | [GEN-IDENTITY-001](../capabilities/generics/GEN-IDENTITY-001.md) | 泛型声明身份与闭合查询上下文 | 7 |
 
 ## 类型使用位置
@@ -41,7 +41,7 @@
 
 | 能力 | 范围入口 | 场景数 |
 | --- | --- | --- |
-| [ATTR-TARGETS-001](../capabilities/attributes/ATTR-TARGETS-001.md) | 直接特性目标、真实记录与伪特性 | 25 |
+| [ATTR-TARGETS-001](../capabilities/attributes/ATTR-TARGETS-001.md) | 直接特性目标、真实记录与伪特性 | 26 |
 
 ## 解析与词法
 
@@ -64,6 +64,6 @@
 | [CROSS-INPUT-001](../capabilities/cross-cutting/CROSS-INPUT-001.md) | 有效输入、候选加载与人工损坏对象 | 4 |
 | [CROSS-LIFETIME-001](../capabilities/cross-cutting/CROSS-LIFETIME-001.md) | 引擎缓存、后端生命周期与并发隔离 | 5 |
 | [CROSS-LOGIC-001](../capabilities/cross-cutting/CROSS-LOGIC-001.md) | 三态逻辑、诊断及 Boolean 转换 | 2 |
-| [CROSS-RESOURCES-001](../capabilities/cross-cutting/CROSS-RESOURCES-001.md) | 取消、类型深度、元数与文本预算 | 7 |
+| [CROSS-RESOURCES-001](../capabilities/cross-cutting/CROSS-RESOURCES-001.md) | 取消、类型深度、元数与文本预算 | 8 |
 
 共 17 条能力；具体承诺、输入条件、失败原因与证据见[逐场景矩阵](support-matrix.md)。

@@ -173,7 +173,7 @@ public sealed class PatternVariableTests
     private static CompiledTypePattern Compile(string source)
     {
         var compilation = AspectNCompilation.Create(
-            AspectNParser.ParseTypePattern(source));
+            AspectNParser.ParseTypePattern(source), new AspectNCompilationOptions(null, GenericVariableMode.Capture));
         Assert.True(compilation.TryGetTypePattern(out var pattern));
         return pattern!;
     }

@@ -195,7 +195,15 @@ Console.WriteLine(result.Status); // Unknown，附 AN3005
 
 显式原生映射深度超限抛异常；已构造中立签名的匹配返回 Unknown。`HasDirectAttribute` 内部读取、映射特性类型时超限，则返回 Unknown 并保留原 AN3005；元数超限对应 AN3006。调用方在查询前自行映射超限类型时，异常仍发生在该映射调用。不要把超限当作普通元数据缺失，也不要自设解析深度、正则超时或规范文本阈值；完整约定见[规范第 21 节](../superpowers/specs/2026-07-31-aspectn-language-spec.md)及 [D01 裁决](../reviews/2026-10-21-d01-direct-attribute-limits.md)。
 
-自定义 `ITypeSystem` 为含变量或通配目标的 `+` 模式返回祖先时，每个祖先也经过深度和元数检查。例如 `Box<$T>+` 遇到总结构深度 65 的祖先，不会绑定其超限实参，而是保留 Unknown/AN3005 并继续其他祖先。另一个正常祖先确定匹配时，最终仍为 Matched，限制诊断也保留；没有确定匹配时保留 Unknown。相同规则适用于成员返回/参数中的关系模式，详见 [C05 回归记录](../reviews/2026-10-21-c05-inheritance-closure-limits.md)。
+自定义 `ITypeSystem` 为含变量或通配目标的 `+` 模式返回祖先时，每个祖先也经过深度和元数检查。例如显式 Capture 的 `Box<$T>+` 遇到总结构深度 65 的祖先，不会绑定其超限实参，而是保留 Unknown/AN3005 并继续其他祖先。另一个正常祖先确定匹配时，最终仍为 Matched，限制诊断也保留；没有确定匹配时保留 Unknown。默认模式须先在直接声明槽位引入 `$T` 才能在关系目标引用。相同限制守卫适用于成员返回/参数中的关系模式，详见 [C05 回归记录](../reviews/2026-10-21-c05-inheritance-closure-limits.md)。
+
+## 变量模式和捕获预算
+
+默认 Declaration 变量是自身声明形参的固定引用；`List<$T>` 不捕获 `List<int>`，嵌套实参/关系/特性内也不能首次声明。需要原通用捕获时，在编译选项选择 Capture，见[配置与迁移](matching.md#泛型)。
+
+Capture 的 `MaximumBindingAlternatives` 默认 4096，约束每个合并集合中去重后的唯一备选；`MaximumBindingWork` 默认 1,000,000，累计计入节点/候选访问、备选处理/创建、条目复制/比较/哈希。所有分支共享一次 Match 的额度，下一次及并发 Match 重置；限额必须为正。耗尽任一项立即中止整次 Match，返回 Unknown/AN3007，保留触发位置及已有诊断。不会截断解集后返回 Matched，也不把预算结果当作元数据缺失。
+
+这不是墙钟或精确内存限额，不抢占正在执行的第三方后端，也不限制它在返回闭包前的内部物化成本。默认模式消除了动态备选集，但普通表达式求值、后端关系和特性枚举仍有成本；不据此承诺固定耗时。[有界压力证据](../reviews/2026-10-21-generic-variable-modes.md)仅覆盖所列输入。
 
 ## 9. 空集合、未知事实与人工损坏输入
 

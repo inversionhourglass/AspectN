@@ -7,6 +7,10 @@ AspectN.AspectNCompilation.TryGetMemberPattern(out AspectN.CompiledMemberPattern
 AspectN.AspectNCompilation.TryGetTypePattern(out AspectN.CompiledTypePattern? pattern) -> bool
 AspectN.AspectNCompilationOptions
 AspectN.AspectNCompilationOptions.AspectNCompilationOptions(System.TimeSpan? regexTimeout = null) -> void
+AspectN.AspectNCompilationOptions.AspectNCompilationOptions(System.TimeSpan? regexTimeout, AspectN.GenericVariableMode genericVariableMode, int maximumBindingAlternatives = 4096, long maximumBindingWork = 1000000) -> void
+AspectN.AspectNCompilationOptions.GenericVariableMode.get -> AspectN.GenericVariableMode
+AspectN.AspectNCompilationOptions.MaximumBindingAlternatives.get -> int
+AspectN.AspectNCompilationOptions.MaximumBindingWork.get -> long
 AspectN.AspectNCompilationOptions.RegexTimeout.get -> System.TimeSpan
 AspectN.AspectNEngine
 AspectN.AspectNEngine.AspectNEngine(AspectN.AspectNEngineOptions? options = null) -> void
@@ -28,6 +32,10 @@ AspectN.Diagnostics.AspectNDiagnostic.AspectNDiagnostic(string! code, AspectN.Di
 AspectN.Diagnostics.AspectNDiagnostic.Code.get -> string!
 AspectN.Diagnostics.AspectNDiagnostic.Message.get -> string!
 AspectN.Diagnostics.AspectNDiagnostic.Severity.get -> AspectN.Diagnostics.DiagnosticSeverity
+AspectN.GenericVariableMode
+AspectN.GenericVariableMode.Capture = 1 -> AspectN.GenericVariableMode
+AspectN.GenericVariableMode.Declaration = 0 -> AspectN.GenericVariableMode
+static AspectN.Diagnostics.DiagnosticCodes.BindingBudgetExceeded.get -> string!
 AspectN.Diagnostics.AspectNDiagnostic.Span.get -> AspectN.Text.TextSpan?
 AspectN.Diagnostics.DiagnosticCodes
 AspectN.Diagnostics.DiagnosticSeverity

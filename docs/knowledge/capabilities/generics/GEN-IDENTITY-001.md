@@ -29,7 +29,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-006"
+        "EV-20261014-006",
+        "EV-20261021-007"
       ],
       "unverified_notes": ""
     },
@@ -47,7 +48,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-006"
+        "EV-20261014-006",
+        "EV-20261021-007"
       ],
       "unverified_notes": ""
     },
@@ -65,7 +67,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-006"
+        "EV-20261014-006",
+        "EV-20261021-007"
       ],
       "unverified_notes": ""
     },
@@ -86,7 +89,8 @@
         "EV-20261014-002",
         "EV-20261014-006",
         "EV-20261014-010",
-        "EV-20261020-001"
+        "EV-20261020-001",
+        "EV-20261021-007"
       ],
       "unverified_notes": ""
     },
@@ -106,7 +110,8 @@
       "evidence_ids": [
         "EV-20261014-006",
         "EV-20261014-010",
-        "EV-20261020-001"
+        "EV-20261020-001",
+        "EV-20261021-007"
       ],
       "unverified_notes": ""
     },
@@ -126,7 +131,8 @@
       "evidence_ids": [
         "EV-20261014-006",
         "EV-20261014-010",
-        "EV-20261020-001"
+        "EV-20261020-001",
+        "EV-20261021-007"
       ],
       "unverified_notes": ""
     },
@@ -146,7 +152,8 @@
       "evidence_ids": [
         "EV-20261014-003",
         "EV-20261014-010",
-        "EV-20261020-001"
+        "EV-20261020-001",
+        "EV-20261021-007"
       ],
       "unverified_notes": ""
     }
@@ -265,3 +272,5 @@ S1–S3的fixture不覆盖缺失解析、全部嵌套/vararg/版本组合或Fody
 S4–S7 的返回类型重载身份碰撞已修复，三个适配器将原始返回形状纳入声明区分；Fody 有独立实际加载/调用回归。新增 [ReturnShapeOwnerIdentityTests](../../../../tests/AspectN.Conformance.Tests/ReturnShapeOwnerIdentityTests.cs) 控制闭合声明类型返回 T / List<T[]>、ref V / ref readonly V /函数指针返回形状；这些是所列 fixture 的补充证据，不承诺编码文本稳定或任意返回修饰符组合。
 
 2026-10-20 补充修复 C01：声明身份独立保留有序 `modreq/modopt` 及结构位置，覆盖返回/参数根、ref 元素、数组元素、泛型实参、指针及函数指针内部 fixture；相同显示形状不再导致不同声明约束串用。Cecil/Fody 另执行原 readonly 返回表达式的误匹配回归。[修复记录](../../../reviews/2026-10-20-c01-custom-modifier-identity.md)与 [Finding](../../../reviews/findings/FND-20261020-001.md)说明范围、反证及回退限制。MLC7 只能提供部分根事实，不据该宿主的通过结果声称完整恢复嵌套修饰符或所有跨视图身份文本一致。
+
+2026-10-21 双模式未改变声明身份编码、映射或原生查询上下文。原场景随完整矩阵重验；新增 Declaration 消费身份的反例与同源后端证据列于 GEN-BINDING-001/S5、S7–S11。具体构造实参不会被 OriginalDefinition 替换；不外推任意 CLI 形状已覆盖。见[实施报告](../../../reviews/2026-10-21-generic-variable-modes.md)。

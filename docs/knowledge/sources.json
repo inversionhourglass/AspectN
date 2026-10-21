@@ -22,6 +22,10 @@
         {
           "path": "docs/reviews/2026-10-21-d01-direct-attribute-limits.md",
           "section": "维护者裁决与取代范围"
+        },
+        {
+          "path": "docs/superpowers/specs/2026-10-21-generic-variable-modes-design.md",
+          "section": "9"
         }
       ]
     },
@@ -204,6 +208,22 @@
         {
           "path": "docs/reviews/2026-10-21-u01-invalid-method-input.md",
           "section": "维护者裁决与适用范围"
+        }
+      ]
+    },
+    {
+      "id": "SRC-GENERIC-MODES",
+      "path": "docs/superpowers/specs/2026-10-21-generic-variable-modes-design.md",
+      "role": "normative",
+      "scope": "2026-10-21维护者批准双模式、默认Declaration与有限Capture预算；历史设计交付段落不扩张实现证据",
+      "target": "working-tree",
+      "approval": "approved",
+      "delegated_by": [],
+      "supersedes": [],
+      "approval_refs": [
+        {
+          "path": "docs/superpowers/specs/2026-10-21-generic-variable-modes-design.md",
+          "section": "9"
         }
       ]
     }

@@ -1,0 +1,644 @@
+{
+  "schema_version": 1,
+  "id": "EV-20261021-007",
+  "method": "automated",
+  "scenario_refs": [
+    {
+      "capability_id": "ATTR-TARGETS-001",
+      "scenario_id": "S1"
+    },
+    {
+      "capability_id": "ATTR-TARGETS-001",
+      "scenario_id": "S26"
+    },
+    {
+      "capability_id": "CROSS-COMPAT-001",
+      "scenario_id": "S1"
+    },
+    {
+      "capability_id": "CROSS-COMPAT-001",
+      "scenario_id": "S2"
+    },
+    {
+      "capability_id": "CROSS-COMPAT-001",
+      "scenario_id": "S3"
+    },
+    {
+      "capability_id": "CROSS-COMPAT-001",
+      "scenario_id": "S4"
+    },
+    {
+      "capability_id": "CROSS-LIFETIME-001",
+      "scenario_id": "S1"
+    },
+    {
+      "capability_id": "CROSS-LOGIC-001",
+      "scenario_id": "S1"
+    },
+    {
+      "capability_id": "CROSS-LOGIC-001",
+      "scenario_id": "S2"
+    },
+    {
+      "capability_id": "CROSS-RESOURCES-001",
+      "scenario_id": "S1"
+    },
+    {
+      "capability_id": "CROSS-RESOURCES-001",
+      "scenario_id": "S8"
+    },
+    {
+      "capability_id": "GEN-BINDING-001",
+      "scenario_id": "S1"
+    },
+    {
+      "capability_id": "GEN-BINDING-001",
+      "scenario_id": "S2"
+    },
+    {
+      "capability_id": "GEN-BINDING-001",
+      "scenario_id": "S3"
+    },
+    {
+      "capability_id": "GEN-BINDING-001",
+      "scenario_id": "S4"
+    },
+    {
+      "capability_id": "GEN-BINDING-001",
+      "scenario_id": "S5"
+    },
+    {
+      "capability_id": "GEN-BINDING-001",
+      "scenario_id": "S6"
+    },
+    {
+      "capability_id": "GEN-BINDING-001",
+      "scenario_id": "S7"
+    },
+    {
+      "capability_id": "GEN-BINDING-001",
+      "scenario_id": "S8"
+    },
+    {
+      "capability_id": "GEN-BINDING-001",
+      "scenario_id": "S9"
+    },
+    {
+      "capability_id": "GEN-BINDING-001",
+      "scenario_id": "S10"
+    },
+    {
+      "capability_id": "GEN-BINDING-001",
+      "scenario_id": "S11"
+    },
+    {
+      "capability_id": "GEN-IDENTITY-001",
+      "scenario_id": "S1"
+    },
+    {
+      "capability_id": "GEN-IDENTITY-001",
+      "scenario_id": "S2"
+    },
+    {
+      "capability_id": "GEN-IDENTITY-001",
+      "scenario_id": "S3"
+    },
+    {
+      "capability_id": "GEN-IDENTITY-001",
+      "scenario_id": "S4"
+    },
+    {
+      "capability_id": "GEN-IDENTITY-001",
+      "scenario_id": "S5"
+    },
+    {
+      "capability_id": "GEN-IDENTITY-001",
+      "scenario_id": "S6"
+    },
+    {
+      "capability_id": "GEN-IDENTITY-001",
+      "scenario_id": "S7"
+    },
+    {
+      "capability_id": "TYPE-NOMINAL-001",
+      "scenario_id": "S1"
+    },
+    {
+      "capability_id": "TYPE-NOMINAL-001",
+      "scenario_id": "S3"
+    },
+    {
+      "capability_id": "TYPE-NOMINAL-001",
+      "scenario_id": "S5"
+    },
+    {
+      "capability_id": "TYPE-NOMINAL-001",
+      "scenario_id": "S6"
+    },
+    {
+      "capability_id": "TYPE-NOMINAL-001",
+      "scenario_id": "S12"
+    }
+  ],
+  "oracle_refs": [
+    {
+      "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+      "section": "13.2 / 21"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-10-21-generic-variable-modes-design.md",
+      "section": "3 / 4 / 6 / 9"
+    }
+  ],
+  "procedure": "dotnet build AspectN.sln -c Release --no-restore --disable-build-servers -m:1 -v:quiet\ndotnet test AspectN.sln -c Release --no-build --no-restore -m:1 --logger trx --results-directory artifacts/generic-modes/final -v:quiet\ndotnet run --project docs/usage/examples/MatchingBoundaries/MatchingBoundaries.csproj -c Release --no-restore --disable-build-servers\ndotnet format AspectN.sln --verify-no-changes --no-restore --verbosity quiet\npwsh -NoProfile -File eng/generate-knowledge.ps1\npwsh -NoProfile -File eng/generate-knowledge.ps1 -Check\npwsh -NoProfile -File eng/verify-documentation.ps1\ngit diff --check\ndotnet test tests/AspectN.Tests/AspectN.Tests.csproj -c Release --no-build --no-restore --filter \"FullyQualifiedName~AttributePatternTests|FullyQualifiedName~BindingBudgetTests|FullyQualifiedName~GenericVariableModeTests\" --logger trx --results-directory artifacts/generic-modes/post-review -v:quiet",
+  "result": "passed",
+  "recorded_on": "2026-10-21",
+  "environment": {
+    "os": "Windows",
+    "sdk": "10.0.401",
+    "runtime": "10.0.12",
+    "cecil": "0.11.5",
+    "fody_helpers": "6.8.1",
+    "roslyn": "4.12.0",
+    "test_hosts": "net10.0及net472；兼容项目实际加载netstandard2.0核心/适配器",
+    "capture_defaults": "MaximumBindingAlternatives=4096; MaximumBindingWork=1000000"
+  },
+  "code_state": {
+    "head": "7b86bbf7d8c667cd1bbf6535c155dff581d923ba",
+    "dirty": true,
+    "files": [
+      {
+        "path": "docs/knowledge/capabilities/attributes/ATTR-TARGETS-001.md",
+        "sha256": "520d256989812043bd43d0cac5d88a33908dad14c5c48b908002c643f7be0a5a"
+      },
+      {
+        "path": "docs/knowledge/capabilities/cross-cutting/CROSS-COMPAT-001.md",
+        "sha256": "75aa4e43cff1d50acadf56f3946fafc077e82e0c586e74ebce177a5c2e7cbb69"
+      },
+      {
+        "path": "docs/knowledge/capabilities/cross-cutting/CROSS-LIFETIME-001.md",
+        "sha256": "761435f7d92b200caa69e3da354bd2445d56fac8a2a06c092067f6cb3313f8d1"
+      },
+      {
+        "path": "docs/knowledge/capabilities/cross-cutting/CROSS-LOGIC-001.md",
+        "sha256": "1ac99b21e4913d3cffee533253d4afe0616a229e9d766cedf9a2ae18805d481d"
+      },
+      {
+        "path": "docs/knowledge/capabilities/cross-cutting/CROSS-RESOURCES-001.md",
+        "sha256": "d026100c3bd3eebaf47718e7137f1ae5801aac7ab199ffdd9c432476112b62d5"
+      },
+      {
+        "path": "docs/knowledge/capabilities/generics/GEN-BINDING-001.md",
+        "sha256": "added11ba1d854779275a3f5e1cb43b6c616f824df39549bf734476bab194789"
+      },
+      {
+        "path": "docs/knowledge/capabilities/generics/GEN-IDENTITY-001.md",
+        "sha256": "797380666b13c0fad6dc291d15772b34b35c0f17d6835532dbdd9d123e75b09b"
+      },
+      {
+        "path": "docs/knowledge/capabilities/types/TYPE-NOMINAL-001.md",
+        "sha256": "1436b5e5c25cf0e9f07a9ac027add80fcf284b7c4b0cddc7b098428de02a85bb"
+      },
+      {
+        "path": "docs/knowledge/coverage.json",
+        "sha256": "c2c856fb5dc4d98f36e4af76b73d6c735a1f2510b608b573ad7a392540775732"
+      },
+      {
+        "path": "docs/knowledge/generated/catalog.md",
+        "sha256": "19ebdfc7b8245d2b7090584e35804d557b97af04c9496acddcf0bc03cf702bcb"
+      },
+      {
+        "path": "docs/knowledge/generated/support-matrix.md",
+        "sha256": "5e0eaedd2255f1a234eb227e7cfe21613d6ebe74b8549f97cbbcd91ac241c26e"
+      },
+      {
+        "path": "docs/knowledge/sources.json",
+        "sha256": "326d5e6e2393955d6ee2d7669381337e36cbfcec0d4c6ddddac7c3627948b176"
+      },
+      {
+        "path": "docs/language/shared-standard-differences.md",
+        "sha256": "b34640f4ecd2428ba90b1b6a3684bea142c105d4b06423da29d145473d3a57b6"
+      },
+      {
+        "path": "docs/language/standard-design-decisions.md",
+        "sha256": "bac33c9fdfd5c19480f184dddd36ccfab94c7192e026be3b3fb57d8556c4ba33"
+      },
+      {
+        "path": "docs/migration/shared-cecil-to-aspectn.md",
+        "sha256": "15427ed9928fbe15ba86492ecd105e3a002c92ce69b097283e200fc65ebaaacb"
+      },
+      {
+        "path": "docs/plans/2026-10-21-generic-variable-modes.md",
+        "sha256": "485b905ae85fd8dd40e632ff82ede933a90545181cd18f085bdce8993214a24f"
+      },
+      {
+        "path": "docs/reviews/2026-10-21-generic-variable-modes.md",
+        "sha256": "7df480b3698393b02c5bbe6726bfdc840995107817c2ea6056e4cdcd2ad8af0b"
+      },
+      {
+        "path": "docs/reviews/findings/FND-20261021-007.md",
+        "sha256": "5847082883f08d3860736f91a0dd58aa77fde2463dfd0478734b096cbef6e36b"
+      },
+      {
+        "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+        "sha256": "88c78e8282547801081796bae91ecc8cfa353b4d14c88d583a5e2db6ca4885f8"
+      },
+      {
+        "path": "docs/superpowers/specs/2026-10-21-generic-variable-modes-design.md",
+        "sha256": "e702fb976734f3d35e1e289465dc32c189312bb2ba1758805d6360af1387869f"
+      },
+      {
+        "path": "docs/usage/backend-implementation.md",
+        "sha256": "07e1e4e0c37cdc2f59e2cb4da9905ba83721124b35bbd9dfe9a223f9df9452f9"
+      },
+      {
+        "path": "docs/usage/examples/MatchingBoundaries/Program.cs",
+        "sha256": "fd262741207c1b1077d19c26741c060a7a32c4c3dbfd2222bfb7929af899fcb8"
+      },
+      {
+        "path": "docs/usage/language-and-metadata.md",
+        "sha256": "8d33152d2361afdfef0f3ec7def64731fa9645d4a78d5f5c846d90791754244c"
+      },
+      {
+        "path": "docs/usage/lifetimes-and-compatibility.md",
+        "sha256": "a374b25306fec9189785b94bcf7102c116528b189d959c10be1ad122ce840484"
+      },
+      {
+        "path": "docs/usage/limits-and-pitfalls.md",
+        "sha256": "3bdb2c40f7571e4ce1b28d20d5bd10e675bd94d4ab1819e02c69c9ea08cddf45"
+      },
+      {
+        "path": "docs/usage/matching.md",
+        "sha256": "23974f9e136eea34a11ee00d0221e811cedd43805a6425aabec6f6e29effaa26"
+      },
+      {
+        "path": "docs/usage/migration.md",
+        "sha256": "50607a2f19d1d556793739fee6f04ec6e8e46e6706805ad743c2fcd4296e6f1f"
+      },
+      {
+        "path": "docs/usage/results-and-diagnostics.md",
+        "sha256": "e4f99ced4081f3150af35a91c93ea31991687121a94dd0e6e52bb89dec79f1fc"
+      },
+      {
+        "path": "src/AspectN/AspectNCompilation.cs",
+        "sha256": "65f388e412130242d888638a806747a4280a5f5d893e36d4b41d827fb48e27b5"
+      },
+      {
+        "path": "src/AspectN/AspectNCompilationOptions.cs",
+        "sha256": "e4c35cdc25a16973af0a076eae9cc93b7041a58bf0cdfd7fc63c30078e4db3dd"
+      },
+      {
+        "path": "src/AspectN/Binding/Binder.Declarations.cs",
+        "sha256": "10ce95bc5fbf58b256feb21bc36a1ab8fd79defaa5c1d752a8832763d228ae6d"
+      },
+      {
+        "path": "src/AspectN/Binding/Binder.MemberPaths.cs",
+        "sha256": "765f2acb3e4e2475e74d80956e92ed7c28aebbcccfe0655f80dd153767a33190"
+      },
+      {
+        "path": "src/AspectN/Binding/Binder.cs",
+        "sha256": "399980b6725a62090901c746169cee0115586d9059c79e9d1f5429bc0ea75bce"
+      },
+      {
+        "path": "src/AspectN/Binding/DeclarationSlot.cs",
+        "sha256": "59a8b0a7a7b765d7684eaaca3a1316bdf4a7c4367978d556c5919b7ca40e296c"
+      },
+      {
+        "path": "src/AspectN/Binding/VariableSymbol.cs",
+        "sha256": "0c81104391162ee86e5a5dc8bfa04681960deb1c33743e5573719ef3297aea37"
+      },
+      {
+        "path": "src/AspectN/Caching/CompiledPatternCache.cs",
+        "sha256": "eeda8aa8f6ff82c783e5656206e2aa7aedeae25e4af5942037e765f86693bf07"
+      },
+      {
+        "path": "src/AspectN/CompiledMemberPattern.cs",
+        "sha256": "fd52a2cabcbf509b37ada1a002a1bdae1257ee05607e4f75866da7a9a73cf8f8"
+      },
+      {
+        "path": "src/AspectN/CompiledTypePattern.cs",
+        "sha256": "965c8d02301b89b8da83c6a99107eaccd4c8eea7116b3dcc21b4c48814e6e926"
+      },
+      {
+        "path": "src/AspectN/Diagnostics/DiagnosticCodes.cs",
+        "sha256": "1c05b5f98c83dc5604427631caa845be3f182e64c99aa7d73626da578976fd5e"
+      },
+      {
+        "path": "src/AspectN/Evaluation/AttributePatternEvaluator.cs",
+        "sha256": "5e2f57dd0561de3ba568dbd7bc71dc483374462c3f61672a89dae6f2d9139843"
+      },
+      {
+        "path": "src/AspectN/Evaluation/BindingBudget.cs",
+        "sha256": "aecdcd46d35de5072cd3d984ca86be37df6beafdda4fb6e7a709bef45c91b005"
+      },
+      {
+        "path": "src/AspectN/Evaluation/BindingBudgetExceededException.cs",
+        "sha256": "2af03caaffa3a6f4c3548cd9fe47895ead55964bf737d144485444997ad104f5"
+      },
+      {
+        "path": "src/AspectN/Evaluation/BindingEnvironment.cs",
+        "sha256": "3c1a26672d1ec143c3bf0e86e95965cc29590973a0063330c74a4e33cdc0c7ca"
+      },
+      {
+        "path": "src/AspectN/Evaluation/DeclarationBindings.cs",
+        "sha256": "caacc900c6ccce3919ef3c53bd15e09ac6360df54b1020ef9ee4df6e785de52b"
+      },
+      {
+        "path": "src/AspectN/Evaluation/EvaluationContext.cs",
+        "sha256": "42d783b9e59778612c5812e481a043b44751066255938aab7bab27998ad97c17"
+      },
+      {
+        "path": "src/AspectN/Evaluation/MemberPatternEvaluator.cs",
+        "sha256": "b6add3233490a5dded5463e12411be65334d5281393de64c0db4eb9428290476"
+      },
+      {
+        "path": "src/AspectN/Evaluation/TypePatternEvaluator.cs",
+        "sha256": "774c848cddd06732ff6bce1c63bac654ec1df2cfd8e7da764426dda922304467"
+      },
+      {
+        "path": "src/AspectN/GenericVariableMode.cs",
+        "sha256": "f66fd389f14f962e83431e035328d36d4a50bedf655e74ff8561cdd30d1db54b"
+      },
+      {
+        "path": "src/AspectN/PublicAPI.Unshipped.txt",
+        "sha256": "050e51b1f37e7462b41c085fb658371fb42e5837eb71b0a1fe5f340736b0de90"
+      },
+      {
+        "path": "tests/AspectN.Cecil.Tests/GenericVariableModeTests.cs",
+        "sha256": "ff9e4f7ad206df70971c3264de324882c96c45292fb41b572cccaf7f0d98e2e6"
+      },
+      {
+        "path": "tests/AspectN.Conformance.Tests/GenericVariableModeConformanceTests.cs",
+        "sha256": "8c7ff241379949e1835fe9030dff0855f6d6f6f999df08f230091b86115d8143"
+      },
+      {
+        "path": "tests/AspectN.NetFramework.Tests/NetFrameworkSmokeTests.cs",
+        "sha256": "d007c73a743edecf7f2ed5057505382a4458b24e908cd48cdd0882f636d0936a"
+      },
+      {
+        "path": "tests/AspectN.Reflection.Tests/AssignablePatternMatchingTests.cs",
+        "sha256": "6bf77ef915cd81cb58625033577b95eb2fa8bfa27c530234286874ca6e10b4bf"
+      },
+      {
+        "path": "tests/AspectN.Tests/Evaluation/AttributePatternTests.cs",
+        "sha256": "a93c4f96655650886f6122d3f8f17b6d5c39eef2e87eeb25b9a40633cc250417"
+      },
+      {
+        "path": "tests/AspectN.Tests/Evaluation/BindingAlternativesTests.cs",
+        "sha256": "b1ec1f43305185cf9b002553461993db8b62a2aabd695ec39b704490ffa88b5a"
+      },
+      {
+        "path": "tests/AspectN.Tests/Evaluation/BindingBudgetTests.cs",
+        "sha256": "1debd37e20130457e854c0b218e8785de95b734e962aaacb22c5038728f96fe7"
+      },
+      {
+        "path": "tests/AspectN.Tests/Evaluation/CompiledPatternTests.cs",
+        "sha256": "fa84677392777d61ce3bfeb0cc928f0fc1b78572d2e28dcbabd58cac405657a4"
+      },
+      {
+        "path": "tests/AspectN.Tests/Evaluation/ConstructorSelectorTests.cs",
+        "sha256": "3ca8574658f687dbe7a3d18e654a583c4a776ef5479dc32afc3981c6c12140a2"
+      },
+      {
+        "path": "tests/AspectN.Tests/Evaluation/GenericVariableModeTests.cs",
+        "sha256": "e0803a2efd15f1ee1966dfe368a1c5e3f5aa519aa7fd883129883cd90b3391d4"
+      },
+      {
+        "path": "tests/AspectN.Tests/Evaluation/IncompleteGenericArgumentTests.cs",
+        "sha256": "b46ce8b1a284641c870bf4bf951cd59873734adf8e787614a8fda3845fdf3cd9"
+      },
+      {
+        "path": "tests/AspectN.Tests/Evaluation/InheritanceClosureLimitTests.cs",
+        "sha256": "510db0596aa5438ee46f73d701a93f2c94cc168014c5abba5f573b57c37ef240"
+      },
+      {
+        "path": "tests/AspectN.Tests/Evaluation/MemberPathTests.cs",
+        "sha256": "af94cc7b6434c835d3744528466ff35d8d78efd7d5991169e42e0d4afb08ab9d"
+      },
+      {
+        "path": "tests/AspectN.Tests/Evaluation/PatternVariableTests.cs",
+        "sha256": "8ef94551b098677e9fb379e214823022369413993ed8a0e46622a2cf8c7d3e47"
+      }
+    ]
+  },
+  "dependency_scope": {
+    "paths": [
+      "docs/knowledge/capabilities/attributes/ATTR-TARGETS-001.md",
+      "docs/knowledge/capabilities/cross-cutting/CROSS-COMPAT-001.md",
+      "docs/knowledge/capabilities/cross-cutting/CROSS-LIFETIME-001.md",
+      "docs/knowledge/capabilities/cross-cutting/CROSS-LOGIC-001.md",
+      "docs/knowledge/capabilities/cross-cutting/CROSS-RESOURCES-001.md",
+      "docs/knowledge/capabilities/generics/GEN-BINDING-001.md",
+      "docs/knowledge/capabilities/generics/GEN-IDENTITY-001.md",
+      "docs/knowledge/capabilities/types/TYPE-NOMINAL-001.md",
+      "docs/knowledge/coverage.json",
+      "docs/knowledge/generated/catalog.md",
+      "docs/knowledge/generated/support-matrix.md",
+      "docs/knowledge/sources.json",
+      "docs/language/shared-standard-differences.md",
+      "docs/language/standard-design-decisions.md",
+      "docs/migration/shared-cecil-to-aspectn.md",
+      "docs/plans/2026-10-21-generic-variable-modes.md",
+      "docs/reviews/2026-10-21-generic-variable-modes.md",
+      "docs/reviews/findings/FND-20261021-007.md",
+      "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+      "docs/superpowers/specs/2026-10-21-generic-variable-modes-design.md",
+      "docs/usage/backend-implementation.md",
+      "docs/usage/examples/MatchingBoundaries/Program.cs",
+      "docs/usage/language-and-metadata.md",
+      "docs/usage/lifetimes-and-compatibility.md",
+      "docs/usage/limits-and-pitfalls.md",
+      "docs/usage/matching.md",
+      "docs/usage/migration.md",
+      "docs/usage/results-and-diagnostics.md",
+      "src/AspectN/AspectNCompilation.cs",
+      "src/AspectN/AspectNCompilationOptions.cs",
+      "src/AspectN/Binding/Binder.Declarations.cs",
+      "src/AspectN/Binding/Binder.MemberPaths.cs",
+      "src/AspectN/Binding/Binder.cs",
+      "src/AspectN/Binding/DeclarationSlot.cs",
+      "src/AspectN/Binding/VariableSymbol.cs",
+      "src/AspectN/Caching/CompiledPatternCache.cs",
+      "src/AspectN/CompiledMemberPattern.cs",
+      "src/AspectN/CompiledTypePattern.cs",
+      "src/AspectN/Diagnostics/DiagnosticCodes.cs",
+      "src/AspectN/Evaluation/AttributePatternEvaluator.cs",
+      "src/AspectN/Evaluation/BindingBudget.cs",
+      "src/AspectN/Evaluation/BindingBudgetExceededException.cs",
+      "src/AspectN/Evaluation/BindingEnvironment.cs",
+      "src/AspectN/Evaluation/DeclarationBindings.cs",
+      "src/AspectN/Evaluation/EvaluationContext.cs",
+      "src/AspectN/Evaluation/MemberPatternEvaluator.cs",
+      "src/AspectN/Evaluation/TypePatternEvaluator.cs",
+      "src/AspectN/GenericVariableMode.cs",
+      "src/AspectN/PublicAPI.Unshipped.txt",
+      "tests/AspectN.Cecil.Tests/GenericVariableModeTests.cs",
+      "tests/AspectN.Conformance.Tests/GenericVariableModeConformanceTests.cs",
+      "tests/AspectN.NetFramework.Tests/NetFrameworkSmokeTests.cs",
+      "tests/AspectN.Reflection.Tests/AssignablePatternMatchingTests.cs",
+      "tests/AspectN.Tests/Evaluation/AttributePatternTests.cs",
+      "tests/AspectN.Tests/Evaluation/BindingAlternativesTests.cs",
+      "tests/AspectN.Tests/Evaluation/BindingBudgetTests.cs",
+      "tests/AspectN.Tests/Evaluation/CompiledPatternTests.cs",
+      "tests/AspectN.Tests/Evaluation/ConstructorSelectorTests.cs",
+      "tests/AspectN.Tests/Evaluation/GenericVariableModeTests.cs",
+      "tests/AspectN.Tests/Evaluation/IncompleteGenericArgumentTests.cs",
+      "tests/AspectN.Tests/Evaluation/InheritanceClosureLimitTests.cs",
+      "tests/AspectN.Tests/Evaluation/MemberPathTests.cs",
+      "tests/AspectN.Tests/Evaluation/PatternVariableTests.cs"
+    ],
+    "environment_keys": [
+      "sdk",
+      "runtime",
+      "cecil",
+      "fody_helpers",
+      "roslyn",
+      "test_hosts",
+      "capture_defaults"
+    ]
+  },
+  "revalidation_conditions": "模式默认、声明槽位来源/身份、预算计数/去重、缓存、实际后端映射、规范、测试或宿主/依赖变化时，重验受影响场景；不能将旧Capture结果外推为Declaration，或把局部分配当整体性能承诺。",
+  "observations": {
+    "total": 2165,
+    "passed": 2165,
+    "failed": 0,
+    "runs": [
+      {
+        "project": "AspectN.Tests",
+        "target": "net10.0",
+        "total": 1204,
+        "passed": 1204,
+        "failed": 0,
+        "not_executed": 0,
+        "trx": "artifacts/generic-modes/final/Administrator_LAPTOP-ERQOPF47_2026-10-21_15_20_06_net10.0.trx",
+        "sha256": "4bafffb55702389a52519f7084ebd3cb792b6d8bb599c2bca02fa685fc4c1822"
+      },
+      {
+        "project": "AspectN.Cecil.Tests",
+        "target": "net10.0",
+        "total": 223,
+        "passed": 223,
+        "failed": 0,
+        "not_executed": 0,
+        "trx": "artifacts/generic-modes/final/Administrator_LAPTOP-ERQOPF47_2026-10-21_15_20_10_net10.0.trx",
+        "sha256": "415448d21b6d4b968d0e4f67af6499cbeeeb12e1b8f21248e2822a6640a43fa4"
+      },
+      {
+        "project": "AspectN.Reflection.Tests",
+        "target": "net10.0",
+        "total": 109,
+        "passed": 109,
+        "failed": 0,
+        "not_executed": 0,
+        "trx": "artifacts/generic-modes/final/Administrator_LAPTOP-ERQOPF47_2026-10-21_15_20_12_net10.0.trx",
+        "sha256": "bc7421683af1fa3f2a1bbd28bff3943f31b7759a98de4e4c8130d653138f6ae6"
+      },
+      {
+        "project": "AspectN.Roslyn.Tests",
+        "target": "net10.0",
+        "total": 28,
+        "passed": 28,
+        "failed": 0,
+        "not_executed": 0,
+        "trx": "artifacts/generic-modes/final/Administrator_LAPTOP-ERQOPF47_2026-10-21_15_20_15_net10.0.trx",
+        "sha256": "26d91db29e6f545bcf0585148168584c25e4c5cf0bbcd4f7b333df0a9108829b"
+      },
+      {
+        "project": "AspectN.Conformance.Tests",
+        "target": "net10.0",
+        "total": 359,
+        "passed": 359,
+        "failed": 0,
+        "not_executed": 0,
+        "trx": "artifacts/generic-modes/final/Administrator_LAPTOP-ERQOPF47_2026-10-21_15_20_19_net10.0.trx",
+        "sha256": "777f42338608739b47182444c0dff0045b60046ba103097d097edffb3362da60"
+      },
+      {
+        "project": "AspectN.NetFramework.Tests",
+        "target": "net472",
+        "total": 8,
+        "passed": 8,
+        "failed": 0,
+        "not_executed": 0,
+        "trx": "artifacts/generic-modes/final/Administrator_LAPTOP-ERQOPF47_2026-10-21_15_20_52_net472.trx",
+        "sha256": "a4c4d7584e66540d7ede8ce240f0334217a8c82aaad764de242fb41637bb16bb"
+      },
+      {
+        "project": "AspectN.NetFramework.Tests",
+        "target": "net10.0",
+        "total": 9,
+        "passed": 9,
+        "failed": 0,
+        "not_executed": 0,
+        "trx": "artifacts/generic-modes/final/Administrator_LAPTOP-ERQOPF47_2026-10-21_15_20_58_net10.0.trx",
+        "sha256": "78837f84e06a35a30bf0c85eecba6188f8c3f7b8c94dc65fc6c4a8ab494d50f4"
+      },
+      {
+        "project": "AspectN.Cecil.Fody.Tests",
+        "target": "net10.0",
+        "total": 225,
+        "passed": 225,
+        "failed": 0,
+        "not_executed": 0,
+        "trx": "artifacts/generic-modes/final/Administrator_LAPTOP-ERQOPF47_2026-10-21_15_20_59_net10.0.trx",
+        "sha256": "36ce3296000ae3ac7e6a281c93c2c3649e8d589afc8dbc211051f0f07fa86560"
+      }
+    ],
+    "pressure": [
+      {
+        "mode": "Capture",
+        "groups": 8,
+        "status": "Matched",
+        "work": 17409,
+        "allocated_bytes": 605040
+      },
+      {
+        "mode": "Capture",
+        "groups": 12,
+        "status": "Matched",
+        "work": 409579,
+        "allocated_bytes": 12358928
+      },
+      {
+        "mode": "Capture",
+        "groups": 13,
+        "status": "Unknown",
+        "work": 708593,
+        "allocated_bytes": 20878024
+      },
+      {
+        "mode": "Declaration",
+        "groups": 8,
+        "status": "Matched",
+        "work": 0,
+        "allocated_bytes": 28008
+      },
+      {
+        "mode": "Declaration",
+        "groups": 12,
+        "status": "Matched",
+        "work": 0,
+        "allocated_bytes": 42152
+      },
+      {
+        "mode": "Declaration",
+        "groups": 13,
+        "status": "Matched",
+        "work": 0,
+        "allocated_bytes": 45416
+      }
+    ],
+    "example_checks": 64,
+    "scope": "Declaration直接证明无动态环境；Capture原有具体/祖先/特性和Unknown备选回归显式配置。Fody按实际codeBase独立识别；同源PE仅Cecil/Reflection/Roslyn源及PE。",
+    "red": "生产变更前默认模式5例4失败1通过；随后缺新API编译错误不当运行时复现；预算部分测试在实现后补齐，不声明其先红后绿。",
+    "limits": "逻辑工作/每集合唯一数量预算，非时间/字节配额，不抢占后端内部执行；压力计数可能随实例哈希变动；现有N/A未改，纯值函数N/A不外推到Match。",
+    "post_review": {
+      "total": 68,
+      "passed": 68,
+      "failed": 0,
+      "trx": "artifacts/generic-modes/post-review/Administrator_LAPTOP-ERQOPF47_2026-10-21_15_33_44_net10.0.trx",
+      "sha256": "1ad9d7fe57f49083e6d89b92043c21498a407267dffea303bbb9c51d0851ca26",
+      "scope": "格式/注释收尾及特性收集器冗余空检查简化后的聚焦复核；不替代完整矩阵"
+    }
+  }
+}

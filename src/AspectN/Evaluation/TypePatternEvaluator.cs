@@ -20,19 +20,19 @@ internal static class TypePatternEvaluator
             "String", "Object",
         };
 
-    // 类型匹配必须传播 Unknown 状态，并在分支匹配时复制绑定环境，避免失败分支泄漏变量。
+    // Declaration 只组合固定引用的三态；Capture 隔离分支绑定并传播未知约束。
     public static MatchStatus Evaluate(
         BoundTypePattern pattern,
         TypeSignature candidate,
         EvaluationContext context)
     {
-        context.CancellationToken.ThrowIfCancellationRequested();
+        context.Visit(pattern.Span);
         switch (pattern)
         {
             case BoundWildcardTypePattern:
                 return MatchStatus.Matched;
             case BoundVariableTypePattern variable:
-                return context.Bind(variable.Variable, candidate);
+                return context.Bind(variable, candidate);
             case BoundNamedTypePattern named:
                 return EvaluateNamed(named, candidate, context);
             case BoundArrayTypePattern array:
@@ -63,10 +63,10 @@ internal static class TypePatternEvaluator
                     var right = Evaluate(binary.Right, candidate, rightContext);
                     context.MergeDiagnosticsFrom(leftContext);
                     context.MergeDiagnosticsFrom(rightContext);
-                    var alternatives = new List<EvaluationContext>();
-                    EvaluationContext.RetainAlternative(alternatives, leftContext, left);
-                    EvaluationContext.RetainAlternative(alternatives, rightContext, right);
-                    context.ReplaceBindingsWithAlternativesFrom(alternatives);
+                    var alternatives = context.CreateAlternativeCollector();
+                    alternatives?.Add(leftContext, left);
+                    alternatives?.Add(rightContext, right);
+                    alternatives?.Apply();
 
                     return MatchLogic.Or(left, right);
                 }
@@ -339,7 +339,7 @@ internal static class TypePatternEvaluator
             pattern.TargetType,
             out var target))
         {
-            context.CancellationToken.ThrowIfCancellationRequested();
+            context.Visit(pattern.Span);
             var result = context.TypeSystem.IsAssignableTo(
                 candidate,
                 target!,
@@ -380,12 +380,12 @@ internal static class TypePatternEvaluator
             candidate,
             cancellationToken);
         var status = MatchStatus.NotMatched;
-        var alternatives = new List<EvaluationContext>();
+        var alternatives = context.CreateAlternativeCollector();
         foreach (var ancestor in AncestorsIncludingSelf(
                      candidate,
                      closure.Ancestors))
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            context.Visit(pattern.Span);
             var branch = context.Fork();
             // 后端返回的中立祖先也受限制；超限时保留未知备选，不求值或绑定其内部结构。
             var failure = MetadataLimitGuard.GetFailure(ancestor, cancellationToken);
@@ -395,7 +395,7 @@ internal static class TypePatternEvaluator
                 : MatchStatus.Unknown;
             context.MergeDiagnosticsFrom(branch);
             status = MatchLogic.Or(status, branchStatus);
-            EvaluationContext.RetainAlternative(alternatives, branch, branchStatus);
+            alternatives?.Add(branch, branchStatus);
         }
 
         // 部分闭包意味着未产出的祖先仍可能匹配，不能静默判为不匹配（规范 12.4）。
@@ -407,10 +407,10 @@ internal static class TypePatternEvaluator
                 context,
                 "The inheritance closure could not be fully resolved.");
             status = MatchLogic.Or(status, unknownStatus);
-            EvaluationContext.RetainAlternative(alternatives, context.Fork(), unknownStatus);
+            alternatives?.Add(context.Fork(), unknownStatus);
         }
 
-        context.ReplaceBindingsWithAlternativesFrom(alternatives);
+        alternatives?.Apply();
         return status;
     }
 

@@ -51,11 +51,11 @@ public sealed class AttributePatternTests
         var matched = Match(
             "attr(call TagAttribute<$A>) && callable($A Service.get_Name(..))",
             Candidate(returnType: second, attributes: attributes),
-            typeSystem);
+            typeSystem, GenericVariableMode.Capture);
         var notMatched = Match(
             "attr(call TagAttribute<$A>) && callable($A Service.get_Name(..))",
             Candidate(returnType: second, attributes: attributes.Take(1)),
-            typeSystem);
+            typeSystem, GenericVariableMode.Capture);
 
         Assert.Equal(MatchStatus.Matched, matched.Status);
         Assert.Equal(MatchStatus.NotMatched, notMatched.Status);
@@ -80,7 +80,7 @@ public sealed class AttributePatternTests
                 [
                     new AttributeSignature(Generic("Example", "TagAttribute", second), AttributeTargetKind.Property)
                 ]),
-            typeSystem);
+            typeSystem, GenericVariableMode.Capture);
 
         Assert.Equal(MatchStatus.Matched, result.Status);
     }
@@ -392,16 +392,16 @@ public sealed class AttributePatternTests
 
         Assert.Equal(
             MatchStatus.NotMatched,
-            Match(memberOr, notMatched, typeSystem).Status);
+            Match(memberOr, notMatched, typeSystem, GenericVariableMode.Capture).Status);
         Assert.Equal(
             MatchStatus.Matched,
-            Match(memberOr, matched, typeSystem).Status);
+            Match(memberOr, matched, typeSystem, GenericVariableMode.Capture).Status);
         Assert.Equal(
             MatchStatus.NotMatched,
-            Match(typeOr, notMatched, typeSystem).Status);
+            Match(typeOr, notMatched, typeSystem, GenericVariableMode.Capture).Status);
         Assert.Equal(
             MatchStatus.Matched,
-            Match(typeOr, matched, typeSystem).Status);
+            Match(typeOr, matched, typeSystem, GenericVariableMode.Capture).Status);
     }
 
     [Fact]
@@ -422,10 +422,10 @@ public sealed class AttributePatternTests
     private static MatchResult Match(
         string source,
         MethodSignature candidate,
-        ITypeSystem typeSystem)
+        ITypeSystem typeSystem, GenericVariableMode mode = GenericVariableMode.Declaration)
     {
         var compilation = AspectNCompilation.Create(
-            AspectNParser.ParseMemberExpression(source));
+            AspectNParser.ParseMemberExpression(source), new AspectNCompilationOptions(null, mode));
         Assert.True(compilation.TryGetMemberPattern(out var pattern));
         return pattern!.Match(candidate, typeSystem);
     }

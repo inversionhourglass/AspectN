@@ -28,7 +28,7 @@
       "adapter": "core",
       "input_mode": "neutral",
       "entry_point": "Parse/Compile / CompiledPattern.Match",
-      "conditions": "InputDepthTests、SignatureLimitTests、RegexPatternTests 和 MemberPathTests 的实际边界及取消 fixture；InheritanceClosureLimitTests 的第三方祖先深度/元数、64边界、正常分支顺序和Unknown绑定备选",
+      "conditions": "InputDepthTests、SignatureLimitTests、RegexPatternTests 和 MemberPathTests 的实际边界及取消 fixture；InheritanceClosureLimitTests 的第三方祖先深度/元数、64边界、正常分支顺序和Unknown绑定备选；原C05变量备选用例显式Capture",
       "target": "working-tree",
       "expected_behavior": "结构深度64含根、类型有效元数64和方法自身元数64；解析/编译给诊断，外部中立匹配超限 Unknown；取消传播；核心闭包模式遍历对每个祖先先检查限制，超限为Unknown并保留诊断和备选，继续其他祖先，确定匹配仍为Matched",
       "contract_status": "supported",
@@ -38,7 +38,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-001",
-        "EV-20261021-002"
+        "EV-20261021-002",
+        "EV-20261021-007"
       ],
       "unverified_notes": ""
     },
@@ -155,6 +156,24 @@
         "EV-20261014-010"
       ],
       "unverified_notes": ""
+    },
+    {
+      "id": "S8",
+      "adapter": "core",
+      "input_mode": "neutral",
+      "entry_point": "Compile* / CompiledPattern.Match",
+      "conditions": "BindingBudgetTests：Capture工作1/2/3边界、数量1/2边界、去重、复制前收费、Fork共享、属性/祖先收集、局部Matched后中止、取消优先、诊断保存、重复/并发重置及8/12/13组压力",
+      "target": "working-tree",
+      "expected_behavior": "正限额且分支共享每次Match预算，耗尽整次Unknown/AN3007；不截断解集，不吞取消/第三方异常；Declaration无动态环境且不消耗捕获预算",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261021-007"
+      ],
+      "unverified_notes": ""
     }
   ],
   "invariant_checks": [
@@ -221,7 +240,8 @@
   "related_findings": [
     "FND-20261013-001",
     "FND-20261021-002",
-    "FND-20261021-005"
+    "FND-20261021-005",
+    "FND-20261021-007"
   ]
 }
 -->
@@ -277,3 +297,5 @@ CROSS-AVAILABILITY-001 处理事实缺失，SEM-REGEX-001 处理正则编译/超
 本轮新增detached继承闭包取消反例（S6/S7）：2026-10-13普通Cecil与Fody均出现已确认违约，当前已修复，见[取消Finding](../../../reviews/findings/FND-20261013-001.md)。原已关联候选的执行证据保持其限定范围。
 
 S6/S7 的提前返回吞取消已修复：CecilResolver.GetInheritanceClosure 在关联查找之前检查 Token。普通 Cecil 与 Fody 分别执行关联/脱离关联预先取消及未取消缺关联控制，见 [CecilCancellationTests](../../../../tests/AspectN.Cecil.Tests/CecilCancellationTests.cs)。
+
+Capture 默认每集合 4096 个唯一备选、每次 Match 1,000,000 个累计逻辑工作单位；逐项去重计费、复制前检查。耗尽即整体 Unknown/AN3007，保留诊断和触发跨度，取消优先。它不是墙钟或精确字节配额，不抢占第三方后端/闭包物化。Declaration 固定槽位缓存不使用动态预算。独立后端入口预算断言见 GEN-BINDING-001/S7–S11；兼容资产见 CROSS-COMPAT-001/S3–S4。[压力报告](../../../reviews/2026-10-21-generic-variable-modes.md)不代替整体性能闸门。

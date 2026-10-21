@@ -12,7 +12,7 @@ internal static class MemberPatternEvaluator
         MethodSignature candidate,
         EvaluationContext context)
     {
-        context.CancellationToken.ThrowIfCancellationRequested();
+        context.Visit(pattern.Span);
         switch (pattern)
         {
             case BoundSelector selector:
@@ -35,10 +35,10 @@ internal static class MemberPatternEvaluator
                     var right = Evaluate(binary.Right, candidate, rightContext);
                     context.MergeDiagnosticsFrom(leftContext);
                     context.MergeDiagnosticsFrom(rightContext);
-                    var alternatives = new List<EvaluationContext>();
-                    EvaluationContext.RetainAlternative(alternatives, leftContext, left);
-                    EvaluationContext.RetainAlternative(alternatives, rightContext, right);
-                    context.ReplaceBindingsWithAlternativesFrom(alternatives);
+                    var alternatives = context.CreateAlternativeCollector();
+                    alternatives?.Add(leftContext, left);
+                    alternatives?.Add(rightContext, right);
+                    alternatives?.Apply();
 
                     return MatchLogic.Or(left, right);
                 }
@@ -267,8 +267,7 @@ internal static class MemberPatternEvaluator
         };
         if (!arityMatches) return MatchStatus.NotMatched;
         if (pattern.Arguments.Count == 0) return MatchStatus.Matched;
-        // 定义签名（织入期实际面对的形式）不带实参，回退到形式参数，
-        // 与规范 13.2「变量可绑定形式泛型参数或构造具体类型」一致。
+        // 定义没有构造实参时使用形式参数；构造候选保留实际值，由所选变量模式检查。
         var candidateArguments = GenericParameterNamer.GetEffectiveMethodArguments(
             candidate);
         if (candidateArguments.Length != pattern.Arguments.Count)
@@ -328,7 +327,7 @@ internal static class MemberPatternEvaluator
         EvaluationContext context,
         MetadataAvailability? nameAvailability = null)
     {
-        context.CancellationToken.ThrowIfCancellationRequested();
+        context.Visit(pattern.Span);
         switch (pattern)
         {
             case BoundNamedMemberPattern named:
@@ -353,10 +352,10 @@ internal static class MemberPatternEvaluator
                 var right = EvaluateMemberName(binary.Right, memberName, candidate, rightContext, nameAvailability);
                 context.MergeDiagnosticsFrom(leftContext);
                 context.MergeDiagnosticsFrom(rightContext);
-                var matchedBranches = new List<EvaluationContext>();
-                EvaluationContext.RetainAlternative(matchedBranches, leftContext, left);
-                EvaluationContext.RetainAlternative(matchedBranches, rightContext, right);
-                context.ReplaceBindingsWithAlternativesFrom(matchedBranches);
+                var matchedBranches = context.CreateAlternativeCollector();
+                matchedBranches?.Add(leftContext, left);
+                matchedBranches?.Add(rightContext, right);
+                matchedBranches?.Apply();
                 return MatchLogic.Or(left, right);
             default:
                 return Unknown(pattern, context, "This member-name node cannot be evaluated.");

@@ -3,6 +3,9 @@ namespace AspectN.Diagnostics;
 /// <summary>Represents diagnostic codes.</summary>
 public static class DiagnosticCodes
 {
+    /// <summary>Identifies exhaustion of a per-match Capture binding budget.</summary>
+    public static string BindingBudgetExceeded => "AN3007";
+
     /// <summary>Identifies syntax that exceeds the supported recursion or tree depth.</summary>
     public static string InputDepthExceeded => "AN1002";
 

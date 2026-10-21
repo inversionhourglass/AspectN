@@ -32,7 +32,7 @@
       "adapter": "core",
       "input_mode": "neutral",
       "entry_point": "CompiledMemberPattern.Match / HasDirectAttribute",
-      "conditions": "AttributePatternTests 的 type/call/prop/para/ret/exec/any 与泛型特性中立输入；核心QueryTargetContractTests记录精确特性查询传参",
+      "conditions": "AttributePatternTests 的 type/call/prop/para/ret/exec/any 与泛型特性中立输入；核心QueryTargetContractTests记录精确特性查询传参；特性首次捕获及多备选用例显式Capture",
       "target": "working-tree",
       "expected_behavior": "只查询直接目标；call 不包含属性位置，exec 对访问器包含关联属性；不可用位置不当作空",
       "contract_status": "supported",
@@ -42,7 +42,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-001",
-        "EV-20261021-003"
+        "EV-20261021-003",
+        "EV-20261021-007"
       ],
       "unverified_notes": ""
     },
@@ -537,6 +538,24 @@
         "EV-20261021-005"
       ],
       "unverified_notes": ""
+    },
+    {
+      "id": "S26",
+      "adapter": "core",
+      "input_mode": "neutral",
+      "entry_point": "Compile* / CompiledPattern.Match",
+      "conditions": "GenericVariableModeTests、BindingBudgetTests：特性中首次声明默认AN2006；方法槽位先声明后的特性引用；Capture多记录/多目标历史回归及唯一数量限额",
+      "target": "working-tree",
+      "expected_behavior": "Declaration只能引用原候选已有槽位，不从记录重绑；Capture保留可满足分支，超限整次Unknown/AN3007",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261021-007"
+      ],
+      "unverified_notes": ""
     }
   ],
   "invariant_checks": [
@@ -670,3 +689,5 @@ CROSS-AVAILABILITY-001 治理缺失事实，GEN-BINDING-001 治理泛型特性�
 所需列表不可用时，S12的具体精确模式可由 HasDirectAttribute 恢复一个存在性事实；S13的通配、变量、复合模式仍需列表，接口没有枚举入口，也不能任意拆分同记录组合条件。不可用空是占位值。
 
 Roslyn PE 隐藏 readonly 返回标记必须从原始 MethodDef、返回 Param 和 CA 构造器作用域恢复，不从读取 Compilation 任取同名类型。S10控制普通/嵌入标记及同名依赖；S14控制实际依赖缺失时 ReturnAttributes 不可用、RefReadOnly 等独立事实仍有效。具体[回归入口](../../../../tests/AspectN.Conformance.Tests/ReadonlyReturnAttributeIdentityTests.cs)与[类型特性上下文](../../../../tests/AspectN.Conformance.Tests/TypeAttributeContextTests.cs)按场景保存证据。
+
+变量配置由 GEN-BINDING-001 管理。特性中的首次类型捕获需要 Capture；默认 Declaration 可引用已声明槽位。S1 动态捕获用例已明确迁移，S26 补默认诊断、固定引用及共享预算；真实记录映射、直接查询和 D01 通道不变。

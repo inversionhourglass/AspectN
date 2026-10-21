@@ -58,6 +58,17 @@ Check(typeSystem.IsAssignableTo(typeSystem.Mapper.MapType(typeof(string[,])),
 Check(MatchType("System.Collections.Generic.List", typeof(List<int>)) == MatchStatus.NotMatched, "省略泛型子句要求零元数");
 Check(MatchType("System.Collections.Generic.List<?>", typeof(List<int>)) == MatchStatus.Matched, "任意泛型元数");
 
+// 默认变量引用自身声明槽位；具体类型捕获需要显式选择 Capture。
+Check(MatchType("List<$T>", typeof(List<>)) == MatchStatus.Matched, "声明槽位变量");
+Check(MatchType("List<$T>", typeof(List<int>)) == MatchStatus.NotMatched, "默认变量拒绝具体实参");
+var captureOptions = new AspectNCompilationOptions(null, GenericVariableMode.Capture);
+Check(engine.CompileTypePattern("List<$T>", captureOptions).TryGetTypePattern(out var capturePattern), "显式编译 Capture");
+Check(capturePattern!.Match(typeSystem.Mapper.MapType(typeof(List<int>)), typeSystem).Status == MatchStatus.Matched, "Capture 捕获具体实参");
+var limitedOptions = new AspectNCompilationOptions(null, GenericVariableMode.Capture, maximumBindingAlternatives: 1);
+Check(engine.CompileTypePattern("List<$L> || List<$R>", limitedOptions).TryGetTypePattern(out var limitedPattern), "编译有限捕获模式");
+var limitedResult = limitedPattern!.Match(typeSystem.Mapper.MapType(typeof(List<int>)), typeSystem);
+Check(limitedResult.Status == MatchStatus.Unknown && limitedResult.Diagnostics.Any(item => item.Code == "AN3007"), "捕获预算耗尽");
+
 // 元数据模型或 C# 标记不自动成为 DSL 关键字。
 Check(MatchMethod("method(* CandidateApi.Sum(int[]))", nameof(CandidateApi.Sum)) == MatchStatus.Matched, "params 方法可按数组参数匹配");
 Check(MatchMethod("method(* CandidateApi.Read(ref int))", nameof(CandidateApi.Read)) == MatchStatus.Matched, "scoped ref 方法可按 ref 类型匹配");

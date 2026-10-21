@@ -12,6 +12,10 @@
     {
       "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
       "section": "7 / 13"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-10-21-generic-variable-modes-design.md",
+      "section": "3 / 4 / 9"
     }
   ],
   "scenarios": [
@@ -20,16 +24,17 @@
       "adapter": "core",
       "input_mode": "neutral",
       "entry_point": "Compile* / CompiledPattern.Match",
-      "conditions": "GenericPatternTests、VariableDeclarationTests、PatternVariableTests、BindingAlternativesTests 的中立 fixture",
+      "conditions": "GenericPatternTests、VariableDeclarationTests、PatternVariableTests、BindingAlternativesTests 的中立 fixture；动态具体类型和多绑定用例显式选择 Capture，GenericVariableModeTests 独立验证默认 Declaration",
       "target": "working-tree",
-      "expected_behavior": "省略具体名称子句是零元数；泛型子句声明 $变量；AND共享、OR隔离、否定不泄漏绑定；未知备选保持不确定",
+      "expected_behavior": "元数和作用域规则保持；默认按自身声明槽位匹配，Capture 允许具体类型捕获并保留未知备选，预算耗尽整次 Unknown/AN3007",
       "contract_status": "supported",
       "verification_status": "verified",
       "verification_methods": [
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-001"
+        "EV-20261014-001",
+        "EV-20261021-007"
       ],
       "unverified_notes": ""
     },
@@ -38,16 +43,17 @@
       "adapter": "reflection",
       "input_mode": "native_member",
       "entry_point": "Mapper.MapMethod / CompiledMemberPattern.Match",
-      "conditions": "GenericDefinitionMatchingTests 与 AssignablePatternMatchingTests 的开放/闭合、嵌套及备选绑定输入",
+      "conditions": "GenericDefinitionMatchingTests 与 AssignablePatternMatchingTests 的开放/闭合、嵌套及备选绑定输入；AssignablePatternMatchingTests 的祖先/具体实参捕获显式选择 Capture",
       "target": "working-tree",
-      "expected_behavior": "形式形参可绑定变量；具体实参模式不误当定义形参；反射闭合查询依实际上下文",
+      "expected_behavior": "形式形参可绑定变量；具体实参模式不误当定义形参；反射闭合查询依实际上下文；默认自身槽位与显式 Capture 区分，闭合构造不自动恢复为定义",
       "contract_status": "supported",
       "verification_status": "verified",
       "verification_methods": [
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-005"
+        "EV-20261014-005",
+        "EV-20261021-007"
       ],
       "unverified_notes": ""
     },
@@ -65,7 +71,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-001"
+        "EV-20261014-001",
+        "EV-20261021-007"
       ],
       "unverified_notes": "",
       "exclusion": {
@@ -87,14 +94,141 @@
       "entry_point": "NamedTypeSignature / MethodSignature 构造；CompiledPattern.Match",
       "conditions": "GenericSignatureValidationTests、IncompleteGenericArgumentTests：构造时校验实参/声明/原始定义元数，包含嵌套总元数、null及方法声明槽位；完整定义、开放/闭合构造及重复变量匹配作对照",
       "target": "working-tree",
-      "expected_behavior": "槽位结构非法在构造时抛ArgumentException；合法定义和完整开放/闭合构造仍可匹配；无声明及原始定义的方法由实参确定元数",
+      "expected_behavior": "槽位结构非法在构造时抛ArgumentException；合法定义和完整开放/闭合构造仍可作为候选，具体捕获的重复变量控制显式选择Capture；无声明及原始定义的方法由实参确定元数",
       "contract_status": "supported",
       "verification_status": "verified",
       "verification_methods": [
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261020-002"
+        "EV-20261020-002",
+        "EV-20261021-007"
+      ],
+      "unverified_notes": ""
+    },
+    {
+      "id": "S5",
+      "adapter": "core",
+      "input_mode": "neutral",
+      "entry_point": "Compile* / CompiledPattern.Match",
+      "conditions": "GenericVariableModeTests：默认/显式模式、直接槽位、嵌套外层位置、借用形参、闭合方法、数组/可空根、间接首次声明诊断、13组OR无动态环境；Binder与公开Match入口",
+      "target": "working-tree",
+      "expected_behavior": "Declaration 按原始候选自身槽位严格比较，不捕获具体类型/外部形参，不建立动态绑定备选；间接首次声明AN2006",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261021-007"
+      ],
+      "unverified_notes": ""
+    },
+    {
+      "id": "S6",
+      "adapter": "core",
+      "input_mode": "neutral",
+      "entry_point": "Compile* / CompiledPattern.Match",
+      "conditions": "BindingBudgetTests 与显式Capture历史回归：数量/工作边界、重复去重、签名实例/确定性差异、复制前扣费、Fork共享、取消、分支诊断、后端异常、并发重置、8/12/13组；有限额度",
+      "target": "working-tree",
+      "expected_behavior": "每个集合唯一数量有限、一次Match累计工作有限；预算内保留原捕获，耗尽整次Unknown/AN3007，取消和后端异常传播",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261021-007"
+      ],
+      "unverified_notes": ""
+    },
+    {
+      "id": "S7",
+      "adapter": "cecil",
+      "input_mode": "native_member",
+      "entry_point": "Compile* / CompiledPattern.Match",
+      "conditions": "GenericVariableModeConformanceTests 同源PE及GenericVariableModeTests公共Cecil对象；嵌套类型定义/闭合/外部形参开放构造，方法自身槽位与嵌套返回/参数引用，属性访问器和唯一备选预算",
+      "target": "working-tree",
+      "expected_behavior": "两模式开放声明Matched；Declaration实际构造实参不为自身形参时NotMatched，Capture保留实际实参匹配；Capture数量超限Unknown/AN3007",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261021-007"
+      ],
+      "unverified_notes": ""
+    },
+    {
+      "id": "S8",
+      "adapter": "reflection",
+      "input_mode": "native_member",
+      "entry_point": "Compile* / CompiledPattern.Match",
+      "conditions": "GenericVariableModeConformanceTests 同源PE由CLR加载；嵌套类型定义/闭合/外部形参开放构造，方法自身槽位与嵌套返回/参数引用，属性访问器和唯一备选预算",
+      "target": "working-tree",
+      "expected_behavior": "两模式开放声明Matched；Declaration实际构造实参不为自身形参时NotMatched，Capture保留实际实参匹配；Capture数量超限Unknown/AN3007",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261021-007"
+      ],
+      "unverified_notes": ""
+    },
+    {
+      "id": "S9",
+      "adapter": "roslyn",
+      "input_mode": "source_symbol",
+      "entry_point": "Compile* / CompiledPattern.Match",
+      "conditions": "GenericVariableModeConformanceTests 同一可成功发射的源码符号；嵌套类型定义/闭合/外部形参开放构造，方法自身槽位与嵌套返回/参数引用，属性访问器和唯一备选预算",
+      "target": "working-tree",
+      "expected_behavior": "两模式开放声明Matched；Declaration实际构造实参不为自身形参时NotMatched，Capture保留实际实参匹配；Capture数量超限Unknown/AN3007",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261021-007"
+      ],
+      "unverified_notes": ""
+    },
+    {
+      "id": "S10",
+      "adapter": "roslyn",
+      "input_mode": "pe_symbol",
+      "entry_point": "Compile* / CompiledPattern.Match",
+      "conditions": "GenericVariableModeConformanceTests 同源PE重新导入符号；嵌套类型定义/闭合/外部形参开放构造，方法自身槽位与嵌套返回/参数引用，属性访问器和唯一备选预算",
+      "target": "working-tree",
+      "expected_behavior": "两模式开放声明Matched；Declaration实际构造实参不为自身形参时NotMatched，Capture保留实际实参匹配；Capture数量超限Unknown/AN3007",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261021-007"
+      ],
+      "unverified_notes": ""
+    },
+    {
+      "id": "S11",
+      "adapter": "cecil_fody",
+      "input_mode": "native_member",
+      "entry_point": "Compile* / CompiledPattern.Match",
+      "conditions": "独立AspectN.Cecil.Fody.Tests程序集编译共享GenericVariableModeTests，公共Cecil对象；不声称Fody同源PE输入；开放/闭合方法及唯一备选预算",
+      "target": "working-tree",
+      "expected_behavior": "两模式开放声明Matched；Declaration实际构造实参不为自身形参时NotMatched，Capture保留实际实参匹配；Capture数量超限Unknown/AN3007",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261021-007"
       ],
       "unverified_notes": ""
     }
@@ -162,14 +296,15 @@
   "open_findings": [],
   "related_findings": [
     "FND-20261013-002",
-    "FND-20261020-002"
+    "FND-20261020-002",
+    "FND-20261021-007"
   ]
 }
 -->
 
 ## 摘要
 
-泛型元数是语法约束，$变量是匹配时的声明与绑定；二者与 CLR 泛型参数声明身份分别治理。
+泛型元数是语法约束；默认 Declaration 的 $变量是候选自身声明槽位别名，显式 Capture 是通用动态捕获。声明身份编码沿用 GEN-IDENTITY-001。
 
 ## 契约
 
@@ -177,11 +312,11 @@
 
 ## 输入条件
 
-泛型定义和槽位完整的构造类型都可作为候选；定义中的实际位置参数由模型确定。非空实参数量必须匹配声明元数，类型包含外层参数；原始定义不得与当前槽位矛盾。需要比较类型相等的变量操作依赖 ITypeSystem，未知不等同不相等。
+泛型定义和槽位完整的构造类型都可作为候选；定义中的实际位置参数由模型确定。非空实参数量必须匹配声明元数，类型包含外层参数；原始定义不得与当前槽位矛盾。Declaration 直接严格消费 owner kind/ID/assembly/position；Capture 重复绑定依赖 ITypeSystem.AreEqual，未知不等同不相等。合法构造可作候选，不表示默认变量必定匹配其具体实参。
 
 ## 分层能力
 
-Binder 验证声明位置和可见作用域；Evaluator 每次匹配使用独立绑定环境。公开 MatchResult 不返回变量捕获；并发候选不会共享暂存绑定。
+Binder 按编译模式验证直接声明槽位及可见作用域；Declaration 每次匹配只缓存唯一声明事实，OR/NOT/特性/祖先不复制动态环境。Capture 每次匹配独立创建绑定环境和共享有限预算。公开 MatchResult 不返回捕获；并发候选不共享事实缓存、暂存绑定或额度。
 
 ## 阶段失败
 
@@ -199,7 +334,7 @@ System.Collections.Generic.List<?>    // 任意元数
 
 ```mermaid
 flowchart LR
-    A[已有绑定] --> B{表达式}
+    A[Capture 已有绑定] --> B{表达式}
     B -->|AND| C[共享环境继续约束]
     B -->|OR| D[分支复制并保留匹配和未知备选]
     B -->|否定| E[隔离求值并丢弃新绑定]
@@ -220,3 +355,5 @@ GEN-IDENTITY-001 定义 CLR 声明身份，CROSS-LOGIC-001 定义结果三态；
 S4 现按 [2026-10-20 维护者裁决](../../../reviews/2026-10-20-c02-generic-signature-validation.md)在构造边界拒绝槽位结构非法的输入。[旧 Finding](../../../reviews/findings/FND-20261013-002.md)保留当时按缺失事实处理的历史结论，该结论不再定义当前输入范围。此为本次明确裁决，并非以修复缺陷为由自行将 supported 改为 excluded；H1 处置保持原范围。
 
 [构造回归](../../../../tests/AspectN.Tests/Metadata/GenericSignatureValidationTests.cs)、[合法匹配对照](../../../../tests/AspectN.Tests/Evaluation/IncompleteGenericArgumentTests.cs)和[真实后端构造](../../../../tests/AspectN.Conformance.Tests/GenericSignatureConstructionTests.cs)记录当前证据；没有声明槽位及原始定义的方法仍可由完整实参列表确定元数。
+
+本轮双模式与预算按 [批准设计](../../../superpowers/specs/2026-10-21-generic-variable-modes-design.md)和[实施报告](../../../reviews/2026-10-21-generic-variable-modes.md)执行。S1–S4 的历史证据保留，当前重新执行时明确选择模式；不能将旧动态捕获报告解释为新默认语义。S5–S11 才是本轮新增实现断言的入口和输入范围。间接首次捕获默认编译失败（AN2006），闭合实际实参默认不匹配，两者不能混为同一种迁移。

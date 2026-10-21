@@ -61,9 +61,9 @@ public sealed class MemberPathTests
     {
         var candidate = Candidate("Service", "Run", 1);
         Assert.Equal(MatchStatus.Matched,
-            Match("method(* Run<$T>(..)) && method(* Service.(Run<$T> || Stop<$T>)(..))", candidate).Status);
+            Match("method(* Run<$T>(..)) && method(* Service.(Run<$T> || Stop<$T>)(..))", candidate, GenericVariableMode.Capture).Status);
         Assert.Equal(MatchStatus.Matched,
-            Match("method(* Run<$T>(..)) && method(* !Service.Stop<$T>(..)) && method(* Run<$T>(..))", candidate).Status);
+            Match("method(* Run<$T>(..)) && method(* !Service.Stop<$T>(..)) && method(* Run<$T>(..))", candidate, GenericVariableMode.Capture).Status);
     }
 
     [Theory]
@@ -135,9 +135,9 @@ public sealed class MemberPathTests
     private static AspectNCompilation Compile(string source) =>
         AspectNCompilation.Create(AspectNParser.ParseMemberExpression(source));
 
-    private static MatchResult Match(string source, MethodSignature candidate)
+    private static MatchResult Match(string source, MethodSignature candidate, GenericVariableMode mode = GenericVariableMode.Declaration)
     {
-        var compilation = Compile(source);
+        var compilation = AspectNCompilation.Create(AspectNParser.ParseMemberExpression(source), new AspectNCompilationOptions(null, mode));
         Assert.True(compilation.TryGetMemberPattern(out var pattern), string.Join("; ", compilation.Diagnostics.Select(diagnostic => diagnostic.Message)));
         return pattern!.Match(candidate, new StubTypeSystem());
     }

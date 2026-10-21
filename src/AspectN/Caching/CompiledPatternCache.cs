@@ -132,11 +132,18 @@ internal readonly struct CompiledPatternCacheKey(
     public long RegexTimeoutTicks { get; } = compilationOptions?.RegexTimeout.Ticks ??
             throw new ArgumentNullException(nameof(compilationOptions));
 
+    public GenericVariableMode GenericVariableMode { get; } = compilationOptions.GenericVariableMode;
+    public int MaximumBindingAlternatives { get; } = compilationOptions.MaximumBindingAlternatives;
+    public long MaximumBindingWork { get; } = compilationOptions.MaximumBindingWork;
+
     public bool Equals(CompiledPatternCacheKey other)
     {
         return StringComparer.Ordinal.Equals(Source, other.Source) &&
                ParseKind == other.ParseKind &&
-               RegexTimeoutTicks == other.RegexTimeoutTicks;
+               RegexTimeoutTicks == other.RegexTimeoutTicks &&
+               GenericVariableMode == other.GenericVariableMode &&
+               MaximumBindingAlternatives == other.MaximumBindingAlternatives &&
+               MaximumBindingWork == other.MaximumBindingWork;
     }
 
     public override bool Equals(object? obj)
@@ -151,6 +158,9 @@ internal readonly struct CompiledPatternCacheKey(
             var hash = StringComparer.Ordinal.GetHashCode(Source);
             hash = (hash * 397) ^ (int)ParseKind;
             hash = (hash * 397) ^ RegexTimeoutTicks.GetHashCode();
+            hash = (hash * 397) ^ (int)GenericVariableMode;
+            hash = (hash * 397) ^ MaximumBindingAlternatives;
+            hash = (hash * 397) ^ MaximumBindingWork.GetHashCode();
             return hash;
         }
     }

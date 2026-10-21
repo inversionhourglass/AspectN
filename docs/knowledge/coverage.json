@@ -177,13 +177,17 @@
         {
           "section": "知识库与证据适用性 / 残余范围",
           "path": "docs/reviews/2026-10-14-classified-review-fixes.md"
+        },
+        {
+          "path": "docs/reviews/2026-10-21-generic-variable-modes.md",
+          "section": "能力、证据适用性与范围"
         }
       ],
       "assessment_status": "reviewed",
       "capability_ids": [
         "GEN-BINDING-001"
       ],
-      "notes": "2026-10-20维护者裁决取代残缺列表求值规则：泛型槽位结构非法在构造时拒绝；GEN-BINDING/S4记录类型包含链、方法声明/原始定义、完整开放/闭合构造和重复变量当前回归，历史结果保持原值。"
+      "notes": "2026-10-20维护者裁决取代残缺列表求值规则：泛型槽位结构非法在构造时拒绝；GEN-BINDING/S4记录类型包含链、方法声明/原始定义、完整开放/闭合构造和重复变量当前回归，历史结果保持原值。 2026-10-21双模式与预算：旧动态捕获回归显式Capture；默认Declaration独立证明固定槽位/无动态环境；AN3007、缓存及兼容性以EV-20261021-007所列输入为限，不扩展整体性能或未盘点范围。"
     },
     {
       "id": "INV-0009",
@@ -258,13 +262,17 @@
         {
           "path": "docs/reviews/2026-10-21-d01-direct-attribute-limits.md",
           "section": "维护者裁决与取代范围 / 知识库与证据适用性"
+        },
+        {
+          "path": "docs/reviews/2026-10-21-generic-variable-modes.md",
+          "section": "能力、证据适用性与范围"
         }
       ],
       "assessment_status": "reviewed",
       "capability_ids": [
         "ATTR-TARGETS-001"
       ],
-      "notes": "2026-10-14修复Roslyn PE返回CA同名读取者身份失真；类型特性优先级已裁决，新增ATTR/S12–S14区分精确原生回退、缺列表和实际标记依赖缺失。旧语法/继承排除仍按四视图实际证据，不外推Fody全部CA组合。 2026-10-21修复C04：ATTR/S2–S4及S15/S16补充类型/方法泛型形参声明直接特性；包含Fody独立程序集及Roslyn PE，不扩大DSL目标。 2026-10-21以C06补全查询目标XML契约及后端指南；核心传参、四视图现有查询行为和严格相等均有独立限定证据，未新增公开比较器或运行逻辑。 2026-10-21 D01维护者批准直接特性查询内部超限统一Unknown并保留原诊断；ATTR/S21–S25分别限定Cecil、Fody、Reflection、Roslyn源码/PE，显式映射异常及取消控制不变。"
+      "notes": "2026-10-14修复Roslyn PE返回CA同名读取者身份失真；类型特性优先级已裁决，新增ATTR/S12–S14区分精确原生回退、缺列表和实际标记依赖缺失。旧语法/继承排除仍按四视图实际证据，不外推Fody全部CA组合。 2026-10-21修复C04：ATTR/S2–S4及S15/S16补充类型/方法泛型形参声明直接特性；包含Fody独立程序集及Roslyn PE，不扩大DSL目标。 2026-10-21以C06补全查询目标XML契约及后端指南；核心传参、四视图现有查询行为和严格相等均有独立限定证据，未新增公开比较器或运行逻辑。 2026-10-21 D01维护者批准直接特性查询内部超限统一Unknown并保留原诊断；ATTR/S21–S25分别限定Cecil、Fody、Reflection、Roslyn源码/PE，显式映射异常及取消控制不变。 2026-10-21双模式与预算：旧动态捕获回归显式Capture；默认Declaration独立证明固定槽位/无动态环境；AN3007、缓存及兼容性以EV-20261021-007所列输入为限，不扩展整体性能或未盘点范围。"
     },
     {
       "id": "INV-0012",
@@ -324,6 +332,10 @@
         {
           "path": "docs/reviews/2026-10-21-d01-direct-attribute-limits.md",
           "section": "维护者裁决与取代范围 / 知识库与证据适用性"
+        },
+        {
+          "path": "docs/reviews/2026-10-21-generic-variable-modes.md",
+          "section": "能力、证据适用性与范围"
         }
       ],
       "assessment_status": "reviewed",
@@ -331,7 +343,7 @@
         "CROSS-RESOURCES-001",
         "CROSS-LIFETIME-001"
       ],
-      "notes": "2026-10-14修复无关联闭包吞预先取消，Cecil/Fody分别验证；完整已知类型特性可消费独立快照，其他原生关系仍需关联；不承诺全部GC时机或线程调度。 2026-10-21修复C05：CROSS-RESOURCES/S1补齐第三方闭包逐祖先限制检查、诊断与Unknown备选；不改变限制数值或内置原生预检。 2026-10-21 D01维护者批准直接特性查询内部超限统一Unknown并保留原诊断；ATTR/S21–S25分别限定Cecil、Fody、Reflection、Roslyn源码/PE，显式映射异常及取消控制不变。"
+      "notes": "2026-10-14修复无关联闭包吞预先取消，Cecil/Fody分别验证；完整已知类型特性可消费独立快照，其他原生关系仍需关联；不承诺全部GC时机或线程调度。 2026-10-21修复C05：CROSS-RESOURCES/S1补齐第三方闭包逐祖先限制检查、诊断与Unknown备选；不改变限制数值或内置原生预检。 2026-10-21 D01维护者批准直接特性查询内部超限统一Unknown并保留原诊断；ATTR/S21–S25分别限定Cecil、Fody、Reflection、Roslyn源码/PE，显式映射异常及取消控制不变。 2026-10-21双模式与预算：旧动态捕获回归显式Capture；默认Declaration独立证明固定槽位/无动态环境；AN3007、缓存及兼容性以EV-20261021-007所列输入为限，不扩展整体性能或未盘点范围。"
     },
     {
       "id": "INV-0014",
@@ -348,13 +360,17 @@
         {
           "section": "盘点与残余范围",
           "path": "docs/reviews/2026-10-13-documentation-expansion.md"
+        },
+        {
+          "path": "docs/reviews/2026-10-21-generic-variable-modes.md",
+          "section": "能力、证据适用性与范围"
         }
       ],
       "assessment_status": "reviewed",
       "capability_ids": [
         "CROSS-COMPAT-001"
       ],
-      "notes": "核心公开表面、Fody 身份及 Windows net10/net472 宿主上的实际 netstandard 资产已验证；Fody 兼容资产、历史依赖/发布版本及远程 Linux 新执行仍无证明。 建档表示已分析所列范围，不等于全版本/全输入验证；见 docs/reviews/2026-10-13-documentation-expansion.md。 2026-10-21以C06补全查询目标XML契约及后端指南；核心传参、四视图现有查询行为和严格相等均有独立限定证据，未新增公开比较器或运行逻辑。"
+      "notes": "核心公开表面、Fody 身份及 Windows net10/net472 宿主上的实际 netstandard 资产已验证；Fody 兼容资产、历史依赖/发布版本及远程 Linux 新执行仍无证明。 建档表示已分析所列范围，不等于全版本/全输入验证；见 docs/reviews/2026-10-13-documentation-expansion.md。 2026-10-21以C06补全查询目标XML契约及后端指南；核心传参、四视图现有查询行为和严格相等均有独立限定证据，未新增公开比较器或运行逻辑。 2026-10-21双模式与预算：旧动态捕获回归显式Capture；默认Declaration独立证明固定槽位/无动态环境；AN3007、缓存及兼容性以EV-20261021-007所列输入为限，不扩展整体性能或未盘点范围。"
     },
     {
       "id": "INV-0015",
@@ -371,13 +387,17 @@
         {
           "section": "盘点与残余范围",
           "path": "docs/reviews/2026-10-13-documentation-expansion.md"
+        },
+        {
+          "path": "docs/reviews/2026-10-21-generic-variable-modes.md",
+          "section": "能力、证据适用性与范围"
         }
       ],
       "assessment_status": "reviewed",
       "capability_ids": [
         "TYPE-NOMINAL-001"
       ],
-      "notes": "名称、嵌套、程序集、引用解析和名义关系已建档；没有覆盖全部转发拓扑或任意解析器组合。 建档表示已分析所列范围，不等于全版本/全输入验证；见 docs/reviews/2026-10-13-documentation-expansion.md。 2026-10-21新增TYPE-NOMINAL/S6，限定核心消费第三方中立祖先的超限与正常分支组合；不外推内置后端、循环或无限输入。 2026-10-21以C06补全查询目标XML契约及后端指南；核心传参、四视图现有查询行为和严格相等均有独立限定证据，未新增公开比较器或运行逻辑。 2026-10-21修复C07，Cecil/Fody分别验证游离原生数组的Module回退、已知固定关系、形状/元素约束及取消；不外推真实PE无Module或H1损坏输入。"
+      "notes": "名称、嵌套、程序集、引用解析和名义关系已建档；没有覆盖全部转发拓扑或任意解析器组合。 建档表示已分析所列范围，不等于全版本/全输入验证；见 docs/reviews/2026-10-13-documentation-expansion.md。 2026-10-21新增TYPE-NOMINAL/S6，限定核心消费第三方中立祖先的超限与正常分支组合；不外推内置后端、循环或无限输入。 2026-10-21以C06补全查询目标XML契约及后端指南；核心传参、四视图现有查询行为和严格相等均有独立限定证据，未新增公开比较器或运行逻辑。 2026-10-21修复C07，Cecil/Fody分别验证游离原生数组的Module回退、已知固定关系、形状/元素约束及取消；不外推真实PE无Module或H1损坏输入。 2026-10-21双模式与预算：旧动态捕获回归显式Capture；默认Declaration独立证明固定槽位/无动态环境；AN3007、缓存及兼容性以EV-20261021-007所列输入为限，不扩展整体性能或未盘点范围。"
     },
     {
       "id": "INV-0016",

@@ -28,16 +28,17 @@
       "adapter": "core",
       "input_mode": "neutral",
       "entry_point": "公开 API 反射与程序集引用检查",
-      "conditions": "PublicApiTests、SyntaxTreeTests、SignatureTests 和 ClosedLanguageTests 的公开表面",
+      "conditions": "PublicApiTests、SyntaxTreeTests、SignatureTests 和 ClosedLanguageTests 的公开表面；新增枚举/选项/AN3007登记于PublicAPI，GenericVariableModeTests验证原null/default/位置构造调用",
       "target": "working-tree",
-      "expected_behavior": "核心不暴露后端类型、不引用适配器程序集；没有语言选择器或自定义扩展参数",
+      "expected_behavior": "核心不暴露后端类型、不引用适配器程序集；没有语言选择器或自定义扩展参数；旧TimeSpan?构造器签名保留，新重载前两参必填；默认变量语义明确改为Declaration",
       "contract_status": "supported",
       "verification_status": "verified",
       "verification_methods": [
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-001"
+        "EV-20261014-001",
+        "EV-20261021-007"
       ],
       "unverified_notes": ""
     },
@@ -55,7 +56,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-003"
+        "EV-20261014-003",
+        "EV-20261021-007"
       ],
       "unverified_notes": ""
     },
@@ -64,16 +66,17 @@
       "adapter": "core",
       "input_mode": "neutral",
       "entry_point": "netstandard2.0 资产的加载及已选原生查询",
-      "conditions": "CompatibilityAssetTests/NetFrameworkSmokeTests 在 net10.0 进程；不含Fody兼容资产",
+      "conditions": "CompatibilityAssetTests/NetFrameworkSmokeTests 在 net10.0 进程；不含Fody兼容资产；NetFrameworkSmokeTests 双模式反射开放/闭合方法与AN3007，实际加载netstandard2.0核心/适配器",
       "target": "working-tree",
-      "expected_behavior": "实际加载核心/Cecil/Roslyn/Reflection netstandard2.0 资产，指定反射方法、数组形状和约束查询可执行",
+      "expected_behavior": "实际加载核心/Cecil/Roslyn/Reflection netstandard2.0 资产，指定反射方法、数组形状和约束查询可执行；所列双模式及预算查询可执行",
       "contract_status": "supported",
       "verification_status": "verified",
       "verification_methods": [
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-007"
+        "EV-20261014-007",
+        "EV-20261021-007"
       ],
       "unverified_notes": ""
     },
@@ -82,16 +85,17 @@
       "adapter": "core",
       "input_mode": "neutral",
       "entry_point": "netstandard2.0 资产的加载及已选原生查询",
-      "conditions": "相同兼容项目实际 net472 进程；Windows已安装.NET Framework运行时；不含Fody兼容资产",
+      "conditions": "相同兼容项目实际 net472 进程；Windows已安装.NET Framework运行时；不含Fody兼容资产；NetFrameworkSmokeTests 双模式反射开放/闭合方法与AN3007，实际加载netstandard2.0核心/适配器",
       "target": "working-tree",
-      "expected_behavior": "指定公开入口及查询能在该环境执行；不把一次测试等同所有旧运行时和所有表达式支持",
+      "expected_behavior": "指定公开入口及查询能在该环境执行；不把一次测试等同所有旧运行时和所有表达式支持；所列双模式及预算查询可执行",
       "contract_status": "supported",
       "verification_status": "verified",
       "verification_methods": [
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-008"
+        "EV-20261014-008",
+        "EV-20261021-007"
       ],
       "unverified_notes": ""
     },
@@ -224,3 +228,5 @@
 S5 补全公开 `ITypeSystem` 的查询侧契约与第三方接入指南。生产源码只更新 XML，未新增公开比较器或改变 API 形状/运行逻辑。记录型后端测试证明核心传参，四视图查询行为证据另见 TYPE-NOMINAL-001/S7–S10、ATTR-TARGETS-001/S17–S20，不外推到任意第三方实现。
 
 本轮Windows证据不代表远端Linux CI已经运行；未新增已发布版本或任意历史依赖版本的证明。Fody的netstandard运行资产、其他宿主版本留待专门矩阵场景。
+
+2026-10-21 选项新增不暴露后端类型，不改变 ITypeSystem。旧构造器二进制签名保留；默认语义变化的迁移要求见 GEN-BINDING-001。Fody 在独立程序集执行共享测试；本轮未新增Fody的netstandard兼容宿主，不外推S3/S4到该组合。S5 的非限定查询契约及无公开比较器决定保持，核心槽位相等不放宽 AreEqual。

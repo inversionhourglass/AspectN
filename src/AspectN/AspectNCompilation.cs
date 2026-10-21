@@ -91,7 +91,7 @@ public sealed class AspectNCompilation
                 syntaxTree.Diagnostics.ToArray());
         }
 
-        var binder = new Binder(syntaxTree);
+        var binder = new Binder(syntaxTree, effectiveOptions);
         var boundRoot = binder.Bind();
         var diagnostics = syntaxTree.Diagnostics
             .Concat(binder.Diagnostics)

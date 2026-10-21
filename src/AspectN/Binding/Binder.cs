@@ -10,7 +10,8 @@ using AspectN.Text;
 namespace AspectN.Binding;
 
 internal sealed partial class Binder(
-    AspectNSyntaxTree syntaxTree)
+    AspectNSyntaxTree syntaxTree,
+    AspectNCompilationOptions? options = null)
 {
     private static readonly Dictionary<string, string> _PrimitiveAliases =
         new(StringComparer.Ordinal)
@@ -40,6 +41,10 @@ internal sealed partial class Binder(
     private int _referenceOnlyDepth;
     private int _genericDefinitionDepth;
     private int _genericDefinitionNegationDepth;
+    private readonly GenericVariableMode _variableMode = options?.GenericVariableMode ?? GenericVariableMode.Declaration;
+    private DeclarationSource? _declarationSource = syntaxTree.ParseKind == AspectNParseKind.TypePattern ? DeclarationSource.RootType : null;
+    private readonly List<DeclarationTypeStep> _declarationPath = [];
+    private DeclarationSlot? _declarationSlot;
 
     public IReadOnlyList<AspectNDiagnostic> Diagnostics =>
         new ReadOnlyCollection<AspectNDiagnostic>(_diagnostics.ToArray());
@@ -210,10 +215,10 @@ internal sealed partial class Binder(
                     SelectorTargetDomain.StaticConstructor,
                     new BoundStaticConstructorSignature(
                         staticConstructor.Body!.FullSpan,
-                        BindTypePattern(
+                        BindDeclarationType(
                             (TypePatternSyntax)staticConstructor.Body,
                             scope,
-                            IsUnderNegation))),
+                            IsUnderNegation, DeclarationSource.DeclaringType))),
             AttributeSelectorSyntax attribute => BindAttributeSelector(
                 attribute,
                 scope),
@@ -330,7 +335,7 @@ internal sealed partial class Binder(
     {
         // 声明类型在源码顺序上先于参数，其引入的变量必须先进入作用域，参数内的引用才是合法引用。
         var declaringType = syntax.Parts.OfType<TypePatternSyntax>().First();
-        var declaringTypePattern = BindTypePattern(declaringType, scope, IsUnderNegation);
+        var declaringTypePattern = BindDeclarationType(declaringType, scope, IsUnderNegation, DeclarationSource.DeclaringType);
         var parameters = syntax.Parts
             .OfType<ParameterSyntax>()
             .Select(parameter =>
@@ -538,30 +543,30 @@ internal sealed partial class Binder(
                 }
                 return new BoundNullableTypePattern(
                     nullable.FullSpan,
-                    BindTypePattern(nullable.UnderlyingType, scope, underNegation));
+                    BindDeclarationWrappedType(nullable.UnderlyingType, scope, underNegation, DeclarationTypeStep.NullableUnderlying));
             case AssignableTypePatternSyntax assignable:
                 ReportInvalidAssignableTarget(assignable);
                 return new BoundAssignableTypePattern(
                     assignable.FullSpan,
-                    BindTypePattern(
+                    BindDeclarationType(
                         assignable.TargetType,
                         scope,
-                        underNegation));
+                        underNegation, null));
             case TupleTypePatternSyntax tuple:
                 return new BoundTupleTypePattern(
                     tuple.FullSpan,
                     tuple.Elements.Select(element =>
-                        BindTypePattern(element, scope, underNegation)));
+                        BindDeclarationType(element, scope, underNegation, null)));
             case TaskLikeTypePatternSyntax taskLike:
                 if (taskLike.ResultType is null)
                 {
                     return new BoundTaskLikeTypePattern(taskLike.FullSpan, null);
                 }
 
-                var taskLikeResult = BindTypePattern(
+                var taskLikeResult = BindDeclarationType(
                     taskLike.ResultType,
                     scope,
-                    underNegation);
+                    underNegation, null);
                 if (IsVoidNamedPattern(taskLikeResult))
                 {
                     _diagnostics.Add(
@@ -616,7 +621,8 @@ internal sealed partial class Binder(
             elementType = array.ElementType;
         }
 
-        BoundTypePattern bound = BindTypePattern(elementType, scope, underNegation);
+        BoundTypePattern bound = BindDeclarationWrappedType(elementType, scope, underNegation,
+            DeclarationTypeStep.ArrayElement, suffixes.Count);
         foreach (var suffix in suffixes)
         {
             bound = new BoundArrayTypePattern(
@@ -709,7 +715,9 @@ internal sealed partial class Binder(
                     genericSyntax,
                     pattern == "*",
                     scope,
-                    underNegation));
+                    underNegation,
+                    _genericDefinitionDepth == 0 ? _declarationSource : null,
+                    syntax.Segments.Count - index - 1));
         }).ToArray();
         var separators = syntax.Separators.Select(token => token.Text).ToArray();
         var sourceName = BuildCanonicalName(segments, separators);
@@ -740,7 +748,9 @@ internal sealed partial class Binder(
         GenericPatternListSyntax? syntax,
         bool nameIsWildcard,
         VariableScope scope,
-        bool underNegation)
+        bool underNegation,
+        DeclarationSource? source = null,
+        int containingDepth = 0)
     {
         if (syntax is null)
         {
@@ -762,8 +772,22 @@ internal sealed partial class Binder(
         _genericDefinitionDepth++;
         try
         {
-            arguments = syntax.Arguments.Select(argument =>
-                BindTypePattern(argument, scope, underNegation)).ToArray();
+            arguments = syntax.Arguments.Select((argument, position) =>
+            {
+                var previous = _declarationSlot;
+                _declarationSlot = source is not null && _genericDefinitionDepth == 1 &&
+                    UnwrapParenthesized(argument) is VariableTypePatternSyntax
+                    ? new DeclarationSlot(source.Value, containingDepth, position, _declarationPath)
+                    : null;
+                try
+                {
+                    return BindTypePattern(argument, scope, underNegation);
+                }
+                finally
+                {
+                    _declarationSlot = previous;
+                }
+            }).ToArray();
         }
         finally
         {
@@ -808,7 +832,7 @@ internal sealed partial class Binder(
             return new BoundVariableTypePattern(span, existing!);
         }
 
-        var variable = new VariableSymbol(name);
+        var variable = new VariableSymbol(name, _declarationSlot);
         if (underNegation)
         {
             _diagnostics.Add(
@@ -837,6 +861,13 @@ internal sealed partial class Binder(
                 DiagnosticSeverity.Error,
                 $"Variable '${name}' must be declared in a type or method generic clause before it is referenced.",
                 span);
+            return new BoundVariableTypePattern(span, variable);
+        }
+
+        if (_variableMode == GenericVariableMode.Declaration && _declarationSlot is null)
+        {
+            _diagnostics.Add(DiagnosticCodes.InvalidVariable, DiagnosticSeverity.Error,
+                $"Variable '${name}' must name a direct declaration slot in Declaration mode; use Capture for indirect type capture.", span);
             return new BoundVariableTypePattern(span, variable);
         }
 

@@ -14,7 +14,8 @@ internal sealed partial class Binder
         {
             var declaringType = syntax.DeclaringType is null
                 ? null
-                : BindTypePattern(syntax.DeclaringType, pathScope, IsUnderNegation);
+                : BindDeclarationType(syntax.DeclaringType, pathScope, IsUnderNegation,
+                    isProperty ? DeclarationSource.PropertyDeclaringType : DeclarationSource.DeclaringType);
             var name = BindMemberName(syntax.Name, pathScope, isProperty, IsUnderNegation);
             return new BoundMemberPattern(declaringType, name, isNegated);
         }
@@ -45,7 +46,8 @@ internal sealed partial class Binder
                         segment.GenericArguments.FullSpan);
                 }
                 return new BoundNamedMemberPattern(named.FullSpan, name,
-                    isProperty ? null : BindGenericPattern(segment.GenericArguments, name == "*", scope, underNegation));
+                    isProperty ? null : BindGenericPattern(segment.GenericArguments, name == "*", scope, underNegation,
+                        DeclarationSource.Method));
             case ParenthesizedMemberNamePatternSyntax parenthesized:
                 return BindMemberName(parenthesized.Pattern, scope, isProperty, underNegation);
             case UnaryMemberNamePatternSyntax unary:

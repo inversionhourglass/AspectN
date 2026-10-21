@@ -72,6 +72,8 @@ if (result.Status == MatchStatus.Unknown)
 
 ## 表达式迁移
 
+当前默认变量为 Declaration 自身声明槽位引用。需要原 AspectN 的具体类型、特性或祖先首次捕获时，编译传入 `new AspectNCompilationOptions(null, GenericVariableMode.Capture)` 并处理预算耗尽的 Unknown/AN3007；[当前迁移表](../usage/migration.md)区分默认编译诊断与候选不匹配。后端继续映射实际构造，不丢弃实参。
+
 以下替代写法表达预期行为，不保证与 Shared.Cecil.AspectN 得到相同结果。
 
 | 历史形式或意图 | AspectN 写法与效果 |

@@ -1,151 +1,128 @@
 using AspectN.Binding;
 using AspectN.Diagnostics;
 using AspectN.Metadata;
+using AspectN.Text;
 using AspectN.TypeSystem;
 
 namespace AspectN.Evaluation;
 
 internal sealed class EvaluationContext
 {
-    private readonly List<AspectNDiagnostic> _diagnostics;
-    private readonly BindingEnvironment _bindings;
+    private readonly List<AspectNDiagnostic> _diagnostics = [];
+    private readonly List<AspectNDiagnostic> _allDiagnostics;
+    private readonly BindingEnvironment? _bindings;
+    private readonly BindingBudget? _budget;
+    private readonly DeclarationBindings _declarations;
 
-    public EvaluationContext(
-        ITypeSystem typeSystem,
-        CancellationToken cancellationToken)
-        : this(
-            typeSystem,
-            new AspectNCompilationOptions(),
-            cancellationToken)
+    public EvaluationContext(ITypeSystem typeSystem, CancellationToken cancellationToken)
+        : this(typeSystem, new AspectNCompilationOptions(), cancellationToken)
     {
     }
 
-    public EvaluationContext(
-        ITypeSystem typeSystem,
-        AspectNCompilationOptions options,
-        CancellationToken cancellationToken)
-        : this(
-            typeSystem,
-            new BindingEnvironment(),
-            new List<AspectNDiagnostic>(),
-            options,
-            cancellationToken)
+    public EvaluationContext(ITypeSystem typeSystem, AspectNCompilationOptions options,
+        CancellationToken cancellationToken, TypeSignature? type = null, MethodSignature? method = null)
     {
-    }
-
-    private EvaluationContext(
-        ITypeSystem typeSystem,
-        BindingEnvironment bindings,
-        List<AspectNDiagnostic> diagnostics,
-        AspectNCompilationOptions options,
-        CancellationToken cancellationToken)
-    {
-        TypeSystem = typeSystem ??
-            throw new ArgumentNullException(nameof(typeSystem));
-        CancellationToken = cancellationToken;
+        TypeSystem = typeSystem ?? throw new ArgumentNullException(nameof(typeSystem));
         Options = options ?? throw new ArgumentNullException(nameof(options));
+        CancellationToken = cancellationToken;
+        _allDiagnostics = [];
+        _declarations = new DeclarationBindings(type, method);
+        if (options.GenericVariableMode == GenericVariableMode.Capture)
+        {
+            _budget = new BindingBudget(options, cancellationToken);
+            _bindings = new BindingEnvironment(_budget);
+        }
+    }
+
+    private EvaluationContext(EvaluationContext parent, BindingEnvironment? bindings)
+    {
+        TypeSystem = parent.TypeSystem;
+        Options = parent.Options;
+        CancellationToken = parent.CancellationToken;
+        _allDiagnostics = parent._allDiagnostics;
+        _declarations = parent._declarations;
+        _budget = parent._budget;
         _bindings = bindings;
-        _diagnostics = diagnostics;
     }
 
     public ITypeSystem TypeSystem { get; }
-
     public CancellationToken CancellationToken { get; }
-
     public AspectNCompilationOptions Options { get; }
+    internal bool HasDynamicBindings => _bindings is not null;
+    internal long BindingWorkUsed => _budget?.WorkUsed ?? 0;
 
-    public EvaluationContext Fork()
-    {
-        return new EvaluationContext(
-            TypeSystem,
-            _bindings.Clone(),
-            new List<AspectNDiagnostic>(),
-            Options,
-            CancellationToken);
-    }
-
-    public MatchStatus Bind(
-        VariableSymbol variable,
-        TypeSignature candidate)
+    public void Visit(TextSpan span)
     {
         CancellationToken.ThrowIfCancellationRequested();
-        return _bindings.Bind(
-            variable,
-            candidate,
-            TypeSystem,
-            _diagnostics);
+        _budget?.Visit(span);
+    }
+
+    public EvaluationContext Fork() => new(this, _bindings?.Clone());
+
+    public MatchStatus Bind(BoundVariableTypePattern variable, TypeSignature candidate)
+    {
+        CancellationToken.ThrowIfCancellationRequested();
+        return _bindings is null
+            ? _declarations.Compare(variable, candidate, this)
+            : _bindings.Bind(variable.Variable, candidate, TypeSystem, AddDiagnostic);
     }
 
     public MatchStatus EvaluateNegation(Func<EvaluationContext, MatchStatus> evaluateOperand)
     {
-        var survivingBranches = new List<EvaluationContext>();
+        if (_bindings is null)
+        {
+            var operand = Fork();
+            var result = MatchLogic.Not(evaluateOperand(operand));
+            MergeDiagnosticsFrom(operand);
+            return result;
+        }
+
+        var alternatives = _bindings.CreateCollector();
         var status = MatchStatus.NotMatched;
-        // 否定逐个筛选已有绑定；操作数在副本上求值，不能把其内部绑定带出否定作用域。
+        // 否定逐个筛选已有绑定；操作数副本不能把内部绑定带出作用域。
         foreach (var bindings in _bindings.CloneAlternatives())
         {
             CancellationToken.ThrowIfCancellationRequested();
-            var branch = new EvaluationContext(
-                TypeSystem,
-                bindings,
-                new List<AspectNDiagnostic>(),
-                Options,
-                CancellationToken);
-            var operandContext = branch.Fork();
-            // 传入分支的未知约束属于外层合取；操作数只判断自身的真假。
-            operandContext._bindings.SetUnknown(false);
-            var operandStatus = operandContext._bindings.GetStatus(evaluateOperand(operandContext));
+            var branch = new EvaluationContext(this, bindings);
+            var operand = branch.Fork();
+            operand._bindings!.SetUnknown(false);
+            var operandStatus = operand._bindings.GetStatus(evaluateOperand(operand));
             var branchStatus = MatchLogic.Not(operandStatus);
-            MergeDiagnosticsFrom(operandContext);
+            MergeDiagnosticsFrom(operand);
             status = MatchLogic.Or(status, branchStatus);
-            if (branchStatus == MatchStatus.Matched)
-            {
-                survivingBranches.Add(branch);
-            }
-            else if (branchStatus == MatchStatus.Unknown)
-            {
-                branch._bindings.SetUnknown(true);
-                survivingBranches.Add(branch);
-            }
+            alternatives.Add(bindings, branchStatus);
         }
-
-        ReplaceBindingsWithAlternativesFrom(survivingBranches);
+        alternatives.Apply();
         return status;
     }
 
-    public void ReplaceBindingsWithAlternativesFrom(
-        IEnumerable<EvaluationContext> branches)
-    {
-        _bindings.ReplaceWithAlternativesFrom(
-            branches.Select(branch => branch._bindings));
-    }
+    public AlternativeCollector? CreateAlternativeCollector() =>
+        _bindings is null ? null : new AlternativeCollector(_bindings.CreateCollector());
 
-    public static void RetainAlternative(
-        ICollection<EvaluationContext> alternatives,
-        EvaluationContext branch,
-        MatchStatus status)
+    internal sealed class AlternativeCollector(BindingEnvironment.AlternativeCollector collector)
     {
-        if (status == MatchStatus.NotMatched) return;
-        if (status == MatchStatus.Unknown) branch._bindings.SetUnknown(true);
-        alternatives.Add(branch);
+        public void Add(EvaluationContext branch, MatchStatus status) => collector.Add(branch._bindings!, status);
+        public void Apply() => collector.Apply();
     }
 
     public void AddDiagnostic(AspectNDiagnostic diagnostic)
     {
         _diagnostics.Add(diagnostic);
+        _allDiagnostics.Add(diagnostic);
     }
 
     public void AddDiagnostics(IEnumerable<AspectNDiagnostic> diagnostics)
     {
-        _diagnostics.AddRange(diagnostics);
+        foreach (var diagnostic in diagnostics) AddDiagnostic(diagnostic);
     }
 
-    public void MergeDiagnosticsFrom(EvaluationContext branch)
-    {
-        _diagnostics.AddRange(branch._diagnostics);
-    }
+    public void MergeDiagnosticsFrom(EvaluationContext branch) => _diagnostics.AddRange(branch._diagnostics);
 
-    public MatchResult CreateResult(MatchStatus status)
+    public MatchResult CreateResult(MatchStatus status) => new(_bindings?.GetStatus(status) ?? status, _diagnostics);
+
+    public MatchResult CreateBudgetResult(BindingBudgetExceededException failure)
     {
-        return new MatchResult(_bindings.GetStatus(status), _diagnostics);
+        CancellationToken.ThrowIfCancellationRequested();
+        return new MatchResult(MatchStatus.Unknown, _allDiagnostics.Concat([failure.Diagnostic]));
     }
 }

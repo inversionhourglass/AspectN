@@ -42,7 +42,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-001",
-        "EV-20261021-003"
+        "EV-20261021-003",
+        "EV-20261021-007"
       ],
       "unverified_notes": ""
     },
@@ -79,7 +80,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-005"
+        "EV-20261014-005",
+        "EV-20261021-007"
       ],
       "unverified_notes": ""
     },
@@ -115,7 +117,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-001"
+        "EV-20261014-001",
+        "EV-20261021-007"
       ],
       "unverified_notes": "",
       "exclusion": {
@@ -135,7 +138,7 @@
       "adapter": "core",
       "input_mode": "neutral",
       "entry_point": "CompiledTypePattern.Match / CompiledMemberPattern.Match / GetInheritanceClosure",
-      "conditions": "InheritanceClosureLimitTests：受控第三方闭包返回公共构造器建立的结构合法中立祖先；实参深度、包含链深度、声明/实参/包含链元数超限；正常祖先两种顺序、后续变量筛选、否定、成员返回槽、原闭包诊断与取消对照",
+      "conditions": "InheritanceClosureLimitTests：受控第三方闭包返回公共构造器建立的结构合法中立祖先；实参深度、包含链深度、声明/实参/包含链元数超限；正常祖先两种顺序、后续变量筛选、否定、成员返回槽、原闭包诊断与取消对照；需要首次从祖先捕获变量的用例显式Capture，Declaration只允许先声明后引用",
       "target": "working-tree",
       "expected_behavior": "超限祖先不进入实际求值或绑定，Unknown/AN3005或AN3006与直接输入一致；继续其他祖先并保留未知备选，正常匹配可使最终Matched且限制诊断保留；64边界及具体目标后端路径保持原行为",
       "contract_status": "supported",
@@ -144,7 +147,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261021-002"
+        "EV-20261021-002",
+        "EV-20261021-007"
       ],
       "unverified_notes": "此场景验证核心消费第三方闭包，不证明内置适配器会生成超限祖先，也不证明循环或无限输入的行为。"
     },
@@ -237,6 +241,24 @@
         "EV-20261021-004"
       ],
       "unverified_notes": "限定当前Cecil身份及公共构造引用；未证明真实PE自然丢失Module，不等于中立签名脱离原生关联。"
+    },
+    {
+      "id": "S12",
+      "adapter": "core",
+      "input_mode": "neutral",
+      "entry_point": "Compile* / CompiledPattern.Match",
+      "conditions": "GenericVariableModeTests 的方法自身槽位先声明、再引用 IValue<$T>+；闭包含具体int及该方法自身形参，Declaration不重绑",
+      "target": "working-tree",
+      "expected_behavior": "关系枚举按原候选的唯一声明身份比较；具体类型祖先不成为新绑定，自身形参祖先可匹配",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261021-007"
+      ],
+      "unverified_notes": ""
     }
   ],
   "invariant_checks": [
@@ -361,3 +383,5 @@ C07 的原生数组 Module 回退及固定关系由 S2 的普通 Cecil 输入与
 非限定关系查询契约见 `ITypeSystem.IsAssignableTo` 的公开 XML 和[后端实现指南](../../../usage/backend-implementation.md)。S1 的记录型后端只核对核心传参，S7–S10 分别验证四视图的现有查询行为；不将这些查询规则应用到严格 `AreEqual`，也不据此声称任意第三方已验证。
 
 数组形状依 USE-ARRAY-001；泛型声明身份依 GEN-IDENTITY-001；未知闭包依 CROSS-AVAILABILITY-001。尚未证明所有程序集转发拓扑或自定义解析器组合。
+
+关系目标首次捕获仅在显式 Capture 合法；默认 Declaration 的已有别名可引用（S12）。S6 的 C05 超限祖先回归按 Capture 重验；限制守卫和无变量查询不变，预算耗尽另外中止整次 Match，不能套用局部已知匹配支配规则。

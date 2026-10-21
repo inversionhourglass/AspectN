@@ -87,7 +87,7 @@ public sealed class IncompleteGenericArgumentTests
         var second = new NamedTypeSignature(box, [Int(), different ? Int() : String()]);
         var carrier = new NamedTypeSignature(
             new TypeIdentity(box.Assembly, "Example", "Carrier", 2, TypeKind.Class), [first, second]);
-        Assert.True(new AspectNEngine().CompileTypePattern("Example.Carrier<$T,$T>").TryGetTypePattern(out var pattern));
+        Assert.True(new AspectNEngine().CompileTypePattern("Example.Carrier<$T,$T>", new AspectNCompilationOptions(null, GenericVariableMode.Capture)).TryGetTypePattern(out var pattern));
         Assert.Equal(expected, pattern.Match(carrier, new StubTypeSystem()).Status);
     }
 

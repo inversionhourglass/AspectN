@@ -22,7 +22,7 @@ public sealed class CompiledTypePattern : CompiledPattern
     /// <param name="candidate">Backend-neutral candidate signature.</param>
     /// <param name="typeSystem">Backend providing metadata queries and declared type relationships.</param>
     /// <param name="cancellationToken">Specifies the cancellation token.</param>
-    /// <returns>Matched, NotMatched, or Unknown with diagnostics when required facts are unavailable.</returns>
+    /// <returns>Matched, NotMatched, or Unknown with diagnostics when required facts are unavailable or a Capture binding budget is exhausted.</returns>
     public MatchResult Match(
         TypeSignature candidate,
         ITypeSystem typeSystem,
@@ -44,9 +44,17 @@ public sealed class CompiledTypePattern : CompiledPattern
         var context = new EvaluationContext(
             typeSystem,
             Options,
-            cancellationToken);
-        var status = TypePatternEvaluator.Evaluate(_root, candidate, context);
-        return context.CreateResult(status);
+            cancellationToken,
+            type: candidate);
+        try
+        {
+            var status = TypePatternEvaluator.Evaluate(_root, candidate, context);
+            return context.CreateResult(status);
+        }
+        catch (BindingBudgetExceededException exhausted)
+        {
+            return context.CreateBudgetResult(exhausted);
+        }
     }
 
 }

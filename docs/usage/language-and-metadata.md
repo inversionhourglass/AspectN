@@ -36,7 +36,7 @@ System.IDisposable+
 method($T Service.Convert<$T>($T))
 ```
 
-普通 `T` 是字面类型名。返回/参数不能首次声明变量；AND 分享已有绑定，OR 与否定隔离各自环境。结果不返回变量捕获。[名称与关系](../knowledge/capabilities/types/TYPE-NOMINAL-001.md)及[泛型作用域](../knowledge/capabilities/generics/GEN-BINDING-001.md)提供详细例子和限制。
+普通 `T` 是字面类型名。默认 Declaration 将直接声明槽位中的变量作为候选自身形参的别名，按声明身份比较，拒绝具体实参及借用形参。返回/参数只能引用已有变量；特性、关系或嵌套实参中的首次捕获仅在显式 Capture 合法。AND 分享可见别名，OR 分支内新别名不逃逸，否定不能首次声明。Declaration 组合三态；Capture 才复制并保留动态备选，受每次 Match 的有限预算约束。结果不返回变量捕获。[配置示例](matching.md#泛型)、[名称与关系](../knowledge/capabilities/types/TYPE-NOMINAL-001.md)及[泛型作用域](../knowledge/capabilities/generics/GEN-BINDING-001.md)提供完整范围。
 
 ## 方法、构造器与属性
 

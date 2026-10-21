@@ -54,6 +54,19 @@
 
 模式变量要写 $T，例如 method($T `Converter.Convert<$T>`($T))。省略 generic clause 对普通名字要求 arity=0；`Name<?>` 才是不限定 arity，裸 * 有单独规则。模式变量与 CLR 声明形参身份不同。
 
+默认 `GenericVariableMode.Declaration` 将 `$T` 作为候选自身声明槽位的别名。`List<$T>` 匹配 `List<>` 的自身形参，不匹配 `List<int>` 或用其他声明形参构造的 `List<U>`。`method($T Service.Echo<$T>($T))` 查找返回及参数引用同一自身方法形参的声明；`Echo<int>` 不会自动变回开放定义。
+
+变量只能直接在类型根、声明类型或方法名的泛型槽位首次声明；已有别名可用于返回、参数、特性或关系。首次从 `IValue<$T>+`、`attr(call TagAttribute<$T>)` 或 `Box<List<$T>>` 捕获类型，需要显式选择 Capture：
+
+```csharp
+var capture = new AspectNCompilationOptions(
+    regexTimeout: null, genericVariableMode: GenericVariableMode.Capture,
+    maximumBindingAlternatives: 4096, maximumBindingWork: 1_000_000);
+var compilation = new AspectNEngine().CompileTypePattern("List<$T>", capture);
+```
+
+Capture 在预算内保留原通用捕获语义，包括具体类型及多备选筛选。预算耗尽时整次匹配为 Unknown/AN3007；不会只保留前几个备选。[边界示例](examples/MatchingBoundaries/Program.cs)可直接运行两种模式及超限对照。编译后的模式固定，选项按值进入缓存键。
+
 `Owner<string>`.`M<V>` 与 `Owner<int>`.`M<V>` 中 V 的声明可相同，但有效约束查询上下文不同；同名不同程序集或不同重载不能按显示名称合并。详见[泛型身份](../knowledge/capabilities/generics/GEN-IDENTITY-001.md)。
 
 ## ref 和数组

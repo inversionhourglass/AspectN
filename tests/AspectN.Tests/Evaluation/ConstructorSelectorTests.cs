@@ -92,7 +92,7 @@ public sealed class ConstructorSelectorTests
     {
         // 声明类型 Foo<$T> 先正向引入 $T，参数内 !$T 只是引用；该模式必须合法编译。
         var compilation = AspectNCompilation.Create(
-            AspectNParser.ParseMemberExpression("ctor(Foo<$T>(!$T))"));
+            AspectNParser.ParseMemberExpression("ctor(Foo<$T>(!$T))"), new AspectNCompilationOptions(null, GenericVariableMode.Capture));
 
         Assert.True(compilation.TryGetMemberPattern(out var pattern));
         Assert.DoesNotContain(
