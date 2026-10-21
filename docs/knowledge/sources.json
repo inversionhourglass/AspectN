@@ -45,7 +45,7 @@
       "id": "SRC-AVAILABILITY",
       "path": "docs/language/metadata-availability.md",
       "role": "normative",
-      "scope": "签名可用性、读取失败、by-ref 分类和限制；2026-10-14维护者批准的完整类型特性事实优先级；2026-10-21 D01批准HasDirectAttribute内部原生映射超限返回Unknown并保留原诊断，显式Mapper异常通道保持",
+      "scope": "签名可用性、读取失败、by-ref 分类和限制；2026-10-14维护者批准的完整类型特性事实优先级；2026-10-21 D01批准HasDirectAttribute内部原生映射超限返回Unknown并保留原诊断，显式Mapper异常通道保持；2026-10-21 U01确认损坏必要方法签名不新增兼容的输入边界，独立事实恢复保持",
       "target": "working-tree",
       "approval": "approved",
       "delegated_by": [
@@ -71,6 +71,10 @@
         {
           "path": "docs/reviews/2026-10-21-d01-direct-attribute-limits.md",
           "section": "维护者裁决与取代范围"
+        },
+        {
+          "path": "docs/reviews/2026-10-21-u01-invalid-method-input.md",
+          "section": "维护者裁决与适用范围"
         }
       ]
     },
@@ -184,6 +188,22 @@
         {
           "path": "docs/reviews/2026-10-21-d01-direct-attribute-limits.md",
           "section": "维护者裁决与取代范围"
+        }
+      ]
+    },
+    {
+      "id": "SRC-INVALID-METHOD-INPUT-DECISION",
+      "path": "docs/reviews/2026-10-21-u01-invalid-method-input.md",
+      "role": "normative",
+      "scope": "仅2026-10-21维护者裁决与适用范围：损坏必要方法签名不新增兼容、保留映射失败；其余部分为静态审查与文档检查记录",
+      "target": "working-tree",
+      "approval": "approved",
+      "delegated_by": [],
+      "supersedes": [],
+      "approval_refs": [
+        {
+          "path": "docs/reviews/2026-10-21-u01-invalid-method-input.md",
+          "section": "维护者裁决与适用范围"
         }
       ]
     }

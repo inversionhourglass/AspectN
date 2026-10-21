@@ -61,7 +61,7 @@
 | --- | --- | --- |
 | [CROSS-AVAILABILITY-001](../capabilities/cross-cutting/CROSS-AVAILABILITY-001.md) | 元数据可用性与独立事实 | 8 |
 | [CROSS-COMPAT-001](../capabilities/cross-cutting/CROSS-COMPAT-001.md) | 公开 API、程序集身份与兼容资产 | 5 |
-| [CROSS-INPUT-001](../capabilities/cross-cutting/CROSS-INPUT-001.md) | 有效输入、候选加载与人工损坏对象 | 3 |
+| [CROSS-INPUT-001](../capabilities/cross-cutting/CROSS-INPUT-001.md) | 有效输入、候选加载与人工损坏对象 | 4 |
 | [CROSS-LIFETIME-001](../capabilities/cross-cutting/CROSS-LIFETIME-001.md) | 引擎缓存、后端生命周期与并发隔离 | 5 |
 | [CROSS-LOGIC-001](../capabilities/cross-cutting/CROSS-LOGIC-001.md) | 三态逻辑、诊断及 Boolean 转换 | 2 |
 | [CROSS-RESOURCES-001](../capabilities/cross-cutting/CROSS-RESOURCES-001.md) | 取消、类型深度、元数与文本预算 | 7 |

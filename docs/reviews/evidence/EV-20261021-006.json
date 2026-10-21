@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "id": "EV-20261021-006",
+  "method": "manual",
+  "scenario_refs": [
+    {
+      "capability_id": "CROSS-INPUT-001",
+      "scenario_id": "S4"
+    }
+  ],
+  "oracle_refs": [
+    {
+      "path": "docs/reviews/2026-10-21-u01-invalid-method-input.md",
+      "section": "维护者裁决与适用范围"
+    },
+    {
+      "path": "docs/reviews/findings/FND-20261011-001.md",
+      "section": "损坏Cecil输入的历史处置"
+    },
+    {
+      "path": "docs/language/metadata-availability.md",
+      "section": "元数据可用性"
+    }
+  ],
+  "procedure": "人工核对维护者U01决定与MapMethod/ValidateMethod/MapProperty/MapPropertyCore、MethodSignature和既有属性延迟读取测试源码；检查输入阶段与独立事实恢复范围，不执行损坏输入。\npwsh -NoProfile -File eng/generate-knowledge.ps1\npwsh -NoProfile -File eng/generate-knowledge.ps1 -Check\npwsh -NoProfile -File eng/verify-documentation.ps1\ngit diff --check",
+  "result": "passed",
+  "recorded_on": "2026-10-21",
+  "environment": {
+    "os": "Windows",
+    "review_mode": "当前检出目录的人工源码/文档审查；仅文档变更，无产品或测试执行"
+  },
+  "code_state": {
+    "head": "f298b55912957c9544dd40ac51e1bd566315689e",
+    "dirty": true,
+    "files": [
+      {
+        "path": "src/AspectN.Cecil/CecilSignatureMapper.cs",
+        "sha256": "d07a316492d18fd4913f686ff643012c0cde20f116d4412c3b817c243d8f4893"
+      },
+      {
+        "path": "src/AspectN.Cecil/Internal/CecilNativeTypeLimitGuard.cs",
+        "sha256": "18fe0e2a273e14b73fdd6531aa11eca8980c4e20adb6f96fe9f075f14e7b0792"
+      },
+      {
+        "path": "src/AspectN.Cecil/Internal/CecilMetadataReader.cs",
+        "sha256": "9195d516d7aaa9b916840d2c6a1588dffbd8863a869b56e192b625259a27e8c5"
+      },
+      {
+        "path": "src/AspectN/Metadata/MethodSignature.cs",
+        "sha256": "501c784a54ae890d116ecec6b51488c66dd41ecd61be25a975428a843b74c561"
+      },
+      {
+        "path": "tests/AspectN.Cecil.Tests/CecilUnavailableMetadataTests.cs",
+        "sha256": "c69fcb18d897c4f21f4d3f4f5660167272403e8339e572b2363c41f95b034477"
+      },
+      {
+        "path": "docs/reviews/findings/FND-20261011-001.md",
+        "sha256": "f3916cdd01c57c7c130cbaa13fb5ecb90955b57302670614a431305c59f15744"
+      },
+      {
+        "path": "docs/language/metadata-availability.md",
+        "sha256": "e25a9f517536e9b0d774fe589f504a57163b4507617c536dff26bdc42a4a60e7"
+      },
+      {
+        "path": "docs/usage/limits-and-pitfalls.md",
+        "sha256": "29e87e9b10d0c3cdc78e2df8847b349894231b0e4cde0bdf7e4a418e444f6405"
+      },
+      {
+        "path": "docs/knowledge/capabilities/cross-cutting/CROSS-INPUT-001.md",
+        "sha256": "7f7ec07232e9219a77933429b22d7c9e758ce55d4327382eaa6e2e9b19ed914a"
+      },
+      {
+        "path": "docs/knowledge/capabilities/cross-cutting/CROSS-AVAILABILITY-001.md",
+        "sha256": "ed32c80d419aeef7b4f7e44d1e97eb7d54033c0c89c46647d0335c563b16caab"
+      },
+      {
+        "path": "docs/knowledge/coverage.json",
+        "sha256": "6c06b0029c52a2573adf47d679142a2fa8c1e7f75daa21923f914064d0cf5265"
+      },
+      {
+        "path": "docs/knowledge/sources.json",
+        "sha256": "d9340d7ec4d3775641271def60def9cf129006ec3d3f0637bb05e7fd7f89a6e8"
+      }
+    ]
+  },
+  "dependency_scope": {
+    "paths": [
+      "src/AspectN.Cecil/CecilSignatureMapper.cs",
+      "src/AspectN.Cecil/Internal/CecilNativeTypeLimitGuard.cs",
+      "src/AspectN.Cecil/Internal/CecilMetadataReader.cs",
+      "src/AspectN/Metadata/MethodSignature.cs",
+      "tests/AspectN.Cecil.Tests/CecilUnavailableMetadataTests.cs",
+      "docs/reviews/findings/FND-20261011-001.md",
+      "docs/language/metadata-availability.md",
+      "docs/usage/limits-and-pitfalls.md",
+      "docs/knowledge/capabilities/cross-cutting/CROSS-INPUT-001.md",
+      "docs/knowledge/capabilities/cross-cutting/CROSS-AVAILABILITY-001.md",
+      "docs/knowledge/coverage.json",
+      "docs/knowledge/sources.json"
+    ],
+    "environment_keys": [
+      "review_mode"
+    ]
+  },
+  "revalidation_conditions": "必要方法签名映射、局部事实恢复、正常输入边界或维护者裁决改变时重新审查；新的真实DLL证据先判断输入是否正常及是否属于已承诺恢复，不自动增加损坏输入兼容。",
+  "observations": {
+    "decision": "拒绝为损坏必要方法签名新增容错的建议，保留映射失败；没有将原报告的进程崩溃推断改成确认事实。",
+    "source_review": "MapMethod必要签名检查没有整体恢复分支；属性Parameters是独立事实。既有属性测试通过修改内存表字段触发局部恢复，不能据此承诺损坏程序集兼容。",
+    "verification_boundary": "passed仅指维护者决定、源码/文档一致性和本轮文档检查。CROSS-INPUT-001/S4保持unverified；未提供真实损坏DLL，未执行损坏输入、H1或产品测试，不沿用旧完整矩阵宣称运行时验证。",
+    "non_changes": "生产代码、测试、现有局部恢复、限制/取消通道及H1历史记录不变；不新增全程序集损坏检测或固定异常类型承诺。"
+  }
+}

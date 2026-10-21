@@ -16,6 +16,10 @@
     {
       "path": "docs/superpowers/specs/2026-07-31-aspectn-redesign-design.md",
       "section": "8 / 13"
+    },
+    {
+      "path": "docs/reviews/2026-10-21-u01-invalid-method-input.md",
+      "section": "维护者裁决与适用范围"
     }
   ],
   "scenarios": [
@@ -89,6 +93,35 @@
         ],
         "failure_behavior": "沿用维护者保留异常、不增加容错、不转换Unknown/Unsupported的裁决；本轮没有重新执行H1"
       }
+    },
+    {
+      "id": "S4",
+      "adapter": "cecil",
+      "input_mode": "native_member",
+      "entry_point": "Mapper.MapMethod",
+      "conditions": "U01/GLM-I2所述必要方法签名损坏、无法读取的原生输入；未提供真实DLL，不作为正常有效生产者输入",
+      "target": "working-tree",
+      "expected_behavior": "拒绝为继续匹配而修补或生成不完整方法签名；必要签名读取失败保留异常，不新增Unknown/Unsupported恢复，不要求主动检测所有损坏形式或固定异常类型",
+      "contract_status": "excluded",
+      "verification_status": "unverified",
+      "verification_methods": [
+        "manual"
+      ],
+      "evidence_ids": [
+        "EV-20261021-006"
+      ],
+      "unverified_notes": "仅完成维护者决定登记与代码/文档静态审查；未执行真实损坏DLL或人工损坏对象，不声称运行时拒绝行为已验证。",
+      "exclusion": {
+        "reason_code": "out_of_scope",
+        "reason": "维护者明确AspectN面向正常程序集，不为已损坏必要方法签名新增兼容；拒绝容错建议，不是确认或修复扫描进程崩溃。",
+        "decision_refs": [
+          {
+            "path": "docs/reviews/2026-10-21-u01-invalid-method-input.md",
+            "section": "维护者裁决与适用范围"
+          }
+        ],
+        "failure_behavior": "必要签名读取失败保留映射异常；不承诺固定异常种类、文案、抛出位置或全程序集预检。"
+      }
     }
   ],
   "invariant_checks": [
@@ -144,7 +177,8 @@
   "relations": [],
   "open_findings": [],
   "related_findings": [
-    "FND-20261011-001"
+    "FND-20261011-001",
+    "FND-20261021-006"
   ]
 }
 -->
@@ -156,6 +190,8 @@
 ## 契约
 
 调用方须提供符合模型/生产者约束的输入。中立构造器可拒绝null集合、错误参数位置等无效对象；已有有效输入的不可用事实由可用性契约处理。H1沿用已批准不修复处置，不新增兜底契约。
+
+维护者于 2026-10-21 [裁决 U01](../../../reviews/2026-10-21-u01-invalid-method-input.md)：AspectN 面向正常程序集，必要方法签名损坏、无法读取时直接映射失败并保留异常，不为继续匹配而修补或生成不完整签名，不转换为 Unknown/Unsupported。S4 登记此排除，未执行真实损坏 DLL；不承诺全程序集完整性预检或检测所有损坏形式。正常输入缺依赖和独立事实不可用仍按原契约处理。
 
 ## 输入条件
 
@@ -199,3 +235,5 @@ flowchart TD
 ## 关联与缺口
 
 CROSS-AVAILABILITY-001处理已有签名缺事实，CROSS-RESOURCES-001处理合法结构超出上限。H1的真实程序集可达性仍是明确缺口；新增真实复现或契约变化才触发重评估。
+
+U01 拒绝的是新增损坏签名容错的建议，见 FND-20261021-006；该决定不证明原报告的进程后果成立，也不将旧证据缺口改成已修复。真实程序集复现应先判断输入是否正常或涉及已承诺恢复，不自动扩大损坏输入兼容范围。

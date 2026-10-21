@@ -77,13 +77,17 @@
         {
           "path": "docs/reviews/2026-10-21-d01-direct-attribute-limits.md",
           "section": "维护者裁决与取代范围 / 知识库与证据适用性"
+        },
+        {
+          "path": "docs/reviews/2026-10-21-u01-invalid-method-input.md",
+          "section": "维护者裁决与适用范围 / 知识库与证据适用性"
         }
       ],
       "assessment_status": "reviewed",
       "capability_ids": [
         "CROSS-AVAILABILITY-001"
       ],
-      "notes": "2026-10-14修复detached闭包取消；完整已知TypeAttributes优先级已获维护者批准并实现，缺列表精确回退/非具体Unknown和PE缺标记依赖分别有场景。 2026-10-21在CROSS-AVAILABILITY/S2、S5补充泛型引用槽位的未知事实对照；声明已知空与引用缺记录分开处理。 2026-10-21修复C07，Cecil/Fody分别验证游离原生数组的Module回退、已知固定关系、形状/元素约束及取消；不外推真实PE无Module或H1损坏输入。 2026-10-21 D01维护者批准直接特性查询内部超限统一Unknown并保留原诊断；ATTR/S21–S25分别限定Cecil、Fody、Reflection、Roslyn源码/PE，显式映射异常及取消控制不变。"
+      "notes": "2026-10-14修复detached闭包取消；完整已知TypeAttributes优先级已获维护者批准并实现，缺列表精确回退/非具体Unknown和PE缺标记依赖分别有场景。 2026-10-21在CROSS-AVAILABILITY/S2、S5补充泛型引用槽位的未知事实对照；声明已知空与引用缺记录分开处理。 2026-10-21修复C07，Cecil/Fody分别验证游离原生数组的Module回退、已知固定关系、形状/元素约束及取消；不外推真实PE无Module或H1损坏输入。 2026-10-21 D01维护者批准直接特性查询内部超限统一Unknown并保留原诊断；ATTR/S21–S25分别限定Cecil、Fody、Reflection、Roslyn源码/PE，显式映射异常及取消控制不变。 2026-10-21 U01裁决不为损坏必要方法签名新增兼容；CROSS-INPUT/S4排除且未执行真实损坏DLL，不改变正常输入缺依赖及独立事实恢复，原证据缺口保留。"
     },
     {
       "id": "INV-0005",
@@ -115,13 +119,17 @@
         {
           "section": "盘点与残余范围",
           "path": "docs/reviews/2026-10-13-documentation-expansion.md"
+        },
+        {
+          "path": "docs/reviews/2026-10-21-u01-invalid-method-input.md",
+          "section": "维护者裁决与适用范围 / 知识库与证据适用性"
         }
       ],
       "assessment_status": "needs_evidence",
       "capability_ids": [
         "CROSS-INPUT-001"
       ],
-      "notes": "已记录有效输入与 H1 接受风险；损坏对象没有容错承诺，真实程序集可达性仍未证明。 建档表示已分析所列范围，不等于全版本/全输入验证；见 docs/reviews/2026-10-13-documentation-expansion.md。"
+      "notes": "已记录有效输入与 H1 接受风险；损坏对象没有容错承诺，真实程序集可达性仍未证明。 建档表示已分析所列范围，不等于全版本/全输入验证；见 docs/reviews/2026-10-13-documentation-expansion.md。 2026-10-21 U01裁决不为损坏必要方法签名新增兼容；CROSS-INPUT/S4排除且未执行真实损坏DLL，不改变正常输入缺依赖及独立事实恢复，原证据缺口保留。"
     },
     {
       "id": "INV-0007",

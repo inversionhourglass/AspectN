@@ -4,6 +4,10 @@ Roslyn 源码映射补充编译器的 async、iterator 和 async-iterator 状态
 
 中立签名公开不可变的 `MetadataAvailability`。`UnavailableFacts` 指出哪些存储值是占位值，`Diagnostics` 解释读取失败。手工构造的签名默认使用 `MetadataAvailability.Complete`，表示提供的值与空集合均为已知事实。显式的 `Accessibility.Unknown` 即使使用该默认值也仍是未知。
 
+按 [2026-10-21 U01 维护者裁决](../reviews/2026-10-21-u01-invalid-method-input.md)，AspectN 面向正常程序集和符合原生生产者结构约束的对象。必要方法签名损坏、无法读取时，映射失败并保留异常，不为继续匹配而修补签名、生成不完整的 `MethodSignature` 或转换为 Unknown/Unsupported。合法方法返回 void 也必须具有对应的返回类型；缺少 ReturnType 不等同于 void。此输入边界不要求新增全程序集完整性预检，也不保证主动识别所有损坏形式。
+
+正常程序集缺少外部依赖、定义解析失败或独立事实不可用，仍按本专题的既有规则处理。现有局部读取恢复及属性 Parameters 不可用的处理，不构成对损坏程序集的兼容承诺；不据 U01 扩大这类恢复，也不因此删除已有恢复路径。
+
 方法和属性的参数集合按声明顺序建立快照。每个 `ParameterSignature.Position` 必须等于其从零开始的列表索引。构造器以 `ArgumentException` 拒绝 null 项、乱序位置、重复及间隙，不重排调用方提供的元数据。
 
 泛型实参的槽位结构也在构造时验证，遵循[语言第 13.1 节](../superpowers/specs/2026-07-31-aspectn-language-spec.md#131-元数)及 [2026-10-20 维护者裁决](../reviews/2026-10-20-c02-generic-signature-validation.md)。声明元数与非空实参列表数量不符，属于结构非法，抛 `ArgumentException`；不通过 `MetadataAvailability` 将它改写为未知事实。合法定义允许空实参列表；完整槽位中无法恢复的类型事实仍可用 `UnsupportedTypeSignature` 表示。
