@@ -61,6 +61,10 @@ public interface ITypeSystem
     /// <para>The matching engine supplies such queries for concretizable exact attribute patterns.
     /// Inspect direct records only, without instantiating attributes or applying attribute inheritance.
     /// This operation does not change the strict equality contract of <see cref="AreEqual"/>.</para>
+    /// <para>If native attribute-type mapping performed inside this lookup exceeds the supported
+    /// depth or generic arity, return Unknown with the original AN3005 or AN3006 diagnostic.
+    /// Do not propagate that <see cref="AspectNLimitException"/> or convert it to a metadata-read failure.
+    /// Explicit native mapper calls retain their exception contract.</para>
     /// </remarks>
     TypeRelationResult HasDirectAttribute(
         AttributeTarget target,

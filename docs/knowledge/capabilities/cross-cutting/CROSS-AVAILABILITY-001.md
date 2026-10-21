@@ -44,7 +44,7 @@
       "entry_point": "Mapper / HasDirectAttribute / CompiledMemberPattern.Match / IsAssignableTo / GetInheritanceClosure",
       "conditions": "CecilUnavailableMetadataTests 的未解析引用、Int32 引用形状、六类 resolver 失败和取消；CecilSignatureLimitTests 指定原生边界；CecilGenericParameterAttributeTests 的未解析 TypeReference 所属泛型槽位对照；CecilDetachedArrayTests：公共构造且元素非空的游离/未解析元素/正常Int32引用，Vector、非SZ一维和二维数组；固定关系、闭包、五个泛型接口的同/异元素、原Module优先和预先取消",
       "target": "working-tree",
-      "expected_behavior": "保留独立名称/形状；消费缺失定义事实 Unknown/AN3004；取消传播，指定深度/元数超限异常不伪装缺事实；不能将引用槽位的占位空特性列表当作已知空，仍为 Unknown/AN3004；元素未解析不影响已知固定数组关系，游离原生数组可用当前Module合成，不扩大为损坏ElementType恢复",
+      "expected_behavior": "保留独立名称/形状；消费缺失定义事实 Unknown/AN3004；取消传播，显式映射的指定深度/元数超限异常不伪装缺事实；不能将引用槽位的占位空特性列表当作已知空，仍为 Unknown/AN3004；元素未解析不影响已知固定数组关系，游离原生数组可用当前Module合成，不扩大为损坏ElementType恢复",
       "contract_status": "supported",
       "verification_status": "verified",
       "verification_methods": [
@@ -230,7 +230,8 @@
   "related_findings": [
     "FND-20261011-001",
     "FND-20261021-001",
-    "FND-20261021-004"
+    "FND-20261021-004",
+    "FND-20261021-005"
   ]
 }
 -->
@@ -253,7 +254,7 @@ DSL 消费事实；模型提供不可变 availability；核心保留独立可观
 
 ## 阶段失败
 
-读取失败 AN3004；缺少原生关联 AN3001。原生超限抛 AspectNLimitException，外部中立匹配超限 Unknown。取消传播；无效参数可抛参数异常。这些不是统一 Unknown 通道。
+读取失败 AN3004；缺少原生关联 AN3001。显式原生映射超限抛 AspectNLimitException，外部中立匹配超限 Unknown。HasDirectAttribute 内部映射原生特性类型超限时，在查询边界返回 Unknown 并保留 AN3005/AN3006，不伪装成 AN3004；具体输入及当前证据见 ATTR-TARGETS-001/S21–S25 和 CROSS-RESOURCES-001/S2–S5。取消传播；无效参数可抛参数异常。这些不是统一 Unknown 通道。
 
 ## 例子与边界
 

@@ -18,6 +18,10 @@
         {
           "path": "docs/reviews/2026-10-20-c02-generic-signature-validation.md",
           "section": "维护者裁决与取代范围"
+        },
+        {
+          "path": "docs/reviews/2026-10-21-d01-direct-attribute-limits.md",
+          "section": "维护者裁决与取代范围"
         }
       ]
     },
@@ -41,7 +45,7 @@
       "id": "SRC-AVAILABILITY",
       "path": "docs/language/metadata-availability.md",
       "role": "normative",
-      "scope": "签名可用性、读取失败、by-ref 分类和限制；2026-10-14维护者批准的完整类型特性事实优先级",
+      "scope": "签名可用性、读取失败、by-ref 分类和限制；2026-10-14维护者批准的完整类型特性事实优先级；2026-10-21 D01批准HasDirectAttribute内部原生映射超限返回Unknown并保留原诊断，显式Mapper异常通道保持",
       "target": "working-tree",
       "approval": "approved",
       "delegated_by": [
@@ -63,6 +67,10 @@
         {
           "section": "维护者裁决与适用范围",
           "path": "docs/reviews/2026-10-14-classified-review-fixes.md"
+        },
+        {
+          "path": "docs/reviews/2026-10-21-d01-direct-attribute-limits.md",
+          "section": "维护者裁决与取代范围"
         }
       ]
     },
@@ -147,7 +155,7 @@
       "id": "SRC-TYPE-SYSTEM-QUERY",
       "path": "src/AspectN/TypeSystem/ITypeSystem.cs",
       "role": "normative",
-      "scope": "C06确认的ITypeSystem查询侧非限定规则与AreEqual严格相等；仅补现有契约，不新增公开比较器或改变运行逻辑",
+      "scope": "C06确认的ITypeSystem查询侧非限定规则与AreEqual严格相等；仅补现有契约，不新增公开比较器或改变运行逻辑；2026-10-21 D01批准HasDirectAttribute内部原生映射超限返回Unknown并保留原诊断，显式Mapper异常通道保持",
       "target": "working-tree",
       "approval": "approved",
       "delegated_by": [],
@@ -156,6 +164,26 @@
         {
           "path": "docs/reviews/2026-10-21-c06-query-target-contract.md",
           "section": "维护者确认与范围"
+        },
+        {
+          "path": "docs/reviews/2026-10-21-d01-direct-attribute-limits.md",
+          "section": "维护者裁决与取代范围"
+        }
+      ]
+    },
+    {
+      "id": "SRC-DIRECT-ATTRIBUTE-LIMIT-DECISION",
+      "path": "docs/reviews/2026-10-21-d01-direct-attribute-limits.md",
+      "role": "normative",
+      "scope": "仅2026-10-21维护者裁决与取代范围：直接查询内部原生特性类型深度/元数超限返回Unknown；报告其余部分为实现与验证记录",
+      "target": "working-tree",
+      "approval": "approved",
+      "delegated_by": [],
+      "supersedes": [],
+      "approval_refs": [
+        {
+          "path": "docs/reviews/2026-10-21-d01-direct-attribute-limits.md",
+          "section": "维护者裁决与取代范围"
         }
       ]
     }

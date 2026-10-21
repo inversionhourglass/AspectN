@@ -116,7 +116,17 @@ public sealed class CecilTypeSystem : ITypeSystem, IDisposable
 
         var metadataFailure = AttributeAvailability.GetFailure(target);
         if (metadataFailure is not null) return metadataFailure;
-        var attributes = GetAttributes(target, out var availability);
+        IReadOnlyList<AttributeSignature>? attributes;
+        MetadataAvailability availability;
+        try
+        {
+            attributes = GetAttributes(target, out availability);
+        }
+        catch (AspectNLimitException exception)
+        {
+            return TypeRelationResult.Unknown(exception.Diagnostic);
+        }
+
         if (availability.UnavailableFacts != MetadataFacts.None)
             return TypeRelationResult.Unknown(availability.Diagnostics.Count > 0 ? availability.Diagnostics.ToArray() : new[]
             {

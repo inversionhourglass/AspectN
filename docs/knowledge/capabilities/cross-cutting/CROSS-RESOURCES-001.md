@@ -16,6 +16,10 @@
     {
       "path": "docs/superpowers/specs/2026-07-31-aspectn-redesign-design.md",
       "section": "13"
+    },
+    {
+      "path": "docs/reviews/2026-10-21-d01-direct-attribute-limits.md",
+      "section": "维护者裁决与取代范围"
     }
   ],
   "scenarios": [
@@ -42,17 +46,18 @@
       "id": "S2",
       "adapter": "cecil",
       "input_mode": "native_member",
-      "entry_point": "Mapper / IsAssignableTo",
-      "conditions": "SignatureLimitConformanceTests、ModifierLimitConformanceTests、MappingDepthTests 的实际后端输入和小栈隔离探针",
+      "entry_point": "Mapper / IsAssignableTo / HasDirectAttribute",
+      "conditions": "SignatureLimitConformanceTests、ModifierLimitConformanceTests、MappingDepthTests 的实际后端输入和小栈隔离探针；D01直接特性查询边界见ATTR-TARGETS-001/S21",
       "target": "working-tree",
-      "expected_behavior": "原生超限 AspectNLimitException 带 AN3005/3006；祖先超限不遮蔽其他已知匹配；不伪装为普通不可用事实",
+      "expected_behavior": "显式原生映射超限 AspectNLimitException 带 AN3005/3006；祖先超限不遮蔽其他已知匹配；不伪装为普通不可用事实；直接特性查询内部映射超限返回Unknown并保留原AN3005/AN3006，显式Mapper异常通道不变",
       "contract_status": "supported",
       "verification_status": "verified",
       "verification_methods": [
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-006"
+        "EV-20261014-006",
+        "EV-20261021-005"
       ],
       "unverified_notes": ""
     },
@@ -60,17 +65,18 @@
       "id": "S3",
       "adapter": "roslyn",
       "input_mode": "source_symbol",
-      "entry_point": "Mapper / IsAssignableTo",
-      "conditions": "SignatureLimitConformanceTests、ModifierLimitConformanceTests、MappingDepthTests 的实际后端输入和小栈隔离探针",
+      "entry_point": "Mapper / IsAssignableTo / HasDirectAttribute",
+      "conditions": "SignatureLimitConformanceTests、ModifierLimitConformanceTests、MappingDepthTests 的实际后端输入和小栈隔离探针；D01直接特性查询边界见ATTR-TARGETS-001/S24",
       "target": "working-tree",
-      "expected_behavior": "原生超限 AspectNLimitException 带 AN3005/3006；祖先超限不遮蔽其他已知匹配；不伪装为普通不可用事实",
+      "expected_behavior": "显式原生映射超限 AspectNLimitException 带 AN3005/3006；祖先超限不遮蔽其他已知匹配；不伪装为普通不可用事实；直接特性查询内部映射超限返回Unknown并保留原AN3005/AN3006，显式Mapper异常通道不变",
       "contract_status": "supported",
       "verification_status": "verified",
       "verification_methods": [
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-006"
+        "EV-20261014-006",
+        "EV-20261021-005"
       ],
       "unverified_notes": ""
     },
@@ -78,17 +84,18 @@
       "id": "S4",
       "adapter": "reflection",
       "input_mode": "native_member",
-      "entry_point": "Mapper / IsAssignableTo",
-      "conditions": "SignatureLimitConformanceTests、ModifierLimitConformanceTests、MappingDepthTests 的实际后端输入和小栈隔离探针",
+      "entry_point": "Mapper / IsAssignableTo / HasDirectAttribute",
+      "conditions": "SignatureLimitConformanceTests、ModifierLimitConformanceTests、MappingDepthTests 的实际后端输入和小栈隔离探针；D01直接特性查询边界见ATTR-TARGETS-001/S23",
       "target": "working-tree",
-      "expected_behavior": "原生超限 AspectNLimitException 带 AN3005/3006；祖先超限不遮蔽其他已知匹配；不伪装为普通不可用事实",
+      "expected_behavior": "显式原生映射超限 AspectNLimitException 带 AN3005/3006；祖先超限不遮蔽其他已知匹配；不伪装为普通不可用事实；直接特性查询内部映射超限返回Unknown并保留原AN3005/AN3006，显式Mapper异常通道不变",
       "contract_status": "supported",
       "verification_status": "verified",
       "verification_methods": [
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-006"
+        "EV-20261014-006",
+        "EV-20261021-005"
       ],
       "unverified_notes": ""
     },
@@ -96,17 +103,18 @@
       "id": "S5",
       "adapter": "cecil_fody",
       "input_mode": "native_member",
-      "entry_point": "Mapper / IsAssignableTo",
-      "conditions": "独立 Fody 测试程序集中的 CecilSignatureLimitTests 和取消用例",
+      "entry_point": "Mapper / IsAssignableTo / HasDirectAttribute",
+      "conditions": "独立 Fody 测试程序集中的 CecilSignatureLimitTests 和取消用例；D01直接特性查询边界见ATTR-TARGETS-001/S22",
       "target": "working-tree",
-      "expected_behavior": "相同核心上限在 Fody Cecil 身份下执行；关系取消令牌/解析器取消异常向外传播",
+      "expected_behavior": "相同核心上限在 Fody Cecil 身份下执行；关系取消令牌/解析器取消异常向外传播；直接特性查询内部映射超限返回Unknown并保留原AN3005/AN3006，显式Mapper异常通道不变",
       "contract_status": "supported",
       "verification_status": "verified",
       "verification_methods": [
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-003"
+        "EV-20261014-003",
+        "EV-20261021-005"
       ],
       "unverified_notes": ""
     },
@@ -212,7 +220,8 @@
   "open_findings": [],
   "related_findings": [
     "FND-20261013-001",
-    "FND-20261021-002"
+    "FND-20261021-002",
+    "FND-20261021-005"
   ]
 }
 -->
@@ -237,7 +246,9 @@
 
 ## 阶段失败
 
-原生映射抛 AspectNLimitException/AN3005或AN3006；中立匹配 Unknown及同码；解析保护AN1002、显式泛型子句超槽AN2011；规范文本预算Unknown/AN3001。取消不转成 Unknown/AN3004。
+显式原生映射抛 AspectNLimitException/AN3005或AN3006；HasDirectAttribute 内部原生特性类型映射超限则在查询边界返回 Unknown 并保留原诊断；中立匹配 Unknown及同码；解析保护AN1002、显式泛型子句超槽AN2011；规范文本预算Unknown/AN3001。取消不转成 Unknown/AN3004。
+
+D01 的查询边界由维护者于 2026-10-21 批准，S2–S5 增加对应入口，Roslyn PE 单列于 ATTR-TARGETS-001/S25。当前新证据仅补该查询及显式映射控制，不替代旧小栈、修饰符或关系遍历证据。
 
 ## 例子与边界
 

@@ -20,6 +20,10 @@
     {
       "path": "src/AspectN/TypeSystem/ITypeSystem.cs",
       "section": "AreEqual / IsAssignableTo / HasDirectAttribute"
+    },
+    {
+      "path": "docs/reviews/2026-10-21-d01-direct-attribute-limits.md",
+      "section": "维护者裁决与取代范围"
     }
   ],
   "scenarios": [
@@ -443,6 +447,96 @@
         "EV-20261021-003"
       ],
       "unverified_notes": "仅列出的字段与输入组合；不外推Fody或任意第三方实现。"
+    },
+    {
+      "id": "S21",
+      "adapter": "cecil",
+      "input_mode": "native_member",
+      "entry_point": "HasDirectAttribute / explicit Mapper",
+      "conditions": "DirectAttributeLimitTests 同源真实C#发射PE；CecilDirectAttributeLimitTests 公共Cecil对象及类型/方法泛型形参声明；不包含Fody；特性类型深度64/65/67、元数64/65、已知空列表及预先取消",
+      "target": "working-tree",
+      "expected_behavior": "查询内部原生特性类型超限返回Unknown和原AN3005/AN3006；上限内精确类型Matched、已知空NotMatched且无诊断；显式映射同一类型仍抛AspectNLimitException，预先取消仍传播",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261021-005"
+      ],
+      "unverified_notes": ""
+    },
+    {
+      "id": "S22",
+      "adapter": "cecil_fody",
+      "input_mode": "native_member",
+      "entry_point": "HasDirectAttribute / explicit Mapper",
+      "conditions": "独立Fody测试程序集的CecilDirectAttributeLimitTests 公共Cecil对象及类型/方法泛型形参声明；不声称本轮Fody读取同源PE；特性类型深度64/65/67、元数64/65、已知空列表及预先取消",
+      "target": "working-tree",
+      "expected_behavior": "查询内部原生特性类型超限返回Unknown和原AN3005/AN3006；上限内精确类型Matched、已知空NotMatched且无诊断；显式映射同一类型仍抛AspectNLimitException，预先取消仍传播",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261021-005"
+      ],
+      "unverified_notes": ""
+    },
+    {
+      "id": "S23",
+      "adapter": "reflection",
+      "input_mode": "native_member",
+      "entry_point": "HasDirectAttribute / explicit Mapper",
+      "conditions": "DirectAttributeLimitTests 同源真实C#发射并由CLR加载的PE；特性类型深度64/65/67、元数64/65、已知空列表及预先取消",
+      "target": "working-tree",
+      "expected_behavior": "查询内部原生特性类型超限返回Unknown和原AN3005/AN3006；上限内精确类型Matched、已知空NotMatched且无诊断；显式映射同一类型仍抛AspectNLimitException，预先取消仍传播",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261021-005"
+      ],
+      "unverified_notes": ""
+    },
+    {
+      "id": "S24",
+      "adapter": "roslyn",
+      "input_mode": "source_symbol",
+      "entry_point": "HasDirectAttribute / explicit Mapper",
+      "conditions": "DirectAttributeLimitTests 同源真实C#源码符号，发射成功作为合法输入前提；特性类型深度64/65/67、元数64/65、已知空列表及预先取消",
+      "target": "working-tree",
+      "expected_behavior": "查询内部原生特性类型超限返回Unknown和原AN3005/AN3006；上限内精确类型Matched、已知空NotMatched且无诊断；显式映射同一类型仍抛AspectNLimitException，预先取消仍传播",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261021-005"
+      ],
+      "unverified_notes": ""
+    },
+    {
+      "id": "S25",
+      "adapter": "roslyn",
+      "input_mode": "pe_symbol",
+      "entry_point": "HasDirectAttribute / explicit Mapper",
+      "conditions": "DirectAttributeLimitTests 同源真实C#发射PE后重新导入符号；特性类型深度64/65/67、元数64/65、已知空列表及预先取消",
+      "target": "working-tree",
+      "expected_behavior": "查询内部原生特性类型超限返回Unknown和原AN3005/AN3006；上限内精确类型Matched、已知空NotMatched且无诊断；显式映射同一类型仍抛AspectNLimitException，预先取消仍传播",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261021-005"
+      ],
+      "unverified_notes": ""
     }
   ],
   "invariant_checks": [
@@ -514,7 +608,8 @@
     "FND-20261013-004",
     "FND-20261013-005",
     "FND-20261021-001",
-    "FND-20261021-003"
+    "FND-20261021-003",
+    "FND-20261021-005"
   ]
 }
 -->
@@ -538,6 +633,8 @@ type 为声明类型；call 为当前方法；prop 为关联属性；para[n]/par
 ## 阶段失败
 
 未知属性关联或目标记录查询在需要时 Unknown；普通方法没有 prop 位置则 NotMatched。非法参数索引和旧长位置名是编译问题；不将错误和未知统一为 false。
+
+直接查询内部读取、映射原生特性类型超过深度/元数上限时返回 Unknown，保留原 AN3005/AN3006；显式 Mapper 仍抛 `AspectNLimitException`。S21–S25 覆盖此入口区分及上限内、已知空和取消控制；Cecil/Fody 还核验泛型形参声明自身记录。具体裁决和输入范围见 [D01 修复记录](../../../reviews/2026-10-21-d01-direct-attribute-limits.md)。
 
 ## 例子与边界
 

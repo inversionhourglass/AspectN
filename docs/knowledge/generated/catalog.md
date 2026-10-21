@@ -41,7 +41,7 @@
 
 | 能力 | 范围入口 | 场景数 |
 | --- | --- | --- |
-| [ATTR-TARGETS-001](../capabilities/attributes/ATTR-TARGETS-001.md) | 直接特性目标、真实记录与伪特性 | 20 |
+| [ATTR-TARGETS-001](../capabilities/attributes/ATTR-TARGETS-001.md) | 直接特性目标、真实记录与伪特性 | 25 |
 
 ## 解析与词法
 

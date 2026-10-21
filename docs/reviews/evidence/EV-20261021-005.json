@@ -1,0 +1,313 @@
+{
+  "schema_version": 1,
+  "id": "EV-20261021-005",
+  "method": "automated",
+  "scenario_refs": [
+    {
+      "capability_id": "ATTR-TARGETS-001",
+      "scenario_id": "S21"
+    },
+    {
+      "capability_id": "ATTR-TARGETS-001",
+      "scenario_id": "S22"
+    },
+    {
+      "capability_id": "ATTR-TARGETS-001",
+      "scenario_id": "S23"
+    },
+    {
+      "capability_id": "ATTR-TARGETS-001",
+      "scenario_id": "S24"
+    },
+    {
+      "capability_id": "ATTR-TARGETS-001",
+      "scenario_id": "S25"
+    },
+    {
+      "capability_id": "CROSS-RESOURCES-001",
+      "scenario_id": "S2"
+    },
+    {
+      "capability_id": "CROSS-RESOURCES-001",
+      "scenario_id": "S3"
+    },
+    {
+      "capability_id": "CROSS-RESOURCES-001",
+      "scenario_id": "S4"
+    },
+    {
+      "capability_id": "CROSS-RESOURCES-001",
+      "scenario_id": "S5"
+    }
+  ],
+  "oracle_refs": [
+    {
+      "path": "src/AspectN/TypeSystem/ITypeSystem.cs",
+      "section": "HasDirectAttribute"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+      "section": "21"
+    },
+    {
+      "path": "docs/language/metadata-availability.md",
+      "section": "元数据可用性"
+    },
+    {
+      "path": "docs/reviews/2026-10-21-d01-direct-attribute-limits.md",
+      "section": "维护者裁决与取代范围"
+    }
+  ],
+  "procedure": "dotnet test AspectN.sln -c Release --no-restore --disable-build-servers -m:1 --filter 'FullyQualifiedName~DirectAttributeLimitTests' --logger trx --results-directory artifacts/d01-fix/green -v:minimal\ndotnet build AspectN.sln -c Release --no-restore --disable-build-servers -m:1 -v:minimal\ndotnet test AspectN.sln -c Release --no-build --no-restore -m:1 --logger trx --results-directory artifacts/d01-fix/final -v:minimal\ndotnet format AspectN.sln --verify-no-changes --no-restore --verbosity quiet\npwsh -NoProfile -File eng/generate-knowledge.ps1\npwsh -NoProfile -File eng/generate-knowledge.ps1 -Check\npwsh -NoProfile -File eng/verify-documentation.ps1",
+  "result": "passed",
+  "recorded_on": "2026-10-21",
+  "environment": {
+    "os": "Windows",
+    "sdk": "10.0.401",
+    "runtime": "10.0.12",
+    "cecil": "0.11.5",
+    "fody_helpers": "6.8.1",
+    "roslyn": "4.12.0",
+    "compatibility_targets": [
+      "net472",
+      "net10.0，加载netstandard2.0资产"
+    ],
+    "notes": "新增D01测试在net10.0宿主执行；同源C#真实发射并由CLR加载，四视图是Roslyn源码/PE、Cecil、Reflection；Fody独立执行公共Cecil对象回归。旧兼容性矩阵不等于D01所有目标框架或依赖版本已验证。VSTest在允许本地通信的沙箱外运行。"
+  },
+  "code_state": {
+    "head": "a7d748e5c53e7179369093aff8b797b880cf8929",
+    "dirty": true,
+    "files": [
+      {
+        "path": "src/AspectN.Cecil/CecilTypeSystem.cs",
+        "sha256": "22780a13e678b6e348a59fa46bac49b900524bd4b576505c195a86a22022f301"
+      },
+      {
+        "path": "src/AspectN.Cecil/CecilSignatureMapper.cs",
+        "sha256": "d07a316492d18fd4913f686ff643012c0cde20f116d4412c3b817c243d8f4893"
+      },
+      {
+        "path": "src/AspectN.Cecil/Internal/CecilMetadataReader.cs",
+        "sha256": "9195d516d7aaa9b916840d2c6a1588dffbd8863a869b56e192b625259a27e8c5"
+      },
+      {
+        "path": "src/AspectN.Cecil/Internal/CecilNativeTypeLimitGuard.cs",
+        "sha256": "18fe0e2a273e14b73fdd6531aa11eca8980c4e20adb6f96fe9f075f14e7b0792"
+      },
+      {
+        "path": "src/AspectN.Reflection/ReflectionTypeSystem.cs",
+        "sha256": "5634ae70543e77cbbb43f4d35a9c2550d83b9602d747f5c34a034b35b645d746"
+      },
+      {
+        "path": "src/AspectN.Reflection/ReflectionSignatureMapper.cs",
+        "sha256": "1c5d61ef409c4d61428f65a77b52bc80b9037f55010a890f4f2d83396519a689"
+      },
+      {
+        "path": "src/AspectN.Roslyn/RoslynTypeSystem.cs",
+        "sha256": "e1c78c7b67a157e16a09cae854b7b1a9e01fb50723a59f8058ec122501624884"
+      },
+      {
+        "path": "src/AspectN.Roslyn/RoslynSignatureMapper.cs",
+        "sha256": "3002bc3332df219496cebc6b7b33f7f8f64337463a2d6814af0506860c6667c5"
+      },
+      {
+        "path": "src/Shared/NativeTypeLimitGuard.cs",
+        "sha256": "fa615cbdeabc46161fc3c0d7a39901bd53129dadfac53cc3ce0b277fa8ef2092"
+      },
+      {
+        "path": "src/Shared/UnqualifiedStructuralComparer.cs",
+        "sha256": "b5597776a60c82a00bb40b6683474aa363328313638703c57c779e794182725a"
+      },
+      {
+        "path": "src/AspectN/TypeSystem/ITypeSystem.cs",
+        "sha256": "15319782977f409cc4c75fbee273b11423236b28ade62624c698584af5aa49b4"
+      },
+      {
+        "path": "tests/AspectN.Cecil.Tests/CecilDirectAttributeLimitTests.cs",
+        "sha256": "6dcc773973878aa3106a5590af5054c59b27f06a1eb53626fa67964aba30b591"
+      },
+      {
+        "path": "tests/AspectN.Conformance.Tests/DirectAttributeLimitTests.cs",
+        "sha256": "7752da5722eedaaf0dbe409e240c6324b2193111cc93b1580e504902ff7e07db"
+      },
+      {
+        "path": "tests/AspectN.Conformance.Tests/ReviewFixture.cs",
+        "sha256": "e949925be048832fbfb2a0733b8215efb029dae82437020f0b8cc10f2a6e0bf7"
+      },
+      {
+        "path": "tests/AspectN.Conformance.Tests/FixtureCompiler.cs",
+        "sha256": "ab69c5b9516ff7b2e9be4173faa8a08e93d0502bb5b073be7adf71903c52a7e3"
+      },
+      {
+        "path": "tests/AspectN.Cecil.Fody.Tests/AspectN.Cecil.Fody.Tests.csproj",
+        "sha256": "cbd60bfcbbb15da4ae57114b1e74584d205e78b8490ec89497d133958e7204e2"
+      },
+      {
+        "path": "src/AspectN.Cecil.Fody/AspectN.Cecil.Fody.csproj",
+        "sha256": "e88e3e6bfd03488c9fe568a2602cf7caacb9b0d0667b1e7bf12ee88db0b57b9c"
+      },
+      {
+        "path": "docs/language/metadata-availability.md",
+        "sha256": "83948551cdd2e55d98fb48461498a8caec4d173baabb9269fe3c277b55fd98fe"
+      },
+      {
+        "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+        "sha256": "273559a169a411531f5962777582f0ba3d9d4d1c02c10281c31d6f2a76d3ac0a"
+      },
+      {
+        "path": "Directory.Build.props",
+        "sha256": "21511672e6680b86521f1d2d275e9fe2d914092073007c8be353f3202c38115a"
+      },
+      {
+        "path": "Directory.Packages.props",
+        "sha256": "a0df07b7d4df78415d87666c16e30c665d285d0e39ed9d300c52aeb7a3837c9a"
+      }
+    ]
+  },
+  "dependency_scope": {
+    "paths": [
+      "src/AspectN.Cecil/CecilTypeSystem.cs",
+      "src/AspectN.Cecil/CecilSignatureMapper.cs",
+      "src/AspectN.Cecil/Internal/CecilMetadataReader.cs",
+      "src/AspectN.Cecil/Internal/CecilNativeTypeLimitGuard.cs",
+      "src/AspectN.Reflection/ReflectionTypeSystem.cs",
+      "src/AspectN.Reflection/ReflectionSignatureMapper.cs",
+      "src/AspectN.Roslyn/RoslynTypeSystem.cs",
+      "src/AspectN.Roslyn/RoslynSignatureMapper.cs",
+      "src/Shared/NativeTypeLimitGuard.cs",
+      "src/Shared/UnqualifiedStructuralComparer.cs",
+      "src/AspectN/TypeSystem/ITypeSystem.cs",
+      "tests/AspectN.Cecil.Tests/CecilDirectAttributeLimitTests.cs",
+      "tests/AspectN.Conformance.Tests/DirectAttributeLimitTests.cs",
+      "tests/AspectN.Conformance.Tests/ReviewFixture.cs",
+      "tests/AspectN.Conformance.Tests/FixtureCompiler.cs",
+      "tests/AspectN.Cecil.Fody.Tests/AspectN.Cecil.Fody.Tests.csproj",
+      "src/AspectN.Cecil.Fody/AspectN.Cecil.Fody.csproj",
+      "docs/language/metadata-availability.md",
+      "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+      "Directory.Build.props",
+      "Directory.Packages.props"
+    ],
+    "environment_keys": [
+      "sdk",
+      "runtime",
+      "cecil",
+      "fody_helpers",
+      "roslyn",
+      "compatibility_targets"
+    ]
+  },
+  "revalidation_conditions": "直接特性列表读取/映射、查询边界捕获、原生限制及通用元数据恢复、映射器与关联缓存、Fody共享项目、公开查询契约或已列依赖版本变化时重验。旧矩阵重跑不扩大历史证据范围。",
+  "observations": {
+    "red": "基线a7d748e：普通Cecil和Fody各8项中5项AspectNLimitException失败、3项控制通过；真实C#一致性5项中3项在Cecil查询外抛失败、2项通过。三项失败在Cecil前完成Roslyn源码/PE检查，未运行到Reflection。首次聚焦中新增测试构造参数遗漏的编译错误不计为产品失败，修正后单独取得一致性红灯。",
+    "scope": "新增21项：普通Cecil/Fody各8项，加5项四视图一致性参数化测试。深度64/65/67、元数64/65、上限内精确Matched、已知空NotMatched、重复查询、泛型形参声明、显式Mapper仍抛原限制异常及预先取消。",
+    "limitations": "仅HasDirectAttribute内部原生特性类型映射超限统一Unknown，不改变Mapper、AN3004恢复、H1、记录求值顺序或限制数值。Fody新证据是公开构造原生对象，不是四视图PE；不证明所有版本、线程调度或损坏对象。",
+    "focused": {
+      "total": 21,
+      "passed": 21,
+      "failed": 0,
+      "skipped": 0,
+      "projects": [
+        {
+          "project": "AspectN.Cecil.Tests",
+          "target": "net10.0",
+          "total": 8,
+          "passed": 8,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.Conformance.Tests",
+          "target": "net10.0",
+          "total": 5,
+          "passed": 5,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.Cecil.Fody.Tests",
+          "target": "net10.0",
+          "total": 8,
+          "passed": 8,
+          "failed": 0,
+          "not_executed": 0
+        }
+      ]
+    },
+    "final": {
+      "total": 2121,
+      "passed": 2121,
+      "failed": 0,
+      "skipped": 0,
+      "projects": [
+        {
+          "project": "AspectN.Tests",
+          "target": "net10.0",
+          "total": 1165,
+          "passed": 1165,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.Cecil.Tests",
+          "target": "net10.0",
+          "total": 222,
+          "passed": 222,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.Reflection.Tests",
+          "target": "net10.0",
+          "total": 109,
+          "passed": 109,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.Roslyn.Tests",
+          "target": "net10.0",
+          "total": 28,
+          "passed": 28,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.Conformance.Tests",
+          "target": "net10.0",
+          "total": 358,
+          "passed": 358,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.NetFramework.Tests",
+          "target": "net472",
+          "total": 7,
+          "passed": 7,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.NetFramework.Tests",
+          "target": "net10.0",
+          "total": 8,
+          "passed": 8,
+          "failed": 0,
+          "not_executed": 0
+        },
+        {
+          "project": "AspectN.Cecil.Fody.Tests",
+          "target": "net10.0",
+          "total": 224,
+          "passed": 224,
+          "failed": 0,
+          "not_executed": 0
+        }
+      ],
+      "build": "Release，零警告、零错误",
+      "format": "verify-no-changes通过",
+      "logs": "artifacts/d01-fix/final（本地忽略目录）"
+    }
+  }
+}

@@ -193,7 +193,7 @@ var result = pattern.Match(neutral, typeSystem);
 Console.WriteLine(result.Status); // Unknown，附 AN3005
 ```
 
-原生映射深度超限抛异常；已构造中立签名的匹配返回 Unknown。元数超限对应 AN3006。不要把超限当作普通元数据缺失，也不要自设解析深度、正则超时或规范文本阈值；完整约定见[规范第 21 节](../superpowers/specs/2026-07-31-aspectn-language-spec.md)。
+显式原生映射深度超限抛异常；已构造中立签名的匹配返回 Unknown。`HasDirectAttribute` 内部读取、映射特性类型时超限，则返回 Unknown 并保留原 AN3005；元数超限对应 AN3006。调用方在查询前自行映射超限类型时，异常仍发生在该映射调用。不要把超限当作普通元数据缺失，也不要自设解析深度、正则超时或规范文本阈值；完整约定见[规范第 21 节](../superpowers/specs/2026-07-31-aspectn-language-spec.md)及 [D01 裁决](../reviews/2026-10-21-d01-direct-attribute-limits.md)。
 
 自定义 `ITypeSystem` 为含变量或通配目标的 `+` 模式返回祖先时，每个祖先也经过深度和元数检查。例如 `Box<$T>+` 遇到总结构深度 65 的祖先，不会绑定其超限实参，而是保留 Unknown/AN3005 并继续其他祖先。另一个正常祖先确定匹配时，最终仍为 Matched，限制诊断也保留；没有确定匹配时保留 Unknown。相同规则适用于成员返回/参数中的关系模式，详见 [C05 回归记录](../reviews/2026-10-21-c05-inheritance-closure-limits.md)。
 
