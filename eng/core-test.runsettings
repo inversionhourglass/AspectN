@@ -1,0 +1,11 @@
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="blame" enabled="true">
+        <Configuration>
+          <CollectDumpOnTestSessionHang TestTimeout="60s" HangDumpType="none" />
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

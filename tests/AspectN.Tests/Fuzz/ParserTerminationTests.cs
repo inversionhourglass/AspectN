@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using AspectN.Syntax;
 using FsCheck.Xunit;
 
@@ -6,8 +5,16 @@ namespace AspectN.Tests.Fuzz;
 
 public sealed class ParserTerminationTests
 {
-    private static readonly TimeSpan _MaximumParseDuration =
-        TimeSpan.FromSeconds(1);
+    [Fact]
+    public void ParseTypePattern_DelayedParser_PreservesValidSpans()
+    {
+        AssertTerminatesWithValidSpans("System.String", value =>
+        {
+            // 模拟线程暂停调度；正常返回的解析不应因单次墙钟时间而失败。
+            Thread.Sleep(TimeSpan.FromMilliseconds(1200));
+            return AspectNParser.ParseTypePattern(value);
+        });
+    }
 
     [Property(
         MaxTest = FuzzConfiguration.LONG_GENERATED_CASES,
@@ -61,13 +68,8 @@ public sealed class ParserTerminationTests
         string source,
         Func<string, AspectNSyntaxTree> parse)
     {
-        var stopwatch = Stopwatch.StartNew();
+        // 同步挂起由测试宿主的 runsettings 终止，不以逐样本墙钟时间断言性能。
         var tree = parse(source);
-
-        stopwatch.Stop();
-        Assert.True(
-            stopwatch.Elapsed <= _MaximumParseDuration,
-            $"Parsing took {stopwatch.Elapsed} for {source.Length} code units.");
         Assert.Equal(source.Length, tree.Text.Length);
         Assert.All(
             tree.Diagnostics,

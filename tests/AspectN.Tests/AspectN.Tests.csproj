@@ -3,6 +3,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <RunSettingsFilePath>$(MSBuildThisFileDirectory)../../eng/core-test.runsettings</RunSettingsFilePath>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\AspectN\AspectN.csproj" />
