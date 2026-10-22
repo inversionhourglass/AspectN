@@ -142,4 +142,17 @@ foreach ($invalid in @('profile','invariants','exclusion','report','duplicate_js
     Assert-Equal $before (Read-Generated $root 'support-matrix') "$invalid 不覆盖输出"
     $passed++
 }
+$root=New-Fixture
+$reportPath='docs/reviews/evidence/EV-20261013-999.json'
+$report=[IO.File]::ReadAllText((Join-Path $root $reportPath))|ConvertFrom-Json -AsHashtable
+Save-File $root 'src/Before.cs' '// 历史快照中的合成源码。'
+$report.code_state.files += @{path='src/Before.cs';sha256=(Get-FileHash -LiteralPath (Join-Path $root 'src/Before.cs')).Hash}
+$report.dependency_scope.paths += 'src/Before.cs'
+Save-File $root $reportPath ($report|ConvertTo-Json -Depth 20)
+[IO.File]::Move((Join-Path $root 'src/Before.cs'), (Join-Path $root 'src/After.cs'))
+$historicalReport=[IO.File]::ReadAllText((Join-Path $root $reportPath))
+Assert-Equal 0 (Invoke-Generator $root $false).exit '历史源码重命名后仍可生成'
+Assert-Equal 0 (Invoke-Generator $root $true).exit '历史源码重命名后的派生检查'
+Assert-Equal $historicalReport ([IO.File]::ReadAllText((Join-Path $root $reportPath))) '生成不改写历史证据'
+$passed++
 Write-Output "知识库生成器：$passed 项黑盒检查通过。"

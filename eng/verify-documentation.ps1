@@ -73,10 +73,15 @@ function Test-Version($record, [string]$where) {
     if ($record.schema_version -isnot [long] -and $record.schema_version -isnot [int]) { Add-Error $where 'schema_version must be the integer 1.' }
     elseif ($record.schema_version -ne 1) { Add-Error $where 'Unsupported schema_version.' }
 }
-function Resolve-RepoFile([string]$path, [string]$where) {
+function Resolve-RepoPath([string]$path, [string]$where) {
     if ([string]::IsNullOrWhiteSpace($path) -or $path -match '^[\\/]|^[a-zA-Z]:|\\') { Add-Error $where 'Expected a repository-relative path with forward slashes.'; return $null }
     $full = [IO.Path]::GetFullPath((Join-Path $root $path))
     if (!$full.StartsWith($root + [IO.Path]::DirectorySeparatorChar, $pathComparison)) { Add-Error $where "Path escapes repository: $path"; return $null }
+    return $full
+}
+function Resolve-RepoFile([string]$path, [string]$where) {
+    $full = Resolve-RepoPath $path $where
+    if (!$full) { return $null }
     if (![IO.File]::Exists($full)) { Add-Error $where "File not found: $path"; return $null }
     return $full
 }
@@ -283,18 +288,25 @@ try {
         Test-Date $e.recorded_on $path
         Test-Refs $e.oracle_refs $path
         Test-Object $e.environment $path | Out-Null
+        # 快照记录取证时的路径与哈希，不要求重命名后的工作区保留同名文件。
+        # 集合按报告隔离，缺失依赖只能引用本报告中结构有效的快照条目。
+        $snapshotPaths = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
         if (Test-Fields $e.code_state @('head','dirty','files') @('head') @('files') $path) {
             if ($e.code_state.dirty -isnot [bool]) { Add-Error $path 'code_state.dirty must be boolean.' }
             if ($e.code_state.head -cnotmatch '^[a-f0-9]{40}$') { Add-Error $path 'Expected full HEAD SHA.' }
             foreach ($file in $e.code_state.files) {
                 if (Test-Fields $file @('path','sha256') @('path','sha256') @() $path) {
-                    Resolve-RepoFile $file.path $path | Out-Null
+                    $snapshotPath = Resolve-RepoPath $file.path $path
                     if ($file.sha256 -cnotmatch '^[a-fA-F0-9]{64}$') { Add-Error $path 'Invalid file SHA256.' }
+                    elseif ($snapshotPath) { $snapshotPaths.Add($file.path) | Out-Null }
                 }
             }
         }
         if (Test-Fields $e.dependency_scope @('paths','environment_keys') @() @('paths','environment_keys') $path) {
-            foreach ($dependency in $e.dependency_scope.paths) { Resolve-RepoFile $dependency $path | Out-Null }
+            foreach ($dependency in $e.dependency_scope.paths) {
+                if ($dependency -is [string] -and $snapshotPaths.Contains($dependency)) { continue }
+                Resolve-RepoFile $dependency $path | Out-Null
+            }
         }
         foreach ($s in $e.scenario_refs) {
             if (!(Test-Fields $s @('capability_id','scenario_id') @('capability_id','scenario_id') @() $path)) { continue }

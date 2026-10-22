@@ -12,6 +12,10 @@ JSON 由标准库 System.Text.Json.JsonDocument 读取，ISO 日期保持字符�
 
 报告 code_state 按声明的实现/测试/规范/配置范围保存文件 SHA256。更新报告和状态不使证据自身失效；历史报告不改写，影响变化在条目重新判断。
 
+`code_state.files[].path` 是取证时的历史快照路径。校验器检查仓库相对路径、目录边界和 SHA256 格式，不要求同名文件仍存在，也不将当前文件内容或 Git HEAD 当作 dirty 快照的原始内容。`dependency_scope.paths` 中精确匹配同一报告有效快照条目的路径沿用该历史语义；其他依赖路径仍必须存在于当前工作区。不同报告不能互相豁免缺失依赖。
+
+规范、来源、`oracle_refs` 和当前 Markdown 正文中的文件引用仍要求实际存在。允许保存历史路径不表示旧证据适用于当前实现，也不证明历史内容可从 Git 恢复；代码、规范或环境变化后的适用性仍由审查和重验决定。校验器不拉取 Git 历史、不替换旧路径、不更新旧哈希，浅克隆和无 Git 的合成 fixture 使用相同规则。
+
 ## 派生目录与矩阵
 
 能力条目的场景元数据及 coverage.json 是唯一状态来源。修改后运行 `pwsh -NoProfile -File eng/generate-knowledge.ps1`，生成 generated/catalog.md 与 generated/support-matrix.md；不能手工修改这两页。

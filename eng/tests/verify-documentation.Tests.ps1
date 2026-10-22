@@ -52,9 +52,35 @@ function Add-Evidence($root) {
     $e = @{schema_version=1;id='EV-20261012-001';method='automated';scenario_refs=@(@{capability_id='USE-TEST-001';scenario_id='S1'});oracle_refs=@($reference);procedure='fixture procedure';result='passed';recorded_on='2026-10-12T09:00:00Z';environment=@{tfm='fixture'};code_state=@{head=('a'*40);dirty=$true;files=@(@{path='contract.md';sha256=(Get-FileHash -LiteralPath (Join-Path $root 'contract.md')).Hash})};dependency_scope=@{paths=@('contract.md');environment_keys=@('tfm')};revalidation_conditions='fixture changed'}
     Write-FixtureFile $root 'docs/reviews/evidence/EV-20261012-001.json' (ConvertTo-Json -InputObject $e -Depth 20)
 }
+function Update-Evidence($root, [scriptblock]$change) {
+    $path = 'docs/reviews/evidence/EV-20261012-001.json'
+    $report = [IO.File]::ReadAllText((Join-Path $root $path)) | ConvertFrom-Json -AsHashtable
+    & $change $report
+    Write-FixtureFile $root $path (ConvertTo-Json -InputObject $report -Depth 20)
+}
+function Add-HistoricalEvidence($root) {
+    Add-Evidence $root
+    Write-FixtureFile $root 'src/Before.cs' '// 历史快照中的合成源码。'
+    $hash = (Get-FileHash -LiteralPath (Join-Path $root 'src/Before.cs')).Hash
+    Update-Evidence $root { param($e)
+        $e.code_state.files += @{path='src/Before.cs';sha256=$hash}
+        $e.dependency_scope.paths += 'src/Before.cs'
+    }
+    [IO.File]::Move((Join-Path $root 'src/Before.cs'), (Join-Path $root 'src/After.cs'))
+}
 $cases = @(
     @{Name='Valid minimal repository';Exit=0;Warning=$false;Change={param($r)}},
     @{Name='Valid dated evidence verifies its own scenario';Exit=0;Warning=$false;Change={param($r) Add-Evidence $r;Update-Capability $r {param($c) $c.scenarios[0].verification_status='verified';$c.scenarios[0].evidence_ids=@('EV-20261012-001');$c.scenarios[0].unverified_notes=''}}},
+    @{Name='历史源码重命名后保留原始快照及依赖路径';Exit=0;Warning=$false;Change={param($r) Add-HistoricalEvidence $r}},
+    @{Name='生成预检同样允许历史快照路径';Exit=0;Warning=$false;Generation=$true;Change={param($r) Add-HistoricalEvidence $r}},
+    @{Name='缺失依赖没有同份证据的快照记录仍拒绝';Exit=1;Warning=$false;Change={param($r) Add-Evidence $r;Update-Evidence $r {param($e) $e.dependency_scope.paths += 'src/Absent.cs'}}},
+    @{Name='其他报告的快照不能豁免缺失依赖';Exit=1;Warning=$false;Change={param($r) Add-HistoricalEvidence $r;$p='docs/reviews/evidence/EV-20261012-002.json';$e=[IO.File]::ReadAllText((Join-Path $r 'docs/reviews/evidence/EV-20261012-001.json'))|ConvertFrom-Json -AsHashtable;$e.id='EV-20261012-002';$e.code_state.files=@($e.code_state.files|Where-Object path -ne 'src/Before.cs');Write-FixtureFile $r $p ($e|ConvertTo-Json -Depth 20)}},
+    @{Name='历史快照不能豁免缺失的当前证据依据';Exit=1;Warning=$false;Change={param($r) Add-HistoricalEvidence $r;Update-Evidence $r {param($e) $e.oracle_refs[0].path='src/Before.cs'}}},
+    @{Name='历史快照不能豁免当前正文的断链';Exit=1;Warning=$false;Change={param($r) Add-HistoricalEvidence $r;[IO.File]::AppendAllText((Join-Path $r 'docs/usage/index.md'),"`n[源码](../../src/Before.cs)")}},
+    @{Name='历史快照中的仓库越界路径仍拒绝';Exit=1;Warning=$false;Change={param($r) Add-HistoricalEvidence $r;Update-Evidence $r {param($e) $e.code_state.files[1].path='../outside.cs';$e.dependency_scope.paths=@('contract.md')}}},
+    @{Name='历史快照中的绝对路径仍拒绝';Exit=1;Warning=$false;Change={param($r) Add-HistoricalEvidence $r;Update-Evidence $r {param($e) $e.code_state.files[1].path='/outside.cs';$e.dependency_scope.paths=@('contract.md')}}},
+    @{Name='历史依赖中的仓库越界路径仍拒绝';Exit=1;Warning=$false;Change={param($r) Add-HistoricalEvidence $r;Update-Evidence $r {param($e) $e.dependency_scope.paths += '../outside.cs'}}},
+    @{Name='历史文件缺失不豁免非法哈希';Exit=1;Warning=$false;Change={param($r) Add-HistoricalEvidence $r;Update-Evidence $r {param($e) $e.code_state.files[1].sha256='invalid';$e.dependency_scope.paths=@('contract.md')}}},
     @{Name='Duplicate capability ID';Exit=1;Warning=$false;Change={param($r) Copy-Item -LiteralPath (Join-Path $r 'docs/knowledge/capabilities/type-uses/USE-TEST-001.md') -Destination (Join-Path $r 'docs/knowledge/capabilities/type-uses/duplicate.md')}},
     @{Name='Invalid contract status';Exit=1;Warning=$false;Change={param($r) Update-Capability $r {param($c) $c.scenarios[0].contract_status='green'}}},
     @{Name='Missing scenario field';Exit=1;Warning=$false;Change={param($r) Update-Capability $r {param($c) $c.scenarios[0].Remove('conditions') | Out-Null}}},
