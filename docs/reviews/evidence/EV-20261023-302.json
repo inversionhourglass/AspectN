@@ -1,0 +1,174 @@
+{
+  "schema_version": 1,
+  "id": "EV-20261023-302",
+  "method": "automated",
+  "scenario_refs": [
+    {
+      "scenario_id": "S3",
+      "capability_id": "GEN-IDENTITY-001"
+    },
+    {
+      "scenario_id": "S3",
+      "capability_id": "USE-ARRAY-001"
+    },
+    {
+      "scenario_id": "S1",
+      "capability_id": "USE-REF-001"
+    },
+    {
+      "scenario_id": "S1",
+      "capability_id": "CROSS-AVAILABILITY-001"
+    },
+    {
+      "scenario_id": "S1",
+      "capability_id": "CROSS-LOGIC-001"
+    },
+    {
+      "scenario_id": "S2",
+      "capability_id": "CROSS-LOGIC-001"
+    }
+  ],
+  "oracle_refs": [
+    {
+      "section": "5 / 11 / 12",
+      "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md"
+    },
+    {
+      "section": "声明身份与闭合上下文",
+      "path": "docs/language/generic-parameter-identity.md"
+    },
+    {
+      "section": "缺失可见性与独立事实",
+      "path": "docs/language/metadata-availability.md"
+    }
+  ],
+  "procedure": "dotnet run --project docs/usage/examples/ReflectionQuickStart/ReflectionQuickStart.csproj -c Release --no-restore -p:UseSharedCompilation=false",
+  "result": "passed",
+  "recorded_on": "2026-10-23",
+  "observed_output": "Documentation examples passed.",
+  "exit_code": 0,
+  "raw_log": "artifacts/rm16/ReflectionQuickStart-supported.log",
+  "raw_log_sha256": "be0a6d99baa67006d46b8781a34bbc8db7dc0ee8c9e15c4cc567753cc2447ea9",
+  "environment": {
+    "backend_scope": "ReflectionQuickStart",
+    "build_configuration": "Release",
+    "tfm": "net10.0",
+    "runtime": "10.0.12",
+    "os": "Windows",
+    "sdk": "10.0.401",
+    "notes": "本机环境执行成功。受限环境中的并行构建先失败；串行构建及no-build执行成功。未修改生产或示例源码，未运行其他适配器矩阵。"
+  },
+  "code_state": {
+    "dirty": true,
+    "head": "007f9aa936099c28b2abf56cebf57d21e9da5684",
+    "files": [
+      {
+        "sha256": "f55cd21023eaa11d4c09b82fdbae44e4abf953bfb66bf30173878f7b7c227c15",
+        "path": "docs/usage/examples/ReflectionQuickStart/ReflectionQuickStart.csproj"
+      },
+      {
+        "sha256": "7100f66b7a0060fb0d518c1bcd5300862caf36e8523adf9d3a08a8e587cd1b40",
+        "path": "docs/usage/examples/ReflectionQuickStart/Program.cs"
+      },
+      {
+        "sha256": "2d08ab4085cdc6d36df0ab8ce8c71992cb809bfe38e43ffbd7037c290f358445",
+        "path": "docs/usage/examples/ReflectionQuickStart/Example.cs"
+      },
+      {
+        "sha256": "6cd80ed6f7a93e76c20e47164e3bfedfddc1b42b33519b2cd2dee6febff4e836",
+        "path": "global.json"
+      },
+      {
+        "sha256": "9b210190bea487b55edae9dadbb9e2f2148cbeb34a9bc95fdf252e5f49836ebf",
+        "path": "Directory.Build.props"
+      },
+      {
+        "sha256": "a0df07b7d4df78415d87666c16e30c665d285d0e39ed9d300c52aeb7a3837c9a",
+        "path": "Directory.Packages.props"
+      },
+      {
+        "sha256": "d68afcda09220f55c0b7aebbf212fd14a05bbc0955e48386ebebcea7cacb4a77",
+        "path": ".editorconfig"
+      },
+      {
+        "sha256": "e07ca04e5e30610715a0e215f5250944c2454ac581bb9e6996a977ef2101b2fa",
+        "path": "src/AspectN/AspectN.csproj"
+      },
+      {
+        "sha256": "386aa19f7d06d2a5dda55bdd8284699fefa261e43c5751849f28609f81e8d705",
+        "path": "src/AspectN.Reflection/AspectN.Reflection.csproj"
+      },
+      {
+        "sha256": "ee326890605fdc1012cc7f007f934a8a830e418215c9e3c079a2b8ba271ba2f3",
+        "path": "src/AspectN/AspectNEngine.cs"
+      },
+      {
+        "sha256": "266cce9750b258bced90fed52711ca73c57811f2a224f833424f8765ab0915dd",
+        "path": "src/AspectN/AspectNCompilation.cs"
+      },
+      {
+        "sha256": "9548f237a2f7c0107e41b028430ab74123fb9a305c1e159ca8b5e2496dc04d7a",
+        "path": "src/AspectN/TypeSystem/StructuralTypeComparer.cs"
+      },
+      {
+        "sha256": "7e5bf5b869d636a130012c5fcd55b7044f72d107fa4d8d1b17d9c187c54dee1e",
+        "path": "src/AspectN/Evaluation/MatchLogic.cs"
+      },
+      {
+        "sha256": "eb98d00df5e764bdced62329e2e37d1e59dbf825b9f98df6e3d84553fd87002d",
+        "path": "src/AspectN/Evaluation/MatchResult.cs"
+      },
+      {
+        "sha256": "a8bdbded64825d686b480277ba24c564f2263675c938143970b2e71702c43f77",
+        "path": "src/AspectN.Reflection/ReflectionSignatureMapper.cs"
+      },
+      {
+        "sha256": "d187983bd24e76558720974e18ae180e9559fc485cd4ce39badbae2f9c601c82",
+        "path": "src/AspectN.Reflection/ReflectionMappingOperation.cs"
+      },
+      {
+        "sha256": "0344822ac47d130f43118396e208439f4c8cfe8d87924654fe50839ccd132ab2",
+        "path": "src/AspectN.Reflection/ReflectionTypeSystem.cs"
+      }
+    ]
+  },
+  "dependency_scope": {
+    "environment_keys": [
+      "os",
+      "sdk",
+      "runtime",
+      "tfm",
+      "backend_scope",
+      "build_configuration"
+    ],
+    "paths": [
+      "docs/usage/examples/ReflectionQuickStart/ReflectionQuickStart.csproj",
+      "docs/usage/examples/ReflectionQuickStart/Program.cs",
+      "docs/usage/examples/ReflectionQuickStart/Example.cs",
+      "global.json",
+      "Directory.Build.props",
+      "Directory.Packages.props",
+      ".editorconfig",
+      "src/AspectN/AspectN.csproj",
+      "src/AspectN.Reflection/AspectN.Reflection.csproj",
+      "src/AspectN/AspectNEngine.cs",
+      "src/AspectN/AspectNCompilation.cs",
+      "src/AspectN/TypeSystem/StructuralTypeComparer.cs",
+      "src/AspectN/Evaluation/MatchLogic.cs",
+      "src/AspectN/Evaluation/MatchResult.cs",
+      "src/AspectN.Reflection/ReflectionSignatureMapper.cs",
+      "src/AspectN.Reflection/ReflectionMappingOperation.cs",
+      "src/AspectN.Reflection/ReflectionTypeSystem.cs"
+    ]
+  },
+  "covered_assertions": [
+    "public string Example.Service.GetName() 成员匹配",
+    "Example.Service.TryRun(out int) 成员匹配",
+    "int[] 模式同时匹配 Reflection Vector 和 General rank-one；AreEqual 区分二者",
+    "Owner<string>/Owner<int> 的同一方法声明形参身份相等",
+    "缺失可见性时 public/!public 为 Unknown，已知返回类型不符为 NotMatched",
+    "NOT U=U、F AND U=F、UnknownMatchBehavior.False 转 false"
+  ],
+  "coverage_notes": "与入门示例关联的六个场景仅获得所列部分观察；不是这些场景的完整重验。未执行约束或重载区分、全部ref分类、跨后端同源IL数组、OR/完整真值表、诊断保留或Throw。普通成员匹配为额外正向控制。本次未执行MatchingBoundaries。其他源码与HEAD一致，dirty包含既有README及本轮文档改动。",
+  "revalidation_conditions": "示例、生产依赖、规范、构建配置或运行环境变化时重新执行；保留历史报告。所列部分观察不得替代各场景的完整回归证据。"
+}
