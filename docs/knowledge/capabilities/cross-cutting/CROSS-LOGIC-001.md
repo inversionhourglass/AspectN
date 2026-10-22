@@ -58,6 +58,24 @@
         "EV-20261022-201"
       ],
       "unverified_notes": ""
+    },
+    {
+      "id": "S3",
+      "adapter": "core",
+      "input_mode": "neutral",
+      "entry_point": "MatchResult / TypeRelationResult 构造器及 Unknown 工厂",
+      "conditions": "零参工厂、null/空诊断集合、构造器省略诊断、单条有效诊断及无诊断的已知状态对照",
+      "target": "working-tree",
+      "expected_behavior": "Unknown 必须携带诊断；缺少诊断抛 ArgumentException 且参数名为 diagnostics；已知状态允许省略诊断",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261022-301"
+      ],
+      "unverified_notes": "仅验证中立结果值的构造约束，不覆盖 null 诊断元素、任意 IEnumerable 实现或原生后端读取失败。"
     }
   ],
   "invariant_checks": [
@@ -124,6 +142,8 @@ Unknown 的否定仍未知。确定匹配状态不意味着可以丢掉所有诊
 
 T=Matched、F=NotMatched、U=Unknown。AND：F 支配；OR：T 支配；NOT U 保持 U。Boolean 转换要求调用方选择 Unknown 策略。
 
+`MatchResult`、`TypeRelationResult` 的 Unknown 必须携带至少一条诊断。工厂零参调用可通过编译，但与传入 null/空诊断集合一样抛 `ArgumentException`（`diagnostics`）；构造器遵循同一约束，已知状态则允许省略诊断。2026-10-22 的 [RM-02 处置](../../../reviews/2026-10-22-rm02-unknown-diagnostic-contract.md)仅补全 XML 和使用说明，未改变方法声明或运行逻辑。
+
 ## 输入条件
 
 有效 MatchStatus/MatchResult 值；不要求套用原生程序集字段。
@@ -148,7 +168,7 @@ T AND U=U；F AND U=F；T OR U=T；F OR U=U；NOT U=U。Combine_UnknownDiagnosti
 
 ## 实现与证据
 
-实现与回归入口：[MatchLogicTests.cs](../../../../tests/AspectN.Tests/Evaluation/MatchLogicTests.cs)。当前证据按元数据 evidence_ids 定位，未验证范围见每个场景。
+实现与回归入口：[MatchLogicTests.cs](../../../../tests/AspectN.Tests/Evaluation/MatchLogicTests.cs)。S3 的结果构造约束由 [MatchResultTests.cs](../../../../tests/AspectN.Tests/Evaluation/MatchResultTests.cs) 和 [TypeRelationResultTests.cs](../../../../tests/AspectN.Tests/TypeSystem/TypeRelationResultTests.cs) 核验。当前证据按元数据 evidence_ids 定位，未验证范围见每个场景。
 
 ## 关联与缺口
 

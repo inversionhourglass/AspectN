@@ -16,7 +16,8 @@ public sealed class TypeRelationResult
 
     /// <summary>Initializes a new instance of the TypeRelationResult class.</summary>
     /// <param name="status">The relation's matching state.</param>
-    /// <param name="diagnostics">Diagnostics to snapshot in deterministic source/code order, removing exact duplicates.</param>
+    /// <param name="diagnostics">Diagnostics to snapshot in deterministic source/code order, removing exact duplicates. At least one diagnostic is required when <paramref name="status"/> is <see cref="MatchStatus.Unknown"/>; otherwise, null or an empty sequence is allowed.</param>
+    /// <exception cref="ArgumentException"><paramref name="status"/> is <see cref="MatchStatus.Unknown"/> and <paramref name="diagnostics"/> is null or empty.</exception>
     public TypeRelationResult(
         MatchStatus status,
         IEnumerable<AspectNDiagnostic>? diagnostics = null)
@@ -46,8 +47,10 @@ public sealed class TypeRelationResult
     public static TypeRelationResult NotMatched => _NotMatched;
 
     /// <summary>Creates an unknown result with the supplied diagnostics.</summary>
-    /// <param name="diagnostics">Diagnostics explaining why the relation cannot be decided.</param>
+    /// <param name="diagnostics">At least one diagnostic explaining why the relation cannot be decided.</param>
     /// <returns>An Unknown relation carrying a normalized snapshot of the supplied diagnostics.</returns>
+    /// <remarks>A parameterless call is permitted by the params parameter but throws <see cref="ArgumentException"/> at run time.</remarks>
+    /// <exception cref="ArgumentException"><paramref name="diagnostics"/> is null or empty, including when no arguments are supplied.</exception>
     public static TypeRelationResult Unknown(
         params AspectNDiagnostic[] diagnostics)
     {

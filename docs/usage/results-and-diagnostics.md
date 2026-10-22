@@ -24,7 +24,17 @@
 
 MatchResult.ToBoolean(UnknownMatchBehavior.False) 将 Unknown 转 false；Throw 策略会抛 InvalidOperationException。不要把任意异常都吞成 Unknown。
 
-手工创建 Unknown 的 MatchResult 必须提供诊断；空诊断列表会被构造器拒绝。通常直接使用匹配返回的结果及诊断，再选择转换策略。
+手工创建 Unknown 的 `MatchResult` 或 `TypeRelationResult` 必须提供至少一条诊断，说明无法确定结果的原因。两个 `Unknown(params AspectNDiagnostic[] diagnostics)` 工厂虽允许零参调用通过编译，但零参、空数组和 `null` 诊断集合都会在运行时抛出 `ArgumentException`，参数名为 `diagnostics`。直接用构造器创建 Unknown 时也遵循同一约束；创建 Matched 或 NotMatched 时允许省略诊断。通常直接使用匹配返回的结果及诊断，再选择转换策略。
+
+自定义后端可以将无法取得必要事实的原因传给工厂：
+
+```csharp
+var diagnostic = new AspectN.Diagnostics.AspectNDiagnostic(
+    "AN3001",
+    AspectN.Diagnostics.DiagnosticSeverity.Warning,
+    "Required relationship metadata is unavailable.");
+var result = AspectN.TypeSystem.TypeRelationResult.Unknown(diagnostic);
+```
 
 ## 缺失信息如何影响结果
 

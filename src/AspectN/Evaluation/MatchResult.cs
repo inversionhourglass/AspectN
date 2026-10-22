@@ -22,7 +22,8 @@ public sealed class MatchResult
 
     /// <summary>Initializes a new instance of the MatchResult class.</summary>
     /// <param name="status">The matching state represented by the result.</param>
-    /// <param name="diagnostics">Diagnostics to snapshot in deterministic source/code order, removing exact duplicates.</param>
+    /// <param name="diagnostics">Diagnostics to snapshot in deterministic source/code order, removing exact duplicates. At least one diagnostic is required when <paramref name="status"/> is <see cref="MatchStatus.Unknown"/>; otherwise, null or an empty sequence is allowed.</param>
+    /// <exception cref="ArgumentException"><paramref name="status"/> is <see cref="MatchStatus.Unknown"/> and <paramref name="diagnostics"/> is null or empty.</exception>
     public MatchResult(
         MatchStatus status,
         IEnumerable<AspectNDiagnostic>? diagnostics = null)
@@ -51,8 +52,10 @@ public sealed class MatchResult
     public static MatchResult NotMatched => _NotMatched;
 
     /// <summary>Creates an unknown result with the supplied diagnostics.</summary>
-    /// <param name="diagnostics">Diagnostics explaining why the matching state is unknown.</param>
+    /// <param name="diagnostics">At least one diagnostic explaining why the matching state is unknown.</param>
     /// <returns>An Unknown result carrying a normalized snapshot of the supplied diagnostics.</returns>
+    /// <remarks>A parameterless call is permitted by the params parameter but throws <see cref="ArgumentException"/> at run time.</remarks>
+    /// <exception cref="ArgumentException"><paramref name="diagnostics"/> is null or empty, including when no arguments are supplied.</exception>
     public static MatchResult Unknown(params AspectNDiagnostic[] diagnostics)
     {
         return new MatchResult(MatchStatus.Unknown, diagnostics);

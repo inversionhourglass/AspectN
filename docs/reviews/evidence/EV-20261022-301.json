@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "id": "EV-20261022-301",
+  "method": "automated",
+  "scenario_refs": [
+    {
+      "scenario_id": "S3",
+      "capability_id": "CROSS-LOGIC-001"
+    }
+  ],
+  "oracle_refs": [
+    {
+      "path": "docs/reviews/2026-10-22-rm02-unknown-diagnostic-contract.md",
+      "section": "维护者裁决与范围"
+    }
+  ],
+  "procedure": "dotnet test tests/AspectN.Tests/AspectN.Tests.csproj -c Release --no-restore -m:1 -nr:false -p:UseSharedCompilation=false --filter 'FullyQualifiedName~MatchResultTests|FullyQualifiedName~TypeRelationResultTests|FullyQualifiedName~MatchLogicTests|FullyQualifiedName~MetadataContractTests' --logger 'trx;LogFileName=rm02-contracts.trx' --results-directory artifacts/rm02/contracts -v:minimal",
+  "result": "passed",
+  "recorded_on": "2026-10-22",
+  "environment": {
+    "notes": "55项聚焦回归通过，其中S3新增18项；修改XML前18项亦通过。只记录中立结果构造约束，不证明所有后端或所有诊断集合输入。",
+    "execution_target": "net10.0",
+    "os": "Windows",
+    "runtime": "10.0.12",
+    "sdk": "10.0.401"
+  },
+  "code_state": {
+    "files": [
+      {
+        "path": "src/AspectN/Evaluation/MatchResult.cs",
+        "sha256": "eb98d00df5e764bdced62329e2e37d1e59dbf825b9f98df6e3d84553fd87002d"
+      },
+      {
+        "path": "src/AspectN/TypeSystem/TypeRelationResult.cs",
+        "sha256": "c426c95800dc909a51ae071c41128640beb4b6abd78e3058cb163b3288ee2107"
+      },
+      {
+        "path": "src/AspectN/Diagnostics/DiagnosticSnapshot.cs",
+        "sha256": "3d96df5a02fed67e0b3c5d19b14d8b2a01d3e3884f2d80e57fc909ba6a03a6a9"
+      },
+      {
+        "path": "src/AspectN/Evaluation/MatchStatus.cs",
+        "sha256": "fa51b9544dacc5b252d715bb653dd260347851036d99297f6c37b756c189f262"
+      },
+      {
+        "path": "tests/AspectN.Tests/Evaluation/MatchResultTests.cs",
+        "sha256": "dbf81d17182312546eb34de0f59183e0616520e5d6b04b8f7e3c3039c980b044"
+      },
+      {
+        "path": "tests/AspectN.Tests/TypeSystem/TypeRelationResultTests.cs",
+        "sha256": "6234defa387643cf70fdf80cb7ddce1c185043419466227de84a74a09d1004c4"
+      },
+      {
+        "path": "tests/AspectN.Tests/Evaluation/MatchLogicTests.cs",
+        "sha256": "df5f86056e83812d99a58e0f08a3715d64358cd13ad8086e58e82a01d926090f"
+      },
+      {
+        "path": "tests/AspectN.Tests/Metadata/MetadataContractTests.cs",
+        "sha256": "2573ce04a527bbad709f8c6af7b06baccc76a64ec1dd9fe10b28b4079a256fc1"
+      },
+      {
+        "path": "tests/AspectN.Tests/AspectN.Tests.csproj",
+        "sha256": "3843c220293ff07b304dfcb8db2ccb82e57d423ac384ade1080a479fc2699b28"
+      },
+      {
+        "path": "Directory.Packages.props",
+        "sha256": "a0df07b7d4df78415d87666c16e30c665d285d0e39ed9d300c52aeb7a3837c9a"
+      },
+      {
+        "path": "Directory.Build.props",
+        "sha256": "21511672e6680b86521f1d2d275e9fe2d914092073007c8be353f3202c38115a"
+      }
+    ],
+    "head": "0f493eb556f6ccc6901d1a6cb8b61adb0fc2e2ab",
+    "dirty": true
+  },
+  "dependency_scope": {
+    "environment_keys": [
+      "os",
+      "sdk",
+      "runtime",
+      "execution_target"
+    ],
+    "paths": [
+      "src/AspectN/Evaluation/MatchResult.cs",
+      "src/AspectN/TypeSystem/TypeRelationResult.cs",
+      "src/AspectN/Diagnostics/DiagnosticSnapshot.cs",
+      "src/AspectN/Evaluation/MatchStatus.cs",
+      "tests/AspectN.Tests/Evaluation/MatchResultTests.cs",
+      "tests/AspectN.Tests/TypeSystem/TypeRelationResultTests.cs",
+      "tests/AspectN.Tests/Evaluation/MatchLogicTests.cs",
+      "tests/AspectN.Tests/Metadata/MetadataContractTests.cs",
+      "tests/AspectN.Tests/AspectN.Tests.csproj",
+      "Directory.Packages.props",
+      "Directory.Build.props"
+    ]
+  },
+  "revalidation_conditions": "结果构造器、工厂、诊断快照归一化、异常契约、测试、构建配置或运行环境变化时重验。XML修订不改变S1/S2或历史产品证据的语义适用范围。"
+}
