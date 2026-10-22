@@ -47,7 +47,7 @@
 
 | 能力 | 范围入口 | 场景数 |
 | --- | --- | --- |
-| [SYN-GRAMMAR-001](../capabilities/syntax/SYN-GRAMMAR-001.md) | 词法、邻接、入口与编译诊断 | 3 |
+| [SYN-GRAMMAR-001](../capabilities/syntax/SYN-GRAMMAR-001.md) | 词法、邻接、入口与编译诊断 | 4 |
 
 ## 绑定与匹配
 

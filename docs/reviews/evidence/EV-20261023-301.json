@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "id": "EV-20261023-301",
+  "method": "automated",
+  "scenario_refs": [
+    {
+      "capability_id": "SYN-GRAMMAR-001",
+      "scenario_id": "S1"
+    },
+    {
+      "capability_id": "SYN-GRAMMAR-001",
+      "scenario_id": "S2"
+    },
+    {
+      "capability_id": "SYN-GRAMMAR-001",
+      "scenario_id": "S4"
+    }
+  ],
+  "oracle_refs": [
+    {
+      "section": "21",
+      "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md"
+    },
+    {
+      "section": "维护者裁决与范围",
+      "path": "docs/reviews/2026-10-23-rm03-trailing-input-diagnostics.md"
+    }
+  ],
+  "procedure": "先以ParserRecoveryTests聚焦过滤验证红阶段（28项，12失败/16通过），实施后同过滤28项全通过；随后执行 dotnet test tests/AspectN.Tests/AspectN.Tests.csproj -c Release --no-build --no-restore --logger 'trx;LogFileName=rm03-core.trx' --results-directory artifacts/rm03/core -v:minimal，1303项通过。红/绿构建使用 --no-restore -m:1 -nr:false -p:UseSharedCompilation=false，结果在artifacts/rm03/red和green。",
+  "result": "passed",
+  "recorded_on": "2026-10-23",
+  "environment": {
+    "notes": "新增17项；完整核心1303项通过，未运行其他后端矩阵或独立边界示例项目。取消仅实测预先取消，不声称扫描中时序覆盖。",
+    "execution_target": "net10.0",
+    "sdk": "10.0.401",
+    "build_targets": [
+      "netstandard2.0",
+      "net10.0"
+    ],
+    "runtime": "10.0.12",
+    "os": "Windows"
+  },
+  "code_state": {
+    "dirty": true,
+    "head": "2f87b92de82fbb088b0429a1be8c18746ec16b5a",
+    "files": [
+      {
+        "path": "src/AspectN/Parsing/Parser.cs",
+        "sha256": "b2e6befca666ec6b1dfb0b9439d11eb18554e37e6200149af4dca6009caaf129"
+      },
+      {
+        "path": "src/AspectN/Parsing/Parser.Selectors.cs",
+        "sha256": "0faf5a7259e0cf03f4bdb1aa416bc503ea40db45ee925355322f6dcaa2523c50"
+      },
+      {
+        "path": "src/AspectN/Parsing/Lexer.cs",
+        "sha256": "ddf9b9581066e111b0163677add4eeedaec220019d214fe58e01326d8700db32"
+      },
+      {
+        "path": "src/AspectN/Parsing/ParseContext.cs",
+        "sha256": "8535a0c1c92da82fd64369a0d5d291ff76f2b299bf456a115171971f913f5d83"
+      },
+      {
+        "path": "src/AspectN/Diagnostics/DiagnosticBag.cs",
+        "sha256": "605b69ed9c90c2c11545db9419a64e5381cd9719db68f781aa009f0c7e8b3f7f"
+      },
+      {
+        "path": "src/AspectN/Diagnostics/DiagnosticSnapshot.cs",
+        "sha256": "3d96df5a02fed67e0b3c5d19b14d8b2a01d3e3884f2d80e57fc909ba6a03a6a9"
+      },
+      {
+        "path": "src/AspectN/AspectNParseOptions.cs",
+        "sha256": "63d752311307afb08017eecdd0a6871d64f3a61bd913ebd1a827431316ffe188"
+      },
+      {
+        "path": "tests/AspectN.Tests/Parsing/ParserRecoveryTests.cs",
+        "sha256": "b51fdad69b4d41f444282b7c100b8e59089ef3956f46daf7cb9d7980f18769bd"
+      },
+      {
+        "path": "tests/AspectN.Tests/AspectN.Tests.csproj",
+        "sha256": "3843c220293ff07b304dfcb8db2ccb82e57d423ac384ade1080a479fc2699b28"
+      },
+      {
+        "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+        "sha256": "cd394c152e10a687ce140f401b4e9bbd4ba5a6b1c2b72c29b601f0211cff916d"
+      },
+      {
+        "path": "Directory.Build.props",
+        "sha256": "21511672e6680b86521f1d2d275e9fe2d914092073007c8be353f3202c38115a"
+      },
+      {
+        "path": "Directory.Packages.props",
+        "sha256": "a0df07b7d4df78415d87666c16e30c665d285d0e39ed9d300c52aeb7a3837c9a"
+      }
+    ]
+  },
+  "dependency_scope": {
+    "environment_keys": [
+      "os",
+      "sdk",
+      "runtime",
+      "execution_target"
+    ],
+    "paths": [
+      "src/AspectN/Parsing/Parser.cs",
+      "src/AspectN/Parsing/Parser.Selectors.cs",
+      "src/AspectN/Parsing/Lexer.cs",
+      "src/AspectN/Parsing/ParseContext.cs",
+      "src/AspectN/Diagnostics/DiagnosticBag.cs",
+      "src/AspectN/Diagnostics/DiagnosticSnapshot.cs",
+      "src/AspectN/AspectNParseOptions.cs",
+      "tests/AspectN.Tests/Parsing/ParserRecoveryTests.cs",
+      "tests/AspectN.Tests/AspectN.Tests.csproj",
+      "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+      "Directory.Build.props",
+      "Directory.Packages.props"
+    ]
+  },
+  "revalidation_conditions": "尾部恢复、词法器、诊断归一化、资源计量、取消、语法/绑定规则、核心回归或运行环境变化时重验。历史报告保留原输出；本轮不证明任意恢复路径、后端行为或扫描中取消时序。"
+}

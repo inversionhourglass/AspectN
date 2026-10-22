@@ -33,11 +33,7 @@ internal sealed partial class Parser
         try
         {
             root = WorkStack.Run(ParseExpressionWork(), Context.CancellationToken);
-            while (Current.Kind != SyntaxKind.EndOfFileToken)
-            {
-                ReportUnexpected(Current, "end of input");
-                NextToken();
-            }
+            ReportTrailingInput();
         }
         catch (ParseLimitException exception)
         {
@@ -58,6 +54,31 @@ internal sealed partial class Parser
             AspectNParseKind.MemberExpression,
             root,
             GetDiagnostics(), Context.Options, Context.CancellationToken);
+    }
+
+    private void ReportTrailingInput()
+    {
+        if (Current.Kind == SyntaxKind.EndOfFileToken) return;
+
+        var start = Current.Span.Start;
+        var end = Current.Span.End;
+        try
+        {
+            while (Current.Kind != SyntaxKind.EndOfFileToken)
+            {
+                end = Current.Span.End;
+                NextToken();
+            }
+        }
+        finally
+        {
+            // 扫描仍消费词法预算；即使中途超限，也保留已扫描尾部的错误位置。
+            _diagnostics.Add(
+                DiagnosticCodes.UnexpectedToken,
+                DiagnosticSeverity.Error,
+                "Unexpected trailing input after the member expression.",
+                new TextSpan(start, end - start));
+        }
     }
 
     private async StackWork<ExpressionSyntax> ParseExpressionWork(int parentPrecedence = 0)

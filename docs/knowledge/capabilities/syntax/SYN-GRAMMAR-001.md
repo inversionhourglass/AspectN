@@ -37,7 +37,8 @@
         "EV-20261014-001",
         "EV-20261020-003",
         "EV-20261022-201",
-        "EV-20261022-202"
+        "EV-20261022-202",
+        "EV-20261023-301"
       ],
       "unverified_notes": ""
     },
@@ -56,7 +57,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-001",
-        "EV-20261022-201"
+        "EV-20261022-201",
+        "EV-20261023-301"
       ],
       "unverified_notes": "",
       "exclusion": {
@@ -100,6 +102,24 @@
         ],
         "failure_behavior": "编译失败且有诊断；不固定全部具体码"
       }
+    },
+    {
+      "id": "S4",
+      "adapter": "core",
+      "input_mode": "neutral",
+      "entry_point": "AspectNParser.ParseMemberExpression / AspectNCompilation.Create",
+      "conditions": "ParserRecoveryTests 的尾部多token、标点、空白/换行、UTF-16、词法错误、缺失项、Boolean根、token/节点预算和预先取消对照",
+      "target": "working-tree",
+      "expected_behavior": "连续尾部仅一条AN1001并覆盖token区域；缺失项和词法诊断独立保留；扫描仍计量并响应取消；错误编译无有效模式",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated"
+      ],
+      "evidence_ids": [
+        "EV-20261023-301"
+      ],
+      "unverified_notes": "仅覆盖成员表达式根后的尾部恢复；不证明任意语法错误恢复、所有词法输入或扫描中的取消时序。"
     }
   ],
   "invariant_checks": [
@@ -187,6 +207,8 @@ Lexer 保留跨度、记号和附属文本，Parser 构建不可变树，Binder 
 
 未知选择器 AN2001；空白分开的 `! ref` 为 AN2005；非法泛型位置 AN2011；深度保护 AN1002。诊断可多个并存，不要求第一条覆盖全部原因。
 
+成员表达式根之后的连续尾部只报告一条 AN1001，跨度覆盖首个到最后一个剩余 token，包含中间空白并排除首尾空白。词法错误和缺失语法项分别保留；扫描中止时保留已扫描区域与限制诊断，不跳过 token/节点计量或吞取消。S4 的 [RM-03 记录](../../../reviews/2026-10-23-rm03-trailing-input-diagnostics.md)说明批准范围与当前证据。
+
 ## 例子与边界
 
 ```csharp
@@ -217,3 +239,5 @@ S1 的修饰符边界回归见 [ModifierBoundaryTests](../../../../tests/AspectN
 2026-10-22资源配置变更按[实施审查](../../../reviews/2026-10-22-configurable-resource-limits.md)重评当前证据。历史报告不改写；新增配置的范围由CROSS-RESOURCES-001/S9—S15区分。INVCANCEL改为applicable，其余三项纯语法N/A由非作者/root/options_review于2026-10-22重新确认；理由见元数据。没有从缺少某后端场景推断排除。
 
 本轮入口增加CancellationToken后，ParseAndCompile_PreCanceled_PrioritizeCancellationOverSourceLimit覆盖两种解析/编译入口及既有树编译的取消优先；旧C03/RI-03记录保留各自当时的变更范围，不代表本轮入口仍无取消。
+
+2026-10-23 RM-03 改变尾部诊断的数量、消息和跨度；旧报告保留历史输出，不能用来证明新的呈现规则。S1/S2 由本轮核心完整测试重验，S4 单独记录新增恢复规则。S3 的 DSL 排除与“错误编译不能取得模式”未改变；本轮没有重跑独立边界示例项目，不扩大其旧证据范围。既有三项 N/A 条件和取消适用性不变，本轮仍不调用后端或消费匹配结果。

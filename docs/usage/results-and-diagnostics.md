@@ -4,6 +4,7 @@
 {
   "schema_version": 1,
   "capability_ids": [
+    "SYN-GRAMMAR-001",
     "CROSS-AVAILABILITY-001",
     "CROSS-LOGIC-001",
     "USE-REF-001",
@@ -35,6 +36,12 @@ var diagnostic = new AspectN.Diagnostics.AspectNDiagnostic(
     "Required relationship metadata is unavailable.");
 var result = AspectN.TypeSystem.TypeRelationResult.Unknown(diagnostic);
 ```
+
+## 解析错误的呈现
+
+成员表达式之后多余的连续输入按一个错误区域报告。例如 `method(* Run(..)) a b c d` 产生一条 AN1001，跨度覆盖 `a b c d`，不包含首尾空白；编译仍然失败。中间的空白、换行按原始 UTF-16 跨度包含在这个区域中。
+
+这只合并根表达式之后的尾部恢复提示。`method(` 缺少类型模式、名称模式和括号的不同消息继续保留；尾部的非法字符、未闭合字符串等词法错误也独立保留。尾部扫描仍消费 token 和节点额度，资源耗尽会停止扫描并保留已扫描部分的尾部错误和 AN1003；取消继续抛 OperationCanceledException。该规则不按诊断位置统一去重，详见[语法与恢复场景](../knowledge/capabilities/syntax/SYN-GRAMMAR-001.md)。
 
 ## 缺失信息如何影响结果
 
