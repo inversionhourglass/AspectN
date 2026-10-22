@@ -218,6 +218,8 @@ internal sealed class CecilMappingOperation
             methodReference.Name,
             kind,
             CecilAccessibility.ForMethod(definition),
+            // 方法引用签名的 HasThis 表示是否带隐式 this；定义无法解析时，
+            // 仍可据此确定静态性，无需将 IsStatic 标记为不可用。
             definition?.IsStatic ?? !methodReference.HasThis,
             isAsync,
             MapType(methodReference.DeclaringType),

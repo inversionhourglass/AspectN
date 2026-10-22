@@ -15,7 +15,7 @@
     <_AspectNProductionParent>$([System.IO.Path]::GetDirectoryName('$(MSBuildProjectDirectory)'))</_AspectNProductionParent>
     <_AspectNSourceDirectory>$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', 'src'))</_AspectNSourceDirectory>
   </PropertyGroup>
-  <!-- All production libraries live directly under src; these defaults must precede SDK documentation-path evaluation. -->
+  <!-- 生产库均位于 src 的直接子目录；这些默认值必须在 SDK 计算文档输出路径之前设置。 -->
   <PropertyGroup Condition="'$(_AspectNProductionParent)' == '$(_AspectNSourceDirectory)'">
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IncludeSymbols>true</IncludeSymbols>
