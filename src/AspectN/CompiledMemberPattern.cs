@@ -21,8 +21,11 @@ public sealed class CompiledMemberPattern : CompiledPattern
     /// <summary>Evaluates the candidate using the supplied backend and cancellation token.</summary>
     /// <param name="candidate">Backend-neutral candidate signature.</param>
     /// <param name="typeSystem">Backend providing metadata queries and declared type relationships.</param>
-    /// <param name="cancellationToken">Specifies the cancellation token.</param>
-    /// <returns>Matched, NotMatched, or Unknown with diagnostics when required facts are unavailable or a Capture binding budget is exhausted.</returns>
+    /// <param name="cancellationToken">Cancels this evaluation independently of other uses of the compiled pattern.</param>
+    /// <returns>Matched, NotMatched, or Unknown with diagnostics when required facts are unavailable or a structural, work, relation, attribute, text, or Capture limit prevents a decision.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="candidate"/> or <paramref name="typeSystem"/> is null.</exception>
+    /// <exception cref="OperationCanceledException">Cancellation is requested.</exception>
+    /// <remarks>Uses Options.MatchOptions fixed at compilation, with a fresh budget for this call. All branches and built-in queries share its quotas. AN3007/AN3008 abort the whole operation; a successful OR branch cannot mask exhaustion. Structural AN3005/AN3006 and regex timeout AN3003 retain local three-state behavior. Mapping limits remain attached to the backend.</remarks>
     public MatchResult Match(
         MethodSignature candidate,
         ITypeSystem typeSystem,
@@ -39,17 +42,21 @@ public sealed class CompiledMemberPattern : CompiledPattern
 #endif
 
         cancellationToken.ThrowIfCancellationRequested();
-        var failure = MetadataLimitGuard.GetFailure(candidate, cancellationToken);
-        if (failure is not null) return MatchResult.Unknown(failure);
         var context = new EvaluationContext(
-            typeSystem,
-            Options,
-            cancellationToken,
-            method: candidate);
+                    typeSystem,
+                    Options,
+                    cancellationToken,
+                    method: candidate);
         try
         {
+            var failure = MetadataLimitGuard.GetFailure(candidate, context.QueryContext);
+            if (failure is not null) return MatchResult.Unknown(failure);
             var status = MemberPatternEvaluator.Evaluate(_root, candidate, context);
             return context.CreateResult(status);
+        }
+        catch (AspectNLimitException exhausted)
+        {
+            return context.CreateResourceResult(exhausted);
         }
         catch (BindingBudgetExceededException exhausted)
         {

@@ -23,9 +23,9 @@ internal sealed class StubTypeSystem : ITypeSystem
         InheritanceClosure>? Closure
     { get; init; }
 
-    public TypeRelationResult AreEqual(TypeSignature left, TypeSignature right)
+    public TypeRelationResult AreEqual(TypeSignature left, TypeSignature right, CancellationToken cancellationToken = default)
     {
-        return StructuralTypeComparer.AreEqual(left, right);
+        return StructuralTypeComparer.AreEqual(left, right, cancellationToken: cancellationToken);
     }
 
     public TypeRelationResult IsAssignableTo(
@@ -39,7 +39,7 @@ internal sealed class StubTypeSystem : ITypeSystem
             return Assignability(candidate, target, cancellationToken);
         }
 
-        return StructuralTypeComparer.AreEqual(candidate, target);
+        return StructuralTypeComparer.AreEqual(candidate, target, cancellationToken: cancellationToken);
     }
 
     public TypeRelationResult HasDirectAttribute(

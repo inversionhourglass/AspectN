@@ -14,7 +14,7 @@ internal sealed partial class Parser
         {
             // 错误恢复用的括号配对只扫描一次，避免多处缺括号时重复扫描后缀。
             _matchedOpenParens = new HashSet<int>();
-            var lexer = new Lexer(_source);
+            var lexer = new Lexer(_source, Context);
             var opens = new Stack<int>();
             while (true)
             {
@@ -85,7 +85,7 @@ internal sealed partial class Parser
 
     internal Lexer CreateLookaheadLexer()
     {
-        var lexer = new Lexer(_source);
+        var lexer = new Lexer(_source, Context);
         lexer.Reset(Current.Span.Start);
         return lexer;
     }

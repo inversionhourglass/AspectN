@@ -61,11 +61,12 @@ Check(MatchType("System.Collections.Generic.List<?>", typeof(List<int>)) == Matc
 // 默认变量引用自身声明槽位；具体类型捕获需要显式选择 Capture。
 Check(MatchType("List<$T>", typeof(List<>)) == MatchStatus.Matched, "声明槽位变量");
 Check(MatchType("List<$T>", typeof(List<int>)) == MatchStatus.NotMatched, "默认变量拒绝具体实参");
-var captureOptions = new AspectNCompilationOptions(null, GenericVariableMode.Capture);
-Check(engine.CompileTypePattern("List<$T>", captureOptions).TryGetTypePattern(out var capturePattern), "显式编译 Capture");
+var captureOptions = new AspectNCompilationOptions(GenericVariableMode.Capture);
+Check(engine.CompileTypePattern("List<$T>", compilationOptions: captureOptions).TryGetTypePattern(out var capturePattern), "显式编译 Capture");
 Check(capturePattern!.Match(typeSystem.Mapper.MapType(typeof(List<int>)), typeSystem).Status == MatchStatus.Matched, "Capture 捕获具体实参");
-var limitedOptions = new AspectNCompilationOptions(null, GenericVariableMode.Capture, maximumBindingAlternatives: 1);
-Check(engine.CompileTypePattern("List<$L> || List<$R>", limitedOptions).TryGetTypePattern(out var limitedPattern), "编译有限捕获模式");
+var limitedOptions = new AspectNCompilationOptions(GenericVariableMode.Capture,
+    new AspectNMatchOptions(maximumBindingAlternatives: ResourceLimit.Finite(1)));
+Check(engine.CompileTypePattern("List<$L> || List<$R>", compilationOptions: limitedOptions).TryGetTypePattern(out var limitedPattern), "编译有限捕获模式");
 var limitedResult = limitedPattern!.Match(typeSystem.Mapper.MapType(typeof(List<int>)), typeSystem);
 Check(limitedResult.Status == MatchStatus.Unknown && limitedResult.Diagnostics.Any(item => item.Code == "AN3007"), "捕获预算耗尽");
 

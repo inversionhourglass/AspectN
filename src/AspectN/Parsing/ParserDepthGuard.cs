@@ -2,15 +2,14 @@ using AspectN.Text;
 
 namespace AspectN.Parsing;
 
-internal sealed class ParserDepthGuard
+internal sealed class ParserDepthGuard(ParseContext context)
 {
-    internal const int MAXIMUM_RECURSION = 128;
-    internal const int MAXIMUM_SYNTAX_DEPTH = 256;
-    private int _depth;
+    private long _depth;
 
     public Scope Enter(TextSpan span)
     {
-        if (_depth >= MAXIMUM_RECURSION) throw new ParserDepthException(span);
+        context.CancellationToken.ThrowIfCancellationRequested();
+        if (context.Options.MaximumParserDepth.ExceededBy(_depth + 1)) throw new ParserDepthException(span);
         _depth++;
         return new Scope(this);
     }

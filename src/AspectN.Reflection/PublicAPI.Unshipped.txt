@@ -1,14 +1,17 @@
 #nullable enable
+AspectN.Reflection.ReflectionSignatureMapper.MapMethod(System.Reflection.MethodBase! method, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.Metadata.MethodSignature!
+AspectN.Reflection.ReflectionSignatureMapper.MapProperty(System.Reflection.PropertyInfo! property, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.Metadata.PropertySignature!
+AspectN.Reflection.ReflectionSignatureMapper.MapType(System.Type! type, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.Metadata.TypeSignature!
+AspectN.Reflection.ReflectionSignatureMapper.MapTypeUse(System.Type! type, AspectN.Metadata.TypeUseKind useKind, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.Metadata.TypeUseSignature!
+AspectN.Reflection.ReflectionSignatureMapper.Options.get -> AspectN.AspectNMappingOptions!
+AspectN.Reflection.ReflectionSignatureMapper.ReflectionSignatureMapper(AspectN.AspectNMappingOptions? options = null) -> void
+AspectN.Reflection.ReflectionTypeSystem.AreEqual(AspectN.Metadata.TypeSignature! left, AspectN.Metadata.TypeSignature! right, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.TypeSystem.TypeRelationResult!
 AspectN.Reflection.ReflectionSignatureMapper
-AspectN.Reflection.ReflectionSignatureMapper.MapMethod(System.Reflection.MethodBase! method) -> AspectN.Metadata.MethodSignature!
-AspectN.Reflection.ReflectionSignatureMapper.MapProperty(System.Reflection.PropertyInfo! property) -> AspectN.Metadata.PropertySignature!
-AspectN.Reflection.ReflectionSignatureMapper.MapType(System.Type! type) -> AspectN.Metadata.TypeSignature!
-AspectN.Reflection.ReflectionSignatureMapper.MapTypeUse(System.Type! type, AspectN.Metadata.TypeUseKind useKind) -> AspectN.Metadata.TypeUseSignature!
 AspectN.Reflection.ReflectionTypeSystem
-AspectN.Reflection.ReflectionTypeSystem.AreEqual(AspectN.Metadata.TypeSignature! left, AspectN.Metadata.TypeSignature! right) -> AspectN.TypeSystem.TypeRelationResult!
 AspectN.Reflection.ReflectionTypeSystem.Capabilities.get -> AspectN.TypeSystem.TypeSystemCapabilities
 AspectN.Reflection.ReflectionTypeSystem.HasDirectAttribute(AspectN.TypeSystem.AttributeTarget! target, AspectN.Metadata.TypeSignature! attributeType, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.TypeSystem.TypeRelationResult!
 AspectN.Reflection.ReflectionTypeSystem.IsAssignableTo(AspectN.Metadata.TypeSignature! candidate, AspectN.Metadata.TypeSignature! target, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.TypeSystem.TypeRelationResult!
 AspectN.Reflection.ReflectionTypeSystem.Mapper.get -> AspectN.Reflection.ReflectionSignatureMapper!
-AspectN.Reflection.ReflectionTypeSystem.ReflectionTypeSystem() -> void
 AspectN.Reflection.ReflectionTypeSystem.GetInheritanceClosure(AspectN.Metadata.TypeSignature! candidate, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.TypeSystem.InheritanceClosure!
+AspectN.Reflection.ReflectionTypeSystem.ReflectionTypeSystem(AspectN.AspectNMappingOptions? mappingOptions = null, AspectN.AspectNMatchOptions? queryOptions = null) -> void
+AspectN.Reflection.ReflectionTypeSystem.QueryOptions.get -> AspectN.AspectNMatchOptions!

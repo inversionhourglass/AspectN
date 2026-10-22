@@ -19,7 +19,6 @@
     <Compile Include="..\Shared\ArrayRelations.cs" Link="Internal\ArrayRelations.cs" />
     <Compile Include="..\Shared\FunctionPointerConventions.cs" Link="Internal\FunctionPointerConventions.cs" />
     <Compile Include="..\Shared\GenericOwnerIdentity.cs" Link="Internal\GenericOwnerIdentity.cs" />
-    <Compile Include="..\Shared\UnqualifiedStructuralComparer.cs" Link="Internal\UnqualifiedStructuralComparer.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Mono.Cecil" />

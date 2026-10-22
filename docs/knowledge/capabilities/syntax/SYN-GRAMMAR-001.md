@@ -12,6 +12,10 @@
     {
       "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
       "section": "3 / 4 / 16 / 17 / 21"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-10-22-configurable-resource-limits-design.md",
+      "section": "2—6；仅资源策略与公开入口"
     }
   ],
   "scenarios": [
@@ -20,17 +24,20 @@
       "adapter": "core",
       "input_mode": "neutral",
       "entry_point": "AspectNParser / AspectNEngine.Compile*",
-      "conditions": "Lexer/LexerLiteral、SelectorParser、TypePatternParser、ParserRecovery及ModifierBoundaryTests的已执行输入；包含修饰符/连续类型名称、否定、复合权限与备选后的类型槽；仅核心解析与绑定",
+      "conditions": "Lexer/LexerLiteral、SelectorParser、TypePatternParser、ParserRecovery及ModifierBoundaryTests的已执行输入；包含修饰符/连续类型名称、否定、复合权限与备选后的类型槽；仅核心解析与绑定；ResourceContractTests两种Parse/Compile预先取消优先于源码超限",
       "target": "working-tree",
       "expected_behavior": "关键字和名称区分大小写；邻接规则保留；恢复给诊断但不能把有错误编译当作有效模式",
       "contract_status": "supported",
       "verification_status": "verified",
       "verification_methods": [
-        "automated"
+        "automated",
+        "manual"
       ],
       "evidence_ids": [
         "EV-20261014-001",
-        "EV-20261020-003"
+        "EV-20261020-003",
+        "EV-20261022-201",
+        "EV-20261022-202"
       ],
       "unverified_notes": ""
     },
@@ -48,7 +55,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-001"
+        "EV-20261014-001",
+        "EV-20261022-201"
       ],
       "unverified_notes": "",
       "exclusion": {
@@ -77,7 +85,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-009"
+        "EV-20261014-009",
+        "EV-20261022-201"
       ],
       "unverified_notes": "",
       "exclusion": {
@@ -103,8 +112,8 @@
       },
       "reason": "选定入口只解析和绑定源码，返回编译诊断，不消费 MatchStatus/MatchResult",
       "review_status": "confirmed",
-      "reviewer": "/root/documentation_pilot_review",
-      "reviewed_on": "2026-10-13"
+      "reviewer": "/root/options_review",
+      "reviewed_on": "2026-10-22"
     },
     {
       "invariant_id": "INVPARITY",
@@ -115,8 +124,8 @@
       },
       "reason": "选定入口为单一核心语法，不比较多个后端映射或关系",
       "review_status": "confirmed",
-      "reviewer": "/root/documentation_pilot_review",
-      "reviewed_on": "2026-10-13"
+      "reviewer": "/root/options_review",
+      "reviewed_on": "2026-10-22"
     },
     {
       "invariant_id": "INVMISSING",
@@ -127,20 +136,20 @@
       },
       "reason": "词法/解析/绑定不读取候选元数据；缺失输入记号不是不可用元数据",
       "review_status": "confirmed",
-      "reviewer": "/root/documentation_pilot_review",
-      "reviewed_on": "2026-10-13"
+      "reviewer": "/root/options_review",
+      "reviewed_on": "2026-10-22"
     },
     {
       "invariant_id": "INVCANCEL",
-      "applicability": "not_applicable",
+      "applicability": "applicable",
       "condition_ref": {
         "path": "docs/knowledge/profiles.json",
         "section": "invariants/INVCANCEL"
       },
-      "reason": "所选 Parse/Compile 入口没有 CancellationToken；匹配入口另由横向契约治理",
+      "reason": "Parse/Compile公开入口现声明CancellationToken，取消穿过解析、绑定和缓存；符合profile条件，旧无令牌N/A理由不再成立。",
       "review_status": "confirmed",
-      "reviewer": "/root/documentation_pilot_review",
-      "reviewed_on": "2026-10-13"
+      "reviewer": "/root/options_review",
+      "reviewed_on": "2026-10-22"
     }
   ],
   "relations": [
@@ -150,7 +159,9 @@
     }
   ],
   "open_findings": [],
-  "related_findings": ["FND-20261020-003"]
+  "related_findings": [
+    "FND-20261020-003"
+  ]
 }
 -->
 
@@ -195,8 +206,14 @@ var invalid = engine.CompileMemberExpression("vendor.select(*)");
 
 [解析测试](../../../../tests/AspectN.Tests/Parsing/SelectorParserTests.cs)、[封闭语言测试](../../../../tests/AspectN.Tests/Binding/ClosedLanguageTests.cs)及[边界示例](../../../usage/examples/MatchingBoundaries/Program.cs)。场景证据只证明已执行输入，不证明任意恢复路径都完成审查。
 
-S1 的修饰符边界回归见 [ModifierBoundaryTests](../../../../tests/AspectN.Tests/Parsing/ModifierBoundaryTests.cs)。[C03 修复记录](../../../reviews/2026-10-20-c03-modifier-boundaries.md)另列真实后端匹配对照，其通过不扩大本条目只覆盖解析/绑定的入口范围或四项 N/A；[Finding](../../../reviews/findings/FND-20261020-003.md)记录原始误解析及修复。
+S1 的修饰符边界回归见 [ModifierBoundaryTests](../../../../tests/AspectN.Tests/Parsing/ModifierBoundaryTests.cs)。[C03 修复记录](../../../reviews/2026-10-20-c03-modifier-boundaries.md)另列真实后端匹配对照，其通过不扩大本条目只覆盖解析/绑定的入口范围或当时四项 N/A；[Finding](../../../reviews/findings/FND-20261020-003.md)记录原始误解析及修复。
+
+[RI-03](../../../reviews/2026-10-22-ri03-fuzz-host-timeout.md)调整解析 fuzz 的测试防线：不再按单个样本的一秒墙钟时间判定失败，由核心测试项目的 VSTest 配置提供 60 秒宿主级挂起保护，保留文本长度和诊断跨度检查。该工程验证登记于盘点 `INV-0019`；该项工程调整本身不改变本条目 S1—S3 的语言契约、验证状态或当时 N/A，也不把有限随机样本解释为全部输入的终止证明。RI-03自身未改变用户解析配置或生产行为；本轮资源配置另按下文重评。
 
 ## 关联与缺口
 
-此条目不验证后端或匹配三态。编译入口的四项 N/A 已由非作者按入口核验；不借此豁免完整匹配流程。变量语义依 GEN-BINDING-001。
+此条目不验证后端或匹配三态。编译入口的三项 N/A 已由非作者按入口核验；不借此豁免完整匹配流程。变量语义依 GEN-BINDING-001。
+
+2026-10-22资源配置变更按[实施审查](../../../reviews/2026-10-22-configurable-resource-limits.md)重评当前证据。历史报告不改写；新增配置的范围由CROSS-RESOURCES-001/S9—S15区分。INVCANCEL改为applicable，其余三项纯语法N/A由非作者/root/options_review于2026-10-22重新确认；理由见元数据。没有从缺少某后端场景推断排除。
+
+本轮入口增加CancellationToken后，ParseAndCompile_PreCanceled_PrioritizeCancellationOverSourceLimit覆盖两种解析/编译入口及既有树编译的取消优先；旧C03/RI-03记录保留各自当时的变更范围，不代表本轮入口仍无取消。

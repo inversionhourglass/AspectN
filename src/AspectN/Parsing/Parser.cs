@@ -1,3 +1,4 @@
+using AspectN.Execution;
 using AspectN.Diagnostics;
 using AspectN.Syntax;
 using AspectN.Text;
@@ -11,45 +12,55 @@ internal sealed partial class Parser
     private readonly SourceText _source;
     private SyntaxToken _current;
 
-    public Parser(SourceText source)
+    internal ParseContext Context { get; }
+
+    public Parser(SourceText source, AspectNParseOptions? options = null, CancellationToken cancellationToken = default)
     {
         _source = source;
-        _lexer = new Lexer(source);
+        Context = new ParseContext(options ?? new AspectNParseOptions(), cancellationToken);
+        DepthGuard = new ParserDepthGuard(Context);
+        _lexer = new Lexer(source, Context);
         _current = _lexer.Lex();
     }
 
     private SyntaxToken Current => _current;
 
-    internal ParserDepthGuard DepthGuard { get; } = new();
+    internal ParserDepthGuard DepthGuard { get; }
 
     public AspectNSyntaxTree ParseMemberExpression()
     {
         ExpressionSyntax root;
         try
         {
-            root = ParseExpression();
+            root = WorkStack.Run(ParseExpressionWork(), Context.CancellationToken);
+            while (Current.Kind != SyntaxKind.EndOfFileToken)
+            {
+                ReportUnexpected(Current, "end of input");
+                NextToken();
+            }
+        }
+        catch (ParseLimitException exception)
+        {
+            Context.Stop();
+            _diagnostics.Add(exception.Diagnostic.Code, exception.Diagnostic.Severity, exception.Diagnostic.Message, exception.Diagnostic.Span);
+            root = CreateMissingSelector(exception.Diagnostic.Span?.Start ?? 0);
         }
         catch (ParserDepthException exception)
         {
+            Context.Stop();
             _diagnostics.Add(DiagnosticCodes.InputDepthExceeded, DiagnosticSeverity.Error,
-                "Parser recursion exceeds the supported depth of 128 levels.", exception.Span);
+                $"Parsing exceeded MaximumParserDepth ({Context.Options.MaximumParserDepth}).", exception.Span);
             root = CreateMissingSelector(exception.Span.Start);
-            while (Current.Kind != SyntaxKind.EndOfFileToken) NextToken();
-        }
-        while (Current.Kind != SyntaxKind.EndOfFileToken)
-        {
-            ReportUnexpected(Current, "end of input");
-            NextToken();
         }
 
         return new AspectNSyntaxTree(
             _source,
             AspectNParseKind.MemberExpression,
             root,
-            GetDiagnostics());
+            GetDiagnostics(), Context.Options, Context.CancellationToken);
     }
 
-    private ExpressionSyntax ParseExpression(int parentPrecedence = 0)
+    private async StackWork<ExpressionSyntax> ParseExpressionWork(int parentPrecedence = 0)
     {
         using var nesting = DepthGuard.Enter(Current.Span);
         ExpressionSyntax left;
@@ -58,12 +69,12 @@ internal sealed partial class Parser
         {
             var operatorToken = NextToken();
             ReportConsecutiveNegation();
-            var operand = ParseExpression(unaryPrecedence);
-            left = new UnaryExpressionSyntax(operatorToken, operand);
+            var operand = await ParseExpressionWork(unaryPrecedence);
+            left = Context.Create(() => new UnaryExpressionSyntax(operatorToken, operand));
         }
         else
         {
-            left = ParsePrimaryExpression();
+            left = await ParsePrimaryExpressionWork();
         }
 
         while (true)
@@ -72,24 +83,24 @@ internal sealed partial class Parser
             if (precedence == 0 || precedence <= parentPrecedence) break;
 
             var operatorToken = NextToken();
-            var right = ParseExpression(precedence);
-            left = new BinaryExpressionSyntax(left, operatorToken, right);
+            var right = await ParseExpressionWork(precedence);
+            left = Context.Create(() => new BinaryExpressionSyntax(left, operatorToken, right));
         }
 
         return left;
     }
 
-    private ExpressionSyntax ParsePrimaryExpression()
+    private async StackWork<ExpressionSyntax> ParsePrimaryExpressionWork()
     {
         if (Current.Kind == SyntaxKind.OpenParenToken)
         {
             var openParen = NextToken();
-            var expression = ParseExpression();
+            var expression = await ParseExpressionWork();
             var closeParen = MatchToken(SyntaxKind.CloseParenToken);
-            return new ParenthesizedExpressionSyntax(
+            return Context.Create(() => new ParenthesizedExpressionSyntax(
                 openParen,
                 expression,
-                closeParen);
+                closeParen));
         }
 
         if (Current.Kind == SyntaxKind.IdentifierToken)
@@ -109,7 +120,7 @@ internal sealed partial class Parser
         if (Current.Kind == expectedKind) return NextToken();
 
         ReportUnexpected(Current, expectedKind.ToString());
-        return SyntaxToken.Missing(expectedKind, Current.Span.Start);
+        return Context.Create(() => SyntaxToken.Missing(expectedKind, Current.Span.Start));
     }
 
     private SyntaxToken NextToken()
@@ -148,16 +159,16 @@ internal sealed partial class Parser
             .ToArray();
     }
 
-    private static InvalidSelectorSyntax CreateMissingSelector(int position)
+    private InvalidSelectorSyntax CreateMissingSelector(int position)
     {
-        var openParen = SyntaxToken.Missing(SyntaxKind.OpenParenToken, position);
-        var closeParen = SyntaxToken.Missing(SyntaxKind.CloseParenToken, position);
-        return new InvalidSelectorSyntax(new SyntaxNode[]
+        var openParen = Context.Create(() => SyntaxToken.Missing(SyntaxKind.OpenParenToken, position));
+        var closeParen = Context.Create(() => SyntaxToken.Missing(SyntaxKind.CloseParenToken, position));
+        return Context.Create(() => new InvalidSelectorSyntax(new SyntaxNode[]
         {
-            SyntaxToken.Missing(SyntaxKind.IdentifierToken, position),
+            Context.Create(() => SyntaxToken.Missing(SyntaxKind.IdentifierToken, position)),
             openParen,
             closeParen
-        }, openParen, closeParen);
+        }, openParen, closeParen));
     }
 
     private static int GetUnaryPrecedence(SyntaxKind kind)

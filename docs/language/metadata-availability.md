@@ -12,7 +12,7 @@ Roslyn 源码映射补充编译器的 async、iterator 和 async-iterator 状态
 
 泛型实参的槽位结构也在构造时验证，遵循[语言第 13.1 节](../superpowers/specs/2026-07-31-aspectn-language-spec.md#131-元数)及 [2026-10-20 维护者裁决](../reviews/2026-10-20-c02-generic-signature-validation.md)。声明元数与非空实参列表数量不符，属于结构非法，抛 `ArgumentException`；不通过 `MetadataAvailability` 将它改写为未知事实。合法定义允许空实参列表；完整槽位中无法恢复的类型事实仍可用 `UnsupportedTypeSignature` 表示。
 
-原生映射支持最多 64 层类型结构（根为第一层）、最多 64 个有效类型泛型形参（含外层类型）和独立的最多 64 个方法泛型形参。显式调用原生 Mapper 时，超限输入在展开前抛出带 AN3005（深度）或 AN3006（元数）的 `AspectNLimitException`。该异常穿过通用元数据恢复流程传播；超出支持上限不是元数据事实不可用。匹配外部构造的超限中立签名时返回 Unknown 和对应诊断。`AspectNLimits` 公开两个上限。
+原生映射默认最多 64 层类型结构（根为第一层）、最多 64 个有效类型泛型形参（含外层类型）和独立的最多 64 个方法泛型形参。显式调用原生 Mapper 时，超限输入在展开前抛出带 AN3005（深度）或 AN3006（元数）的 `AspectNLimitException`。该异常穿过通用元数据恢复流程传播；超出支持上限不是元数据事实不可用。匹配外部构造的超限中立签名时返回 Unknown 和对应诊断。三个阶段的不可变配置分别调整结构、工作和文本额度，详见[资源规范](../superpowers/specs/2026-10-22-configurable-resource-limits-design.md)；资源累计耗尽使用 AN3008 并中止整次查询/匹配。
 
 维护者于 2026-10-21 [裁决直接特性查询的超限通道](../reviews/2026-10-21-d01-direct-attribute-limits.md)：`HasDirectAttribute` 内部读取并映射原生特性类型遇到深度或元数上限时，在查询边界返回 Unknown，保留原 AN3005/AN3006 诊断，不外抛该限制异常，也不改写为 AN3004。显式 Mapper 的异常契约不变；如果调用方在进入查询前自行映射超限类型，仍由该映射调用抛出异常。取消、生命周期和参数错误继续遵循各自契约。
 

@@ -46,9 +46,10 @@ public sealed class DeepStructuralConformanceTests
             left = new ArrayTypeSignature(left, 1);
             right = new ArrayTypeSignature(right, 1);
         }
-        using var cecil = new CecilTypeSystem(ModuleDefinition.CreateModule("Deep", ModuleKind.Dll));
+        var query = new AspectNMatchOptions(maximumTypeDepth: ResourceLimit.Unlimited, maximumWork: ResourceLimit.Unlimited);
+        using var cecil = new CecilTypeSystem(ModuleDefinition.CreateModule("Deep", ModuleKind.Dll), queryOptions: query);
         Assert.Equal(MatchStatus.Matched, cecil.IsAssignableTo(left, right).Status);
-        Assert.Equal(MatchStatus.Matched, new ReflectionTypeSystem().IsAssignableTo(left, right).Status);
-        Assert.Equal(MatchStatus.Matched, new RoslynTypeSystem(CSharpCompilation.Create("Deep")).IsAssignableTo(left, right).Status);
+        Assert.Equal(MatchStatus.Matched, new ReflectionTypeSystem(queryOptions: query).IsAssignableTo(left, right).Status);
+        Assert.Equal(MatchStatus.Matched, new RoslynTypeSystem(CSharpCompilation.Create("Deep"), queryOptions: query).IsAssignableTo(left, right).Status);
     }
 }

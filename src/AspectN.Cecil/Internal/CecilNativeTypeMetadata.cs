@@ -1,16 +1,18 @@
 using AspectN.AdapterInternals;
+using AspectN.TypeSystem;
 using Mono.Cecil;
 
 namespace AspectN.Cecil.Internal;
 
 internal static class CecilNativeTypeMetadata
 {
-    public static IMetadataScope? GetScope(TypeReference type) => Root(type)?.Scope;
+    public static IMetadataScope? GetScope(TypeReference type, MappingContext resources) => Root(type, resources)?.Scope;
 
-    public static ModuleDefinition? GetModule(TypeReference type)
+    public static ModuleDefinition? GetModule(TypeReference type, MappingContext resources)
     {
         while (true)
         {
+            resources.SpendWork();
             // 引用的 Module 优先使用自身关联（可能不同于包含类型）；定义则继承最外定义的模块。
             if (type is GenericParameter parameter)
             {
@@ -24,14 +26,15 @@ internal static class CecilNativeTypeMetadata
             }
             else if (type is FunctionPointerType function) type = function.ReturnType;
             else if (type is TypeSpecification specification) type = specification.ElementType;
-            else return type is TypeDefinition ? Root(type)?.Module : type.Module;
+            else return type is TypeDefinition ? Root(type, resources)?.Module : type.Module;
         }
     }
 
-    private static TypeReference? Root(TypeReference? type)
+    private static TypeReference? Root(TypeReference? type, MappingContext resources)
     {
         while (type is not null)
         {
+            resources.SpendWork();
             // Cecil 的 Scope getter 沿规格类型、形参 owner 和包含类型递归；先迭代归一到根。
             if (type is GenericParameter parameter)
                 type = parameter.Owner switch
@@ -48,9 +51,9 @@ internal static class CecilNativeTypeMetadata
         return null;
     }
 
-    public static string FullName(TypeReference type) => IterativeTypeText.Format(type, false, false, NameParts);
+    public static string FullName(TypeReference type, MappingContext resources) => IterativeTypeText.Format(type, false, false, (node, qualified, modified) => NameParts(node, qualified, modified, resources), resources);
 
-    private static IEnumerable<TypeTextPart<TypeReference>> NameParts(TypeReference type, bool qualified, bool modified)
+    private static IEnumerable<TypeTextPart<TypeReference>> NameParts(TypeReference type, bool qualified, bool modified, MappingContext resources)
     {
         // 保留 Cecil 原生 FullName：不补元数、不展示开放形参、不加程序集；避免改变既有 owner ID。
         switch (type)
@@ -70,8 +73,17 @@ internal static class CecilNativeTypeMetadata
                 yield break;
             case ArrayType array:
                 yield return TypeTextPart<TypeReference>.Node(array.ElementType, false);
-                yield return TypeTextPart<TypeReference>.Literal(array.IsVector ? "[]" :
-                    "[" + string.Join(",", array.Dimensions.Select(dimension => dimension.ToString())) + "]");
+                yield return TypeTextPart<TypeReference>.Literal("[");
+                if (!array.IsVector)
+                {
+                    for (var index = 0; index < array.Dimensions.Count; index++)
+                    {
+                        resources.SpendWork();
+                        if (index > 0) yield return TypeTextPart<TypeReference>.Literal(",");
+                        yield return TypeTextPart<TypeReference>.Literal(array.Dimensions[index].ToString());
+                    }
+                }
+                yield return TypeTextPart<TypeReference>.Literal("]");
                 yield break;
             case PointerType pointer:
                 yield return TypeTextPart<TypeReference>.Node(pointer.ElementType, false);
@@ -109,6 +121,11 @@ internal static class CecilNativeTypeMetadata
             yield return TypeTextPart<TypeReference>.Node(declaringType, false);
             yield return TypeTextPart<TypeReference>.Literal("/");
         }
-        yield return TypeTextPart<TypeReference>.Literal(string.IsNullOrEmpty(type.Namespace) ? type.Name : type.Namespace + "." + type.Name);
+        if (!string.IsNullOrEmpty(type.Namespace))
+        {
+            yield return TypeTextPart<TypeReference>.Literal(type.Namespace);
+            yield return TypeTextPart<TypeReference>.Literal(".");
+        }
+        yield return TypeTextPart<TypeReference>.Literal(type.Name);
     }
 }

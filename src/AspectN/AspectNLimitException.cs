@@ -2,8 +2,9 @@ using AspectN.Diagnostics;
 
 namespace AspectN;
 
-/// <summary>Reports native metadata that exceeds the supported type depth or generic arity.</summary>
-/// <param name="diagnostic">The diagnostic identifying the exceeded limit.</param>
+/// <summary>Reports explicit native mapping that exceeds a configured structural or resource limit.</summary>
+/// <param name="diagnostic">The diagnostic identifying the exceeded depth, arity, work, attribute, or generated-text limit.</param>
+/// <exception cref="ArgumentNullException"><paramref name="diagnostic"/> is null.</exception>
 public sealed class AspectNLimitException(AspectNDiagnostic diagnostic) : Exception(FormatMessage(diagnostic))
 {
     /// <summary>Gets the diagnostic identifying the exceeded limit.</summary>

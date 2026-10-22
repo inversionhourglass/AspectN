@@ -64,6 +64,6 @@
 | [CROSS-INPUT-001](../capabilities/cross-cutting/CROSS-INPUT-001.md) | 有效输入、候选加载与人工损坏对象 | 4 |
 | [CROSS-LIFETIME-001](../capabilities/cross-cutting/CROSS-LIFETIME-001.md) | 引擎缓存、后端生命周期与并发隔离 | 5 |
 | [CROSS-LOGIC-001](../capabilities/cross-cutting/CROSS-LOGIC-001.md) | 三态逻辑、诊断及 Boolean 转换 | 2 |
-| [CROSS-RESOURCES-001](../capabilities/cross-cutting/CROSS-RESOURCES-001.md) | 取消、类型深度、元数与文本预算 | 8 |
+| [CROSS-RESOURCES-001](../capabilities/cross-cutting/CROSS-RESOURCES-001.md) | 分阶段资源配置、预算与取消 | 15 |
 
 共 17 条能力；具体承诺、输入条件、失败原因与证据见[逐场景矩阵](support-matrix.md)。

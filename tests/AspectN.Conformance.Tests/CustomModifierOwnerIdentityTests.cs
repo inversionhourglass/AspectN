@@ -136,10 +136,10 @@ public sealed class CustomModifierOwnerIdentityTests
         {
             var runtime = context.LoadFromStream(new MemoryStream(image)).GetType("Example.Owner")!.GetMethods()
                 .Where(method => method.Name == "M").ToArray();
-            var cecilMethods = cecil.Module.GetType("Example.Owner").Methods.Select(cecil.Mapper.MapMethod).ToArray();
-            var reflectionMethods = runtime.Select(reflection.Mapper.MapMethod).ToArray();
+            var cecilMethods = cecil.Module.GetType("Example.Owner").Methods.Select(method => cecil.Mapper.MapMethod(method)).ToArray();
+            var reflectionMethods = runtime.Select(method => reflection.Mapper.MapMethod(method)).ToArray();
             var roslynMethods = compilation.GetTypeByMetadataName("Example.Owner")!.GetMembers("M")
-                .OfType<IMethodSymbol>().Select(roslyn.Mapper.MapMethod).ToArray();
+                .OfType<IMethodSymbol>().Select(method => roslyn.Mapper.MapMethod(method)).ToArray();
             var cecilVariables = cecil.Module.GetType("Example.Owner").Methods
                 .Select(method => cecil.Mapper.MapType(method.GenericParameters[0])).ToArray();
             var reflectionVariables = runtime.Select(method => reflection.Mapper.MapType(method.GetGenericArguments()[0])).ToArray();

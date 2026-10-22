@@ -609,11 +609,11 @@ Standard 保留正则原文，但只支持字面量和转义、普通字符类�
 外层边界只需要处理转义、普通字符类和分组深度。历史审计文档中的对应正例保留其固定版本事实，
 迁移以当前规范第 15 节为准。
 
-### 6.4 固定 culture，并要求有限超时
+### 6.4 固定 culture，默认有限超时
 
 Shared 使用默认 Regex culture；Standard 使用 CultureInvariant，并禁止通过内联选项改变匹配规则。
 需要有限范围的大小写替代时可使用明确的字符类，例如 `[iI][nN][tT]32`。
-Standard 要求有限正则超时；超时返回 Unknown/AN3003，而不是继续无限等待或伪装成不匹配。
+Standard 默认单次正则超时250ms；可通过 AspectNMatchOptions.RegexTimeout 配置正有限值或显式 TimeLimit.Unlimited。超时返回局部 Unknown/AN3003；文本和总工作超限则整次 Unknown/AN3008，详见[资源规范](../superpowers/specs/2026-10-22-configurable-resource-limits-design.md)。
 普通量词仍可能引起昂贵回溯，因此功能限制不取消超时。
 
 **原因：设计统一、运行可靠性。** 相同规则不能随机器 culture 改变，昂贵正则不能阻塞整个匹配流程。
@@ -641,7 +641,7 @@ Unknown 取反仍是 Unknown；Unknown OR Matched 得到 Matched，Unknown AND N
 ### 7.2 中立签名、生命周期和缓存隔离
 
 Shared 直接依赖 Cecil，静态缓存持有类型/方法；Standard 将 Cecil、Roslyn、Reflection 映射为中立签名，
-编译缓存有界且按源文本、解析入口、正则超时隔离。
+编译缓存有界且按源文本、解析入口、变量模式及全部解析/匹配配置字段值隔离；只发布完成结果。
 适配器缓存受上下文生命周期约束，并保留程序集卸载覆盖。
 例如使用 `CecilMappingOptions(leaveOpen: true)` 时，模块仍由调用方关闭。
 

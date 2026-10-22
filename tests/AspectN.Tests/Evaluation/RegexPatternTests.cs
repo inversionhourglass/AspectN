@@ -56,8 +56,8 @@ public sealed class RegexPatternTests
             Named("Example", "Service"), new TypeUseSignature(node, RefKind.None, TypeUseKind.Return), [], [], [], [], []);
         var result = await Task.Run(() => Match("regex(.*)", candidate)).WaitAsync(TimeSpan.FromSeconds(2));
         Assert.Equal(MatchStatus.Unknown, result.Status);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == DiagnosticCodes.MissingBackendCapability
-            && diagnostic.Message.Contains("formatting limit", StringComparison.Ordinal));
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == DiagnosticCodes.ResourceLimitExceeded
+            && diagnostic.Message.Contains("MaximumCanonicalSignatureLength", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -65,7 +65,7 @@ public sealed class RegexPatternTests
     {
         var result = Match("regex(.*)", Callable(new string('M', 100_000)));
         Assert.Equal(MatchStatus.Unknown, result.Status);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == DiagnosticCodes.MissingBackendCapability);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == DiagnosticCodes.ResourceLimitExceeded);
     }
 
     [Fact]
@@ -148,7 +148,7 @@ public sealed class RegexPatternTests
         var result = Match(
             "regex(^(.+)+Z$)",
             candidate,
-            new AspectNCompilationOptions(TimeSpan.FromMilliseconds(1)));
+            new AspectNCompilationOptions(matchOptions: new AspectNMatchOptions(maximumCanonicalSignatureLength: ResourceLimit.Finite(32768), regexTimeout: TimeLimit.Finite(TimeSpan.FromMilliseconds(1)))));
 
         Assert.Equal(MatchStatus.Unknown, result.Status);
         Assert.Contains(

@@ -1,3 +1,4 @@
+using AspectN.Execution;
 using AspectN.Diagnostics;
 using AspectN.Syntax;
 
@@ -6,6 +7,16 @@ namespace AspectN.Parsing;
 internal sealed partial class SelectorParser(Parser parser)
 {
     private readonly Parser _parser = parser;
+    private ParseContext Context => _parser.Context;
+
+    private TypePatternSyntax ParseTypePattern(int parentPrecedence = 0, bool taskLikeIsName = false) =>
+        WorkStack.Run(ParseTypePatternWork(parentPrecedence, taskLikeIsName), Context.CancellationToken);
+
+    private NamePatternSegmentSyntax ParseNameSegment(SyntaxToken? first = null) =>
+        WorkStack.Run(ParseNameSegmentWork(first), Context.CancellationToken);
+
+    private MemberNamePatternSyntax ParseMemberName(int parentPrecedence = 0) =>
+        WorkStack.Run(ParseMemberNameWork(parentPrecedence), Context.CancellationToken);
 
     private SyntaxToken Current => _parser.SelectorCurrent;
 
@@ -61,16 +72,16 @@ internal sealed partial class SelectorParser(Parser parser)
         var signature = ParseMethodSignature();
         var closeParen = MatchToken(SyntaxKind.CloseParenToken);
         return family == SelectorFamily.Callable
-            ? new CallableSelectorSyntax(
+            ? Context.Create(() => new CallableSelectorSyntax(
                 keyword,
                 openParen,
                 signature,
-                closeParen)
-            : new MethodSelectorSyntax(
+                closeParen))
+            : Context.Create(() => new MethodSelectorSyntax(
                 keyword,
                 openParen,
                 signature,
-                closeParen);
+                closeParen));
     }
 
     private SelectorSyntax ParseProperty(
@@ -82,21 +93,21 @@ internal sealed partial class SelectorParser(Parser parser)
         var closeParen = MatchToken(SyntaxKind.CloseParenToken);
         return family switch
         {
-            SelectorFamily.Property => new PropertySelectorSyntax(
+            SelectorFamily.Property => Context.Create(() => new PropertySelectorSyntax(
                 keyword,
                 openParen,
                 signature,
-                closeParen),
-            SelectorFamily.Getter => new GetterSelectorSyntax(
+                closeParen)),
+            SelectorFamily.Getter => Context.Create(() => new GetterSelectorSyntax(
                 keyword,
                 openParen,
                 signature,
-                closeParen),
-            _ => new SetterSelectorSyntax(
+                closeParen)),
+            _ => Context.Create(() => new SetterSelectorSyntax(
                 keyword,
                 openParen,
                 signature,
-                closeParen)
+                closeParen))
         };
     }
 
@@ -105,12 +116,12 @@ internal sealed partial class SelectorParser(Parser parser)
         var openParen = MatchToken(SyntaxKind.OpenParenToken);
         var parts = new List<SyntaxNode> { ParseTypePattern() };
         parts.AddRange(ParseParameterPatternList());
-        var signature = new ConstructorSignatureSyntax(parts);
-        return new ConstructorSelectorSyntax(
+        var signature = Context.Create(() => new ConstructorSignatureSyntax(parts));
+        return Context.Create(() => new ConstructorSelectorSyntax(
             keyword,
             openParen,
             signature,
-            MatchToken(SyntaxKind.CloseParenToken));
+            MatchToken(SyntaxKind.CloseParenToken)));
     }
 
     private StaticConstructorSelectorSyntax ParseStaticConstructor(
@@ -118,11 +129,11 @@ internal sealed partial class SelectorParser(Parser parser)
     {
         var openParen = MatchToken(SyntaxKind.OpenParenToken);
         var typePattern = ParseTypePattern();
-        return new StaticConstructorSelectorSyntax(
+        return Context.Create(() => new StaticConstructorSelectorSyntax(
             keyword,
             openParen,
             typePattern,
-            MatchToken(SyntaxKind.CloseParenToken));
+            MatchToken(SyntaxKind.CloseParenToken)));
     }
 
     private AttributeSelectorSyntax ParseAttribute(SyntaxToken keyword)
@@ -188,12 +199,12 @@ internal sealed partial class SelectorParser(Parser parser)
         }
 
         parts.Add(ParseTypePattern());
-        var signature = new AttributeSignatureSyntax(parts);
-        return new AttributeSelectorSyntax(
+        var signature = Context.Create(() => new AttributeSignatureSyntax(parts));
+        return Context.Create(() => new AttributeSelectorSyntax(
             keyword,
             openParen,
             signature,
-            MatchToken(SyntaxKind.CloseParenToken));
+            MatchToken(SyntaxKind.CloseParenToken)));
     }
 
     // Standard 的 attr 长形式位置（callable/property/parameter/return）已简写为
@@ -224,12 +235,12 @@ internal sealed partial class SelectorParser(Parser parser)
         var openParen = _parser.ConsumeRegexOpenParen();
         var body = Current.Kind == SyntaxKind.RegexBodyToken
             ? NextToken()
-            : SyntaxToken.Missing(SyntaxKind.RegexBodyToken, Current.Span.Start);
-        return new RegexSelectorSyntax(
+            : Context.Create(() => SyntaxToken.Missing(SyntaxKind.RegexBodyToken, Current.Span.Start));
+        return Context.Create(() => new RegexSelectorSyntax(
             keyword,
             openParen,
             body,
-            MatchToken(SyntaxKind.CloseParenToken));
+            MatchToken(SyntaxKind.CloseParenToken)));
     }
 
     private InvalidSelectorSyntax ParseUnknownSelector(List<SyntaxToken> nameTokens)
@@ -259,7 +270,7 @@ internal sealed partial class SelectorParser(Parser parser)
             ? MatchToken(SyntaxKind.CloseParenToken)
             : (SyntaxToken)tokens[tokens.Count - 1];
         if (depth > 0) tokens.Add(closeParen);
-        return new InvalidSelectorSyntax(tokens, openParen, closeParen);
+        return Context.Create(() => new InvalidSelectorSyntax(tokens, openParen, closeParen));
     }
 
     private MethodSignatureSyntax ParseMethodSignature()
@@ -270,7 +281,7 @@ internal sealed partial class SelectorParser(Parser parser)
         parts.Add(ParseTypeUse());
         parts.Add(ParseMemberPath());
         parts.AddRange(ParseParameterPatternList());
-        return new MethodSignatureSyntax(parts);
+        return Context.Create(() => new MethodSignatureSyntax(parts));
     }
 
     private void ParseUnsupportedAsyncModifier(List<SyntaxNode> parts)
@@ -296,7 +307,7 @@ internal sealed partial class SelectorParser(Parser parser)
         ParseUnsupportedAsyncModifier(parts);
         parts.Add(ParseTypeUse());
         parts.Add(ParseMemberPath());
-        return new PropertySignatureSyntax(parts);
+        return Context.Create(() => new PropertySignatureSyntax(parts));
     }
 
     // 连续名称、限定/嵌套路径、泛型及类型后缀优先属于完整类型模式，不能截成修饰符。
@@ -338,12 +349,12 @@ internal sealed partial class SelectorParser(Parser parser)
                         AddCompoundAccessibilityMigration(
                             tokens[1],
                             negatedReplacement);
-                        modifiers.Add(new ModifierSyntax(tokens));
+                        modifiers.Add(Context.Create(() => new ModifierSyntax(tokens)));
                         continue;
                     }
 
                     ReportUnexpected(Current, "accessibility or static modifier");
-                    modifiers.Add(new ModifierSyntax(tokens));
+                    modifiers.Add(Context.Create(() => new ModifierSyntax(tokens)));
                     break;
                 }
 
@@ -363,7 +374,7 @@ internal sealed partial class SelectorParser(Parser parser)
                     tokens.Add(NextToken());
                 }
 
-                modifiers.Add(new ModifierSyntax(tokens));
+                modifiers.Add(Context.Create(() => new ModifierSyntax(tokens)));
                 continue;
             }
 
@@ -378,7 +389,7 @@ internal sealed partial class SelectorParser(Parser parser)
                     };
                     ConsumeParenthesizedAccessibility(parenthesizedTokens);
                     ParseAccessibilityAlternatives(parenthesizedTokens);
-                    modifiers.Add(new ModifierSyntax(parenthesizedTokens));
+                    modifiers.Add(Context.Create(() => new ModifierSyntax(parenthesizedTokens)));
                     continue;
                 }
             }
@@ -397,7 +408,7 @@ internal sealed partial class SelectorParser(Parser parser)
                     var misspelled = NextToken();
                     AddCompoundAccessibilityMigration(misspelled, replacement);
                     modifiers.Add(
-                        new ModifierSyntax(new List<SyntaxToken> { misspelled }));
+                        Context.Create(() => new ModifierSyntax(new List<SyntaxToken> { misspelled })));
                     continue;
                 }
 
@@ -416,7 +427,7 @@ internal sealed partial class SelectorParser(Parser parser)
                 ParseAccessibilityAlternatives(modifierTokens);
             }
 
-            modifiers.Add(new ModifierSyntax(modifierTokens));
+            modifiers.Add(Context.Create(() => new ModifierSyntax(modifierTokens)));
         }
 
         return modifiers;
@@ -585,11 +596,11 @@ internal sealed partial class SelectorParser(Parser parser)
                 refKind[0]);
         }
 
-        return new TypeUseSyntax(refKind, ParseTypePattern(), negatedRefTokens);
+        return Context.Create(() => new TypeUseSyntax(refKind, ParseTypePattern(), negatedRefTokens));
     }
 
     // 使用优先级爬升解析类型表达式，以保持一元、二元和后缀构造的结合顺序。
-    private TypePatternSyntax ParseTypePattern(int parentPrecedence = 0, bool taskLikeIsName = false)
+    private async StackWork<TypePatternSyntax> ParseTypePatternWork(int parentPrecedence = 0, bool taskLikeIsName = false)
     {
         using var nesting = _parser.DepthGuard.Enter(Current.Span);
         TypePatternSyntax left;
@@ -598,13 +609,13 @@ internal sealed partial class SelectorParser(Parser parser)
         {
             var operatorToken = NextToken();
             _parser.ReportConsecutiveNegation();
-            left = new UnaryTypePatternSyntax(
+            left = await Context.CreateWork(async () => new UnaryTypePatternSyntax(
                 operatorToken,
-                ParseTypePattern(unaryPrecedence, taskLikeIsName));
+                await ParseTypePatternWork(unaryPrecedence, taskLikeIsName)));
         }
         else
         {
-            left = ParseTypePrimaryWithSuffixes(taskLikeIsName);
+            left = await ParseTypePrimaryWithSuffixesWork(taskLikeIsName);
         }
 
         while (true)
@@ -613,16 +624,16 @@ internal sealed partial class SelectorParser(Parser parser)
             if (precedence == 0 || precedence <= parentPrecedence) break;
 
             var operatorToken = NextToken();
-            var right = ParseTypePattern(precedence, taskLikeIsName);
-            left = new BinaryTypePatternSyntax(left, operatorToken, right);
+            var right = await ParseTypePatternWork(precedence, taskLikeIsName);
+            left = Context.Create(() => new BinaryTypePatternSyntax(left, operatorToken, right));
         }
 
         return left;
     }
 
-    private TypePatternSyntax ParseTypePrimaryWithSuffixes(bool taskLikeIsName)
+    private async StackWork<TypePatternSyntax> ParseTypePrimaryWithSuffixesWork(bool taskLikeIsName)
     {
-        var pattern = ParseTypeAtom(taskLikeIsName);
+        var pattern = await ParseTypeAtomWork(taskLikeIsName);
         while (true)
         {
             switch (Current.Kind)
@@ -643,7 +654,7 @@ internal sealed partial class SelectorParser(Parser parser)
                         ReportUnexpected(Current, "'?' (must be adjacent to the type pattern)");
                     }
 
-                    pattern = new NullableTypePatternSyntax(pattern, NextToken());
+                    pattern = Context.Create(() => new NullableTypePatternSyntax(pattern, NextToken()));
                     continue;
                 case SyntaxKind.PlusToken:
                     if (Current.Span.Start != pattern.FullSpan.End)
@@ -651,7 +662,7 @@ internal sealed partial class SelectorParser(Parser parser)
                         ReportUnexpected(Current, "'+' (must be adjacent to the type pattern)");
                     }
 
-                    pattern = new AssignableTypePatternSyntax(pattern, NextToken());
+                    pattern = Context.Create(() => new AssignableTypePatternSyntax(pattern, NextToken()));
                     continue;
                 default:
                     return pattern;
@@ -659,7 +670,7 @@ internal sealed partial class SelectorParser(Parser parser)
         }
     }
 
-    private TypePatternSyntax ParseTypeAtom(bool taskLikeIsName)
+    private async StackWork<TypePatternSyntax> ParseTypeAtomWork(bool taskLikeIsName)
     {
         if (Current.Kind == SyntaxKind.StarToken)
         {
@@ -674,23 +685,23 @@ internal sealed partial class SelectorParser(Parser parser)
                      SyntaxKind.DotDotToken or
                      SyntaxKind.SlashToken))
             {
-                return ParseNamedType(star);
+                return await ParseNamedTypeWork(star);
             }
 
-            return new WildcardTypePatternSyntax(star);
+            return Context.Create(() => new WildcardTypePatternSyntax(star));
         }
 
         if (Current.Kind == SyntaxKind.DollarToken)
         {
             var dollar = NextToken();
-            return new VariableTypePatternSyntax(
+            return Context.Create(() => new VariableTypePatternSyntax(
                 dollar,
-                MatchToken(SyntaxKind.IdentifierToken));
+                MatchToken(SyntaxKind.IdentifierToken)));
         }
 
         if (Current.Kind == SyntaxKind.OpenParenToken)
         {
-            return ParseParenthesizedOrTupleType(taskLikeIsName);
+            return await ParseParenthesizedOrTupleTypeWork(taskLikeIsName);
         }
 
         if (!TypePatternSyntaxFacts.IsNamePart(Current))
@@ -706,7 +717,7 @@ internal sealed partial class SelectorParser(Parser parser)
         {
             if (Current.Kind != SyntaxKind.LessThanToken)
             {
-                return new TaskLikeTypePatternSyntax(first, null, null, null);
+                return Context.Create(() => new TaskLikeTypePatternSyntax(first, null, null, null));
             }
 
             if (Current.Span.Start != first.Span.End)
@@ -720,22 +731,22 @@ internal sealed partial class SelectorParser(Parser parser)
                 ReportUnexpected(Current, "task-like result type");
                 result = CreateMissingType(Current.Span.Start);
             }
-            else result = ParseTypePattern();
-            return new TaskLikeTypePatternSyntax(
+            else result = await ParseTypePatternWork();
+            return Context.Create(() => new TaskLikeTypePatternSyntax(
                 first,
                 lessThan,
                 result,
-                MatchToken(SyntaxKind.GreaterThanToken));
+                MatchToken(SyntaxKind.GreaterThanToken)));
         }
 
-        return ParseNamedType(first);
+        return await ParseNamedTypeWork(first);
     }
 
-    private NamedTypePatternSyntax ParseNamedType(SyntaxToken first)
+    private async StackWork<NamedTypePatternSyntax> ParseNamedTypeWork(SyntaxToken first)
     {
         var segments = new List<NamePatternSegmentSyntax>
         {
-            ParseNameSegment(first)
+            await ParseNameSegmentWork(first)
         };
         var separators = new List<SyntaxToken>();
         var inNestedType = false;
@@ -769,13 +780,13 @@ internal sealed partial class SelectorParser(Parser parser)
                         : "member path separator (names must follow without whitespace)");
             }
 
-            segments.Add(ParseNameSegment());
+            segments.Add(await ParseNameSegmentWork());
         }
 
-        return new NamedTypePatternSyntax(segments, separators);
+        return Context.Create(() => new NamedTypePatternSyntax(segments, separators));
     }
 
-    private NamePatternSegmentSyntax ParseNameSegment(SyntaxToken? first = null)
+    private async StackWork<NamePatternSegmentSyntax> ParseNameSegmentWork(SyntaxToken? first = null)
     {
         var parts = new List<SyntaxToken>();
         if (first is not null) parts.Add(first);
@@ -794,20 +805,20 @@ internal sealed partial class SelectorParser(Parser parser)
         {
             ReportUnexpected(Current, "name pattern");
             parts.Add(
-                SyntaxToken.Missing(
+                Context.Create(() => SyntaxToken.Missing(
                     SyntaxKind.IdentifierToken,
-                    Current.Span.Start));
+                    Current.Span.Start)));
         }
 
-        return new NamePatternSegmentSyntax(
+        return await Context.CreateWork(async () => new NamePatternSegmentSyntax(
             parts,
             Current.Kind == SyntaxKind.LessThanToken &&
             Current.Span.Start == parts[parts.Count - 1].Span.End
-                ? ParseGenericPatternList()
-                : null);
+                ? await ParseGenericPatternListWork()
+                : null));
     }
 
-    private GenericPatternListSyntax ParseGenericPatternList()
+    private async StackWork<GenericPatternListSyntax> ParseGenericPatternListWork()
     {
         var lessThan = NextToken();
 
@@ -816,63 +827,63 @@ internal sealed partial class SelectorParser(Parser parser)
             _parser.PeekSelectorTokens(2)[1].Kind == SyntaxKind.GreaterThanToken)
         {
             var bang = NextToken();
-            return new GenericPatternListSyntax(
+            return Context.Create(() => new GenericPatternListSyntax(
                 lessThan,
                 GenericPatternForm.FixedArity,
                 0,
                 Array.Empty<TypePatternSyntax>(),
                 Array.Empty<SyntaxToken>(),
                 bang,
-                MatchToken(SyntaxKind.GreaterThanToken));
+                MatchToken(SyntaxKind.GreaterThanToken)));
         }
 
         if (Current.Kind == SyntaxKind.GreaterThanToken)
         {
             // <> = 单个 Any 空槽。
-            return new GenericPatternListSyntax(
+            return Context.Create(() => new GenericPatternListSyntax(
                 lessThan,
                 GenericPatternForm.FixedArity,
                 1,
                 Array.Empty<TypePatternSyntax>(),
                 Array.Empty<SyntaxToken>(),
                 null,
-                NextToken());
+                NextToken()));
         }
 
         if (Current.Kind == SyntaxKind.DotDotToken)
         {
             // <..> = 至少一个泛型参数。
             var wildcard = NextToken();
-            return new GenericPatternListSyntax(
+            return Context.Create(() => new GenericPatternListSyntax(
                 lessThan,
                 GenericPatternForm.AnyPositiveArity,
                 0,
                 Array.Empty<TypePatternSyntax>(),
                 Array.Empty<SyntaxToken>(),
                 wildcard,
-                MatchToken(SyntaxKind.GreaterThanToken));
+                MatchToken(SyntaxKind.GreaterThanToken)));
         }
 
         // <?> = 任意 arity（含零）。
         if (Current.Kind == SyntaxKind.QuestionToken)
         {
             var question = NextToken();
-            return new GenericPatternListSyntax(
+            return Context.Create(() => new GenericPatternListSyntax(
                 lessThan,
                 GenericPatternForm.AnyArity,
                 0,
                 Array.Empty<TypePatternSyntax>(),
                 Array.Empty<SyntaxToken>(),
                 question,
-                MatchToken(SyntaxKind.GreaterThanToken));
+                MatchToken(SyntaxKind.GreaterThanToken)));
         }
 
         // 混合空槽：空槽 = Any 占位，arity = 槽数；
         // 全空槽（<,>、<,,>）等价于纯逗号计数形式。
-        return ParseGenericArguments(lessThan);
+        return await ParseGenericArgumentsWork(lessThan);
     }
 
-    private GenericPatternListSyntax ParseGenericArguments(SyntaxToken lessThan)
+    private async StackWork<GenericPatternListSyntax> ParseGenericArgumentsWork(SyntaxToken lessThan)
     {
         var arguments = new List<TypePatternSyntax>();
         var separators = new List<SyntaxToken>();
@@ -885,7 +896,7 @@ internal sealed partial class SelectorParser(Parser parser)
             }
             else
             {
-                arguments.Add(ParseTypePattern());
+                arguments.Add(await ParseTypePatternWork());
                 hasTypedArgument = true;
             }
 
@@ -893,26 +904,26 @@ internal sealed partial class SelectorParser(Parser parser)
             separators.Add(NextToken());
         }
 
-        return new GenericPatternListSyntax(
+        return Context.Create(() => new GenericPatternListSyntax(
             lessThan,
             hasTypedArgument ? GenericPatternForm.Arguments : GenericPatternForm.FixedArity,
             arguments.Count,
             hasTypedArgument ? arguments : Array.Empty<TypePatternSyntax>(),
             separators,
             null,
-            MatchToken(SyntaxKind.GreaterThanToken));
+            MatchToken(SyntaxKind.GreaterThanToken)));
     }
 
-    private TypePatternSyntax ParseParenthesizedOrTupleType(bool taskLikeIsName)
+    private async StackWork<TypePatternSyntax> ParseParenthesizedOrTupleTypeWork(bool taskLikeIsName)
     {
         var openParen = NextToken();
         if (Current.Kind == SyntaxKind.CloseParenToken)
         {
             ReportUnexpected(Current, "type pattern");
-            return new ParenthesizedTypePatternSyntax(openParen,
-                CreateMissingType(Current.Span.Start), NextToken());
+            return Context.Create(() => new ParenthesizedTypePatternSyntax(openParen,
+                CreateMissingType(Current.Span.Start), NextToken()));
         }
-        var first = ParseTypePattern(taskLikeIsName: taskLikeIsName);
+        var first = await ParseTypePatternWork(taskLikeIsName: taskLikeIsName);
         if (Current.Kind != SyntaxKind.CommaToken)
         {
             // 括号类型只保留 Boolean 分组含义；单元素括号按缺元素诊断。
@@ -921,10 +932,10 @@ internal sealed partial class SelectorParser(Parser parser)
                 ReportUnexpected(Current, "',' and another tuple element (a tuple needs at least two elements)");
             }
 
-            return new ParenthesizedTypePatternSyntax(
+            return Context.Create(() => new ParenthesizedTypePatternSyntax(
                 openParen,
                 first,
-                MatchToken(SyntaxKind.CloseParenToken));
+                MatchToken(SyntaxKind.CloseParenToken)));
         }
 
         var elements = new List<TypePatternSyntax> { first };
@@ -938,14 +949,14 @@ internal sealed partial class SelectorParser(Parser parser)
                 elements.Add(CreateMissingType(Current.Span.Start));
                 break;
             }
-            elements.Add(ParseTypePattern(taskLikeIsName: taskLikeIsName));
+            elements.Add(await ParseTypePatternWork(taskLikeIsName: taskLikeIsName));
         }
 
-        return new TupleTypePatternSyntax(
+        return Context.Create(() => new TupleTypePatternSyntax(
             openParen,
             elements,
             separators,
-            MatchToken(SyntaxKind.CloseParenToken));
+            MatchToken(SyntaxKind.CloseParenToken)));
     }
 
     private ArrayTypePatternSyntax ParseArraySuffix(TypePatternSyntax elementType)
@@ -957,11 +968,11 @@ internal sealed partial class SelectorParser(Parser parser)
             commas.Add(NextToken());
         }
 
-        return new ArrayTypePatternSyntax(
+        return Context.Create(() => new ArrayTypePatternSyntax(
             elementType,
             openBracket,
             commas,
-            MatchToken(SyntaxKind.CloseBracketToken));
+            MatchToken(SyntaxKind.CloseBracketToken)));
     }
 
     private List<SyntaxNode> ParseParameterPatternList()
@@ -1006,7 +1017,7 @@ internal sealed partial class SelectorParser(Parser parser)
                 continue;
             }
 
-            parts.Add(new ParameterSyntax(ParseTypeUse()));
+            parts.Add(Context.Create(() => new ParameterSyntax(ParseTypeUse())));
             expectsParameter = false;
             if (Current.Kind != SyntaxKind.CommaToken) break;
         }
@@ -1017,13 +1028,13 @@ internal sealed partial class SelectorParser(Parser parser)
         }
     }
 
-    private static ParameterSyntax CreateWildcardParameter(int position)
+    private ParameterSyntax CreateWildcardParameter(int position)
     {
-        return new ParameterSyntax(
-            new TypeUseSyntax(
+        return Context.Create(() => new ParameterSyntax(
+            Context.Create(() => new TypeUseSyntax(
                 Array.Empty<SyntaxToken>(),
-                new WildcardTypePatternSyntax(
-                    SyntaxToken.Missing(SyntaxKind.StarToken, position))));
+                Context.Create(() => new WildcardTypePatternSyntax(
+                    Context.Create(() => SyntaxToken.Missing(SyntaxKind.StarToken, position))))))));
     }
 
     // 连写复合访问性提供迁移诊断，匹配只接受空格短语。
@@ -1128,10 +1139,10 @@ internal sealed partial class SelectorParser(Parser parser)
         _parser.ReportSelectorUnexpected(token, expected);
     }
 
-    private static WildcardTypePatternSyntax CreateMissingType(int position)
+    private WildcardTypePatternSyntax CreateMissingType(int position)
     {
-        return new WildcardTypePatternSyntax(
-            SyntaxToken.Missing(SyntaxKind.StarToken, position));
+        return Context.Create(() => new WildcardTypePatternSyntax(
+            Context.Create(() => SyntaxToken.Missing(SyntaxKind.StarToken, position))));
     }
 
     private static int GetUnaryPrecedence(SyntaxKind kind)

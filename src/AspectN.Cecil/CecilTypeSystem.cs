@@ -9,25 +9,44 @@ using Mono.Cecil;
 namespace AspectN.Cecil;
 
 /// <summary>Provides Mono.Cecil-backed type and metadata operations for AspectN matching.</summary>
-public sealed class CecilTypeSystem : ITypeSystem, IDisposable
+public sealed class CecilTypeSystem : ITypeSystem, IBudgetAwareTypeSystem, IDisposable
 {
-    private readonly CecilResolver _resolver;
     private ModuleDefinition? _module;
 
-    /// <summary>Initializes a new instance of the CecilTypeSystem class.</summary>
-    /// <param name="module">Specifies the module.</param>
-    /// <param name="options">Specifies the options.</param>
+    /// <summary>Creates a module-scoped Cecil backend that borrows the supplied module by default.</summary>
+    /// <param name="module">The module to query. Keep it alive while this backend is in use.</param>
+    /// <param name="options">
+    /// Mapping and ownership options. Null uses defaults, including <see cref="CecilMappingOptions.LeaveOpen"/>
+    /// set to <see langword="true"/>. Set LeaveOpen to false explicitly to transfer module disposal to this instance.
+    /// </param>
+    /// <param name="queryOptions">Immutable limits for independent public queries; null uses match defaults. Internal compiled matching uses its plan options.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="module"/> is null.</exception>
+    /// <remarks>
+    /// By default the caller or host owns the module, so disposing this backend does not prevent later module use.
+    /// This backend and its mapper cannot be used after disposal, regardless of module ownership.
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// using var module = Mono.Cecil.ModuleDefinition.ReadModule("Example.dll");
+    /// using (var backend = new AspectN.Cecil.CecilTypeSystem(module))
+    /// {
+    ///     var signature = backend.Mapper.MapType(module.Types[0]);
+    /// }
+    /// module.Write("Example.processed.dll");
+    /// </code>
+    /// </example>
     public CecilTypeSystem(
         ModuleDefinition module,
-        CecilMappingOptions? options = null)
+        CecilMappingOptions? options = null, AspectNMatchOptions? queryOptions = null)
     {
         _module = module ?? throw new ArgumentNullException(nameof(module));
         Options = options ?? new CecilMappingOptions();
         Mapper = new CecilSignatureMapper(this);
-        _resolver = new CecilResolver(Mapper);
+        QueryOptions = queryOptions ?? new AspectNMatchOptions();
     }
 
-    /// <summary>Gets the module.</summary>
+    /// <summary>Gets the module supplied to this backend.</summary>
+    /// <exception cref="ObjectDisposedException">This backend has been disposed.</exception>
     public ModuleDefinition Module
     {
         get
@@ -37,13 +56,17 @@ public sealed class CecilTypeSystem : ITypeSystem, IDisposable
         }
     }
 
-    /// <summary>Gets the options.</summary>
+    /// <summary>Gets the mapping limits and module ownership policy used by this backend.</summary>
     public CecilMappingOptions Options { get; }
 
-    /// <summary>Gets the mapper.</summary>
+    /// <summary>Gets immutable standalone-query defaults; compiled matches supply their own match options.</summary>
+    /// <remarks>Each direct query has independent counters. All nested mappings share one mapping sub-budget and consume the active query budget.</remarks>
+    public AspectNMatchOptions QueryOptions { get; }
+
+    /// <summary>Gets the mapper associated with this module-scoped backend.</summary>
     public CecilSignatureMapper Mapper { get; }
 
-    /// <summary>Gets the capabilities.</summary>
+    /// <inheritdoc cref="ITypeSystem.Capabilities"/>
     public TypeSystemCapabilities Capabilities =>
         TypeSystemCapabilities.TypeEquality |
         TypeSystemCapabilities.BaseTypeTraversal |
@@ -53,58 +76,111 @@ public sealed class CecilTypeSystem : ITypeSystem, IDisposable
         TypeSystemCapabilities.DirectAttributeLookup |
         TypeSystemCapabilities.OriginalDefinitionMapping;
 
-    /// <summary>Compares two values for structural equality.</summary>
-    /// <param name="left">Specifies the left.</param>
-    /// <param name="right">Specifies the right.</param>
-    /// <returns>Returns the result of the operation.</returns>
-    public TypeRelationResult AreEqual(
-        TypeSignature left,
-        TypeSignature right)
+    /// <inheritdoc cref="ITypeSystem.AreEqual"/>
+    /// <exception cref="ObjectDisposedException">This backend has been disposed.</exception>
+    public TypeRelationResult AreEqual(TypeSignature left, TypeSignature right, CancellationToken cancellationToken = default) =>
+        ((IBudgetAwareTypeSystem)this).AreEqual(left, right, new TypeSystemQueryContext(QueryOptions, cancellationToken));
+
+    TypeRelationResult IBudgetAwareTypeSystem.AreEqual(TypeSignature left, TypeSignature right, TypeSystemQueryContext context)
     {
         ThrowIfDisposed();
-        return StructuralTypeComparer.AreEqual(left, right);
+        try
+        {
+            context.ThrowIfExhausted();
+            var result = StructuralTypeComparer.AreEqual(left, right, context);
+            context.ThrowIfExhausted();
+            return result;
+        }
+        catch (AspectNLimitException limit)
+        {
+            context.CancellationToken.ThrowIfCancellationRequested();
+            var diagnostic = context.LimitDiagnostic ?? limit.Diagnostic;
+            return TypeRelationResult.Unknown(diagnostic);
+        }
     }
 
-    /// <summary>Determines whether is assignable to.</summary>
-    /// <param name="candidate">Specifies the candidate.</param>
-    /// <param name="target">Specifies the target.</param>
-    /// <param name="cancellationToken">Specifies the cancellation token.</param>
-    /// <returns>Returns the result of the operation.</returns>
-    public TypeRelationResult IsAssignableTo(
-        TypeSignature candidate,
-        TypeSignature target,
-        CancellationToken cancellationToken = default)
+
+    /// <inheritdoc cref="ITypeSystem.IsAssignableTo"/>
+    /// <exception cref="ObjectDisposedException">This backend has been disposed.</exception>
+    public TypeRelationResult IsAssignableTo(TypeSignature candidate, TypeSignature target, CancellationToken cancellationToken = default) =>
+        ((IBudgetAwareTypeSystem)this).IsAssignableTo(candidate, target, new TypeSystemQueryContext(QueryOptions, cancellationToken));
+
+    TypeRelationResult IBudgetAwareTypeSystem.IsAssignableTo(TypeSignature candidate, TypeSignature target, TypeSystemQueryContext context)
     {
         ThrowIfDisposed();
-        return _resolver.IsAssignableTo(candidate, target, cancellationToken);
+        try
+        {
+            context.ThrowIfExhausted();
+            var resources = new MappingContext(Mapper.Options, context.CancellationToken, context);
+            var operation = Mapper.CreateOperation(resources);
+            var result = new CecilResolver(operation, context, resources).IsAssignableTo(candidate, target, context.CancellationToken);
+            context.ThrowIfExhausted();
+            return result;
+        }
+        catch (AspectNLimitException limit)
+        {
+            context.CancellationToken.ThrowIfCancellationRequested();
+            var diagnostic = context.LimitDiagnostic ?? limit.Diagnostic;
+            return TypeRelationResult.Unknown(diagnostic);
+        }
     }
 
-    /// <summary>Gets the declared inheritance closure of a type, excluding the type itself.</summary>
-    /// <param name="candidate">Specifies the candidate.</param>
-    /// <param name="cancellationToken">Specifies the cancellation token.</param>
-    /// <returns>Returns the known ancestors and the failure, if any, that stopped expansion.</returns>
-    public InheritanceClosure GetInheritanceClosure(
-        TypeSignature candidate,
-        CancellationToken cancellationToken = default)
+
+    /// <inheritdoc cref="ITypeSystem.GetInheritanceClosure"/>
+    /// <exception cref="ObjectDisposedException">This backend has been disposed.</exception>
+    public InheritanceClosure GetInheritanceClosure(TypeSignature candidate, CancellationToken cancellationToken = default) =>
+        ((IBudgetAwareTypeSystem)this).GetInheritanceClosure(candidate, new TypeSystemQueryContext(QueryOptions, cancellationToken));
+
+    InheritanceClosure IBudgetAwareTypeSystem.GetInheritanceClosure(TypeSignature candidate, TypeSystemQueryContext context)
     {
         ThrowIfDisposed();
-        return _resolver.GetInheritanceClosure(
-            candidate,
-            cancellationToken);
+        try
+        {
+            context.ThrowIfExhausted();
+            var resources = new MappingContext(Mapper.Options, context.CancellationToken, context);
+            var operation = Mapper.CreateOperation(resources);
+            var result = new CecilResolver(operation, context, resources).GetInheritanceClosure(candidate, context.CancellationToken);
+            context.ThrowIfExhausted();
+            return result;
+        }
+        catch (AspectNLimitException limit)
+        {
+            context.CancellationToken.ThrowIfCancellationRequested();
+            var diagnostic = context.LimitDiagnostic ?? limit.Diagnostic;
+            return new InheritanceClosure(Array.Empty<TypeSignature>(), TypeRelationResult.Unknown(diagnostic));
+        }
     }
 
-    /// <summary>Determines whether has direct attribute.</summary>
-    /// <param name="target">Specifies the target.</param>
-    /// <param name="attributeType">Specifies the attribute type.</param>
-    /// <param name="cancellationToken">Specifies the cancellation token.</param>
-    /// <returns>Returns the result of the operation.</returns>
-    public TypeRelationResult HasDirectAttribute(
-        AttributeTarget target,
-        TypeSignature attributeType,
-        CancellationToken cancellationToken = default)
+
+    /// <inheritdoc cref="ITypeSystem.HasDirectAttribute"/>
+    /// <exception cref="ObjectDisposedException">This backend has been disposed.</exception>
+    public TypeRelationResult HasDirectAttribute(AttributeTarget target, TypeSignature attributeType, CancellationToken cancellationToken = default) =>
+        ((IBudgetAwareTypeSystem)this).HasDirectAttribute(target, attributeType, new TypeSystemQueryContext(QueryOptions, cancellationToken));
+
+    TypeRelationResult IBudgetAwareTypeSystem.HasDirectAttribute(AttributeTarget target, TypeSignature attributeType, TypeSystemQueryContext context)
     {
         ThrowIfDisposed();
-        cancellationToken.ThrowIfCancellationRequested();
+        try
+        {
+            context.ThrowIfExhausted();
+            var resources = new MappingContext(Mapper.Options, context.CancellationToken, context);
+            var operation = Mapper.CreateOperation(resources);
+            var result = HasDirectAttributeCore(target, attributeType, operation, resources, context);
+            context.ThrowIfExhausted();
+            return result;
+        }
+        catch (AspectNLimitException limit)
+        {
+            context.CancellationToken.ThrowIfCancellationRequested();
+            var diagnostic = context.LimitDiagnostic ?? limit.Diagnostic;
+            return TypeRelationResult.Unknown(diagnostic);
+        }
+    }
+
+    private TypeRelationResult HasDirectAttributeCore(AttributeTarget target, TypeSignature attributeType, CecilMappingOperation operation, MappingContext resources, TypeSystemQueryContext context)
+    {
+        ThrowIfDisposed();
+        context.ThrowIfExhausted();
 #if NET10_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(target);
         ArgumentNullException.ThrowIfNull(attributeType);
@@ -114,13 +190,15 @@ public sealed class CecilTypeSystem : ITypeSystem, IDisposable
             throw new ArgumentNullException(nameof(attributeType));
 #endif
 
+        var structuralFailure = MetadataLimitGuard.GetFailure(attributeType, context) ?? MetadataLimitGuard.GetFailure(target, context);
+        if (structuralFailure is not null) return TypeRelationResult.Unknown(structuralFailure);
         var metadataFailure = AttributeAvailability.GetFailure(target);
         if (metadataFailure is not null) return metadataFailure;
         IReadOnlyList<AttributeSignature>? attributes;
         MetadataAvailability availability;
         try
         {
-            attributes = GetAttributes(target, out availability);
+            attributes = GetAttributes(target, operation, resources, out availability);
         }
         catch (AspectNLimitException exception)
         {
@@ -142,9 +220,8 @@ public sealed class CecilTypeSystem : ITypeSystem, IDisposable
         TypeRelationResult? unknown = null;
         foreach (var attribute in attributes)
         {
-            var relation = UnqualifiedTypeComparer.AreEqual(
-                attribute.AttributeType,
-                attributeType);
+            if (!context.TryConsumeAttributeRecords(1)) context.ThrowIfExhausted();
+            var relation = StructuralTypeComparer.AreEqual(attribute.AttributeType, attributeType, context, unqualified: true);
             if (relation.Status == MatchStatus.Matched) return relation;
             if (relation.Status == MatchStatus.Unknown) unknown = relation;
         }
@@ -152,7 +229,13 @@ public sealed class CecilTypeSystem : ITypeSystem, IDisposable
         return unknown ?? TypeRelationResult.NotMatched;
     }
 
-    /// <summary>Releases the resources owned by this instance.</summary>
+
+    /// <summary>Clears this backend's caches and makes its module, query, and mapping operations unavailable.</summary>
+    /// <remarks>
+    /// Repeated calls are harmless. The supplied module is left open by default and remains the caller's responsibility.
+    /// If <see cref="CecilMappingOptions.LeaveOpen"/> is <see langword="false"/>, this method also disposes the module.
+    /// Keeping the module open does not keep this backend or its mapper usable after disposal.
+    /// </remarks>
     public void Dispose()
     {
         var module = Interlocked.Exchange(ref _module, null);
@@ -182,9 +265,9 @@ public sealed class CecilTypeSystem : ITypeSystem, IDisposable
                 message));
     }
 
-    private IReadOnlyList<AttributeSignature>? GetAttributes(AttributeTarget target, out MetadataAvailability availability)
+    private IReadOnlyList<AttributeSignature>? GetAttributes(AttributeTarget target, CecilMappingOperation operation, MappingContext resources, out MetadataAvailability availability)
     {
-        if (target.Kind == AttributeTargetKind.Type) return GetTypeAttributes(target.Type!, out availability);
+        if (target.Kind == AttributeTargetKind.Type) return GetTypeAttributes(target.Type!, operation, resources, out availability);
         var source = target.Kind switch
         {
             AttributeTargetKind.Property => target.Property!.Availability,
@@ -204,7 +287,7 @@ public sealed class CecilTypeSystem : ITypeSystem, IDisposable
         };
     }
 
-    private AttributeSignature[]? GetTypeAttributes(TypeSignature type, out MetadataAvailability availability)
+    private AttributeSignature[]? GetTypeAttributes(TypeSignature type, CecilMappingOperation operation, MappingContext resources, out MetadataAvailability availability)
     {
         availability = MetadataAvailability.Complete;
         if (!Mapper.TryGetTypeReference(type, out var reference) || reference is null) return null;
@@ -220,8 +303,8 @@ public sealed class CecilTypeSystem : ITypeSystem, IDisposable
                 _ => (reference as TypeDefinition ?? reference.Resolve())?.CustomAttributes
             };
             return attributes?
-                .Select(attribute => new AttributeSignature(Mapper.MapType(attribute.AttributeType), AttributeTargetKind.Type))
+                .Select(attribute => { resources.ScanAttribute(); return new AttributeSignature(operation.MapType(attribute.AttributeType), AttributeTargetKind.Type); })
                 .ToArray();
-        }, reference.FullName, MetadataFacts.Attributes, out availability);
+        }, "type attribute target", MetadataFacts.Attributes, out availability);
     }
 }

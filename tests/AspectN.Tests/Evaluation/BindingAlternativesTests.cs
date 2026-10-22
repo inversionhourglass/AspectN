@@ -12,7 +12,7 @@ public sealed class BindingAlternativesTests
     [Fact]
     public void ReplaceWithAlternativesFrom_EquivalentBindings_CoalescesBranches()
     {
-        var bindings = new BindingEnvironment(new BindingBudget(new AspectNCompilationOptions(null, GenericVariableMode.Capture), default));
+        var bindings = new BindingEnvironment(new BindingBudget(new AspectNCompilationOptions(GenericVariableMode.Capture), default));
         var variable = new VariableSymbol("T");
         var candidate = Named("String");
         bindings.Bind(variable, candidate, new StubTypeSystem(), static _ => { });
@@ -25,7 +25,7 @@ public sealed class BindingAlternativesTests
     [Fact]
     public void ReplaceWithAlternativesFrom_DifferentCertainty_PreservesBothBranches()
     {
-        var bindings = new BindingEnvironment(new BindingBudget(new AspectNCompilationOptions(null, GenericVariableMode.Capture), default));
+        var bindings = new BindingEnvironment(new BindingBudget(new AspectNCompilationOptions(GenericVariableMode.Capture), default));
         var unknown = bindings.Clone();
         unknown.SetUnknown(true);
 
@@ -54,8 +54,8 @@ public sealed class BindingAlternativesTests
     [Fact]
     public void ReplaceWithAlternativesFrom_DifferentVariableKeys_PreservesBindings()
     {
-        var left = new BindingEnvironment(new BindingBudget(new AspectNCompilationOptions(null, GenericVariableMode.Capture), default));
-        var right = new BindingEnvironment(new BindingBudget(new AspectNCompilationOptions(null, GenericVariableMode.Capture), default));
+        var left = new BindingEnvironment(new BindingBudget(new AspectNCompilationOptions(GenericVariableMode.Capture), default));
+        var right = new BindingEnvironment(new BindingBudget(new AspectNCompilationOptions(GenericVariableMode.Capture), default));
         var type = Named("Int32");
         var system = new StubTypeSystem();
         left.Bind(new VariableSymbol("L"), type, system, static _ => { });
@@ -104,7 +104,7 @@ public sealed class BindingAlternativesTests
 
     private static CompiledTypePattern Compile(string source)
     {
-        var compilation = AspectNCompilation.Create(AspectNParser.ParseTypePattern(source), new AspectNCompilationOptions(null, GenericVariableMode.Capture));
+        var compilation = AspectNCompilation.Create(AspectNParser.ParseTypePattern(source), new AspectNCompilationOptions(GenericVariableMode.Capture));
         Assert.True(compilation.TryGetTypePattern(out var pattern));
         return pattern!;
     }
@@ -123,7 +123,7 @@ public sealed class BindingAlternativesTests
             [new AttributeSignature(Construct("TagAttribute", text), AttributeTargetKind.Method),
                 new AttributeSignature(Construct("TagAttribute", number), AttributeTargetKind.Method)], [],
             availability: new MetadataAvailability(MetadataFacts.Name));
-        var compilation = new AspectNEngine().CompileMemberExpression(source, new AspectNCompilationOptions(null, GenericVariableMode.Capture));
+        var compilation = new AspectNEngine().CompileMemberExpression(source, compilationOptions: new AspectNCompilationOptions(GenericVariableMode.Capture));
         Assert.True(compilation.TryGetMemberPattern(out var pattern));
 
         Assert.Equal(MatchStatus.Unknown, pattern!.Match(candidate, new StubTypeSystem()).Status);

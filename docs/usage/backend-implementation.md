@@ -3,8 +3,17 @@
 <!-- aspectn-usage:v1
 {
   "schema_version": 1,
-  "capability_ids": ["TYPE-NOMINAL-001", "ATTR-TARGETS-001", "CROSS-COMPAT-001"],
-  "inventory_refs": ["INV-0015", "INV-0011", "INV-0014"]
+  "capability_ids": [
+    "TYPE-NOMINAL-001",
+    "ATTR-TARGETS-001",
+    "CROSS-COMPAT-001",
+    "CROSS-RESOURCES-001"
+  ],
+  "inventory_refs": [
+    "INV-0015",
+    "INV-0011",
+    "INV-0014"
+  ]
 }
 -->
 
@@ -12,7 +21,9 @@
 
 ## 严格相等与查询条件
 
-`AreEqual(left, right)` 判断对称的结构相等，可以使用公开的 `StructuralTypeComparer.AreEqual`。空字段及 `TypeKind.Unknown` 在这里仍是身份值，不是通配条件。
+`AreEqual(left, right, cancellationToken = default)` 判断对称的结构相等，可以使用公开的 `StructuralTypeComparer.AreEqual`。空字段及 `TypeKind.Unknown` 在这里仍是身份值，不是通配条件。
+
+程序集严格相等也有独立规则：`AssemblyIdentity` 的名称和区域性使用区分大小写的序数比较，公钥 token 使用忽略大小写的序数比较，版本按值比较。区域性和 token 的 null 输入归一为空字符串；版本为 null 或字段为空，在 `Equals` 中都不表示任意值。类型身份还严格比较每层名称、声明元数、种类及包含链。参见 [AssemblyIdentity XML](../../src/AspectN/Metadata/AssemblyIdentity.cs) 和 [TypeIdentity XML](../../src/AspectN/Metadata/TypeIdentity.cs)；这些说明不会放宽下文查询侧限定规则。
 
 `IsAssignableTo(candidate, target)` 的 `target`、`HasDirectAttribute(target, attributeType)` 的 `attributeType` 则是有方向的查询条件。它们不一定是已经映射的完整原生类型，也不要求有原生关联。
 
@@ -41,6 +52,12 @@
 映射器继续保存当前类型/方法的实际构造实参、原始声明及形参 owner kind/ID/assembly/position，不能为了默认模式统一返回 OriginalDefinition。核心据这些事实拒绝将闭合或借用形参的构造当作自身声明。Capture 预算约束核心求值和绑定工作，不抢占后端内部执行；自定义后端仍自行响应取消和管理查询成本。
 
 `HasDirectAttribute` 内部映射原生特性类型遇到深度/元数限制时，应在查询边界返回 Unknown，保留 `AspectNLimitException.Diagnostic` 的 AN3005/AN3006。不要加入通用读取失败恢复而改写为 AN3004，也不要捕获取消、参数或生命周期错误。显式 Mapper 调用仍抛限制异常；第三方实现应分别验证“直接查询返回 Unknown”和“显式映射抛异常”这两个入口，参见 [D01 裁决与回归](../reviews/2026-10-21-d01-direct-attribute-limits.md)。
+
+## 取消与计量边界
+
+四个公开查询均接收可选 CancellationToken；实现者应在入口、遍历和返回前响应取消，取消抛 OperationCanceledException。Core 的共享预算上下文只在内置后端内部使用，第三方不需要实现额外公开协议。Core 对自身预检查、派发和返回结果消费计量，不能准确计量第三方内部工作、抢占忽略取消的调用或约束其返回前分配。第三方装饰器调用内置公开查询使用独立预算，不自动并入外层 Match。
+
+返回 AN3007/AN3008 的资源失败会被 Core 传播为整次中止，其他成功分支不能覆盖；AN3005/AN3006 仍为局部结构失败。独立查询和映射的策略由实现者管理，内置后端的具体作用域见[资源配置](resource-limits.md)。不要用 ThreadStatic、AsyncLocal 或适配器当前操作字段传递预算。
 
 ## 接入验收
 

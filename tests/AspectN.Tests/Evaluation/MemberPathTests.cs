@@ -137,7 +137,7 @@ public sealed class MemberPathTests
 
     private static MatchResult Match(string source, MethodSignature candidate, GenericVariableMode mode = GenericVariableMode.Declaration)
     {
-        var compilation = AspectNCompilation.Create(AspectNParser.ParseMemberExpression(source), new AspectNCompilationOptions(null, mode));
+        var compilation = AspectNCompilation.Create(AspectNParser.ParseMemberExpression(source), new AspectNCompilationOptions(mode));
         Assert.True(compilation.TryGetMemberPattern(out var pattern), string.Join("; ", compilation.Diagnostics.Select(diagnostic => diagnostic.Message)));
         return pattern!.Match(candidate, new StubTypeSystem());
     }

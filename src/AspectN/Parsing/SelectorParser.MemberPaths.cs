@@ -1,3 +1,4 @@
+using AspectN.Execution;
 using AspectN.Syntax;
 
 namespace AspectN.Parsing;
@@ -21,7 +22,7 @@ internal sealed partial class SelectorParser
         {
             ReportUnexpected(Current, "member name (a member path cannot start with a separator)");
             NextToken();
-            return new MemberPathSyntax(negation, null, null, ParseMemberName());
+            return Context.Create(() => new MemberPathSyntax(negation, null, null, ParseMemberName()));
         }
         _memberSeparatorStart = FindMemberSeparator();
         if (_memberSeparatorStart is not null)
@@ -45,7 +46,7 @@ internal sealed partial class SelectorParser
             }
         }
 
-        return new MemberPathSyntax(negation, declaringType, separator, ParseMemberName());
+        return Context.Create(() => new MemberPathSyntax(negation, declaringType, separator, ParseMemberName()));
     }
 
     // 只在最外层寻找成员分隔符，跳过泛型实参、数组秩与 Boolean 分组中的点。
@@ -90,7 +91,7 @@ internal sealed partial class SelectorParser
         }
     }
 
-    private MemberNamePatternSyntax ParseMemberName(int parentPrecedence = 0)
+    private async StackWork<MemberNamePatternSyntax> ParseMemberNameWork(int parentPrecedence = 0)
     {
         using var nesting = _parser.DepthGuard.Enter(Current.Span);
         MemberNamePatternSyntax left;
@@ -98,17 +99,17 @@ internal sealed partial class SelectorParser
         {
             var bang = NextToken();
             _parser.ReportConsecutiveNegation();
-            left = new UnaryMemberNamePatternSyntax(bang, ParseMemberName(3));
+            left = await Context.CreateWork(async () => new UnaryMemberNamePatternSyntax(bang, await ParseMemberNameWork(3)));
         }
         else if (Current.Kind == SyntaxKind.OpenParenToken)
         {
             var openParen = NextToken();
-            var pattern = ParseMemberName();
-            left = new ParenthesizedMemberNamePatternSyntax(openParen, pattern, MatchToken(SyntaxKind.CloseParenToken));
+            var pattern = await ParseMemberNameWork();
+            left = Context.Create(() => new ParenthesizedMemberNamePatternSyntax(openParen, pattern, MatchToken(SyntaxKind.CloseParenToken)));
         }
         else
         {
-            left = new NamedMemberPatternSyntax(ParseNameSegment());
+            left = await Context.CreateWork(async () => new NamedMemberPatternSyntax(await ParseNameSegmentWork()));
             if (Current.Kind is SyntaxKind.DotDotToken or SyntaxKind.SlashToken)
             {
                 ReportUnexpected(Current, "member name (use '.' between the declaring type and member)");
@@ -123,7 +124,7 @@ internal sealed partial class SelectorParser
             var precedence = GetBinaryPrecedence(Current.Kind);
             if (precedence == 0 || precedence <= parentPrecedence) return left;
             var operatorToken = NextToken();
-            left = new BinaryMemberNamePatternSyntax(left, operatorToken, ParseMemberName(precedence));
+            left = await Context.CreateWork(async () => new BinaryMemberNamePatternSyntax(left, operatorToken, await ParseMemberNameWork(precedence)));
         }
     }
 }

@@ -107,7 +107,8 @@ public sealed class SignatureLimitTests
     {
         var source = generic ? string.Concat(Enumerable.Repeat("Box<", layers)) + "int" + new string('>', layers) :
             "int" + string.Concat(Enumerable.Repeat("[]", layers));
-        var compilation = new AspectNEngine().CompileTypePattern(source);
+        var compilation = new AspectNEngine().CompileTypePattern(source, new AspectNParseOptions(maximumSourceLength: ResourceLimit.Unlimited,
+            maximumSyntaxDepth: ResourceLimit.Finite(1024)));
 
         Assert.Equal(valid, compilation.TryGetTypePattern(out _));
         if (!valid) Assert.Contains(compilation.Diagnostics, diagnostic => diagnostic.Code == "AN1002");

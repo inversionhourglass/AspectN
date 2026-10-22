@@ -24,6 +24,10 @@
     {
       "path": "src/AspectN/TypeSystem/ITypeSystem.cs",
       "section": "AreEqual / IsAssignableTo / HasDirectAttribute"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-10-22-configurable-resource-limits-design.md",
+      "section": "2—6；仅资源策略与公开入口"
     }
   ],
   "scenarios": [
@@ -43,7 +47,8 @@
       "evidence_ids": [
         "EV-20261014-001",
         "EV-20261021-003",
-        "EV-20261021-007"
+        "EV-20261021-007",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -62,7 +67,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-002",
-        "EV-20261021-004"
+        "EV-20261021-004",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -81,7 +87,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-005",
-        "EV-20261021-007"
+        "EV-20261021-007",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -99,7 +106,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-004"
+        "EV-20261014-004",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -118,7 +126,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-001",
-        "EV-20261021-007"
+        "EV-20261021-007",
+        "EV-20261022-201"
       ],
       "unverified_notes": "",
       "exclusion": {
@@ -148,9 +157,10 @@
       ],
       "evidence_ids": [
         "EV-20261021-002",
-        "EV-20261021-007"
+        "EV-20261021-007",
+        "EV-20261022-201"
       ],
-      "unverified_notes": "此场景验证核心消费第三方闭包，不证明内置适配器会生成超限祖先，也不证明循环或无限输入的行为。"
+      "unverified_notes": ""
     },
     {
       "id": "S7",
@@ -166,9 +176,10 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261021-003"
+        "EV-20261021-003",
+        "EV-20261022-201"
       ],
-      "unverified_notes": "仅列出的字段与输入组合；不外推Fody或任意第三方实现。"
+      "unverified_notes": ""
     },
     {
       "id": "S8",
@@ -184,9 +195,10 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261021-003"
+        "EV-20261021-003",
+        "EV-20261022-201"
       ],
-      "unverified_notes": "仅列出的字段与输入组合；不外推Fody或任意第三方实现。"
+      "unverified_notes": ""
     },
     {
       "id": "S9",
@@ -202,9 +214,10 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261021-003"
+        "EV-20261021-003",
+        "EV-20261022-201"
       ],
-      "unverified_notes": "仅列出的字段与输入组合；不外推Fody或任意第三方实现。"
+      "unverified_notes": ""
     },
     {
       "id": "S10",
@@ -220,9 +233,10 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261021-003"
+        "EV-20261021-003",
+        "EV-20261022-201"
       ],
-      "unverified_notes": "仅列出的字段与输入组合；不外推Fody或任意第三方实现。"
+      "unverified_notes": ""
     },
     {
       "id": "S11",
@@ -238,9 +252,10 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261021-004"
+        "EV-20261021-004",
+        "EV-20261022-201"
       ],
-      "unverified_notes": "限定当前Cecil身份及公共构造引用；未证明真实PE自然丢失Module，不等于中立签名脱离原生关联。"
+      "unverified_notes": ""
     },
     {
       "id": "S12",
@@ -256,7 +271,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261021-007"
+        "EV-20261021-007",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     }
@@ -385,3 +401,5 @@ C07 的原生数组 Module 回退及固定关系由 S2 的普通 Cecil 输入与
 数组形状依 USE-ARRAY-001；泛型声明身份依 GEN-IDENTITY-001；未知闭包依 CROSS-AVAILABILITY-001。尚未证明所有程序集转发拓扑或自定义解析器组合。
 
 关系目标首次捕获仅在显式 Capture 合法；默认 Declaration 的已有别名可引用（S12）。S6 的 C05 超限祖先回归按 Capture 重验；限制守卫和无变量查询不变，预算耗尽另外中止整次 Match，不能套用局部已知匹配支配规则。
+
+2026-10-22资源配置变更按[实施审查](../../../reviews/2026-10-22-configurable-resource-limits.md)重评当前证据。历史报告不改写；新增配置的范围由CROSS-RESOURCES-001/S9—S15区分。未新增或改动N/A记录；没有从缺少某后端场景推断排除。

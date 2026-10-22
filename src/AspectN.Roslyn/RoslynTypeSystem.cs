@@ -1,295 +1,121 @@
-using AspectN.AdapterInternals;
 using AspectN.Diagnostics;
-using AspectN.Evaluation;
 using AspectN.Metadata;
 using AspectN.TypeSystem;
 using Microsoft.CodeAnalysis;
-using CoreDiagnosticSeverity = AspectN.Diagnostics.DiagnosticSeverity;
-using CoreTypeKind = AspectN.Metadata.TypeKind;
 
 namespace AspectN.Roslyn;
 
-/// <summary>Provides Roslyn-backed type and metadata operations for AspectN matching.</summary>
-public sealed class RoslynTypeSystem : ITypeSystem
+/// <summary>Queries native metadata using isolated budgets; compiled matching shares its own match budget across internal queries.</summary>
+/// <remarks>Immutable options can be reused concurrently; instance use also requires the native metadata objects to satisfy their concurrency requirements. Each direct query starts fresh. Mapping performed inside a query shares one mapping sub-budget and consumes the query budget. Third-party wrappers use the ordinary public boundary.</remarks>
+public sealed class RoslynTypeSystem : ITypeSystem, IBudgetAwareTypeSystem
 {
-    /// <summary>Initializes a new instance of the RoslynTypeSystem class.</summary>
-    /// <param name="compilation">Specifies the compilation.</param>
-    public RoslynTypeSystem(Compilation compilation)
+    /// <summary>Creates a reusable backend with independent mapping and standalone-query limits.</summary>
+    /// <param name="compilation">The compilation supplying native symbols.</param>
+    /// <param name="mappingOptions">Native mapping limits; null uses mapping defaults.</param>
+    /// <param name="queryOptions">Limits for each direct public query; null uses match defaults. Compiled matching uses the compiled plan options instead.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="compilation"/> is null.</exception>
+    public RoslynTypeSystem(Compilation compilation, AspectNMappingOptions? mappingOptions = null, AspectNMatchOptions? queryOptions = null)
     {
-#if NET10_0_OR_GREATER
-        ArgumentNullException.ThrowIfNull(compilation);
-#else
-        if (compilation is null)
-            throw new ArgumentNullException(nameof(compilation));
-#endif
-
-        Compilation = compilation;
-        Mapper = new RoslynSignatureMapper(compilation);
+        Compilation = compilation ?? throw new ArgumentNullException(nameof(compilation));
+        Mapper = new RoslynSignatureMapper(compilation, mappingOptions);
+        QueryOptions = queryOptions ?? new AspectNMatchOptions();
     }
 
-    /// <summary>Gets the compilation.</summary>
+    /// <summary>Gets the compilation providing native metadata.</summary>
     public Compilation Compilation { get; }
 
-    /// <summary>Gets the capabilities.</summary>
+    /// <inheritdoc cref="ITypeSystem.Capabilities"/>
     public TypeSystemCapabilities Capabilities => TypeSystemCapabilities.All;
 
-    /// <summary>Gets the mapper.</summary>
+    /// <summary>Gets the mapper retaining native associations and immutable mapping limits.</summary>
     public RoslynSignatureMapper Mapper { get; }
 
-    /// <summary>Compares two values for structural equality.</summary>
-    /// <param name="left">Specifies the left.</param>
-    /// <param name="right">Specifies the right.</param>
-    /// <returns>Returns the result of the operation.</returns>
-    public TypeRelationResult AreEqual(
-        TypeSignature left,
-        TypeSignature right)
+    /// <summary>Gets immutable defaults for independent public queries, including 250,000 work units, 1,024 relation nodes, and 4,096 relation edges.</summary>
+    /// <remarks>These defaults do not constrain internal queries made by a compiled match. Different public calls have separate counters; nested mapping consumes both its own limits and the active query limits.</remarks>
+    public AspectNMatchOptions QueryOptions { get; }
+
+    /// <inheritdoc cref="ITypeSystem.AreEqual"/>
+    public TypeRelationResult AreEqual(TypeSignature left, TypeSignature right, CancellationToken cancellationToken = default) =>
+        ((IBudgetAwareTypeSystem)this).AreEqual(left, right, new TypeSystemQueryContext(QueryOptions, cancellationToken));
+
+    TypeRelationResult IBudgetAwareTypeSystem.AreEqual(TypeSignature left, TypeSignature right, TypeSystemQueryContext context)
     {
-        return StructuralTypeComparer.AreEqual(left, right);
-    }
-
-    /// <summary>Determines whether is assignable to.</summary>
-    /// <param name="candidate">Specifies the candidate.</param>
-    /// <param name="target">Specifies the target.</param>
-    /// <param name="cancellationToken">Specifies the cancellation token.</param>
-    /// <returns>Returns the result of the operation.</returns>
-    public TypeRelationResult IsAssignableTo(
-        TypeSignature candidate,
-        TypeSignature target,
-        CancellationToken cancellationToken = default)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        var arrayRelation = ArrayRelations.Compare(candidate, target, CompareUnqualified);
-        if (arrayRelation is not null) return arrayRelation;
-        var structural = CompareUnqualified(candidate, target);
-        if (structural.Status == MatchStatus.Matched) return structural;
-        TypeRelationResult? unresolved = structural.Status == MatchStatus.Unknown ? structural : null;
-
-        if (!Mapper.TryGetTypeSymbol(candidate, out var candidateSymbol) ||
-            candidateSymbol is null)
-        {
-            return unresolved ?? MissingNativeSymbol(candidate);
-        }
-
         try
         {
-            // + 只匹配声明的继承/实现关系；ClassifyCommonConversion 额外包含数组协变与泛型变型，
-            // 与模式路径的合成目标语义不一致，统一按名义闭包遍历（Interfaces 含运行时合成的数组接口）。
-            var pending = new Queue<ITypeSymbol>();
-            var visited = new HashSet<ITypeSymbol>(
-                SymbolEqualityComparer.Default);
-            pending.Enqueue(candidateSymbol);
-            while (pending.Count > 0)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                var current = pending.Dequeue();
-                try
-                {
-                    if (!visited.Add(current)) continue;
-                    var relation = CompareUnqualified(Mapper.MapType(current), target);
-                    if (relation.Status == MatchStatus.Matched) return relation;
-                    // 不可读的祖先只影响该分支；后续已知接口仍能给出确定匹配。
-                    if (relation.Status == MatchStatus.Unknown) unresolved ??= relation;
-                    EnqueueNominalAncestors(current, pending);
-                }
-                catch (Exception exception) when (IsSymbolFailure(exception))
-                {
-                    unresolved ??= SymbolFailure(current, exception);
-                }
-            }
-
-            return unresolved ?? TypeRelationResult.NotMatched;
+            context.ThrowIfExhausted();
+            var result = new RoslynQueryOperation(this, context).AreEqual(left, right, context.CancellationToken);
+            context.ThrowIfExhausted();
+            return result;
         }
-        catch (Exception exception) when (IsSymbolFailure(exception))
+        catch (AspectNLimitException limit)
         {
-            return SymbolFailure(candidateSymbol, exception);
+            context.CancellationToken.ThrowIfCancellationRequested();
+            var diagnostic = context.LimitDiagnostic ?? limit.Diagnostic;
+            return TypeRelationResult.Unknown(diagnostic);
         }
     }
 
-    /// <summary>Gets the declared inheritance closure of a type, excluding the type itself.</summary>
-    /// <param name="candidate">Specifies the candidate.</param>
-    /// <param name="cancellationToken">Specifies the cancellation token.</param>
-    /// <returns>Returns the known ancestors and the failure, if any, that stopped expansion.</returns>
-    public InheritanceClosure GetInheritanceClosure(
-        TypeSignature candidate,
-        CancellationToken cancellationToken = default)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        if (!Mapper.TryGetTypeSymbol(candidate, out var candidateSymbol) ||
-            candidateSymbol is null)
-        {
-            return new InheritanceClosure(
-                Array.Empty<TypeSignature>(),
-                MissingNativeSymbol(candidate));
-        }
+    /// <inheritdoc cref="ITypeSystem.IsAssignableTo"/>
+    public TypeRelationResult IsAssignableTo(TypeSignature candidate, TypeSignature target, CancellationToken cancellationToken = default) =>
+        ((IBudgetAwareTypeSystem)this).IsAssignableTo(candidate, target, new TypeSystemQueryContext(QueryOptions, cancellationToken));
 
-        var closure = new List<TypeSignature>();
-        TypeRelationResult? failure = null;
+    TypeRelationResult IBudgetAwareTypeSystem.IsAssignableTo(TypeSignature candidate, TypeSignature target, TypeSystemQueryContext context)
+    {
         try
         {
-            var pending = new Queue<ITypeSymbol>();
-            EnqueueNominalAncestors(candidateSymbol, pending);
-
-            var visited = new HashSet<ITypeSymbol>(
-                SymbolEqualityComparer.Default) { candidateSymbol };
-            while (pending.Count > 0)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                var current = pending.Dequeue();
-                try
-                {
-                    if (!visited.Add(current)) continue;
-                    closure.Add(Mapper.MapType(current));
-                    EnqueueNominalAncestors(current, pending);
-                }
-                catch (Exception exception) when (IsSymbolFailure(exception))
-                {
-                    failure ??= SymbolFailure(current, exception);
-                }
-            }
+            context.ThrowIfExhausted();
+            var result = new RoslynQueryOperation(this, context).IsAssignableTo(candidate, target, context.CancellationToken);
+            context.ThrowIfExhausted();
+            return result;
         }
-        catch (Exception exception) when (IsSymbolFailure(exception))
+        catch (AspectNLimitException limit)
         {
-            // 符号读取失败：已产出的祖先仍有效，闭包标记为部分并携带失败诊断。
-            return new InheritanceClosure(
-                closure,
-                SymbolFailure(candidateSymbol, exception));
+            context.CancellationToken.ThrowIfCancellationRequested();
+            var diagnostic = context.LimitDiagnostic ?? limit.Diagnostic;
+            return TypeRelationResult.Unknown(diagnostic);
         }
-
-        return new InheritanceClosure(closure, failure);
     }
 
-    /// <summary>Determines whether has direct attribute.</summary>
-    /// <param name="target">Specifies the target.</param>
-    /// <param name="attributeType">Specifies the attribute type.</param>
-    /// <param name="cancellationToken">Specifies the cancellation token.</param>
-    /// <returns>Returns the result of the operation.</returns>
-    public TypeRelationResult HasDirectAttribute(
-        AttributeTarget target,
-        TypeSignature attributeType,
-        CancellationToken cancellationToken = default)
-    {
-#if NET10_0_OR_GREATER
-        ArgumentNullException.ThrowIfNull(target);
-        ArgumentNullException.ThrowIfNull(attributeType);
-#else
-        if (target is null) throw new ArgumentNullException(nameof(target));
-        if (attributeType is null)
-            throw new ArgumentNullException(nameof(attributeType));
-#endif
+    /// <inheritdoc cref="ITypeSystem.GetInheritanceClosure"/>
+    public InheritanceClosure GetInheritanceClosure(TypeSignature candidate, CancellationToken cancellationToken = default) =>
+        ((IBudgetAwareTypeSystem)this).GetInheritanceClosure(candidate, new TypeSystemQueryContext(QueryOptions, cancellationToken));
 
-        cancellationToken.ThrowIfCancellationRequested();
-        var metadataFailure = AttributeAvailability.GetFailure(target);
-        if (metadataFailure is not null) return metadataFailure;
-        IReadOnlyList<AttributeSignature>? attributes;
+    InheritanceClosure IBudgetAwareTypeSystem.GetInheritanceClosure(TypeSignature candidate, TypeSystemQueryContext context)
+    {
         try
         {
-            attributes = GetAttributes(target);
+            context.ThrowIfExhausted();
+            var result = new RoslynQueryOperation(this, context).GetInheritanceClosure(candidate, context.CancellationToken);
+            context.ThrowIfExhausted();
+            return result;
         }
-        catch (Exception exception) when (IsSymbolFailure(exception))
+        catch (AspectNLimitException limit)
         {
-            return SymbolFailure(target.Kind.ToString(), exception);
+            context.CancellationToken.ThrowIfCancellationRequested();
+            var diagnostic = context.LimitDiagnostic ?? limit.Diagnostic;
+            return new InheritanceClosure(Array.Empty<TypeSignature>(), TypeRelationResult.Unknown(diagnostic));
         }
+    }
 
-        if (attributes is null)
+    /// <inheritdoc cref="ITypeSystem.HasDirectAttribute"/>
+    public TypeRelationResult HasDirectAttribute(AttributeTarget target, TypeSignature attributeType, CancellationToken cancellationToken = default) =>
+        ((IBudgetAwareTypeSystem)this).HasDirectAttribute(target, attributeType, new TypeSystemQueryContext(QueryOptions, cancellationToken));
+
+    TypeRelationResult IBudgetAwareTypeSystem.HasDirectAttribute(AttributeTarget target, TypeSignature attributeType, TypeSystemQueryContext context)
+    {
+        try
         {
-            return TypeRelationResult.Unknown(
-                MissingCapability(
-                    "No Roslyn symbol is available for the attribute target."));
+            context.ThrowIfExhausted();
+            var result = new RoslynQueryOperation(this, context).HasDirectAttribute(target, attributeType, context.CancellationToken);
+            context.ThrowIfExhausted();
+            return result;
         }
-
-        TypeRelationResult? unknown = null;
-        foreach (var attribute in attributes)
+        catch (AspectNLimitException limit)
         {
-            var relation = CompareUnqualified(
-                attribute.AttributeType,
-                attributeType);
-            if (relation.Status == MatchStatus.Matched) return relation;
-            if (relation.Status == MatchStatus.Unknown) unknown = relation;
-        }
-
-        return unknown ?? TypeRelationResult.NotMatched;
-    }
-
-    private IReadOnlyList<AttributeSignature>? GetAttributes(
-        AttributeTarget target)
-    {
-        switch (target.Kind)
-        {
-            case AttributeTargetKind.Type:
-                if (!Mapper.TryGetTypeSymbol(
-                        target.Type!,
-                        out var typeSymbol) ||
-                    typeSymbol is null)
-                {
-                    return null;
-                }
-
-                return Mapper.MapTypeAttributes(typeSymbol);
-            case AttributeTargetKind.Method:
-                return target.Method!.Attributes;
-            case AttributeTargetKind.Property:
-                return target.Property!.Attributes;
-            case AttributeTargetKind.Parameter:
-                return target.Parameter!.Attributes;
-            case AttributeTargetKind.Return:
-                return target.Method!.ReturnAttributes;
-            default:
-                return null;
+            context.CancellationToken.ThrowIfCancellationRequested();
+            var diagnostic = context.LimitDiagnostic ?? limit.Diagnostic;
+            return TypeRelationResult.Unknown(diagnostic);
         }
     }
 
-    private void EnqueueNominalAncestors(ITypeSymbol symbol, Queue<ITypeSymbol> pending)
-    {
-        if (symbol is ITypeParameterSymbol parameter)
-        {
-            // Roslyn 的类型形参没有普通 BaseType/Interfaces；使用声明约束并补充隐含基类。
-            pending.Enqueue(Compilation.GetSpecialType(SpecialType.System_Object));
-            if (parameter.HasValueTypeConstraint || parameter.HasUnmanagedTypeConstraint)
-                pending.Enqueue(Compilation.GetSpecialType(SpecialType.System_ValueType));
-            foreach (var constraint in parameter.ConstraintTypes) pending.Enqueue(constraint);
-            return;
-        }
-        if (symbol.BaseType is not null) pending.Enqueue(symbol.BaseType);
-        foreach (var implementation in symbol.Interfaces) pending.Enqueue(implementation);
-    }
-
-    private static TypeRelationResult CompareUnqualified(TypeSignature actual, TypeSignature expected)
-    {
-        return UnqualifiedStructuralComparer.AreEqual(actual, expected);
-    }
-
-    private static bool IsSymbolFailure(Exception exception)
-    {
-        return exception is InvalidOperationException or ArgumentException or AspectNLimitException;
-    }
-
-    private static TypeRelationResult MissingNativeSymbol(
-        TypeSignature candidate)
-    {
-        return TypeRelationResult.Unknown(
-            MissingCapability(
-                $"No Roslyn type symbol is available for " +
-                $"'{candidate.GetType().Name}'."));
-    }
-
-    private static AspectNDiagnostic MissingCapability(string message)
-    {
-        return new AspectNDiagnostic(
-            DiagnosticCodes.MissingBackendCapability,
-            CoreDiagnosticSeverity.Warning,
-            message);
-    }
-
-    private static TypeRelationResult SymbolFailure(
-        object source,
-        Exception exception)
-    {
-        if (exception is AspectNLimitException limit) return TypeRelationResult.Unknown(limit.Diagnostic);
-        return TypeRelationResult.Unknown(
-            new AspectNDiagnostic(
-                DiagnosticCodes.ResolutionFailure,
-                CoreDiagnosticSeverity.Warning,
-                $"Roslyn symbol data for '{source}' could not be read. " +
-                $"{exception.GetType().Name}: {exception.Message}"));
-    }
 }

@@ -51,13 +51,13 @@ public sealed class MethodGenericOwnerIdentityTests
             var reflection = new ReflectionTypeSystem();
             var roslyn = new RoslynTypeSystem(compilation);
             var cecilMethods = cecil.Module.GetType("Review.Owner").Methods.Where(method => method.Name == "M")
-                .Select(cecil.Mapper.MapMethod).ToArray();
+                .Select(method => cecil.Mapper.MapMethod(method)).ToArray();
             var importedMethods = assembly.GetType("Review.Owner")!.GetMethods().Where(method => method.Name == "M")
                 .Select(method => cecil.Mapper.MapMethod(cecil.Module.ImportReference(method))).ToArray();
             var reflectionMethods = assembly.GetType("Review.Owner")!.GetMethods().Where(method => method.Name == "M")
-                .Select(reflection.Mapper.MapMethod).ToArray();
+                .Select(method => reflection.Mapper.MapMethod(method)).ToArray();
             var roslynMethods = compilation.GetTypeByMetadataName("Review.Owner")!.GetMembers("M").OfType<IMethodSymbol>()
-                .Select(roslyn.Mapper.MapMethod).ToArray();
+                .Select(method => roslyn.Mapper.MapMethod(method)).ToArray();
             foreach (var (methods, system) in new (MethodSignature[], ITypeSystem)[]
                      { (cecilMethods, cecil), (reflectionMethods, reflection), (roslynMethods, roslyn), (importedMethods, cecil) })
             {

@@ -64,7 +64,7 @@ public sealed class QueryTargetContractTests
     {
         public TypeSignature? Query { get; private set; }
         public TypeSystemCapabilities Capabilities => TypeSystemCapabilities.All;
-        public TypeRelationResult AreEqual(TypeSignature left, TypeSignature right) => StructuralTypeComparer.AreEqual(left, right);
+        public TypeRelationResult AreEqual(TypeSignature left, TypeSignature right, CancellationToken cancellationToken = default) => StructuralTypeComparer.AreEqual(left, right, cancellationToken: cancellationToken);
         public TypeRelationResult IsAssignableTo(TypeSignature candidate, TypeSignature target, CancellationToken cancellationToken = default)
         {
             Query = target;

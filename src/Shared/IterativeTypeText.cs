@@ -1,4 +1,5 @@
 using System.Text;
+using AspectN.TypeSystem;
 
 namespace AspectN.AdapterInternals;
 
@@ -16,23 +17,28 @@ internal sealed class TypeTextPart<T>(T? type, string? text, bool qualified, boo
 internal static class IterativeTypeText
 {
     public static string Format<T>(T root, bool qualified, bool modified,
-        Func<T, bool, bool, IEnumerable<TypeTextPart<T>>> expand) where T : class
+        Func<T, bool, bool, IEnumerable<TypeTextPart<T>>> expand, MappingContext resources) where T : class
     {
         var output = new StringBuilder();
-        var pending = new Stack<TypeTextPart<T>>();
-        pending.Push(TypeTextPart<T>.Node(root, qualified, modified));
-        while (pending.Count > 0)
+        var pending = new Stack<IEnumerator<TypeTextPart<T>>>();
+        pending.Push(Enumerable.Repeat(TypeTextPart<T>.Node(root, qualified, modified), 1).GetEnumerator());
+        try
         {
-            var part = pending.Pop();
-            if (part.Text is not null)
+            while (pending.Count > 0)
             {
-                output.Append(part.Text);
-                continue;
+                resources.SpendWork();
+                var items = pending.Peek();
+                if (!items.MoveNext()) { pending.Pop().Dispose(); continue; }
+                var part = items.Current;
+                if (part.Text is not null)
+                {
+                    resources.CheckTextLength(output.Length, part.Text.Length);
+                    output.Append(part.Text);
+                }
+                else pending.Push(expand(part.Type!, part.Qualified, part.Modified).GetEnumerator());
             }
-            // 文本片段与子形状一起逆序入栈，保持原有规范文本顺序。
-            var parts = expand(part.Type!, part.Qualified, part.Modified).ToArray();
-            for (var index = parts.Length - 1; index >= 0; index--) pending.Push(parts[index]);
+            return output.ToString();
         }
-        return output.ToString();
+        finally { foreach (var items in pending) items.Dispose(); }
     }
 }

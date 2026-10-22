@@ -1,3 +1,4 @@
+using AspectN.Execution;
 using System.Collections.ObjectModel;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -11,7 +12,7 @@ namespace AspectN.Binding;
 
 internal sealed partial class Binder(
     AspectNSyntaxTree syntaxTree,
-    AspectNCompilationOptions? options = null)
+    AspectNCompilationOptions? options = null, CancellationToken cancellationToken = default)
 {
     private static readonly Dictionary<string, string> _PrimitiveAliases =
         new(StringComparer.Ordinal)
@@ -56,13 +57,13 @@ internal sealed partial class Binder(
         return _syntaxTree.ParseKind switch
         {
             AspectNParseKind.MemberExpression =>
-                BindExpression((ExpressionSyntax)_syntaxTree.Root, scope),
-            AspectNParseKind.TypePattern => BindTypeRoot(_syntaxTree.Root, scope),
+                WorkStack.Run(BindExpressionWork((ExpressionSyntax)_syntaxTree.Root, scope), cancellationToken),
+            AspectNParseKind.TypePattern => WorkStack.Run(BindTypeRootWork(_syntaxTree.Root, scope), cancellationToken),
             _ => null
         };
     }
 
-    private BoundTypePattern BindTypeRoot(SyntaxNode root, VariableScope scope)
+    private async StackWork<BoundTypePattern> BindTypeRootWork(SyntaxNode root, VariableScope scope)
     {
         if (root is TypeUseSyntax typeUse)
         {
@@ -71,23 +72,23 @@ internal sealed partial class Binder(
                 DiagnosticSeverity.Error,
                 "A top-level type pattern cannot specify a ref kind.",
                 typeUse.FullSpan);
-            return BindTypePattern(typeUse.TypePattern, scope, false);
+            return await BindTypePatternWork(typeUse.TypePattern, scope, false);
         }
 
-        return BindTypePattern((TypePatternSyntax)root, scope, false);
+        return await BindTypePatternWork((TypePatternSyntax)root, scope, false);
     }
 
     // 表达式绑定需要沿着分支复制作用域，保证逻辑运算两侧的变量约束不会相互污染。
-    private BoundExpression BindExpression(
+    private async StackWork<BoundExpression> BindExpressionWork(
         ExpressionSyntax syntax,
         VariableScope scope)
     {
         switch (syntax)
         {
             case SelectorSyntax selector:
-                return BindSelector(selector, scope);
+                return await BindSelectorWork(selector, scope);
             case ParenthesizedExpressionSyntax parenthesized:
-                return BindExpression(parenthesized.Expression, scope);
+                return await BindExpressionWork(parenthesized.Expression, scope);
             case UnaryExpressionSyntax unary:
                 {
                     var childScope = scope.Clone();
@@ -95,7 +96,7 @@ internal sealed partial class Binder(
                     _negationDepth++;
                     try
                     {
-                        operand = BindExpression(unary.Operand, childScope);
+                        operand = await BindExpressionWork(unary.Operand, childScope);
                     }
                     finally
                     {
@@ -106,21 +107,21 @@ internal sealed partial class Binder(
                     return new BoundUnaryExpression(unary.FullSpan, operand);
                 }
             case BinaryExpressionSyntax binary:
-                return BindBinaryExpression(binary, scope);
+                return await BindBinaryExpressionWork(binary, scope);
             default:
                 throw new InvalidOperationException(
                     $"Unsupported expression syntax '{syntax.Kind}'.");
         }
     }
 
-    private BoundBinaryExpression BindBinaryExpression(
+    private async StackWork<BoundBinaryExpression> BindBinaryExpressionWork(
         BinaryExpressionSyntax syntax,
         VariableScope scope)
     {
         if (syntax.OperatorToken.Kind == SyntaxKind.AmpersandAmpersandToken)
         {
-            var left = BindExpression(syntax.Left, scope);
-            var right = BindExpression(syntax.Right, scope);
+            var left = await BindExpressionWork(syntax.Left, scope);
+            var right = await BindExpressionWork(syntax.Right, scope);
             var domain = left.TargetDomain & right.TargetDomain;
             if (domain == SelectorTargetDomain.None)
             {
@@ -141,8 +142,8 @@ internal sealed partial class Binder(
 
         var leftScope = scope.Clone();
         var rightScope = scope.Clone();
-        var leftBranch = BindExpression(syntax.Left, leftScope);
-        var rightBranch = BindExpression(syntax.Right, rightScope);
+        var leftBranch = await BindExpressionWork(syntax.Left, leftScope);
+        var rightBranch = await BindExpressionWork(syntax.Right, rightScope);
         ReportDuplicateBranchVariables(
             scope,
             leftScope,
@@ -158,7 +159,7 @@ internal sealed partial class Binder(
             leftBranch.TargetDomain | rightBranch.TargetDomain);
     }
 
-    private BoundSelector BindSelector(
+    private async StackWork<BoundSelector> BindSelectorWork(
         SelectorSyntax syntax,
         VariableScope scope)
     {
@@ -170,42 +171,42 @@ internal sealed partial class Binder(
                 EqualsKeyword(callable.KeywordToken!.Text, "execution")
                     ? SelectorTargetDomain.All
                     : SelectorTargetDomain.Callable,
-                BindMethodSignature(
+                await BindMethodSignatureWork(
                     (MethodSignatureSyntax)callable.Body!,
                     scope)),
             MethodSelectorSyntax method => new BoundSelector(
                 method.FullSpan,
                 BoundSelectorKind.Method,
                 SelectorTargetDomain.OrdinaryMethod,
-                BindMethodSignature(
+                await BindMethodSignatureWork(
                     (MethodSignatureSyntax)method.Body!,
                     scope)),
             PropertySelectorSyntax property => new BoundSelector(
                 property.FullSpan,
                 BoundSelectorKind.Property,
                 SelectorTargetDomain.PropertyAccessor,
-                BindPropertySignature(
+                await BindPropertySignatureWork(
                     (PropertySignatureSyntax)property.Body!,
                     scope)),
             GetterSelectorSyntax getter => new BoundSelector(
                 getter.FullSpan,
                 BoundSelectorKind.Getter,
                 SelectorTargetDomain.PropertyGetter,
-                BindPropertySignature(
+                await BindPropertySignatureWork(
                     (PropertySignatureSyntax)getter.Body!,
                     scope)),
             SetterSelectorSyntax setter => new BoundSelector(
                 setter.FullSpan,
                 BoundSelectorKind.Setter,
                 SelectorTargetDomain.PropertySetter,
-                BindPropertySignature(
+                await BindPropertySignatureWork(
                     (PropertySignatureSyntax)setter.Body!,
                     scope)),
             ConstructorSelectorSyntax constructor => new BoundSelector(
                 constructor.FullSpan,
                 BoundSelectorKind.Constructor,
                 SelectorTargetDomain.InstanceConstructor,
-                BindConstructorSignature(
+                await BindConstructorSignatureWork(
                     (ConstructorSignatureSyntax)constructor.Body!,
                     scope)),
             StaticConstructorSelectorSyntax staticConstructor =>
@@ -215,11 +216,11 @@ internal sealed partial class Binder(
                     SelectorTargetDomain.StaticConstructor,
                     new BoundStaticConstructorSignature(
                         staticConstructor.Body!.FullSpan,
-                        BindDeclarationType(
+                        await BindDeclarationTypeWork(
                             (TypePatternSyntax)staticConstructor.Body,
                             scope,
                             IsUnderNegation, DeclarationSource.DeclaringType))),
-            AttributeSelectorSyntax attribute => BindAttributeSelector(
+            AttributeSelectorSyntax attribute => await BindAttributeSelectorWork(
                 attribute,
                 scope),
             RegexSelectorSyntax regex => new BoundSelector(
@@ -252,7 +253,7 @@ internal sealed partial class Binder(
         return new BoundRegexPattern(body.Span, body.Text);
     }
 
-    private BoundSelector BindAttributeSelector(
+    private async StackWork<BoundSelector> BindAttributeSelectorWork(
         AttributeSelectorSyntax syntax,
         VariableScope scope)
     {
@@ -291,22 +292,19 @@ internal sealed partial class Binder(
                 signature.FullSpan,
                 target,
                 parameterIndex,
-                BindTypePattern(typeSyntax, scope, IsUnderNegation)));
+                await BindTypePatternWork(typeSyntax, scope, IsUnderNegation)));
     }
 
-    private BoundMethodSignature BindMethodSignature(
+    private async StackWork<BoundMethodSignature> BindMethodSignatureWork(
         MethodSignatureSyntax syntax,
         VariableScope scope)
     {
         var modifiers = BindModifiers(syntax.Parts.OfType<ModifierSyntax>());
         var returnSyntax = syntax.Parts.OfType<TypeUseSyntax>().First();
-        var member = BindMemberPattern(syntax.Parts.OfType<MemberPathSyntax>().Single(), scope, false);
-        var returnType = BindTypeUse(returnSyntax, scope, true);
-        var parameters = syntax.Parts
-            .OfType<ParameterSyntax>()
-            .Select(parameter =>
-                BindTypeUse(parameter.TypeUse, scope, false))
-            .ToArray();
+        var member = await BindMemberPatternWork(syntax.Parts.OfType<MemberPathSyntax>().Single(), scope, false);
+        var returnType = await BindTypeUseWork(returnSyntax, scope, true);
+        var parameters = await WorkSequence.Select(syntax.Parts.OfType<ParameterSyntax>(),
+            parameter => BindTypeUseWork(parameter.TypeUse, scope, false));
         return new BoundMethodSignature(
             syntax.FullSpan,
             modifiers,
@@ -316,31 +314,28 @@ internal sealed partial class Binder(
             MatchesAnyParameters(syntax.Parts));
     }
 
-    private BoundPropertySignature BindPropertySignature(
+    private async StackWork<BoundPropertySignature> BindPropertySignatureWork(
         PropertySignatureSyntax syntax,
         VariableScope scope)
     {
         var typeSyntax = syntax.Parts.OfType<TypeUseSyntax>().First();
-        var member = BindMemberPattern(syntax.Parts.OfType<MemberPathSyntax>().Single(), scope, true);
+        var member = await BindMemberPatternWork(syntax.Parts.OfType<MemberPathSyntax>().Single(), scope, true);
         return new BoundPropertySignature(
             syntax.FullSpan,
             BindModifiers(syntax.Parts.OfType<ModifierSyntax>()),
-            BindTypeUse(typeSyntax, scope, true),
+            await BindTypeUseWork(typeSyntax, scope, true),
             member);
     }
 
-    private BoundConstructorSignature BindConstructorSignature(
+    private async StackWork<BoundConstructorSignature> BindConstructorSignatureWork(
         ConstructorSignatureSyntax syntax,
         VariableScope scope)
     {
         // 声明类型在源码顺序上先于参数，其引入的变量必须先进入作用域，参数内的引用才是合法引用。
         var declaringType = syntax.Parts.OfType<TypePatternSyntax>().First();
-        var declaringTypePattern = BindDeclarationType(declaringType, scope, IsUnderNegation, DeclarationSource.DeclaringType);
-        var parameters = syntax.Parts
-            .OfType<ParameterSyntax>()
-            .Select(parameter =>
-                BindTypeUse(parameter.TypeUse, scope, false))
-            .ToArray();
+        var declaringTypePattern = await BindDeclarationTypeWork(declaringType, scope, IsUnderNegation, DeclarationSource.DeclaringType);
+        var parameters = await WorkSequence.Select(syntax.Parts.OfType<ParameterSyntax>(),
+            parameter => BindTypeUseWork(parameter.TypeUse, scope, false));
         return new BoundConstructorSignature(
             syntax.FullSpan,
             declaringTypePattern,
@@ -348,7 +343,7 @@ internal sealed partial class Binder(
             MatchesAnyParameters(syntax.Parts));
     }
 
-    private BoundTypeUsePattern BindTypeUse(
+    private async StackWork<BoundTypeUsePattern> BindTypeUseWork(
         TypeUseSyntax syntax,
         VariableScope scope,
         bool isReturn)
@@ -380,7 +375,7 @@ internal sealed partial class Binder(
             return new BoundTypeUsePattern(
                 refKind,
                 negatedRef,
-                BindTypePattern(syntax.TypePattern, scope, IsUnderNegation));
+                await BindTypePatternWork(syntax.TypePattern, scope, IsUnderNegation));
         }
         finally
         {
@@ -516,7 +511,7 @@ internal sealed partial class Binder(
         }
     }
 
-    private BoundTypePattern BindTypePattern(
+    private async StackWork<BoundTypePattern> BindTypePatternWork(
         TypePatternSyntax syntax,
         VariableScope scope,
         bool underNegation)
@@ -524,7 +519,7 @@ internal sealed partial class Binder(
         switch (syntax)
         {
             case NamedTypePatternSyntax named:
-                return BindNamedTypePattern(named, scope, underNegation);
+                return await BindNamedTypePatternWork(named, scope, underNegation);
             case WildcardTypePatternSyntax wildcard:
                 return new BoundWildcardTypePattern(wildcard.FullSpan);
             case VariableTypePatternSyntax variable:
@@ -534,7 +529,7 @@ internal sealed partial class Binder(
                     scope,
                     underNegation);
             case ArrayTypePatternSyntax array:
-                return BindArrayTypePattern(array, scope, underNegation);
+                return await BindArrayTypePatternWork(array, scope, underNegation);
             case NullableTypePatternSyntax nullable:
                 if (UnwrapParenthesized(nullable.UnderlyingType) is NullableTypePatternSyntax)
                 {
@@ -543,27 +538,26 @@ internal sealed partial class Binder(
                 }
                 return new BoundNullableTypePattern(
                     nullable.FullSpan,
-                    BindDeclarationWrappedType(nullable.UnderlyingType, scope, underNegation, DeclarationTypeStep.NullableUnderlying));
+                    await BindDeclarationWrappedTypeWork(nullable.UnderlyingType, scope, underNegation, DeclarationTypeStep.NullableUnderlying));
             case AssignableTypePatternSyntax assignable:
                 ReportInvalidAssignableTarget(assignable);
                 return new BoundAssignableTypePattern(
                     assignable.FullSpan,
-                    BindDeclarationType(
+                    await BindDeclarationTypeWork(
                         assignable.TargetType,
                         scope,
                         underNegation, null));
             case TupleTypePatternSyntax tuple:
                 return new BoundTupleTypePattern(
                     tuple.FullSpan,
-                    tuple.Elements.Select(element =>
-                        BindDeclarationType(element, scope, underNegation, null)));
+                    await WorkSequence.Select(tuple.Elements, element => BindDeclarationTypeWork(element, scope, underNegation, null)));
             case TaskLikeTypePatternSyntax taskLike:
                 if (taskLike.ResultType is null)
                 {
                     return new BoundTaskLikeTypePattern(taskLike.FullSpan, null);
                 }
 
-                var taskLikeResult = BindDeclarationType(
+                var taskLikeResult = await BindDeclarationTypeWork(
                     taskLike.ResultType,
                     scope,
                     underNegation, null);
@@ -580,7 +574,7 @@ internal sealed partial class Binder(
                     taskLike.FullSpan,
                     taskLikeResult);
             case ParenthesizedTypePatternSyntax parenthesized:
-                return BindTypePattern(
+                return await BindTypePatternWork(
                     parenthesized.Pattern,
                     scope,
                     underNegation);
@@ -591,7 +585,7 @@ internal sealed partial class Binder(
                     if (negatesGenericDefinition) _genericDefinitionNegationDepth++;
                     try
                     {
-                        var operand = BindTypePattern(unary.Operand, childScope, true);
+                        var operand = await BindTypePatternWork(unary.Operand, childScope, true);
                         scope.HideNewVariablesFrom(childScope);
                         return new BoundUnaryTypePattern(unary.FullSpan, operand);
                     }
@@ -601,14 +595,14 @@ internal sealed partial class Binder(
                     }
                 }
             case BinaryTypePatternSyntax binary:
-                return BindBinaryTypePattern(binary, scope, underNegation);
+                return await BindBinaryTypePatternWork(binary, scope, underNegation);
             default:
                 throw new InvalidOperationException(
                     $"Unsupported type-pattern syntax '{syntax.Kind}'.");
         }
     }
 
-    private BoundArrayTypePattern BindArrayTypePattern(
+    private async StackWork<BoundArrayTypePattern> BindArrayTypePatternWork(
         ArrayTypePatternSyntax syntax,
         VariableScope scope,
         bool underNegation)
@@ -621,7 +615,7 @@ internal sealed partial class Binder(
             elementType = array.ElementType;
         }
 
-        BoundTypePattern bound = BindDeclarationWrappedType(elementType, scope, underNegation,
+        BoundTypePattern bound = await BindDeclarationWrappedTypeWork(elementType, scope, underNegation,
             DeclarationTypeStep.ArrayElement, suffixes.Count);
         foreach (var suffix in suffixes)
         {
@@ -644,7 +638,7 @@ internal sealed partial class Binder(
         return syntax;
     }
 
-    private BoundBinaryTypePattern BindBinaryTypePattern(
+    private async StackWork<BoundBinaryTypePattern> BindBinaryTypePatternWork(
         BinaryTypePatternSyntax syntax,
         VariableScope scope,
         bool underNegation)
@@ -653,15 +647,15 @@ internal sealed partial class Binder(
         {
             return new BoundBinaryTypePattern(
                 syntax.FullSpan,
-                BindTypePattern(syntax.Left, scope, underNegation),
+                await BindTypePatternWork(syntax.Left, scope, underNegation),
                 BoundTypeLogicalOperator.And,
-                BindTypePattern(syntax.Right, scope, underNegation));
+                await BindTypePatternWork(syntax.Right, scope, underNegation));
         }
 
         var leftScope = scope.Clone();
         var rightScope = scope.Clone();
-        var left = BindTypePattern(syntax.Left, leftScope, underNegation);
-        var right = BindTypePattern(syntax.Right, rightScope, underNegation);
+        var left = await BindTypePatternWork(syntax.Left, leftScope, underNegation);
+        var right = await BindTypePatternWork(syntax.Right, rightScope, underNegation);
         ReportDuplicateBranchVariables(
             scope,
             leftScope,
@@ -676,26 +670,27 @@ internal sealed partial class Binder(
             right);
     }
 
-    private BoundNamedTypePattern BindNamedTypePattern(
+    private async StackWork<BoundNamedTypePattern> BindNamedTypePatternWork(
         NamedTypePatternSyntax syntax,
         VariableScope scope,
         bool underNegation)
     {
         var outerTypeIndex = syntax.Separators.ToList().FindIndex(token => token.Kind == SyntaxKind.SlashToken);
         if (outerTypeIndex < 0) outerTypeIndex = syntax.Segments.Count - 1;
-        var remainingArity = AspectNLimits.MaximumGenericParameters;
+        var typeArityLimit = _syntaxTree.ParseOptions.MaximumTypeGenericParameters;
+        long totalArity = 0;
         foreach (var segment in syntax.Segments.Skip(outerTypeIndex))
         {
             var arity = segment.GenericArguments?.Arity ?? 0;
-            if (arity > remainingArity)
+            if (!typeArityLimit.IsUnlimited && arity > typeArityLimit.Value - totalArity)
             {
                 _diagnostics.Add(DiagnosticCodes.InvalidGenericClause, DiagnosticSeverity.Error,
-                    "The effective type arity, including enclosing types, cannot exceed 64 parameters.", syntax.FullSpan);
+                    $"Binding exceeded MaximumTypeGenericParameters ({typeArityLimit}); requested {totalArity + arity} effective slots.", syntax.FullSpan);
                 break;
             }
-            remainingArity -= arity;
+            totalArity += arity;
         }
-        var segments = syntax.Segments.Select((segment, index) =>
+        var segments = await WorkSequence.Select(syntax.Segments, async (segment, index) =>
         {
             var genericSyntax = segment.GenericArguments;
             if (index < outerTypeIndex && genericSyntax is not null)
@@ -711,14 +706,14 @@ internal sealed partial class Binder(
                 segment.NameParts.Select(token => token.Text));
             return new BoundNameSegment(
                 pattern,
-                BindGenericPattern(
+                await BindGenericPatternWork(
                     genericSyntax,
                     pattern == "*",
                     scope,
                     underNegation,
                     _genericDefinitionDepth == 0 ? _declarationSource : null,
                     syntax.Segments.Count - index - 1));
-        }).ToArray();
+        });
         var separators = syntax.Separators.Select(token => token.Text).ToArray();
         var sourceName = BuildCanonicalName(segments, separators);
         var canonicalName = _PrimitiveAliases.TryGetValue(
@@ -744,7 +739,7 @@ internal sealed partial class Binder(
             canonicalName);
     }
 
-    private BoundGenericPattern BindGenericPattern(
+    private async StackWork<BoundGenericPattern> BindGenericPatternWork(
         GenericPatternListSyntax? syntax,
         bool nameIsWildcard,
         VariableScope scope,
@@ -761,10 +756,12 @@ internal sealed partial class Binder(
                 0);
         }
 
-        if (syntax.Arity > AspectNLimits.MaximumGenericParameters)
+        var arityLimit = source == DeclarationSource.Method ? _syntaxTree.ParseOptions.MaximumMethodGenericParameters :
+            _syntaxTree.ParseOptions.MaximumTypeGenericParameters;
+        if (arityLimit.ExceededBy(syntax.Arity))
         {
             _diagnostics.Add(DiagnosticCodes.InvalidGenericClause, DiagnosticSeverity.Error,
-                "A generic clause cannot exceed 64 parameters.", syntax.FullSpan);
+                $"Binding exceeded {(source == DeclarationSource.Method ? nameof(AspectNParseOptions.MaximumMethodGenericParameters) : nameof(AspectNParseOptions.MaximumTypeGenericParameters))} ({arityLimit}); requested {syntax.Arity} slots.", syntax.FullSpan);
             return new BoundGenericPattern(BoundGenericArityKind.Exact, 0);
         }
 
@@ -772,7 +769,7 @@ internal sealed partial class Binder(
         _genericDefinitionDepth++;
         try
         {
-            arguments = syntax.Arguments.Select((argument, position) =>
+            arguments = await WorkSequence.Select(syntax.Arguments, async (argument, position) =>
             {
                 var previous = _declarationSlot;
                 _declarationSlot = source is not null && _genericDefinitionDepth == 1 &&
@@ -781,13 +778,13 @@ internal sealed partial class Binder(
                     : null;
                 try
                 {
-                    return BindTypePattern(argument, scope, underNegation);
+                    return await BindTypePatternWork(argument, scope, underNegation);
                 }
                 finally
                 {
                     _declarationSlot = previous;
                 }
-            }).ToArray();
+            });
         }
         finally
         {

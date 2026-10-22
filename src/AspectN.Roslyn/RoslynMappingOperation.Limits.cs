@@ -1,22 +1,26 @@
+using AspectN.TypeSystem;
 using AspectN.AdapterInternals;
 using Microsoft.CodeAnalysis;
 
 namespace AspectN.Roslyn;
 
-public sealed partial class RoslynSignatureMapper
+internal sealed partial class RoslynMappingOperation
 {
-    private void ValidateType(ITypeSymbol type) => NativeTypeLimitGuard.Validate(
-        NormalizeType(type), EffectiveArity, ShapeChildren, DeclarationContexts);
+    private readonly HashSet<ITypeSymbol> _validated = new(SymbolEqualityComparer.Default);
 
-    private static int EffectiveArity(ITypeSymbol type)
+    private void ValidateType(ITypeSymbol type) => NativeTypeLimitGuard.Validate(
+        NormalizeType(type), EffectiveArity, ShapeChildren, DeclarationContexts, _resources, _validated);
+
+    private int EffectiveArity(ITypeSymbol type)
     {
         var arity = 0;
         var depth = 0;
         for (var current = type as INamedTypeSymbol; current is not null; current = current.ContainingType)
         {
-            NativeTypeLimitGuard.CheckDepth(++depth);
-            NativeTypeLimitGuard.CheckArity(current.TypeArguments.Length);
-            arity = NativeTypeLimitGuard.AddArity(arity, current.Arity);
+            _resources.SpendWork();
+            _resources.CheckDepth(++depth);
+            _resources.CheckArity(current.TypeArguments.Length);
+            arity = NativeTypeLimitGuard.AddArity(arity, current.Arity, _resources);
         }
         return arity;
     }
@@ -67,7 +71,7 @@ public sealed partial class RoslynSignatureMapper
 
     private IEnumerable<ITypeSymbol> MethodTypes(IMethodSymbol method)
     {
-        NativeTypeLimitGuard.CheckArity(method.Arity);
+        _resources.CheckArity(method.Arity, method: true);
         yield return method.ContainingType;
         yield return NormalizeType(method.ReturnType);
         foreach (var parameter in method.Parameters) yield return NormalizeType(parameter.Type);

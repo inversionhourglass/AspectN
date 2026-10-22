@@ -14,24 +14,31 @@ public sealed class AspectNSyntaxTree
         SourceText text,
         AspectNParseKind parseKind,
         SyntaxNode root,
-        IEnumerable<AspectNDiagnostic> diagnostics)
+        IEnumerable<AspectNDiagnostic> diagnostics, AspectNParseOptions? parseOptions = null,
+        CancellationToken cancellationToken = default)
     {
         Text = text;
         ParseKind = parseKind;
         Root = root;
+        ParseOptions = parseOptions ?? new AspectNParseOptions();
+        cancellationToken.ThrowIfCancellationRequested();
         var snapshot = diagnostics.ToList();
         // 平铺二元表达式也能形成深树，绑定前必须独立检查树高。
-        if (root.Depth > ParserDepthGuard.MAXIMUM_SYNTAX_DEPTH)
+        if (ParseOptions.MaximumSyntaxDepth.ExceededBy(root.Depth))
             snapshot.Add(new AspectNDiagnostic(DiagnosticCodes.InputDepthExceeded,
-                DiagnosticSeverity.Error, "The syntax tree exceeds the supported depth of 256 nodes.", root.FullSpan));
-        if (TypeStructureGuard.ExceedsLimit(root))
+                DiagnosticSeverity.Error, $"Parsing exceeded MaximumSyntaxDepth ({ParseOptions.MaximumSyntaxDepth}); requested {root.Depth} levels.", root.FullSpan));
+        if (TypeStructureGuard.ExceedsLimit(root, ParseOptions, cancellationToken))
             snapshot.Add(new AspectNDiagnostic(DiagnosticCodes.InputDepthExceeded,
-                DiagnosticSeverity.Error, "The type pattern exceeds the supported structural depth of 64 levels.", root.FullSpan));
+                DiagnosticSeverity.Error, $"Parsing exceeded MaximumTypeDepth ({ParseOptions.MaximumTypeDepth}).", root.FullSpan));
         _diagnostics = new ReadOnlyCollection<AspectNDiagnostic>(DiagnosticSnapshot.Create(snapshot));
     }
 
     /// <summary>Gets the text.</summary>
     public SourceText Text { get; }
+
+    /// <summary>Gets the immutable limits used to parse and validate this tree.</summary>
+    /// <remarks>Compilation retains these limits for binding. Recompiling an existing tree cannot override them.</remarks>
+    public AspectNParseOptions ParseOptions { get; }
 
     /// <summary>Gets the parse kind.</summary>
     public AspectNParseKind ParseKind { get; }

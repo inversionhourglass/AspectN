@@ -1,4 +1,5 @@
 using AspectN.Metadata;
+using AspectN.TypeSystem;
 
 namespace AspectN.AdapterInternals;
 
@@ -6,28 +7,42 @@ internal static class IterativeTypeMapping
 {
     public static TypeSignature Map<T>(T root, Func<T, TypeSignature?> find,
         Func<T, IEnumerable<T>> dependencies, Func<T, TypeSignature> create,
-        Func<T, Func<TypeSignature>, TypeSignature> publish) where T : class
+        Func<T, Func<TypeSignature>, TypeSignature> publish, MappingContext resources) where T : class
     {
-        var pending = new Stack<(T Type, bool Expanded)>();
+        var pending = new Stack<(T Type, IEnumerator<T>? Items)>();
         var completed = new List<T>();
-        pending.Push((root, false));
-        while (pending.Count > 0)
+        pending.Push((root, null));
+        try
         {
-            var (type, expanded) = pending.Pop();
-            completed.Add(type);
-            if (find(type) is not null) continue;
-            if (expanded)
+            while (pending.Count > 0)
             {
-                publish(type, () => create(type));
-                continue;
+                resources.SpendWork();
+                var (type, items) = pending.Pop();
+                if (items is not null)
+                {
+                    if (items.MoveNext())
+                    {
+                        pending.Push((type, items));
+                        pending.Push((items.Current, null));
+                    }
+                    else
+                    {
+                        items.Dispose();
+                        publish(type, () => create(type));
+                    }
+                    continue;
+                }
+                completed.Add(type);
+                if (find(type) is not null) continue;
+                pending.Push((type, dependencies(type).GetEnumerator()));
             }
-            // 先映射依赖再构造父节点；create 中的子类型查询仅命中缓存，不再递归展开。
-            pending.Push((type, true));
-            foreach (var dependency in dependencies(type)) pending.Push((dependency, false));
+            return find(root)!;
         }
-        var result = find(root)!;
-        // 弱缓存的原生子类型在父节点构造结束前必须保持存活。
-        GC.KeepAlive(completed);
-        return result;
+        finally
+        {
+            foreach (var frame in pending) frame.Items?.Dispose();
+            // 弱缓存的原生子类型在父节点构造结束前必须保持存活。
+            GC.KeepAlive(completed);
+        }
     }
 }

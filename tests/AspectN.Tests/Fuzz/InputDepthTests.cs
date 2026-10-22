@@ -36,14 +36,16 @@ public sealed class InputDepthTests
     public void ParseMemberExpression_DeepParentheses_ReturnsDepthDiagnostic()
     {
         var source = new string('(', 300) + "method(* *(..))" + new string(')', 300);
-        AssertDepthFailure(AspectNParser.ParseMemberExpression(source));
+        AssertDepthFailure(AspectNParser.ParseMemberExpression(source, new AspectNParseOptions(maximumSourceLength: ResourceLimit.Unlimited,
+            maximumTokens: ResourceLimit.Unlimited, maximumSyntaxNodes: ResourceLimit.Unlimited)));
     }
 
     [Fact]
     public void ParseMemberExpression_LongBooleanChain_ReturnsDepthDiagnostic()
     {
         var source = string.Join(" || ", Enumerable.Repeat("method(* *(..))", 300));
-        AssertDepthFailure(AspectNParser.ParseMemberExpression(source));
+        AssertDepthFailure(AspectNParser.ParseMemberExpression(source, new AspectNParseOptions(maximumSourceLength: ResourceLimit.Unlimited,
+            maximumTokens: ResourceLimit.Unlimited, maximumSyntaxNodes: ResourceLimit.Unlimited)));
     }
 
     [Theory]
@@ -54,7 +56,8 @@ public sealed class InputDepthTests
         var source = generic
             ? string.Concat(Enumerable.Repeat("List<", 300)) + "int" + new string('>', 300)
             : "int" + string.Concat(Enumerable.Repeat("[]", 300));
-        AssertDepthFailure(AspectNParser.ParseTypePattern(source));
+        AssertDepthFailure(AspectNParser.ParseTypePattern(source, new AspectNParseOptions(maximumSourceLength: ResourceLimit.Unlimited,
+            maximumTokens: ResourceLimit.Unlimited, maximumSyntaxNodes: ResourceLimit.Unlimited)));
     }
 
     [Fact]
@@ -99,7 +102,8 @@ public sealed class InputDepthTests
     public void AreEqual_OneHundredThousandArrayLayers_UsesBoundedCallStack()
     {
         Assert.Equal(MatchStatus.Matched,
-            StructuralTypeComparer.AreEqual(DeepArray(100_000), DeepArray(100_000)).Status);
+            StructuralTypeComparer.AreEqual(DeepArray(100_000), DeepArray(100_000),
+                new AspectNMatchOptions(maximumTypeDepth: ResourceLimit.Unlimited, maximumWork: ResourceLimit.Unlimited)).Status);
     }
 
     [Fact]

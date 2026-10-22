@@ -1,29 +1,34 @@
 using AspectN.AdapterInternals;
+using AspectN.TypeSystem;
 using Mono.Cecil;
 
 namespace AspectN.Cecil.Internal;
 
-internal static class CecilNativeTypeLimitGuard
+internal sealed class CecilNativeTypeLimitGuard(MappingContext resources)
 {
-    public static void ValidateType(TypeReference type) => NativeTypeLimitGuard.Validate(type, Arity, Children, Contexts);
+    private readonly HashSet<TypeReference> _validated = NativeTypeLimitGuard.CreateValidated<TypeReference>();
 
-    public static void ValidateMethod(MethodReference method)
+    public void ValidateType(TypeReference type) => NativeTypeLimitGuard.Validate(type, Arity, Children, Contexts, resources, _validated);
+
+    public void ValidateMethod(MethodReference method)
     {
         foreach (var type in MethodTypes(method)) ValidateType(type);
     }
 
-    private static int Arity(TypeReference type)
+    private int Arity(TypeReference type)
     {
-        if (type is GenericInstanceType generic) NativeTypeLimitGuard.CheckArity(generic.GenericArguments.Count);
+        if (type is GenericInstanceType generic) resources.CheckArity(generic.GenericArguments.Count);
         else if (type is TypeSpecification or GenericParameter) return 0;
+        resources.SpendWork();
         var total = 0;
         var depth = 0;
         for (var current = type is GenericInstanceType instance ? instance.ElementType : type;
              current is not null; current = current.DeclaringType)
         {
-            NativeTypeLimitGuard.CheckDepth(++depth);
-            NativeTypeLimitGuard.CheckArity(current.GenericParameters.Count);
-            total = NativeTypeLimitGuard.AddArity(total, CecilTypeMapper.OwnGenericArity(current));
+            resources.SpendWork();
+            resources.CheckDepth(++depth);
+            resources.CheckArity(current.GenericParameters.Count);
+            total = NativeTypeLimitGuard.AddArity(total, CecilTypeMapper.OwnGenericArity(current, resources), resources);
         }
         return total;
     }
@@ -51,7 +56,7 @@ internal static class CecilNativeTypeLimitGuard
         }
     }
 
-    private static IEnumerable<TypeReference> Contexts(TypeReference type)
+    private IEnumerable<TypeReference> Contexts(TypeReference type)
     {
         if (type is IModifierType modifier) yield return modifier.ModifierType;
         if (type is GenericInstanceType generic) yield return generic.ElementType;
@@ -61,13 +66,13 @@ internal static class CecilNativeTypeLimitGuard
         foreach (var memberType in MethodTypes(method)) yield return memberType;
     }
 
-    private static IEnumerable<TypeReference> MethodTypes(MethodReference method)
+    private IEnumerable<TypeReference> MethodTypes(MethodReference method)
     {
-        NativeTypeLimitGuard.CheckArity(method.GenericParameters.Count);
+        resources.CheckArity(method.GenericParameters.Count, method: true);
         if (method is GenericInstanceMethod generic)
         {
-            NativeTypeLimitGuard.CheckArity(generic.ElementMethod.GenericParameters.Count);
-            NativeTypeLimitGuard.CheckArity(generic.GenericArguments.Count);
+            resources.CheckArity(generic.ElementMethod.GenericParameters.Count, method: true);
+            resources.CheckArity(generic.GenericArguments.Count, method: true);
             foreach (var argument in generic.GenericArguments) yield return argument;
         }
         yield return method.DeclaringType;

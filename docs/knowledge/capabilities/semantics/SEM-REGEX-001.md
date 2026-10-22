@@ -12,6 +12,10 @@
     {
       "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
       "section": "15 / 21"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-10-22-configurable-resource-limits-design.md",
+      "section": "2—6；仅资源策略与公开入口"
     }
   ],
   "scenarios": [
@@ -29,7 +33,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-001"
+        "EV-20261014-001",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -47,7 +52,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-005"
+        "EV-20261014-005",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -65,7 +71,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-001"
+        "EV-20261014-001",
+        "EV-20261022-201"
       ],
       "unverified_notes": "",
       "exclusion": {
@@ -94,7 +101,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261020-002"
+        "EV-20261020-002",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     }
@@ -181,11 +189,11 @@ regex 在一份规范成员签名上做区域性无关的子串搜索，既不�
 
 ## 分层能力
 
-Parser 保留正则原文并识别外层闭合；Binder 检查受限子集并调用 .NET 语法验证；Formatter 生成规范签名；Evaluator 执行带有限超时的匹配。源 async 标记不包含在该文本内。
+Parser 保留正则原文并识别外层闭合；Binder 检查受限子集并调用 .NET 语法验证；Formatter 生成规范签名；Evaluator 默认执行单次250ms有限超时的匹配，允许显式 TimeLimit.Unlimited。源 async 标记不包含在该文本内。
 
 ## 阶段失败
 
-不支持结构 AN2012、无效正则 AN3002 都是编译失败；超时为 Unknown/AN3003。无法形成规范文本或超过 65,536 UTF-16 字符预算为 Unknown/AN3001。格式化阶段遵守匹配取消，正则超时从格式化结束后计时。
+不支持结构 AN2012、无效正则 AN3002 都是编译失败；超时为 Unknown/AN3003。真正无法形成规范文本为 Unknown/AN3001；规范文本默认16,384个UTF-16代码单元，额度耗尽为整次Unknown/AN3008，支持配置有限值或显式Unlimited，仍受总工作约束。格式化阶段遵守匹配取消，正则超时从格式化结束后计时。
 
 ## 例子与边界
 
@@ -212,3 +220,5 @@ regex((?=GetName))      // 环视被排除
 S4 当前遵循[构造校验裁决](../../../reviews/2026-10-20-c02-generic-signature-validation.md)：元数或槽位矛盾在构造时拒绝，不再送入 regex 求 Unknown。[旧 Finding](../../../reviews/findings/FND-20261013-002.md)保留当时观察与预期，但相应输入契约已被本次裁决取代。
 
 合法定义、完整闭合/开放构造及嵌套类型的当前对照见 [IncompleteGenericArgumentTests](../../../../tests/AspectN.Tests/Evaluation/IncompleteGenericArgumentTests.cs)和[真实后端回归](../../../../tests/AspectN.Conformance.Tests/GenericSignatureConstructionTests.cs)。无法提供可编号声明上下文、遇到不支持类型形状等事实缺口仍遵守既有 Unknown 规则；不是任何完整槽位都能保证规范文本可用。
+
+2026-10-22资源配置变更按[实施审查](../../../reviews/2026-10-22-configurable-resource-limits.md)重评当前证据。历史报告不改写；新增配置的范围由CROSS-RESOURCES-001/S9—S15区分。未新增或改动N/A记录；没有从缺少某后端场景推断排除。

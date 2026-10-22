@@ -1,11 +1,16 @@
+using AspectN.Execution;
 using AspectN.Binding;
 using AspectN.Diagnostics;
 using AspectN.Metadata;
+using AspectN.TypeSystem;
 
 namespace AspectN.Evaluation;
 
 internal static class TypePatternEvaluator
 {
+    public static MatchStatus Evaluate(BoundTypePattern pattern, TypeSignature candidate, EvaluationContext context) =>
+        WorkStack.Run(EvaluateWork(pattern, candidate, context), context.CancellationToken);
+
     private static readonly HashSet<string> _KnownValueTypeNames =
         new(StringComparer.Ordinal)
         {
@@ -21,7 +26,7 @@ internal static class TypePatternEvaluator
         };
 
     // Declaration 只组合固定引用的三态；Capture 隔离分支绑定并传播未知约束。
-    public static MatchStatus Evaluate(
+    internal static async StackWork<MatchStatus> EvaluateWork(
         BoundTypePattern pattern,
         TypeSignature candidate,
         EvaluationContext context)
@@ -34,33 +39,33 @@ internal static class TypePatternEvaluator
             case BoundVariableTypePattern variable:
                 return context.Bind(variable, candidate);
             case BoundNamedTypePattern named:
-                return EvaluateNamed(named, candidate, context);
+                return await EvaluateNamedWork(named, candidate, context);
             case BoundArrayTypePattern array:
-                return EvaluateArray(array, candidate, context);
+                return await EvaluateArrayWork(array, candidate, context);
             case BoundNullableTypePattern nullable:
-                return EvaluateNullable(nullable, candidate, context);
+                return await EvaluateNullableWork(nullable, candidate, context);
             case BoundTupleTypePattern tuple:
-                return EvaluateTuple(tuple, candidate, context);
+                return await EvaluateTupleWork(tuple, candidate, context);
             case BoundTaskLikeTypePattern taskLike:
-                return EvaluateTaskLike(taskLike, candidate, context);
+                return await EvaluateTaskLikeWork(taskLike, candidate, context);
             case BoundAssignableTypePattern assignable:
-                return EvaluateAssignable(assignable, candidate, context);
+                return await EvaluateAssignableWork(assignable, candidate, context);
             case BoundUnaryTypePattern unary:
-                return context.EvaluateNegation(
-                    branch => Evaluate(unary.Operand, candidate, branch));
+                return await context.EvaluateNegationWork(
+                    branch => EvaluateWork(unary.Operand, candidate, branch));
             case BoundBinaryTypePattern binary
                 when binary.Operator == BoundTypeLogicalOperator.And:
                 {
-                    var left = Evaluate(binary.Left, candidate, context);
-                    var right = Evaluate(binary.Right, candidate, context);
+                    var left = await EvaluateWork(binary.Left, candidate, context);
+                    var right = await EvaluateWork(binary.Right, candidate, context);
                     return MatchLogic.And(left, right);
                 }
             case BoundBinaryTypePattern binary:
                 {
                     var leftContext = context.Fork();
                     var rightContext = context.Fork();
-                    var left = Evaluate(binary.Left, candidate, leftContext);
-                    var right = Evaluate(binary.Right, candidate, rightContext);
+                    var left = await EvaluateWork(binary.Left, candidate, leftContext);
+                    var right = await EvaluateWork(binary.Right, candidate, rightContext);
                     context.MergeDiagnosticsFrom(leftContext);
                     context.MergeDiagnosticsFrom(rightContext);
                     var alternatives = context.CreateAlternativeCollector();
@@ -78,13 +83,14 @@ internal static class TypePatternEvaluator
         }
     }
 
-    private static MatchStatus EvaluateNamed(
+    private static async StackWork<MatchStatus> EvaluateNamedWork(
         BoundNamedTypePattern pattern,
         TypeSignature candidate,
         EvaluationContext context)
     {
         if (candidate is UnsupportedTypeSignature unsupported)
         {
+            context.QueryContext.SpendWork(Math.Max(1, unsupported.DisplayName.Length));
             return Unknown(
                 pattern,
                 context,
@@ -96,16 +102,17 @@ internal static class TypePatternEvaluator
             return MatchStatus.NotMatched;
         }
 
-        return EvaluateNamedCandidate(pattern, named, context);
+        return await EvaluateNamedCandidateWork(pattern, named, context);
     }
 
-    private static MatchStatus EvaluateArray(
+    private static async StackWork<MatchStatus> EvaluateArrayWork(
         BoundArrayTypePattern pattern,
         TypeSignature candidate,
         EvaluationContext context)
     {
         if (candidate is UnsupportedTypeSignature unsupported)
         {
+            context.QueryContext.SpendWork(Math.Max(1, unsupported.DisplayName.Length));
             return Unknown(
                 pattern,
                 context,
@@ -113,17 +120,18 @@ internal static class TypePatternEvaluator
         }
 
         return candidate is ArrayTypeSignature array && array.Rank == pattern.Rank
-            ? Evaluate(pattern.ElementType, array.ElementType, context)
+            ? await EvaluateWork(pattern.ElementType, array.ElementType, context)
             : MatchStatus.NotMatched;
     }
 
-    private static MatchStatus EvaluateNullable(
+    private static async StackWork<MatchStatus> EvaluateNullableWork(
         BoundNullableTypePattern pattern,
         TypeSignature candidate,
         EvaluationContext context)
     {
         if (candidate is UnsupportedTypeSignature unsupported)
         {
+            context.QueryContext.SpendWork(Math.Max(1, unsupported.DisplayName.Length));
             return Unknown(
                 pattern,
                 context,
@@ -132,7 +140,7 @@ internal static class TypePatternEvaluator
 
         if (candidate is ArrayTypeSignature)
         {
-            return Evaluate(pattern.UnderlyingType, candidate, context);
+            return await EvaluateWork(pattern.UnderlyingType, candidate, context);
         }
 
         if (candidate is not NamedTypeSignature named)
@@ -145,7 +153,7 @@ internal static class TypePatternEvaluator
 
         if (IsNamedDefinition(named.Identity, "System", "Nullable", 1))
         {
-            var arguments = GenericParameterNamer.GetEffectiveTypeArguments(named);
+            var arguments = GenericParameterNamer.GetEffectiveTypeArguments(named, context.QueryContext);
             if (arguments.Length != 1)
             {
                 return Unknown(
@@ -154,7 +162,7 @@ internal static class TypePatternEvaluator
                     "System.Nullable<T> is missing its constructed argument.");
             }
 
-            return Evaluate(
+            return await EvaluateWork(
                 pattern.UnderlyingType,
                 arguments[0],
                 context);
@@ -163,7 +171,7 @@ internal static class TypePatternEvaluator
         return named.Identity.Kind switch
         {
             TypeKind.Class or TypeKind.Interface or TypeKind.Delegate =>
-                Evaluate(pattern.UnderlyingType, candidate, context),
+                await EvaluateWork(pattern.UnderlyingType, candidate, context),
             TypeKind.Struct or TypeKind.Enum => MatchStatus.NotMatched,
             _ => Unknown(
                 pattern,
@@ -172,13 +180,14 @@ internal static class TypePatternEvaluator
         };
     }
 
-    private static MatchStatus EvaluateTuple(
+    private static async StackWork<MatchStatus> EvaluateTupleWork(
         BoundTupleTypePattern pattern,
         TypeSignature candidate,
         EvaluationContext context)
     {
         if (candidate is UnsupportedTypeSignature unsupported)
         {
+            context.QueryContext.SpendWork(Math.Max(1, unsupported.DisplayName.Length));
             return Unknown(
                 pattern,
                 context,
@@ -192,7 +201,7 @@ internal static class TypePatternEvaluator
         }
 
         var elements = new List<TypeSignature>();
-        var shape = FlattenTuple(named, elements);
+        var shape = FlattenTuple(named, elements, context);
         if (shape == MatchStatus.NotMatched) return shape;
         if (shape == MatchStatus.Unknown)
         {
@@ -212,19 +221,20 @@ internal static class TypePatternEvaluator
         {
             status = MatchLogic.And(
                 status,
-                Evaluate(pattern.Elements[index], elements[index], context));
+                await EvaluateWork(pattern.Elements[index], elements[index], context));
         }
 
         return status;
     }
 
-    private static MatchStatus EvaluateTaskLike(
+    private static async StackWork<MatchStatus> EvaluateTaskLikeWork(
         BoundTaskLikeTypePattern pattern,
         TypeSignature candidate,
         EvaluationContext context)
     {
         if (candidate is UnsupportedTypeSignature unsupported)
         {
+            context.QueryContext.SpendWork(Math.Max(1, unsupported.DisplayName.Length));
             return Unknown(
                 pattern,
                 context,
@@ -251,7 +261,7 @@ internal static class TypePatternEvaluator
             return MatchStatus.NotMatched;
         }
 
-        var arguments = GenericParameterNamer.GetEffectiveTypeArguments(named);
+        var arguments = GenericParameterNamer.GetEffectiveTypeArguments(named, context.QueryContext);
         if (arguments.Length != 1)
         {
             return Unknown(
@@ -260,20 +270,21 @@ internal static class TypePatternEvaluator
                 "The task-like result type is unavailable.");
         }
 
-        return Evaluate(resultType, arguments[0], context);
+        return await EvaluateWork(resultType, arguments[0], context);
     }
 
     private static MatchStatus FlattenTuple(
         NamedTypeSignature tuple,
-        List<TypeSignature> elements)
+        List<TypeSignature> elements, EvaluationContext context)
     {
         var current = tuple;
         while (true)
         {
+            context.QueryContext.SpendWork();
             var arity = current.Identity.GenericArity;
             if (arity > 8) return MatchStatus.NotMatched;
             if (current.TypeArguments.Count != 0 && current.TypeArguments.Count != arity) return MatchStatus.Unknown;
-            var arguments = GenericParameterNamer.GetEffectiveTypeArguments(current);
+            var arguments = GenericParameterNamer.GetEffectiveTypeArguments(current, context.QueryContext);
             if (arguments.Length != arity) return MatchStatus.Unknown;
             if (arity == 0) return MatchStatus.Matched;
 
@@ -330,14 +341,14 @@ internal static class TypePatternEvaluator
                    identity.MetadataName,
                    metadataName);
     }
-    private static MatchStatus EvaluateAssignable(
+    private static async StackWork<MatchStatus> EvaluateAssignableWork(
         BoundAssignableTypePattern pattern,
         TypeSignature candidate,
         EvaluationContext context)
     {
         if (TryCreateRelationshipTarget(
             pattern.TargetType,
-            out var target))
+            out var target, context.QueryContext))
         {
             context.Visit(pattern.Span);
             var result = context.TypeSystem.IsAssignableTo(
@@ -358,7 +369,7 @@ internal static class TypePatternEvaluator
                 UnderlyingType: BoundNamedTypePattern
             })
         {
-            return EvaluateAssignablePatternWalk(
+            return await EvaluateAssignablePatternWalkWork(
                 pattern,
                 candidate,
                 context);
@@ -370,7 +381,7 @@ internal static class TypePatternEvaluator
             "The assignability target is not a concrete named type.");
     }
 
-    private static MatchStatus EvaluateAssignablePatternWalk(
+    private static async StackWork<MatchStatus> EvaluateAssignablePatternWalkWork(
         BoundAssignableTypePattern pattern,
         TypeSignature candidate,
         EvaluationContext context)
@@ -388,10 +399,10 @@ internal static class TypePatternEvaluator
             context.Visit(pattern.Span);
             var branch = context.Fork();
             // 后端返回的中立祖先也受限制；超限时保留未知备选，不求值或绑定其内部结构。
-            var failure = MetadataLimitGuard.GetFailure(ancestor, cancellationToken);
+            var failure = MetadataLimitGuard.GetFailure(ancestor, context.QueryContext);
             if (failure is not null) branch.AddDiagnostic(failure);
             var branchStatus = failure is null
-                ? Evaluate(pattern.TargetType, ancestor, branch)
+                ? await EvaluateWork(pattern.TargetType, ancestor, branch)
                 : MatchStatus.Unknown;
             context.MergeDiagnosticsFrom(branch);
             status = MatchLogic.Or(status, branchStatus);
@@ -425,17 +436,14 @@ internal static class TypePatternEvaluator
         }
     }
 
-    private static MatchStatus EvaluateNamedCandidate(
+    private static async StackWork<MatchStatus> EvaluateNamedCandidateWork(
         BoundNamedTypePattern pattern,
         NamedTypeSignature candidate,
         EvaluationContext context)
     {
         if (IsPrimitiveAlias(pattern))
         {
-            if (!string.Equals(
-                    pattern.CanonicalName,
-                    candidate.Identity.FullMetadataName,
-                    StringComparison.Ordinal) ||
+            if (!MatchesPrimitiveIdentity(pattern.CanonicalName, candidate.Identity, context.QueryContext) ||
                 !MatchesGeneric(
                     pattern.Segments[0].Generic,
                     candidate.Identity.GenericArity))
@@ -443,7 +451,7 @@ internal static class TypePatternEvaluator
                 return MatchStatus.NotMatched;
             }
 
-            return EvaluateGenericArguments(
+            return await EvaluateGenericArgumentsWork(
                 pattern,
                 candidate,
                 new List<TypeIdentity> { candidate.Identity },
@@ -455,7 +463,7 @@ internal static class TypePatternEvaluator
         var outerTypeIndex = slashIndex >= 0
             ? slashIndex
             : pattern.Segments.Count - 1;
-        var candidateTypes = GetTypeChain(candidate.Identity);
+        var candidateTypes = GenericParameterNamer.GetTypeChain(candidate.Identity, context.QueryContext);
         if (candidateTypes.Count != pattern.Segments.Count - outerTypeIndex)
         {
             return MatchStatus.NotMatched;
@@ -465,9 +473,7 @@ internal static class TypePatternEvaluator
         {
             var patternSegment = pattern.Segments[outerTypeIndex + index];
             var identity = candidateTypes[index];
-            if (!NamePatternMatcher.IsMatch(
-                    patternSegment.Pattern,
-                    identity.MetadataName) ||
+            if (!NamePatternMatcher.IsMatch(patternSegment.Pattern, identity.MetadataName, context.QueryContext) ||
                 !MatchesGeneric(patternSegment.Generic, identity.GenericArity))
             {
                 return MatchStatus.NotMatched;
@@ -477,12 +483,12 @@ internal static class TypePatternEvaluator
         if (!MatchesNamespaceAndOuterType(
                 pattern,
                 outerTypeIndex,
-                candidateTypes[0]))
+                candidateTypes[0], context))
         {
             return MatchStatus.NotMatched;
         }
 
-        return EvaluateGenericArguments(
+        return await EvaluateGenericArgumentsWork(
             pattern,
             candidate,
             candidateTypes,
@@ -490,7 +496,7 @@ internal static class TypePatternEvaluator
             context);
     }
 
-    private static MatchStatus EvaluateGenericArguments(
+    private static async StackWork<MatchStatus> EvaluateGenericArgumentsWork(
         BoundNamedTypePattern pattern,
         NamedTypeSignature candidate,
         List<TypeIdentity> candidateTypes,
@@ -511,8 +517,7 @@ internal static class TypePatternEvaluator
 
         if (!requiresArguments) return MatchStatus.Matched;
         // 与成员泛型子句同理：定义签名没有实参时回退到按声明链合成的形式参数。
-        var candidateArguments = GenericParameterNamer.GetEffectiveTypeArguments(
-            candidate);
+        var candidateArguments = GenericParameterNamer.GetEffectiveTypeArguments(candidate, context.QueryContext);
         if (candidateArguments.Length != totalArity)
         {
             return Unknown(
@@ -534,7 +539,7 @@ internal static class TypePatternEvaluator
                  argumentIndex < generic.Arguments.Count;
                  argumentIndex++)
             {
-                var argumentStatus = Evaluate(
+                var argumentStatus = await EvaluateWork(
                     generic.Arguments[argumentIndex],
                     candidateArguments[
                         candidateArgumentOffset + argumentIndex],
@@ -548,13 +553,22 @@ internal static class TypePatternEvaluator
         return status;
     }
 
+    private static bool MatchesPrimitiveIdentity(string canonicalName, TypeIdentity identity, TypeSystemQueryContext context)
+    {
+        if (identity.ContainingType is not null || identity.GenericArity != 0) return false;
+        var separator = canonicalName.LastIndexOf('.');
+        return context.StringsEqual(canonicalName.Substring(0, separator), identity.Namespace) &&
+            context.StringsEqual(canonicalName.Substring(separator + 1), identity.MetadataName);
+    }
+
     private static bool MatchesNamespaceAndOuterType(
         BoundNamedTypePattern pattern,
         int outerTypeIndex,
-        TypeIdentity outerType)
+        TypeIdentity outerType, EvaluationContext context)
     {
         if (outerTypeIndex == 0) return true;
 
+        context.QueryContext.SpendWork(Math.Max(1, outerType.Namespace.Length));
         var namespaceSegments = string.IsNullOrEmpty(outerType.Namespace)
             ? Array.Empty<string>()
             : outerType.Namespace.Split('.');
@@ -565,9 +579,7 @@ internal static class TypePatternEvaluator
             namespaceSegments.Length);
         candidateSegments[candidateSegments.Length - 1] = outerType.MetadataName;
         if (candidateSegments.Length < outerTypeIndex + 1 ||
-            !NamePatternMatcher.IsMatch(
-                pattern.Segments[0].Pattern,
-                candidateSegments[0]))
+            !NamePatternMatcher.IsMatch(pattern.Segments[0].Pattern, candidateSegments[0], context.QueryContext))
         {
             return false;
         }
@@ -578,6 +590,7 @@ internal static class TypePatternEvaluator
              patternIndex <= outerTypeIndex;
              patternIndex++)
         {
+            context.QueryContext.SpendWork(candidateSegments.Length);
             var next = new bool[candidateSegments.Length];
             var separator = pattern.Separators[patternIndex - 1];
             var earlierReachable = false;
@@ -590,9 +603,7 @@ internal static class TypePatternEvaluator
                     ? earlierReachable
                     : reachable[candidateIndex - 1];
                 next[candidateIndex] = canReach &&
-                    NamePatternMatcher.IsMatch(
-                        pattern.Segments[patternIndex].Pattern,
-                        candidateSegments[candidateIndex]);
+                    NamePatternMatcher.IsMatch(pattern.Segments[patternIndex].Pattern, candidateSegments[candidateIndex], context.QueryContext);
             }
 
             reachable = next;
@@ -646,11 +657,11 @@ internal static class TypePatternEvaluator
 
     private static bool TryCreateRelationshipTarget(
         BoundTypePattern pattern,
-        out TypeSignature? target)
+        out TypeSignature? target, TypeSystemQueryContext context)
     {
         if (!TryCreateConcreteType(
                 pattern,
-                out target) ||
+                out target, context) ||
             target is not NamedTypeSignature)
         {
             target = null;
@@ -660,62 +671,35 @@ internal static class TypePatternEvaluator
         return true;
     }
 
-    internal static bool TryCreateConcreteType(
-        BoundTypePattern pattern,
-        out TypeSignature? type)
+    internal static bool TryCreateConcreteType(BoundTypePattern pattern, out TypeSignature? type,
+        TypeSystemQueryContext? context = null)
     {
-        if (pattern is BoundNamedTypePattern named)
+        context ??= new TypeSystemQueryContext(new AspectNMatchOptions(), default);
+        type = WorkStack.Run(CreateConcreteTypeWork(pattern, context), context.CancellationToken);
+        return type is not null;
+    }
+
+    private static async StackWork<TypeSignature?> CreateConcreteTypeWork(BoundTypePattern pattern, TypeSystemQueryContext context)
+    {
+        context.SpendWork();
+        if (pattern is BoundNamedTypePattern named) return await CreateConcreteNamedTypeWork(named, context);
+        // 秩一模式同时接受两种 CLI 数组身份，仍不能提前具体化。
+        if (pattern is BoundArrayTypePattern { Rank: > 1 } array)
         {
-            return TryCreateConcreteNamedType(
-                named,
-                out type);
+            var element = await CreateConcreteTypeWork(array.ElementType, context);
+            return element is null ? null : new ArrayTypeSignature(element, array.Rank);
         }
-
-        // 一维 [] 是同时接受 SZ/non-SZ 的秩模式，不能具体化为唯一数组身份；
-        // 命名关系目标与特性目标包含它时必须保留模式求值语义。
-        if (pattern is BoundArrayTypePattern { Rank: > 1 } array &&
-            TryCreateConcreteType(
-                array.ElementType,
-                out var elementType))
+        if (pattern is BoundNullableTypePattern nullable)
         {
-            type = new ArrayTypeSignature(elementType!, array.Rank);
-            return true;
-        }
-
-        if (pattern is BoundNullableTypePattern nullable &&
-            TryCreateConcreteType(
-                nullable.UnderlyingType,
-                out var underlying))
-        {
-            // 引用类型 T? 等价于 T，非空值类型 T? 才是 Nullable<T>。
-            // 具体化只能静态判断基元和数组，其余类型交给模式求值。
-            if (underlying is ArrayTypeSignature)
-            {
-                type = underlying;
-                return true;
-            }
-
+            var underlying = await CreateConcreteTypeWork(nullable.UnderlyingType, context);
+            if (underlying is ArrayTypeSignature) return underlying;
             if (underlying is NamedTypeSignature underlyingNamed)
             {
-                if (IsKnownReferenceType(underlyingNamed.Identity))
-                {
-                    type = underlying;
-                    return true;
-                }
-
-                if (IsKnownValueType(underlyingNamed.Identity))
-                {
-                    type = CreateNullableWrapper(underlying);
-                    return true;
-                }
+                if (IsKnownReferenceType(underlyingNamed.Identity)) return underlying;
+                if (IsKnownValueType(underlyingNamed.Identity)) return CreateNullableWrapper(underlying);
             }
-
-            type = null;
-            return false;
         }
-
-        type = null;
-        return false;
+        return null;
     }
 
     private static NamedTypeSignature CreateNullableWrapper(
@@ -756,15 +740,17 @@ internal static class TypePatternEvaluator
             _KnownReferenceTypeNames.Contains(identity.MetadataName);
     }
 
-    private static bool TryCreateConcreteNamedType(
-        BoundNamedTypePattern named,
-        out TypeSignature? type)
+    private static async StackWork<TypeSignature?> CreateConcreteNamedTypeWork(BoundNamedTypePattern named,
+        TypeSystemQueryContext context)
     {
+        TypeSignature? type;
+        foreach (var segment in named.Segments) context.SpendWork(Math.Max(1, segment.Pattern.Length));
+        if (named.Separators.Count > 0) context.SpendWork(named.Separators.Count);
         if (named.Segments.Any(segment => segment.Pattern.Contains('*')) ||
             named.Separators.Contains(".."))
         {
             type = null;
-            return false;
+            return null;
         }
 
         if (IsPrimitiveAlias(named))
@@ -789,17 +775,19 @@ internal static class TypePatternEvaluator
                         named.CanonicalName.Substring(separator + 1),
                         0,
                         TypeKind.Unknown));
-                return true;
+                return type;
             }
 
             type = null;
-            return false;
+            return null;
         }
 
         var slashIndex = FindFirstSlash(named.Separators);
         var outerIndex = slashIndex >= 0
             ? slashIndex
             : named.Segments.Count - 1;
+        var namespaceLength = named.Segments.Take(outerIndex).Sum(segment => (long)segment.Pattern.Length + 1);
+        if (namespaceLength > 0) context.SpendWork(namespaceLength);
         var namespaceName = BuildNamespace(named, outerIndex);
         TypeIdentity? containingType = null;
         var typeArguments = new List<TypeSignature>();
@@ -815,20 +803,20 @@ internal static class TypePatternEvaluator
                  segment.Generic.Arguments.Count != segment.Generic.Arity))
             {
                 type = null;
-                return false;
+                return null;
             }
 
             foreach (var argument in segment.Generic.Arguments)
             {
-                if (!TryCreateConcreteType(
-                        argument,
-                        out var typeArgument))
+                var typeArgument = await CreateConcreteTypeWork(argument, context);
+                if (typeArgument is null)
                 {
                     type = null;
-                    return false;
+                    return null;
                 }
 
-                typeArguments.Add(typeArgument!);
+                context.SpendWork();
+                typeArguments.Add(typeArgument);
             }
 
             containingType = new TypeIdentity(
@@ -840,6 +828,7 @@ internal static class TypePatternEvaluator
                 containingType);
         }
 
+        context.SpendWork(Math.Max(1, typeArguments.Count));
         var definition = new NamedTypeSignature(containingType!);
         type = typeArguments.Count == 0
             ? definition
@@ -847,7 +836,7 @@ internal static class TypePatternEvaluator
                 containingType!,
                 typeArguments,
                 definition);
-        return true;
+        return type;
     }
 
     private static string BuildNamespace(

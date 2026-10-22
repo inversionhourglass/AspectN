@@ -1,4 +1,5 @@
 using AspectN.Metadata;
+using AspectN.TypeSystem;
 using Mono.Cecil;
 
 namespace AspectN.Cecil.Internal;
@@ -10,9 +11,9 @@ internal static class CecilRefKindDetector
     private const string REQUIRES_LOCATION_ATTRIBUTE =
         "System.Runtime.CompilerServices.RequiresLocationAttribute";
 
-    public static RefKind ForParameter(ParameterDefinition parameter)
+    public static RefKind ForParameter(ParameterDefinition parameter, MappingContext resources)
     {
-        if (!ContainsByReference(parameter.ParameterType))
+        if (!ContainsByReference(parameter.ParameterType, resources))
         {
             return RefKind.None;
         }
@@ -21,14 +22,14 @@ internal static class CecilRefKindDetector
         if (parameter.IsOut && !parameter.IsIn) return RefKind.Out;
         if (ContainsModifier(
                 parameter.ParameterType,
-                REQUIRES_LOCATION_ATTRIBUTE) ||
-            HasAttribute(parameter, REQUIRES_LOCATION_ATTRIBUTE))
+                REQUIRES_LOCATION_ATTRIBUTE, resources) ||
+            HasAttribute(parameter, REQUIRES_LOCATION_ATTRIBUTE, resources))
         {
             return RefKind.RefReadOnly;
         }
 
-        if (ContainsModifier(parameter.ParameterType, IS_READ_ONLY_ATTRIBUTE) ||
-            HasAttribute(parameter, IS_READ_ONLY_ATTRIBUTE))
+        if (ContainsModifier(parameter.ParameterType, IS_READ_ONLY_ATTRIBUTE, resources) ||
+            HasAttribute(parameter, IS_READ_ONLY_ATTRIBUTE, resources))
         {
             return RefKind.In;
         }
@@ -36,21 +37,21 @@ internal static class CecilRefKindDetector
         return RefKind.Ref;
     }
 
-    public static RefKind ForReturn(MethodDefinition? method)
+    public static RefKind ForReturn(MethodDefinition? method, MappingContext resources)
     {
-        if (method is null || !ContainsByReference(method.ReturnType))
+        if (method is null || !ContainsByReference(method.ReturnType, resources))
         {
             return RefKind.None;
         }
 
-        if (ContainsModifier(method.ReturnType, IS_READ_ONLY_ATTRIBUTE) ||
+        if (ContainsModifier(method.ReturnType, IS_READ_ONLY_ATTRIBUTE, resources) ||
             ContainsModifier(
                 method.ReturnType,
-                REQUIRES_LOCATION_ATTRIBUTE) ||
-            HasAttribute(method.MethodReturnType, IS_READ_ONLY_ATTRIBUTE) ||
+                REQUIRES_LOCATION_ATTRIBUTE, resources) ||
+            HasAttribute(method.MethodReturnType, IS_READ_ONLY_ATTRIBUTE, resources) ||
             HasAttribute(
                 method.MethodReturnType,
-                REQUIRES_LOCATION_ATTRIBUTE))
+                REQUIRES_LOCATION_ATTRIBUTE, resources))
         {
             return RefKind.RefReadOnly;
         }
@@ -58,40 +59,35 @@ internal static class CecilRefKindDetector
         return RefKind.Ref;
     }
 
-    internal static bool ContainsByReference(TypeReference type)
+    internal static bool ContainsByReference(TypeReference type, MappingContext resources)
     {
-        return type switch
+        while (true)
         {
-            ByReferenceType => true,
-            TypeSpecification specification =>
-                ContainsByReference(specification.ElementType),
-            _ => false
-        };
+            resources.SpendWork();
+            if (type is ByReferenceType) return true;
+            if (type is not TypeSpecification specification || specification.ElementType is null) return false;
+            type = specification.ElementType;
+        }
     }
 
     private static bool ContainsModifier(
         TypeReference type,
-        string modifierFullName)
+        string modifierFullName, MappingContext resources)
     {
-        return type switch
+        while (true)
         {
-            OptionalModifierType optional =>
-                optional.ModifierType.FullName == modifierFullName ||
-                ContainsModifier(optional.ElementType, modifierFullName),
-            RequiredModifierType required =>
-                required.ModifierType.FullName == modifierFullName ||
-                ContainsModifier(required.ElementType, modifierFullName),
-            TypeSpecification specification =>
-                ContainsModifier(specification.ElementType, modifierFullName),
-            _ => false
-        };
+            resources.SpendWork();
+            if (type is IModifierType modifier && CecilNativeTypeMetadata.FullName(modifier.ModifierType, resources) == modifierFullName) return true;
+            if (type is not TypeSpecification specification || specification.ElementType is null) return false;
+            type = specification.ElementType;
+        }
     }
 
     private static bool HasAttribute(
         ICustomAttributeProvider provider,
-        string attributeFullName)
+        string attributeFullName, MappingContext resources)
     {
-        return provider.HasCustomAttributes && provider.CustomAttributes.Any(
-            attribute => attribute.AttributeType.FullName == attributeFullName);
+        return provider.HasCustomAttributes && resources.Attributes(provider.CustomAttributes).Any(
+            attribute => CecilNativeTypeMetadata.FullName(attribute.AttributeType, resources) == attributeFullName);
     }
 }

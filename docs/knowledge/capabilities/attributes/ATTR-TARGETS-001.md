@@ -24,6 +24,10 @@
     {
       "path": "docs/reviews/2026-10-21-d01-direct-attribute-limits.md",
       "section": "维护者裁决与取代范围"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-10-22-configurable-resource-limits-design.md",
+      "section": "2—6；仅资源策略与公开入口"
     }
   ],
   "scenarios": [
@@ -43,7 +47,8 @@
       "evidence_ids": [
         "EV-20261014-001",
         "EV-20261021-003",
-        "EV-20261021-007"
+        "EV-20261021-007",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -62,7 +67,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-006",
-        "EV-20261021-001"
+        "EV-20261021-001",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -81,7 +87,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-006",
-        "EV-20261021-001"
+        "EV-20261021-001",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -100,7 +107,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-006",
-        "EV-20261021-001"
+        "EV-20261021-001",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -118,7 +126,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-001"
+        "EV-20261014-001",
+        "EV-20261022-201"
       ],
       "unverified_notes": "",
       "exclusion": {
@@ -147,7 +156,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-006"
+        "EV-20261014-006",
+        "EV-20261022-201"
       ],
       "unverified_notes": "",
       "exclusion": {
@@ -176,7 +186,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-006"
+        "EV-20261014-006",
+        "EV-20261022-201"
       ],
       "unverified_notes": "",
       "exclusion": {
@@ -205,7 +216,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-006"
+        "EV-20261014-006",
+        "EV-20261022-201"
       ],
       "unverified_notes": "",
       "exclusion": {
@@ -234,7 +246,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-006"
+        "EV-20261014-006",
+        "EV-20261022-201"
       ],
       "unverified_notes": "",
       "exclusion": {
@@ -264,7 +277,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-006",
-        "EV-20261014-010"
+        "EV-20261014-010",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -283,7 +297,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-006",
-        "EV-20261014-010"
+        "EV-20261014-010",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -301,7 +316,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-006"
+        "EV-20261014-006",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -319,7 +335,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-006"
+        "EV-20261014-006",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -337,7 +354,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-006"
+        "EV-20261014-006",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -355,9 +373,10 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261021-001"
+        "EV-20261021-001",
+        "EV-20261022-201"
       ],
-      "unverified_notes": "仅此泛型形参声明场景，不外推其他 Fody 特性组合"
+      "unverified_notes": ""
     },
     {
       "id": "S16",
@@ -373,7 +392,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261021-001"
+        "EV-20261021-001",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -391,9 +411,10 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261021-003"
+        "EV-20261021-003",
+        "EV-20261022-201"
       ],
-      "unverified_notes": "仅列出的字段与输入组合；不外推Fody或任意第三方实现。"
+      "unverified_notes": ""
     },
     {
       "id": "S18",
@@ -409,9 +430,10 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261021-003"
+        "EV-20261021-003",
+        "EV-20261022-201"
       ],
-      "unverified_notes": "仅列出的字段与输入组合；不外推Fody或任意第三方实现。"
+      "unverified_notes": ""
     },
     {
       "id": "S19",
@@ -427,9 +449,10 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261021-003"
+        "EV-20261021-003",
+        "EV-20261022-201"
       ],
-      "unverified_notes": "仅列出的字段与输入组合；不外推Fody或任意第三方实现。"
+      "unverified_notes": ""
     },
     {
       "id": "S20",
@@ -445,9 +468,10 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261021-003"
+        "EV-20261021-003",
+        "EV-20261022-201"
       ],
-      "unverified_notes": "仅列出的字段与输入组合；不外推Fody或任意第三方实现。"
+      "unverified_notes": ""
     },
     {
       "id": "S21",
@@ -463,7 +487,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261021-005"
+        "EV-20261021-005",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -481,7 +506,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261021-005"
+        "EV-20261021-005",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -499,7 +525,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261021-005"
+        "EV-20261021-005",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -517,7 +544,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261021-005"
+        "EV-20261021-005",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -535,7 +563,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261021-005"
+        "EV-20261021-005",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -553,7 +582,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261021-007"
+        "EV-20261021-007",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     }
@@ -691,3 +721,5 @@ CROSS-AVAILABILITY-001 治理缺失事实，GEN-BINDING-001 治理泛型特性�
 Roslyn PE 隐藏 readonly 返回标记必须从原始 MethodDef、返回 Param 和 CA 构造器作用域恢复，不从读取 Compilation 任取同名类型。S10控制普通/嵌入标记及同名依赖；S14控制实际依赖缺失时 ReturnAttributes 不可用、RefReadOnly 等独立事实仍有效。具体[回归入口](../../../../tests/AspectN.Conformance.Tests/ReadonlyReturnAttributeIdentityTests.cs)与[类型特性上下文](../../../../tests/AspectN.Conformance.Tests/TypeAttributeContextTests.cs)按场景保存证据。
 
 变量配置由 GEN-BINDING-001 管理。特性中的首次类型捕获需要 Capture；默认 Declaration 可引用已声明槽位。S1 动态捕获用例已明确迁移，S26 补默认诊断、固定引用及共享预算；真实记录映射、直接查询和 D01 通道不变。
+
+2026-10-22资源配置变更按[实施审查](../../../reviews/2026-10-22-configurable-resource-limits.md)重评当前证据。历史报告不改写；新增配置的范围由CROSS-RESOURCES-001/S9—S15区分。未新增或改动N/A记录；没有从缺少某后端场景推断排除。

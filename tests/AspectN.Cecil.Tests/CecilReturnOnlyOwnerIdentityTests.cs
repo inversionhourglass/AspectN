@@ -43,7 +43,7 @@ public sealed class CecilReturnOnlyOwnerIdentityTests
                     Assert.Null(method.MakeGenericMethod(typeof(int)).Invoke(null, [0]));
 
             using var system = new CecilTypeSystem(ModuleDefinition.ReadModule(new MemoryStream(image.ToArray())));
-            var methods = system.Module.GetType("Example.Owner").Methods.Select(system.Mapper.MapMethod).ToArray();
+            var methods = system.Module.GetType("Example.Owner").Methods.Select(method => system.Mapper.MapMethod(method)).ToArray();
             var first = methods[0].GenericParameters[0];
             var second = methods[1].GenericParameters[0];
 

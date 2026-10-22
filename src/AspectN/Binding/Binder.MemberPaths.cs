@@ -1,3 +1,4 @@
+using AspectN.Execution;
 using AspectN.Diagnostics;
 using AspectN.Syntax;
 
@@ -5,7 +6,7 @@ namespace AspectN.Binding;
 
 internal sealed partial class Binder
 {
-    private BoundMemberPattern BindMemberPattern(MemberPathSyntax syntax, VariableScope scope, bool isProperty)
+    private async StackWork<BoundMemberPattern> BindMemberPatternWork(MemberPathSyntax syntax, VariableScope scope, bool isProperty)
     {
         var isNegated = syntax.NegationToken is not null;
         var pathScope = isNegated ? scope.Clone() : scope;
@@ -14,9 +15,9 @@ internal sealed partial class Binder
         {
             var declaringType = syntax.DeclaringType is null
                 ? null
-                : BindDeclarationType(syntax.DeclaringType, pathScope, IsUnderNegation,
+                : await BindDeclarationTypeWork(syntax.DeclaringType, pathScope, IsUnderNegation,
                     isProperty ? DeclarationSource.PropertyDeclaringType : DeclarationSource.DeclaringType);
-            var name = BindMemberName(syntax.Name, pathScope, isProperty, IsUnderNegation);
+            var name = await BindMemberNameWork(syntax.Name, pathScope, isProperty, IsUnderNegation);
             return new BoundMemberPattern(declaringType, name, isNegated);
         }
         finally
@@ -29,7 +30,7 @@ internal sealed partial class Binder
         }
     }
 
-    private BoundMemberNamePattern BindMemberName(
+    private async StackWork<BoundMemberNamePattern> BindMemberNameWork(
         MemberNamePatternSyntax syntax, VariableScope scope, bool isProperty, bool underNegation)
     {
         switch (syntax)
@@ -46,25 +47,25 @@ internal sealed partial class Binder
                         segment.GenericArguments.FullSpan);
                 }
                 return new BoundNamedMemberPattern(named.FullSpan, name,
-                    isProperty ? null : BindGenericPattern(segment.GenericArguments, name == "*", scope, underNegation,
+                    isProperty ? null : await BindGenericPatternWork(segment.GenericArguments, name == "*", scope, underNegation,
                         DeclarationSource.Method));
             case ParenthesizedMemberNamePatternSyntax parenthesized:
-                return BindMemberName(parenthesized.Pattern, scope, isProperty, underNegation);
+                return await BindMemberNameWork(parenthesized.Pattern, scope, isProperty, underNegation);
             case UnaryMemberNamePatternSyntax unary:
                 var childScope = scope.Clone();
-                var operand = BindMemberName(unary.Operand, childScope, isProperty, true);
+                var operand = await BindMemberNameWork(unary.Operand, childScope, isProperty, true);
                 scope.HideNewVariablesFrom(childScope);
                 return new BoundUnaryMemberNamePattern(unary.FullSpan, operand);
             case BinaryMemberNamePatternSyntax binary when binary.OperatorToken.Kind == SyntaxKind.AmpersandAmpersandToken:
                 return new BoundBinaryMemberNamePattern(binary.FullSpan,
-                    BindMemberName(binary.Left, scope, isProperty, underNegation),
+                    await BindMemberNameWork(binary.Left, scope, isProperty, underNegation),
                     BoundLogicalOperator.And,
-                    BindMemberName(binary.Right, scope, isProperty, underNegation));
+                    await BindMemberNameWork(binary.Right, scope, isProperty, underNegation));
             case BinaryMemberNamePatternSyntax binary:
                 var leftScope = scope.Clone();
                 var rightScope = scope.Clone();
-                var left = BindMemberName(binary.Left, leftScope, isProperty, underNegation);
-                var right = BindMemberName(binary.Right, rightScope, isProperty, underNegation);
+                var left = await BindMemberNameWork(binary.Left, leftScope, isProperty, underNegation);
+                var right = await BindMemberNameWork(binary.Right, rightScope, isProperty, underNegation);
                 ReportDuplicateBranchVariables(scope, leftScope, rightScope, binary.OperatorToken);
                 scope.HideNewVariablesFrom(leftScope);
                 scope.HideNewVariablesFrom(rightScope);

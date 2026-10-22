@@ -22,7 +22,8 @@ using AspectN;
 var compilation = new AspectNEngine().CompileMemberExpression(
     expression,
     compilationOptions: new AspectNCompilationOptions(
-        TimeSpan.FromMilliseconds(100)));
+        matchOptions: new AspectNMatchOptions(
+            regexTimeout: TimeLimit.Finite(TimeSpan.FromMilliseconds(100)))));
 
 if (!compilation.TryGetMemberPattern(out var pattern))
 {
@@ -58,7 +59,7 @@ if (result.Status == MatchStatus.Unknown)
 }
 ```
 
-每个 `ModuleDefinition` 生命周期内保留一个 `CecilTypeSystem`，结束时释放。映射缓存归该上下文所有。示例中的 `leaveOpen: true` 让调用方负责模块释放；默认在类型系统释放时关闭模块。
+每个 `ModuleDefinition` 生命周期内保留一个 `CecilTypeSystem`，结束时释放。映射缓存归该上下文所有。`LeaveOpen` 默认为 `true`，模块由调用方负责最终释放；显式 `false` 才把模块释放责任交给类型系统。
 
 移除的 `CompositeAccessibility` 选项没有替代项：可见性反映成员声明，不与外层类型求交。属性元数据仍合并访问器可见性，属性选择器则检查当前访问器。
 
@@ -72,7 +73,7 @@ if (result.Status == MatchStatus.Unknown)
 
 ## 表达式迁移
 
-当前默认变量为 Declaration 自身声明槽位引用。需要原 AspectN 的具体类型、特性或祖先首次捕获时，编译传入 `new AspectNCompilationOptions(null, GenericVariableMode.Capture)` 并处理预算耗尽的 Unknown/AN3007；[当前迁移表](../usage/migration.md)区分默认编译诊断与候选不匹配。后端继续映射实际构造，不丢弃实参。
+当前默认变量为 Declaration 自身声明槽位引用。需要原 AspectN 的具体类型、特性或祖先首次捕获时，编译传入 `new AspectNCompilationOptions(GenericVariableMode.Capture)` 并处理预算耗尽的 Unknown/AN3007；[当前迁移表](../usage/migration.md)区分默认编译诊断与候选不匹配。后端继续映射实际构造，不丢弃实参。
 
 以下替代写法表达预期行为，不保证与 Shared.Cecil.AspectN 得到相同结果。
 

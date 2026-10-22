@@ -1,50 +1,75 @@
+using AspectN.Execution;
+using AspectN.TypeSystem;
 using AspectN.AdapterInternals;
 using Mono.Cecil;
 
 namespace AspectN.Cecil.Internal;
 
-internal static partial class CecilTypeMapper
+internal sealed partial class CecilTypeMapper
 {
-    internal static string CanonicalTypeText(TypeReference type) => CanonicalParameterForm(type, qualifyAssembly: false);
+    internal string CanonicalTypeText(TypeReference type) => CanonicalParameterForm(type, qualifyAssembly: false);
 
-    private static string DeclarationParameterForm(TypeReference type)
+    private string DeclarationParameterForm(TypeReference type)
     {
-        return GenericOwnerIdentity.WithCustomModifiers(CanonicalParameterForm(type), DeclarationModifiers(type, string.Empty));
+        return GenericOwnerIdentity.WithCustomModifiers(_resources, CanonicalParameterForm(type), DeclarationModifiers(type, string.Empty));
     }
 
-    private static IEnumerable<string> DeclarationModifiers(TypeReference type, string path)
+    private List<string> DeclarationModifiers(TypeReference type, string path)
     {
+        var entries = new List<string>();
+        WorkStack.Run(DeclarationModifiersWork(type, path, entries), _resources.CancellationToken);
+        return entries;
+    }
+
+    private async StackWork<bool> DeclarationModifiersWork(TypeReference type, string path, List<string> entries)
+    {
+        _resources.SpendWork();
         while (type is IModifierType modifier)
         {
-            yield return GenericOwnerIdentity.CustomModifier(path, type is OptionalModifierType,
-                CanonicalParameterForm(modifier.ModifierType));
+            entries.Add(GenericOwnerIdentity.CustomModifier(_resources, path, type is OptionalModifierType,
+                CanonicalParameterForm(modifier.ModifierType)));
             type = modifier.ElementType;
         }
         // 只遍历声明签名树，不跟随泛型形参的 owner 回到同一方法。
         switch (type)
         {
             case ByReferenceType reference:
-                foreach (var entry in DeclarationModifiers(reference.ElementType, path + "/ref")) yield return entry;
+                await DeclarationModifiersWork(reference.ElementType, _resources.Concat(path, "/ref"), entries);
                 break;
             case PointerType pointer:
-                foreach (var entry in DeclarationModifiers(pointer.ElementType, path + "/pointer")) yield return entry;
+                await DeclarationModifiersWork(pointer.ElementType, _resources.Concat(path, "/pointer"), entries);
                 break;
             case ArrayType array:
-                foreach (var entry in DeclarationModifiers(array.ElementType, path + "/element")) yield return entry;
+                await DeclarationModifiersWork(array.ElementType, _resources.Concat(path, "/element"), entries);
                 break;
             case GenericInstanceType generic:
                 for (var index = 0; index < generic.GenericArguments.Count; index++)
-                    foreach (var entry in DeclarationModifiers(generic.GenericArguments[index], path + "/arg:" + index)) yield return entry;
+                    await DeclarationModifiersWork(generic.GenericArguments[index], _resources.Concat(path, "/arg:", index.ToString(System.Globalization.CultureInfo.InvariantCulture)), entries);
                 break;
             case FunctionPointerType function:
-                foreach (var entry in DeclarationModifiers(function.ReturnType, path + "/return")) yield return entry;
+                await DeclarationModifiersWork(function.ReturnType, _resources.Concat(path, "/return"), entries);
                 for (var index = 0; index < function.Parameters.Count; index++)
-                    foreach (var entry in DeclarationModifiers(function.Parameters[index].ParameterType, path + "/parameter:" + index)) yield return entry;
+                    await DeclarationModifiersWork(function.Parameters[index].ParameterType, _resources.Concat(path, "/parameter:", index.ToString(System.Globalization.CultureInfo.InvariantCulture)), entries);
                 break;
+        }
+        return true;
+    }
+
+    private IEnumerable<string> ConventionNames(FunctionPointerType function)
+    {
+        for (var result = function.ReturnType; result is OptionalModifierType or RequiredModifierType;)
+        {
+            _resources.SpendWork();
+            if (result is OptionalModifierType optional)
+            {
+                var name = CecilNativeTypeMetadata.FullName(optional.ModifierType, _resources);
+                if (name.StartsWith("System.Runtime.CompilerServices.CallConv", StringComparison.Ordinal)) yield return name;
+            }
+            result = ((TypeSpecification)result).ElementType;
         }
     }
 
-    private static IEnumerable<TypeTextPart<TypeReference>> TypeFormParts(TypeReference type, bool qualified, bool modified)
+    private IEnumerable<TypeTextPart<TypeReference>> TypeFormParts(TypeReference type, bool qualified, bool modified)
     {
         switch (type)
         {
@@ -64,15 +89,9 @@ internal static partial class CecilTypeMapper
                 yield return TypeTextPart<TypeReference>.Literal("*");
                 yield break;
             case FunctionPointerType function:
-                var conventions = new List<string>();
-                for (var result = function.ReturnType; result is OptionalModifierType or RequiredModifierType;)
-                {
-                    if (result is OptionalModifierType optional && optional.ModifierType.FullName.StartsWith("System.Runtime.CompilerServices.CallConv", StringComparison.Ordinal))
-                        conventions.Add(optional.ModifierType.FullName);
-                    result = ((TypeSpecification)result).ElementType;
-                }
+                var conventions = ConventionNames(function);
                 yield return TypeTextPart<TypeReference>.Literal("delegate*[" +
-                    FunctionPointerConventions.Format(CallingConventionToken(function.CallingConvention), conventions) + "]<");
+                    FunctionPointerConventions.Format(CallingConventionToken(function.CallingConvention), conventions, _resources) + "]<");
                 foreach (var parameter in function.Parameters)
                 {
                     yield return TypeTextPart<TypeReference>.Node(parameter.ParameterType, qualified);
@@ -96,16 +115,20 @@ internal static partial class CecilTypeMapper
         }
         chain.Reverse();
         var definitionType = type is GenericInstanceType generic ? generic.ElementType : type;
-        if (qualified) yield return TypeTextPart<TypeReference>.Literal(GenericOwnerIdentity.Qualify(string.Empty, MapAssemblyIdentity(definitionType)));
+        if (qualified) yield return TypeTextPart<TypeReference>.Literal(GenericOwnerIdentity.Qualify(_resources, string.Empty, MapAssemblyIdentity(definitionType)));
         var outer = chain[0] is GenericInstanceType outerInstance ? outerInstance.ElementType : chain[0];
-        if (!string.IsNullOrEmpty(outer.Namespace)) yield return TypeTextPart<TypeReference>.Literal(outer.Namespace + ".");
+        if (!string.IsNullOrEmpty(outer.Namespace))
+        {
+            yield return TypeTextPart<TypeReference>.Literal(outer.Namespace);
+            yield return TypeTextPart<TypeReference>.Literal(".");
+        }
         var offset = 0;
         foreach (var level in chain)
         {
             if (!ReferenceEquals(level, chain[0])) yield return TypeTextPart<TypeReference>.Literal("/");
             var definition = level is GenericInstanceType instance ? instance.ElementType : level;
             yield return TypeTextPart<TypeReference>.Literal(definition.Name);
-            var arity = SplitMetadataName(definition.Name, GetOwnArityFallback(definition)).GenericArity;
+            var arity = SplitMetadataName(definition.Name, GetOwnArityFallback(definition), _resources).GenericArity;
             if (arity <= 0 || offset + arity > arguments.Count) continue;
             yield return TypeTextPart<TypeReference>.Literal("<");
             for (var index = 0; index < arity; index++)

@@ -144,9 +144,8 @@ internal static class EmittedFixture
 {
     public static CecilTypeSystem Open()
     {
-        return new CecilTypeSystem(
-            ModuleDefinition.ReadModule(
-                typeof(EmittedFixture).Assembly.Location));
+        // 工厂独占其打开的文件，将释放责任显式交给返回的适配器。
+        return Open(new CecilMappingOptions(leaveOpen: false));
     }
 
     public static CecilTypeSystem Open(CecilMappingOptions options)

@@ -1,18 +1,23 @@
+using AspectN.TypeSystem;
 using System.Globalization;
 using AspectN.Metadata;
 using Mono.Cecil;
 
 namespace AspectN.Cecil.Internal;
 
-internal static partial class CecilTypeMapper
+internal sealed partial class CecilTypeMapper
 {
+    private readonly MappingContext _resources;
+    internal CecilTypeMapper(MappingContext resources) => _resources = resources;
+
     private const string HEX_DIGITS = "0123456789abcdef";
 
     // Cecil 类型引用可能代表数组、泛型实例或泛型参数，先按元数据形状分派再构造统一签名。
-    public static TypeSignature Map(
+    public TypeSignature Map(
         TypeReference typeReference,
         Func<TypeReference, TypeSignature> mapType)
     {
+        _resources.SpendWork();
         return typeReference switch
         {
             GenericInstanceType generic => MapGenericInstance(generic, mapType),
@@ -35,7 +40,7 @@ internal static partial class CecilTypeMapper
         };
     }
 
-    private static TypeSignature MapGenericInstance(
+    private TypeSignature MapGenericInstance(
         GenericInstanceType generic,
         Func<TypeReference, TypeSignature> mapType)
     {
@@ -52,7 +57,7 @@ internal static partial class CecilTypeMapper
             definition.OriginalDefinition ?? definition);
     }
 
-    internal static string GetGenericParameterOwner(
+    internal string GetGenericParameterOwner(
         GenericParameter parameter)
     {
         return parameter.Owner switch
@@ -63,7 +68,7 @@ internal static partial class CecilTypeMapper
         };
     }
 
-    internal static AssemblyIdentity GetGenericParameterOwnerAssembly(
+    internal AssemblyIdentity GetGenericParameterOwnerAssembly(
         GenericParameter parameter)
     {
         return parameter.Owner switch
@@ -77,13 +82,14 @@ internal static partial class CecilTypeMapper
     // Cecil 元数据中嵌套类型会重声明外层类型的泛型参数：内层扁平槽位 [0, 外层元数)
     // 实际声明在外层类型上。沿包含链把这类参数归一到原始声明类型，
     // 与 Roslyn 的声明视图一致；Position 保持 ECMA 扁平槽位不变。
-    private static string GetTypeParameterOwner(TypeReference owner, int position)
+    private string GetTypeParameterOwner(TypeReference owner, int position)
     {
         var chain = new List<TypeReference>();
         for (var current = owner;
              current is not null;
              current = current.DeclaringType)
         {
+            _resources.SpendWork();
             chain.Add(current);
         }
 
@@ -92,16 +98,16 @@ internal static partial class CecilTypeMapper
         {
             var arity = SplitMetadataName(
                 level.Name,
-                GetOwnArityFallback(level)).GenericArity;
+                GetOwnArityFallback(level), _resources).GenericArity;
             if (position < arity)
             {
-                return CecilNativeTypeMetadata.FullName(level);
+                return CecilNativeTypeMetadata.FullName(level, _resources);
             }
 
             position -= arity;
         }
 
-        return CecilNativeTypeMetadata.FullName(owner);
+        return CecilNativeTypeMetadata.FullName(owner, _resources);
     }
 
     // 元数据名称不含元数后缀时，TypeDefinition 的 GenericParameters 是包含链扁平总数，
@@ -117,9 +123,12 @@ internal static partial class CecilTypeMapper
         return type.GenericParameters.Count;
     }
 
-    internal static int OwnGenericArity(TypeReference type) => SplitMetadataName(type.Name, GetOwnArityFallback(type)).GenericArity;
+    internal static int OwnGenericArity(TypeReference type, MappingContext resources)
+    {
+        return SplitMetadataName(type.Name, GetOwnArityFallback(type), resources).GenericArity;
+    }
 
-    private static GenericParameterTypeSignature MapGenericParameter(
+    private GenericParameterTypeSignature MapGenericParameter(
         GenericParameter parameter)
     {
         var ownerKind = parameter.Type == GenericParameterType.Method
@@ -134,7 +143,7 @@ internal static partial class CecilTypeMapper
                 parameter.Position));
     }
 
-    private static UnsupportedTypeSignature Unsupported(
+    private UnsupportedTypeSignature Unsupported(
         TypeReference typeReference)
     {
         return new UnsupportedTypeSignature(
@@ -142,17 +151,22 @@ internal static partial class CecilTypeMapper
             $"Cecil type shape '{typeReference.GetType().Name}' is unsupported.");
     }
 
-    private static TypeIdentity MapIdentity(TypeReference typeReference)
+    private TypeIdentity MapIdentity(TypeReference typeReference)
     {
         var chain = new Stack<TypeReference>();
-        for (var current = typeReference; current is not null; current = current.DeclaringType) chain.Push(current);
+        for (var current = typeReference; current is not null; current = current.DeclaringType)
+        {
+            _resources.SpendWork();
+            chain.Push(current);
+        }
         TypeIdentity? containingType = null;
         while (chain.Count > 0)
         {
+            _resources.SpendWork();
             typeReference = chain.Pop();
             var (metadataName, genericArity) = SplitMetadataName(
                 typeReference.Name,
-                GetOwnArityFallback(typeReference));
+                GetOwnArityFallback(typeReference), _resources);
             containingType = new TypeIdentity(
                 MapAssemblyIdentity(typeReference),
                 typeReference.Namespace ?? string.Empty,
@@ -164,7 +178,7 @@ internal static partial class CecilTypeMapper
         return containingType!;
     }
 
-    private static TypeKind GetTypeKind(TypeReference typeReference)
+    private TypeKind GetTypeKind(TypeReference typeReference)
     {
         var definition = TryResolve(typeReference);
         if (definition is not null)
@@ -172,7 +186,7 @@ internal static partial class CecilTypeMapper
             if (definition.IsInterface) return TypeKind.Interface;
             if (definition.IsEnum) return TypeKind.Enum;
             if (definition.IsValueType) return TypeKind.Struct;
-            if (definition.BaseType?.FullName is
+            if (definition.BaseType is { } parent && CecilNativeTypeMetadata.FullName(parent, _resources) is
                 "System.Delegate" or "System.MulticastDelegate")
             {
                 return TypeKind.Delegate;
@@ -208,7 +222,7 @@ internal static partial class CecilTypeMapper
         };
     }
 
-    private static TypeDefinition? TryResolve(TypeReference typeReference)
+    private TypeDefinition? TryResolve(TypeReference typeReference)
     {
         try
         {
@@ -219,12 +233,14 @@ internal static partial class CecilTypeMapper
             while (typeReference.DeclaringType is not null)
             {
                 chain.Push(typeReference);
+                _resources.SpendWork();
                 typeReference = typeReference.DeclaringType;
                 if (typeReference is GenericInstanceType generic) typeReference = generic.ElementType;
             }
             TypeDefinition? resolved = typeReference as TypeDefinition ?? typeReference.Resolve();
             while (resolved is not null && chain.Count > 0)
             {
+                _resources.SpendWork();
                 var nested = chain.Pop();
                 resolved = resolved.NestedTypes.FirstOrDefault(candidate => candidate.Name == nested.Name);
             }
@@ -236,17 +252,17 @@ internal static partial class CecilTypeMapper
         }
     }
 
-    private static AssemblyIdentity MapAssemblyIdentity(
+    private AssemblyIdentity MapAssemblyIdentity(
         TypeReference typeReference)
     {
         var definition = TryResolve(typeReference);
-        var definitionModule = definition is null ? null : CecilNativeTypeMetadata.GetModule(definition);
+        var definitionModule = definition is null ? null : CecilNativeTypeMetadata.GetModule(definition, _resources);
         if (definitionModule?.Assembly is not null)
         {
             return MapAssemblyIdentity(definitionModule.Assembly.Name);
         }
 
-        var scope = CecilNativeTypeMetadata.GetScope(typeReference);
+        var scope = CecilNativeTypeMetadata.GetScope(typeReference, _resources);
         if (scope is AssemblyNameReference assembly)
         {
             return MapAssemblyIdentity(assembly);
@@ -258,7 +274,7 @@ internal static partial class CecilTypeMapper
             return MapAssemblyIdentity(module.Assembly.Name);
         }
 
-        var referenceModule = CecilNativeTypeMetadata.GetModule(typeReference);
+        var referenceModule = CecilNativeTypeMetadata.GetModule(typeReference, _resources);
         if (referenceModule?.Assembly is not null)
         {
             return MapAssemblyIdentity(referenceModule.Assembly.Name);
@@ -267,7 +283,7 @@ internal static partial class CecilTypeMapper
         return new AssemblyIdentity(scope?.Name ?? string.Empty);
     }
 
-    private static AssemblyIdentity MapAssemblyIdentity(
+    private AssemblyIdentity MapAssemblyIdentity(
         AssemblyNameReference assembly)
     {
         return new AssemblyIdentity(
@@ -279,8 +295,9 @@ internal static partial class CecilTypeMapper
 
     private static (string MetadataName, int GenericArity) SplitMetadataName(
         string name,
-        int fallbackArity)
+        int fallbackArity, MappingContext resources)
     {
+        resources.SpendWork(Math.Max(1, name.Length));
         var marker = name.LastIndexOf('`');
         if (marker < 0) return (name, fallbackArity);
 
@@ -291,24 +308,26 @@ internal static partial class CecilTypeMapper
             CultureInfo.InvariantCulture,
             out var parsedArity);
 #else
+        resources.CheckTextLength(0, name.Length - marker - 1L);
         var hasExplicitArity = int.TryParse(
             name.Substring(marker + 1),
             NumberStyles.None,
             CultureInfo.InvariantCulture,
             out var parsedArity);
 #endif
-        return hasExplicitArity
-            ? (name.Substring(0, marker), parsedArity)
-            : (name, fallbackArity);
+        if (!hasExplicitArity) return (name, fallbackArity);
+        resources.CheckTextLength(0, marker);
+        return (name.Substring(0, marker), parsedArity);
     }
 
-    private static string FormatPublicKeyToken(byte[]? publicKeyToken)
+    private string FormatPublicKeyToken(byte[]? publicKeyToken)
     {
         if (publicKeyToken is null || publicKeyToken.Length == 0)
         {
             return string.Empty;
         }
 
+        _resources.CheckTextLength(0, publicKeyToken.Length * 2L);
         var characters = new char[publicKeyToken.Length * 2];
         for (var index = 0; index < publicKeyToken.Length; index++)
         {
@@ -320,7 +339,18 @@ internal static partial class CecilTypeMapper
         return new string(characters);
     }
 
-    private static string GetMethodOwnerId(MethodReference method)
+    private readonly Dictionary<MethodReference, string> _methodOwners = new();
+
+    private string GetMethodOwnerId(MethodReference method)
+    {
+        _resources.SpendWork();
+        if (_methodOwners.TryGetValue(method, out var owner)) return owner;
+        owner = GetMethodOwnerIdCore(method);
+        _methodOwners.Add(method, owner);
+        return owner;
+    }
+
+    private string GetMethodOwnerIdCore(MethodReference method)
     {
         if (method is GenericInstanceMethod instance) method = instance.ElementMethod;
         try
@@ -332,14 +362,13 @@ internal static partial class CecilTypeMapper
             // 未解析引用仍有声明名称与参数形状；保留这些可用的身份信息。
         }
 
-        CecilNativeTypeLimitGuard.ValidateMethod(method);
+        new CecilNativeTypeLimitGuard(_resources).ValidateMethod(method);
         // 原始声明的参数和返回形状共同区分CLI重载；不混入闭合查询上下文。
         var parameters = method.Parameters
             .Select(parameter => DeclarationParameterForm(parameter.ParameterType))
             .ToArray();
-        return $"{MapIdentity(method.DeclaringType).FullMetadataName}.{method.Name}`" +
-               MethodGenericArity(method) +
-               $"({string.Join(",", parameters)})->{DeclarationParameterForm(method.ReturnType)}";
+        return _resources.Concat(_resources.FullName(MapIdentity(method.DeclaringType)), ".", method.Name, "`",
+            MethodGenericArity(method).ToString(System.Globalization.CultureInfo.InvariantCulture), "(", _resources.Join(",", parameters), ")->", DeclarationParameterForm(method.ReturnType));
     }
 
     private static int MethodGenericArity(MethodReference method)
@@ -349,10 +378,10 @@ internal static partial class CecilTypeMapper
             : method.GenericParameters.Count;
     }
 
-    internal static MethodDefinition? ResolveMethodDeclaration(MethodReference method)
+    internal MethodDefinition? ResolveMethodDeclaration(MethodReference method)
     {
         if (method is GenericInstanceMethod instance) method = instance.ElementMethod;
-        CecilNativeTypeLimitGuard.ValidateMethod(method);
+        new CecilNativeTypeLimitGuard(_resources).ValidateMethod(method);
         if (method is MethodDefinition definition) return definition;
         // 先保留 !n 声明槽位比较；闭合后相同的实参不能把不同声明重载折叠。
         // vararg 调用点在 sentinel 后携带可选实参，声明只包含 sentinel 前的固定参数。
@@ -367,7 +396,7 @@ internal static partial class CecilTypeMapper
                 candidate.HasThis != method.HasThis || candidate.ExplicitThis != method.ExplicitThis ||
                 (candidate.CallingConvention & ~MethodCallingConvention.Generic) !=
                 (method.CallingConvention & ~MethodCallingConvention.Generic)) return false;
-            CecilNativeTypeLimitGuard.ValidateMethod(candidate);
+            new CecilNativeTypeLimitGuard(_resources).ValidateMethod(candidate);
             return candidate.Parameters.Select(parameter => DeclarationParameterForm(parameter.ParameterType)).SequenceEqual(parameters) &&
                 DeclarationParameterForm(candidate.ReturnType) == returnType;
         }
@@ -388,36 +417,16 @@ internal static partial class CecilTypeMapper
         return match;
     }
 
-    private static string CanonicalParameterForm(TypeReference type, bool qualifyAssembly = true)
+    private string CanonicalParameterForm(TypeReference type, bool qualifyAssembly = true)
     {
-        return AspectN.AdapterInternals.IterativeTypeText.Format(type, qualifyAssembly, false, TypeFormParts);
+        return AspectN.AdapterInternals.IterativeTypeText.Format(type, qualifyAssembly, false, TypeFormParts, _resources);
     }
 
     // 函数指针的规范形式：delegate*[调用约定]<参数...,返回类型>，与 Reflection、Roslyn
     // 逐字节一致；Cecil 的 FullName 不含调用约定，无法区分仅调用约定不同的重载。
-    private static string FunctionPointerForm(FunctionPointerType functionPointer, bool qualifyAssembly = true)
+    private string FunctionPointerForm(FunctionPointerType functionPointer, bool qualifyAssembly = true)
     {
-        var conventions = new List<string>();
-        var returnType = functionPointer.ReturnType;
-        while (returnType is OptionalModifierType or RequiredModifierType)
-        {
-            if (returnType is OptionalModifierType optional)
-            {
-                if (optional.ModifierType.FullName.StartsWith("System.Runtime.CompilerServices.CallConv", StringComparison.Ordinal))
-                    conventions.Add(optional.ModifierType.FullName);
-                returnType = optional.ElementType;
-            }
-            else returnType = ((RequiredModifierType)returnType).ElementType;
-        }
-        var forms = functionPointer.Parameters
-            .Select(parameter => CanonicalParameterForm(parameter.ParameterType, qualifyAssembly))
-            .Append(CanonicalParameterForm(functionPointer.ReturnType, qualifyAssembly));
-        return "delegate*[" +
-               AspectN.AdapterInternals.FunctionPointerConventions.Format(
-                   CallingConventionToken(functionPointer.CallingConvention), conventions) +
-               "]<" +
-               string.Join(",", forms) +
-               ">";
+        return CanonicalParameterForm(functionPointer, qualifyAssembly);
     }
 
     private static string CallingConventionToken(MethodCallingConvention convention)
@@ -438,8 +447,9 @@ internal static partial class CecilTypeMapper
     }
 
 
-    private static string ArraySuffix(int rank)
+    private string ArraySuffix(int rank)
     {
+        _resources.CheckTextLength(0, (long)rank + 1);
         return "[" + (rank == 1
             ? string.Empty
             : new string(',', rank - 1)) + "]";

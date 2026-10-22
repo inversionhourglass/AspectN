@@ -20,6 +20,10 @@
     {
       "path": "docs/reviews/2026-10-21-u01-invalid-method-input.md",
       "section": "维护者裁决与适用范围"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-10-22-configurable-resource-limits-design.md",
+      "section": "2—6；仅资源策略与公开入口"
     }
   ],
   "scenarios": [
@@ -37,7 +41,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-001"
+        "EV-20261014-001",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -57,7 +62,8 @@
       "evidence_ids": [
         "EV-20261014-002",
         "EV-20261021-001",
-        "EV-20261021-004"
+        "EV-20261021-004",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -76,7 +82,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-004",
-        "EV-20261014-006"
+        "EV-20261014-006",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -95,7 +102,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-005",
-        "EV-20261014-006"
+        "EV-20261014-006",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -115,7 +123,8 @@
       "evidence_ids": [
         "EV-20261014-003",
         "EV-20261021-001",
-        "EV-20261021-004"
+        "EV-20261021-004",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -133,7 +142,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-006"
+        "EV-20261014-006",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -151,7 +161,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-006"
+        "EV-20261014-006",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -169,7 +180,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-006"
+        "EV-20261014-006",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     }
@@ -290,3 +302,5 @@ S2/S5 的 C07 组合分别核验普通 Cecil/Fody：已映射原生数组缺少 
 类型特性完整快照的优先级已由维护者于2026-10-14裁决；完整已知事实、精确原生回退、无法枚举的缺列表模式分别见 ATTR-TARGETS-001/S11–S13。Roslyn PE 标记依赖缺失的 ReturnAttributes 不可用、独立 RefKind 仍可知见 ATTR-TARGETS-001/S14。直接 HasDirectAttribute API 的原生关联前置条件不因此改变。
 
 C04 修复后，Cecil/Fody 已知泛型形参声明记录按 ATTR-TARGETS-001/S2、S15 查询；引用上的占位泛型槽位仍不能证明没有特性，S2、S5 保留 Unknown/AN3004 控制。缺少原生关联仍为 AN3001，预先取消继续抛出取消异常。[修复记录](../../../reviews/2026-10-21-c04-generic-parameter-attributes.md)限定了声明记录与引用输入的边界。
+
+2026-10-22资源配置变更按[实施审查](../../../reviews/2026-10-22-configurable-resource-limits.md)重评当前证据。历史报告不改写；新增配置的范围由CROSS-RESOURCES-001/S9—S15区分。未新增或改动N/A记录；没有从缺少某后端场景推断排除。

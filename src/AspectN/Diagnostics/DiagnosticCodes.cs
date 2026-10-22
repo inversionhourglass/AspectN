@@ -3,6 +3,12 @@ namespace AspectN.Diagnostics;
 /// <summary>Represents diagnostic codes.</summary>
 public static class DiagnosticCodes
 {
+    /// <summary>Identifies exhaustion of a parsing source, token, or node quota.</summary>
+    public static string ParseResourceLimitExceeded => "AN1003";
+
+    /// <summary>Identifies exhaustion of operation work, relationship, attribute, or text quotas.</summary>
+    public static string ResourceLimitExceeded => "AN3008";
+
     /// <summary>Identifies exhaustion of a per-match Capture binding budget.</summary>
     public static string BindingBudgetExceeded => "AN3007";
 

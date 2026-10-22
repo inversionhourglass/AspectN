@@ -1,11 +1,13 @@
+using AspectN.Execution;
+using AspectN.TypeSystem;
 using AspectN.AdapterInternals;
 using AspectN.Reflection.Internal;
 
 namespace AspectN.Reflection;
 
-public sealed partial class ReflectionSignatureMapper
+internal sealed partial class ReflectionMappingOperation
 {
-    private static IReadOnlyList<string>[]? DeclarationModifiers(System.Reflection.MethodBase method)
+    private IReadOnlyList<string>[]? DeclarationModifiers(System.Reflection.MethodBase method)
     {
         try
         {
@@ -13,7 +15,7 @@ public sealed partial class ReflectionSignatureMapper
             // 读取原始签名才能保留混排、嵌套位置，并兼容没有 modified Type API 的旧宿主。
             return MethodCustomModifierReader.Read(method.Module.ResolveSignature(method.MetadataToken), token =>
                 CanonicalParameterForm(method.Module.ResolveType(token,
-                    method.DeclaringType?.GetGenericArguments(), method.GetGenericArguments())));
+                    method.DeclaringType?.GetGenericArguments(), method.GetGenericArguments())), _resources);
         }
         catch (Exception exception) when (exception is NotSupportedException or InvalidOperationException or ArgumentException or BadImageFormatException)
         {
@@ -22,7 +24,7 @@ public sealed partial class ReflectionSignatureMapper
         }
     }
 
-    private static IReadOnlyList<string>[]? UnambiguousDeclarationModifiers(System.Reflection.MethodBase method)
+    private IReadOnlyList<string>[]? UnambiguousDeclarationModifiers(System.Reflection.MethodBase method)
     {
         var result = ReadUnambiguousDeclarationModifiers(method, out var rootOnly);
         if (result is null || !rootOnly) return result;
@@ -43,8 +45,7 @@ public sealed partial class ReflectionSignatureMapper
             }
         }
         catch (Exception exception) when (exception is TypeLoadException or System.Reflection.ReflectionTypeLoadException or
-            IOException or BadImageFormatException or NotSupportedException or InvalidOperationException or ArgumentException or
-            AspectNLimitException)
+            IOException or BadImageFormatException or NotSupportedException or InvalidOperationException or ArgumentException)
         {
             // 排歧所需的兄弟声明不可读，不应使当前完整候选的映射失败；改用物理身份。
             return null;
@@ -52,15 +53,15 @@ public sealed partial class ReflectionSignatureMapper
         return result;
     }
 
-    private static string[] DeclarationShape(System.Reflection.MethodBase method, IReadOnlyList<string>[] modifiers)
+    private string[] DeclarationShape(System.Reflection.MethodBase method, IReadOnlyList<string>[] modifiers)
     {
-        var result = method.GetParameters().Select((parameter, index) => GenericOwnerIdentity.WithCustomModifiers(
+        var result = method.GetParameters().Select((parameter, index) => GenericOwnerIdentity.WithCustomModifiers(_resources,
             CanonicalParameterForm(parameter), modifiers[index + 1]));
-        return result.Prepend(method is System.Reflection.MethodInfo info ? GenericOwnerIdentity.WithCustomModifiers(
+        return result.Prepend(method is System.Reflection.MethodInfo info ? GenericOwnerIdentity.WithCustomModifiers(_resources,
             CanonicalParameterForm(info.ReturnParameter), modifiers[0]) : "System.Void").ToArray();
     }
 
-    private static IReadOnlyList<string>[]? ReadUnambiguousDeclarationModifiers(System.Reflection.MethodBase method, out bool rootOnly)
+    private IReadOnlyList<string>[]? ReadUnambiguousDeclarationModifiers(System.Reflection.MethodBase method, out bool rootOnly)
     {
         rootOnly = false;
         var parameters = method.GetParameters();
@@ -81,39 +82,43 @@ public sealed partial class ReflectionSignatureMapper
             var required = parameter.GetRequiredCustomModifiers();
             var optional = parameter.GetOptionalCustomModifiers();
             if (required.Length + optional.Length > 1) return null;
-            foreach (var modifier in required) entries.Add(GenericOwnerIdentity.CustomModifier(string.Empty, false, CanonicalParameterForm(modifier)));
-            foreach (var modifier in optional) entries.Add(GenericOwnerIdentity.CustomModifier(string.Empty, true, CanonicalParameterForm(modifier)));
+            foreach (var modifier in required) entries.Add(GenericOwnerIdentity.CustomModifier(_resources, string.Empty, false, CanonicalParameterForm(modifier)));
+            foreach (var modifier in optional) entries.Add(GenericOwnerIdentity.CustomModifier(_resources, string.Empty, true, CanonicalParameterForm(modifier)));
         }
         return result;
     }
 
-    private static bool TryCollectDeclarationModifiers(Type type, string path, List<string> entries)
+    private bool TryCollectDeclarationModifiers(Type type, string path, List<string> entries) =>
+        WorkStack.Run(CollectDeclarationModifiersWork(type, path, entries), _resources.CancellationToken);
+
+    private async StackWork<bool> CollectDeclarationModifiersWork(Type type, string path, List<string> entries)
     {
+        _resources.SpendWork();
         if (!RuntimeTypeFacts.TryGetCustomModifiers(type, out var required, out var optional) ||
             required.Length + optional.Length > 1) return false;
         // 单个修饰符没有顺序歧义；多个修饰符的分组 API 不能证明原始混排。
-        foreach (var modifier in required) entries.Add(GenericOwnerIdentity.CustomModifier(path, false, CanonicalParameterForm(modifier)));
-        foreach (var modifier in optional) entries.Add(GenericOwnerIdentity.CustomModifier(path, true, CanonicalParameterForm(modifier)));
+        foreach (var modifier in required) entries.Add(GenericOwnerIdentity.CustomModifier(_resources, path, false, CanonicalParameterForm(modifier)));
+        foreach (var modifier in optional) entries.Add(GenericOwnerIdentity.CustomModifier(_resources, path, true, CanonicalParameterForm(modifier)));
         if (type.HasElementType)
-            return TryCollectDeclarationModifiers(RequiredElementType(type),
-                path + (type.IsByRef ? "/ref" : type.IsPointer ? "/pointer" : "/element"), entries);
+            return await CollectDeclarationModifiersWork(RequiredElementType(type),
+                _resources.Concat(path, type.IsByRef ? "/ref" : type.IsPointer ? "/pointer" : "/element"), entries);
         if (RuntimeTypeFacts.IsFunctionPointer(type))
         {
-            if (!TryCollectDeclarationModifiers(RuntimeTypeFacts.GetFunctionPointerReturnType(type), path + "/return", entries)) return false;
+            if (!await CollectDeclarationModifiersWork(RuntimeTypeFacts.GetFunctionPointerReturnType(type), _resources.Concat(path, "/return"), entries)) return false;
             var parameters = RuntimeTypeFacts.GetFunctionPointerParameterTypes(type);
             for (var index = 0; index < parameters.Length; index++)
-                if (!TryCollectDeclarationModifiers(parameters[index], path + "/parameter:" + index, entries)) return false;
+                if (!await CollectDeclarationModifiersWork(parameters[index], _resources.Concat(path, "/parameter:", index.ToString(System.Globalization.CultureInfo.InvariantCulture)), entries)) return false;
         }
         else if (type.IsGenericType && !type.IsGenericTypeDefinition)
         {
             var arguments = type.GetGenericArguments();
             for (var index = 0; index < arguments.Length; index++)
-                if (!TryCollectDeclarationModifiers(arguments[index], path + "/arg:" + index, entries)) return false;
+                if (!await CollectDeclarationModifiersWork(arguments[index], _resources.Concat(path, "/arg:", index.ToString(System.Globalization.CultureInfo.InvariantCulture)), entries)) return false;
         }
         return true;
     }
 
-    private static IEnumerable<TypeTextPart<Type>> TypeFormParts(Type type, bool qualified, bool modified)
+    private IEnumerable<TypeTextPart<Type>> TypeFormParts(Type type, bool qualified, bool modified)
     {
         if (type.IsGenericParameter)
         {
@@ -131,7 +136,7 @@ public sealed partial class ReflectionSignatureMapper
         if (RuntimeTypeFacts.IsFunctionPointer(type))
         {
             // 必须沿用 modified Type 读取调用约定；原始 Type 的空列表不能证明 managed。
-            yield return TypeTextPart<Type>.Literal("delegate*[" + RuntimeTypeFacts.CallingConvention(type, modified) + "]<");
+            yield return TypeTextPart<Type>.Literal("delegate*[" + RuntimeTypeFacts.CallingConvention(type, modified, _resources) + "]<");
             foreach (var parameter in RuntimeTypeFacts.GetFunctionPointerParameterTypes(type))
             {
                 yield return TypeTextPart<Type>.Node(parameter, qualified, modified);
@@ -146,9 +151,13 @@ public sealed partial class ReflectionSignatureMapper
         var chain = new Stack<Type>();
         for (var current = type; current is not null; current = current.DeclaringType) chain.Push(current);
         var arguments = type.IsGenericType && !type.IsGenericTypeDefinition ? type.GetGenericArguments() : Type.EmptyTypes;
-        if (qualified) yield return TypeTextPart<Type>.Literal(GenericOwnerIdentity.Qualify(string.Empty, MapAssemblyIdentity(type.Assembly.GetName())));
+        if (qualified) yield return TypeTextPart<Type>.Literal(GenericOwnerIdentity.Qualify(_resources, string.Empty, MapAssemblyIdentity(type.Assembly.GetName())));
         var outer = chain.Peek();
-        if (!string.IsNullOrEmpty(outer.Namespace)) yield return TypeTextPart<Type>.Literal(outer.Namespace + ".");
+        if (!string.IsNullOrEmpty(outer.Namespace))
+        {
+            yield return TypeTextPart<Type>.Literal(outer.Namespace);
+            yield return TypeTextPart<Type>.Literal(".");
+        }
         var offset = 0;
         var first = true;
         while (chain.Count > 0)

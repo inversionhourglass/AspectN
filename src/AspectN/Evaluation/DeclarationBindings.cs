@@ -17,7 +17,7 @@ internal sealed class DeclarationBindings(TypeSignature? type, MethodSignature? 
         if (slot is null) return MatchStatus.NotMatched;
         if (!_slots.TryGetValue(slot, out var resolution))
         {
-            resolution = Resolve(slot);
+            resolution = Resolve(slot, context.QueryContext);
             _slots.Add(slot, resolution);
         }
 
@@ -32,13 +32,14 @@ internal sealed class DeclarationBindings(TypeSignature? type, MethodSignature? 
         if (resolution.Status == MatchStatus.NotMatched) return MatchStatus.NotMatched;
 
         // 严格消费声明身份，不把未限定查询规则或后端关系查询用于槽位相等。
-        var result = StructuralTypeComparer.AreEqual(resolution.Parameter!, candidate);
+        var result = StructuralTypeComparer.AreEqual(resolution.Parameter!, candidate, context.QueryContext);
         context.AddDiagnostics(result.Diagnostics);
         return result.Status;
     }
 
-    private SlotResolution Resolve(DeclarationSlot slot)
+    private SlotResolution Resolve(DeclarationSlot slot, TypeSystemQueryContext context)
     {
+        context.SpendWork();
         if (slot.Source == DeclarationSource.Method)
         {
             var declaration = method?.OriginalDefinition ?? method;
@@ -72,6 +73,7 @@ internal sealed class DeclarationBindings(TypeSignature? type, MethodSignature? 
 
         foreach (var step in slot.Path)
         {
+            context.SpendWork();
             if (source is UnsupportedTypeSignature) return new(MatchStatus.Unknown);
             if (step == DeclarationTypeStep.ArrayElement)
             {
@@ -81,20 +83,20 @@ internal sealed class DeclarationBindings(TypeSignature? type, MethodSignature? 
             else if (source is NamedTypeSignature nullable && nullable.Identity.Namespace == "System" &&
                 nullable.Identity.MetadataName == "Nullable" && nullable.Identity.GenericArity == 1)
             {
-                source = GenericParameterNamer.GetEffectiveTypeArguments(nullable)[0];
+                source = GenericParameterNamer.GetEffectiveTypeArguments(nullable, context)[0];
             }
         }
 
         if (source is UnsupportedTypeSignature) return new(MatchStatus.Unknown);
         if (source is not NamedTypeSignature named) return new(MatchStatus.NotMatched);
-        var chain = GenericParameterNamer.GetTypeChain(named.Identity);
+        var chain = GenericParameterNamer.GetTypeChain(named.Identity, context);
         var level = chain.Count - slot.ContainingDepth - 1;
         if (level < 0 || slot.Position >= chain[level].GenericArity) return new(MatchStatus.NotMatched);
         var position = slot.Position;
-        for (var index = 0; index < level; index++) position += chain[index].GenericArity;
+        for (var index = 0; index < level; index++) { context.SpendWork(); position += chain[index].GenericArity; }
         var owner = chain[level];
         return new(MatchStatus.Matched, new GenericParameterTypeSignature(new GenericParameterSignature(
-            $"T{position + 1}", GenericParameterOwnerKind.Type, owner.FullMetadataName, owner.Assembly, position)));
+            $"T{position + 1}", GenericParameterOwnerKind.Type, GenericParameterNamer.GetOwnerId(owner, context), owner.Assembly, position)));
     }
 
     private sealed class SlotResolution(MatchStatus status, TypeSignature? parameter = null,

@@ -1,16 +1,17 @@
 #nullable enable
+AspectN.Cecil.CecilMappingOptions.CecilMappingOptions(bool leaveOpen = true, AspectN.AspectNMappingOptions? resources = null) -> void
+AspectN.Cecil.CecilMappingOptions.Resources.get -> AspectN.AspectNMappingOptions!
+AspectN.Cecil.CecilSignatureMapper.MapMethod(Mono.Cecil.MethodReference! methodReference, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.Metadata.MethodSignature!
+AspectN.Cecil.CecilSignatureMapper.MapProperty(Mono.Cecil.PropertyReference! propertyReference, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.Metadata.PropertySignature!
+AspectN.Cecil.CecilSignatureMapper.MapType(Mono.Cecil.TypeReference! typeReference, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.Metadata.TypeSignature!
+AspectN.Cecil.CecilSignatureMapper.MapTypeUse(Mono.Cecil.TypeReference! typeReference, AspectN.Metadata.TypeUseKind useKind, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.Metadata.TypeUseSignature!
+AspectN.Cecil.CecilSignatureMapper.Options.get -> AspectN.AspectNMappingOptions!
+AspectN.Cecil.CecilTypeSystem.AreEqual(AspectN.Metadata.TypeSignature! left, AspectN.Metadata.TypeSignature! right, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.TypeSystem.TypeRelationResult!
 AspectN.Cecil.CecilMappingOptions
-AspectN.Cecil.CecilMappingOptions.CecilMappingOptions(bool leaveOpen = false) -> void
 AspectN.Cecil.CecilMappingOptions.LeaveOpen.get -> bool
 AspectN.Cecil.CecilSignatureMapper
-AspectN.Cecil.CecilSignatureMapper.MapMethod(Mono.Cecil.MethodReference! methodReference) -> AspectN.Metadata.MethodSignature!
-AspectN.Cecil.CecilSignatureMapper.MapProperty(Mono.Cecil.PropertyReference! propertyReference) -> AspectN.Metadata.PropertySignature!
-AspectN.Cecil.CecilSignatureMapper.MapType(Mono.Cecil.TypeReference! typeReference) -> AspectN.Metadata.TypeSignature!
-AspectN.Cecil.CecilSignatureMapper.MapTypeUse(Mono.Cecil.TypeReference! typeReference, AspectN.Metadata.TypeUseKind useKind) -> AspectN.Metadata.TypeUseSignature!
 AspectN.Cecil.CecilTypeSystem
-AspectN.Cecil.CecilTypeSystem.AreEqual(AspectN.Metadata.TypeSignature! left, AspectN.Metadata.TypeSignature! right) -> AspectN.TypeSystem.TypeRelationResult!
 AspectN.Cecil.CecilTypeSystem.Capabilities.get -> AspectN.TypeSystem.TypeSystemCapabilities
-AspectN.Cecil.CecilTypeSystem.CecilTypeSystem(Mono.Cecil.ModuleDefinition! module, AspectN.Cecil.CecilMappingOptions? options = null) -> void
 AspectN.Cecil.CecilTypeSystem.Dispose() -> void
 AspectN.Cecil.CecilTypeSystem.HasDirectAttribute(AspectN.TypeSystem.AttributeTarget! target, AspectN.Metadata.TypeSignature! attributeType, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.TypeSystem.TypeRelationResult!
 AspectN.Cecil.CecilTypeSystem.IsAssignableTo(AspectN.Metadata.TypeSignature! candidate, AspectN.Metadata.TypeSignature! target, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.TypeSystem.TypeRelationResult!
@@ -18,3 +19,5 @@ AspectN.Cecil.CecilTypeSystem.Mapper.get -> AspectN.Cecil.CecilSignatureMapper!
 AspectN.Cecil.CecilTypeSystem.Module.get -> Mono.Cecil.ModuleDefinition!
 AspectN.Cecil.CecilTypeSystem.Options.get -> AspectN.Cecil.CecilMappingOptions!
 AspectN.Cecil.CecilTypeSystem.GetInheritanceClosure(AspectN.Metadata.TypeSignature! candidate, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.TypeSystem.InheritanceClosure!
+AspectN.Cecil.CecilTypeSystem.CecilTypeSystem(Mono.Cecil.ModuleDefinition! module, AspectN.Cecil.CecilMappingOptions? options = null, AspectN.AspectNMatchOptions? queryOptions = null) -> void
+AspectN.Cecil.CecilTypeSystem.QueryOptions.get -> AspectN.AspectNMatchOptions!

@@ -60,10 +60,10 @@ public sealed class ReturnShapeOwnerIdentityTests
                     Assert.Null(method.MakeGenericMethod(typeof(int)).Invoke(null, [0]));
             var (system, methods) = backend switch
             {
-                "cecil" => ((ITypeSystem)cecil, cecil.Module.GetType("Example.Owner").Methods.Select(cecil.Mapper.MapMethod).ToArray()),
-                "reflection" => (reflection, runtime.Select(reflection.Mapper.MapMethod).ToArray()),
+                "cecil" => ((ITypeSystem)cecil, cecil.Module.GetType("Example.Owner").Methods.Select(method => cecil.Mapper.MapMethod(method)).ToArray()),
+                "reflection" => (reflection, runtime.Select(method => reflection.Mapper.MapMethod(method)).ToArray()),
                 _ => (roslyn, reader.GetTypeByMetadataName("Example.Owner")!.GetMembers("M")
-                    .OfType<IMethodSymbol>().Select(roslyn.Mapper.MapMethod).ToArray())
+                    .OfType<IMethodSymbol>().Select(method => roslyn.Mapper.MapMethod(method)).ToArray())
             };
             var first = methods[0].GenericParameters[0];
             var second = methods[1].GenericParameters[0];
@@ -117,7 +117,8 @@ public sealed class ReturnShapeOwnerIdentityTests
                 var relation = system.IsAssignableTo(variable, target);
                 Assert.True(relation.Status == MatchStatus.Matched,
                     system.GetType().Name + ": " + relation.Status + " " + string.Join(",", relation.Diagnostics.Select(d => d.Code + " " + d.Message)));
-                Assert.Equal(MatchStatus.NotMatched, system.IsAssignableTo(variable, other).Status);
+                var negative = system.IsAssignableTo(variable, other);
+                Assert.True(negative.Status == MatchStatus.NotMatched, system.GetType().Name + ": " + string.Join(",", negative.Diagnostics.Select(d => d.Message)));
                 var expectedReturn = returnType == "T" ? native : typeof(List<>).MakeGenericType(native.MakeArrayType());
                 Assert.Equal(MatchStatus.Matched, system.AreEqual(method.ReturnType.Type,
                     fixture.Reflection.Mapper.MapType(expectedReturn)).Status);

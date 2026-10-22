@@ -1,3 +1,4 @@
+using AspectN.Execution;
 using AspectN.Binding;
 using AspectN.Diagnostics;
 using AspectN.Metadata;
@@ -24,7 +25,7 @@ internal static class AttributePatternEvaluator
 
         var hasConcreteAttributeType = TryCreateAttributeType(
             pattern.AttributeType,
-            out var attributeType);
+            out var attributeType, context.QueryContext);
 
         if (pattern.Target == BoundAttributeTargetKind.Property)
         {
@@ -149,6 +150,7 @@ internal static class AttributePatternEvaluator
         var matchedBranches = context.CreateAlternativeCollector();
         foreach (var attribute in attributes)
         {
+            if (!context.QueryContext.TryConsumeAttributeRecords(1)) context.QueryContext.ThrowIfExhausted();
             context.Visit(pattern.Span);
             var branch = context.Fork();
             var branchStatus = TypePatternEvaluator.Evaluate(
@@ -194,7 +196,7 @@ internal static class AttributePatternEvaluator
         }
     }
 
-    private static IReadOnlyList<AttributeTarget> GetTargets(
+    private static IEnumerable<AttributeTarget> GetTargets(
         BoundAttributePattern pattern,
         MethodSignature candidate)
     {
@@ -223,53 +225,32 @@ internal static class AttributePatternEvaluator
         }
     }
 
-    private static AttributeTarget[] GetParameterTargets(
-        int? parameterIndex,
-        MethodSignature candidate)
+    private static IEnumerable<AttributeTarget> GetParameterTargets(int? parameterIndex, MethodSignature candidate)
     {
         if (parameterIndex.HasValue)
         {
-            return parameterIndex.Value >= 0 &&
-                   parameterIndex.Value < candidate.Parameters.Count
-                ? new[]
-                {
-                    AttributeTarget.ForParameter(
-                        candidate.Parameters[parameterIndex.Value])
-                }
-                : Array.Empty<AttributeTarget>();
+            if (parameterIndex.Value >= 0 && parameterIndex.Value < candidate.Parameters.Count)
+                yield return AttributeTarget.ForParameter(candidate.Parameters[parameterIndex.Value]);
+            yield break;
         }
-
-        return candidate.Parameters
-            .Select(AttributeTarget.ForParameter)
-            .ToArray();
+        foreach (var parameter in candidate.Parameters) yield return AttributeTarget.ForParameter(parameter);
     }
 
-    private static List<AttributeTarget> GetAllTargets(
-        MethodSignature candidate)
+    private static IEnumerable<AttributeTarget> GetAllTargets(MethodSignature candidate)
     {
-        var targets = new List<AttributeTarget>
-        {
-            AttributeTarget.ForType(candidate.DeclaringType),
-            AttributeTarget.ForMethod(candidate)
-        };
-        if (candidate.AssociatedProperty is not null)
-        {
-            targets.Add(
-                AttributeTarget.ForProperty(candidate.AssociatedProperty));
-        }
-
-        targets.AddRange(
-            candidate.Parameters.Select(AttributeTarget.ForParameter));
-        targets.Add(AttributeTarget.ForReturn(candidate));
-        return targets;
+        yield return AttributeTarget.ForType(candidate.DeclaringType);
+        yield return AttributeTarget.ForMethod(candidate);
+        if (candidate.AssociatedProperty is not null) yield return AttributeTarget.ForProperty(candidate.AssociatedProperty);
+        foreach (var parameter in candidate.Parameters) yield return AttributeTarget.ForParameter(parameter);
+        yield return AttributeTarget.ForReturn(candidate);
     }
 
     private static bool TryCreateAttributeType(
         BoundTypePattern pattern,
-        out TypeSignature? type)
+        out TypeSignature? type, TypeSystemQueryContext context)
     {
         if (pattern is not BoundNamedTypePattern named ||
-            !HasSpecifiedGenericArguments(named))
+            !HasSpecifiedGenericArguments(named, context))
         {
             type = null;
             return false;
@@ -277,32 +258,28 @@ internal static class AttributePatternEvaluator
 
         return TypePatternEvaluator.TryCreateConcreteType(
             pattern,
-            out type);
+            out type, context);
     }
 
-    // 直接特性查询要求泛型形参完全具体化；通配元数或未指定实参的模式交给类型模式求值器。
-    private static bool HasSpecifiedGenericArguments(BoundNamedTypePattern named)
-    {
-        return !named.Segments.Any(segment =>
-            segment.Generic.Kind == BoundGenericArityKind.AnyPositive ||
-            segment.Generic.Kind == BoundGenericArityKind.Any ||
-            (segment.Generic.Arity > 0 &&
-             segment.Generic.Arguments.Count != segment.Generic.Arity) ||
-            segment.Generic.Arguments.Any(
-                argument => !IsFullyConcrete(argument)));
-    }
+    // 具体化先按顺序验证所有子项；延迟帧避免嵌套特性模式耗尽调用栈。
+    private static bool HasSpecifiedGenericArguments(BoundNamedTypePattern named, TypeSystemQueryContext context) =>
+        WorkStack.Run(IsFullyConcreteWork(named, context), context.CancellationToken);
 
-    // 嵌套实参也必须递归具体化；nullable 在具体化路径会错构为 Nullable<T>，
-    // 与模式求值器的引用类型语义不一致，必须回退到类型模式求值器。
-    private static bool IsFullyConcrete(BoundTypePattern pattern)
+    private static async StackWork<bool> IsFullyConcreteWork(BoundTypePattern pattern, TypeSystemQueryContext context)
     {
-        return pattern switch
+        context.SpendWork();
+        if (pattern is BoundArrayTypePattern { Rank: > 1 } array)
+            return await IsFullyConcreteWork(array.ElementType, context);
+        if (pattern is not BoundNamedTypePattern named) return false;
+        foreach (var segment in named.Segments)
         {
-            BoundNamedTypePattern named =>
-                HasSpecifiedGenericArguments(named),
-            BoundArrayTypePattern array => array.Rank > 1 && IsFullyConcrete(array.ElementType),
-            _ => false
-        };
+            context.SpendWork();
+            if (segment.Generic.Kind is BoundGenericArityKind.AnyPositive or BoundGenericArityKind.Any ||
+                segment.Generic.Arity > 0 && segment.Generic.Arguments.Count != segment.Generic.Arity) return false;
+            foreach (var argument in segment.Generic.Arguments)
+                if (!await IsFullyConcreteWork(argument, context)) return false;
+        }
+        return true;
     }
 
     private static MatchStatus Unknown(

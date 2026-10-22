@@ -17,7 +17,7 @@ public sealed class AssignablePatternMatchingTests
     {
         var typeSystem = new ReflectionTypeSystem();
         var candidate = typeSystem.Mapper.MapType(typeof(ReflectionBindingFixture));
-        var compilation = new AspectNEngine().CompileTypePattern(source, new AspectNCompilationOptions(null, GenericVariableMode.Capture));
+        var compilation = new AspectNEngine().CompileTypePattern(source, compilationOptions: new AspectNCompilationOptions(GenericVariableMode.Capture));
         Assert.True(compilation.TryGetTypePattern(out var pattern));
 
         Assert.Equal(expected, pattern!.Match(candidate, typeSystem).Status);
@@ -41,7 +41,7 @@ public sealed class AssignablePatternMatchingTests
         var candidate = typeSystem.Mapper.MapMethod(method);
         var compilation = AspectNCompilation.Create(AspectNParser.ParseMemberExpression(
             $"method(* IValue<$T>+.Run<?>(..)) && {exclusion} && {subsequentConstraint}"),
-            new AspectNCompilationOptions(null, GenericVariableMode.Capture));
+            new AspectNCompilationOptions(GenericVariableMode.Capture));
         Assert.True(compilation.TryGetMemberPattern(out var pattern));
 
         Assert.Equal(expected, pattern!.Match(candidate, typeSystem).Status);

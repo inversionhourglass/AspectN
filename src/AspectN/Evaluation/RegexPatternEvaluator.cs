@@ -26,12 +26,12 @@ internal static class RegexPatternEvaluator
         if (metadataStatus == MatchStatus.Unknown) return metadataStatus;
         try
         {
-            var signature = CanonicalSignatureFormatter.Format(candidate, context.CancellationToken);
+            var signature = CanonicalSignatureFormatter.Format(candidate, context.QueryContext);
             return Regex.IsMatch(
                 signature,
                 pattern.Pattern,
                 RegexOptions.CultureInvariant,
-                context.Options.RegexTimeout)
+                context.Options.MatchOptions.RegexTimeout.RegexTimeout)
                 ? MatchStatus.Matched
                 : MatchStatus.NotMatched;
         }

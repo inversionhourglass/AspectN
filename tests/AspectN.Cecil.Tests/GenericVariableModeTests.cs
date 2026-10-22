@@ -23,14 +23,12 @@ public sealed class GenericVariableModeTests
         var engine = new AspectNEngine();
         foreach (var mode in new[] { GenericVariableMode.Declaration, GenericVariableMode.Capture })
         {
-            Assert.True(engine.CompileMemberExpression("method($T Service.Echo<$T>($T))",
-                new AspectNCompilationOptions(null, mode)).TryGetMemberPattern(out var pattern));
+            Assert.True(engine.CompileMemberExpression("method($T Service.Echo<$T>($T))", compilationOptions: new AspectNCompilationOptions(mode)).TryGetMemberPattern(out var pattern));
             Assert.Equal(MatchStatus.Matched, pattern.Match(system.Mapper.MapMethod(method), system).Status);
             Assert.Equal(mode == GenericVariableMode.Declaration ? MatchStatus.NotMatched : MatchStatus.Matched,
                 pattern.Match(system.Mapper.MapMethod(constructed), system).Status);
         }
-        Assert.True(engine.CompileMemberExpression("method(* Echo<$L>(..)) || method(* Echo<$R>(..))",
-            new AspectNCompilationOptions(null, GenericVariableMode.Capture, 1)).TryGetMemberPattern(out var limited));
+        Assert.True(engine.CompileMemberExpression("method(* Echo<$L>(..)) || method(* Echo<$R>(..))", compilationOptions: new AspectNCompilationOptions(GenericVariableMode.Capture, new AspectNMatchOptions(maximumBindingAlternatives: ResourceLimit.Finite(1)))).TryGetMemberPattern(out var limited));
         var result = limited.Match(system.Mapper.MapMethod(method), system);
         Assert.Equal(MatchStatus.Unknown, result.Status);
         Assert.Contains(result.Diagnostics, item => item.Code == "AN3007");

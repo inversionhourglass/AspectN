@@ -1,3 +1,4 @@
+using AspectN.Execution;
 using AspectN.Diagnostics;
 using AspectN.Syntax;
 using AspectN.Text;
@@ -10,12 +11,15 @@ internal sealed class TypePatternParser
     private readonly Lexer _lexer;
     private readonly SourceText _source;
     private SyntaxToken _current;
-    private readonly ParserDepthGuard _depthGuard = new();
+    private readonly ParserDepthGuard _depthGuard;
+    private readonly ParseContext _context;
 
-    public TypePatternParser(SourceText source)
+    public TypePatternParser(SourceText source, AspectNParseOptions? options = null, CancellationToken cancellationToken = default)
     {
         _source = source;
-        _lexer = new Lexer(source);
+        _context = new ParseContext(options ?? new AspectNParseOptions(), cancellationToken);
+        _depthGuard = new ParserDepthGuard(_context);
+        _lexer = new Lexer(source, _context);
         _current = _lexer.Lex();
     }
 
@@ -26,36 +30,42 @@ internal sealed class TypePatternParser
         SyntaxNode root;
         try
         {
-            root = ParseTypeUseOrPattern();
+            root = WorkStack.Run(ParseTypeUseOrPatternWork(), _context.CancellationToken);
+            while (Current.Kind != SyntaxKind.EndOfFileToken)
+            {
+                ReportUnexpected(Current, "end of input");
+                NextToken();
+            }
+        }
+        catch (ParseLimitException exception)
+        {
+            _context.Stop();
+            _diagnostics.Add(exception.Diagnostic.Code, exception.Diagnostic.Severity, exception.Diagnostic.Message, exception.Diagnostic.Span);
+            root = CreateMissingType(exception.Diagnostic.Span?.Start ?? 0);
         }
         catch (ParserDepthException exception)
         {
+            _context.Stop();
             _diagnostics.Add(DiagnosticCodes.InputDepthExceeded, DiagnosticSeverity.Error,
-                "Parser recursion exceeds the supported depth of 128 levels.", exception.Span);
+                $"Parsing exceeded MaximumParserDepth ({_context.Options.MaximumParserDepth}).", exception.Span);
             root = CreateMissingType(exception.Span.Start);
-            while (Current.Kind != SyntaxKind.EndOfFileToken) NextToken();
-        }
-        while (Current.Kind != SyntaxKind.EndOfFileToken)
-        {
-            ReportUnexpected(Current, "end of input");
-            NextToken();
         }
 
         return new AspectNSyntaxTree(
             _source,
             AspectNParseKind.TypePattern,
             root,
-            GetDiagnostics());
+            GetDiagnostics(), _context.Options, _context.CancellationToken);
     }
 
-    private SyntaxNode ParseTypeUseOrPattern()
+    private async StackWork<SyntaxNode> ParseTypeUseOrPatternWork()
     {
         var negatedRef = IsNegatedRefPrefix();
         if (!negatedRef && !IsIdentifier("ref") &&
             !IsIdentifier("out") &&
             !IsIdentifier("in"))
         {
-            return ParseTypeExpression();
+            return await ParseTypeExpressionWork();
         }
 
         var refKindTokens = new List<SyntaxToken>();
@@ -71,7 +81,7 @@ internal sealed class TypePatternParser
             "Ref-kind annotations require a member parameter or return type use; the type-pattern entry point accepts types only.",
             refKindTokens[0].Span);
 
-        return new TypeUseSyntax(refKindTokens, ParseTypeExpression());
+        return await _context.CreateWork(async () => new TypeUseSyntax(refKindTokens, await ParseTypeExpressionWork()));
     }
 
     private bool IsNegatedRefPrefix()
@@ -81,7 +91,7 @@ internal sealed class TypePatternParser
         return next.Kind == SyntaxKind.IdentifierToken && next.Text == "ref" && next.Span.Start == Current.Span.End;
     }
 
-    private TypePatternSyntax ParseTypeExpression(int parentPrecedence = 0)
+    private async StackWork<TypePatternSyntax> ParseTypeExpressionWork(int parentPrecedence = 0)
     {
         ReportNestedRefKindPrefix();
         using var nesting = _depthGuard.Enter(Current.Span);
@@ -103,13 +113,13 @@ internal sealed class TypePatternParser
                     "Consecutive '!' operators are not allowed; remove the extra negation.",
                     Current.Span);
             }
-            left = new UnaryTypePatternSyntax(
+            left = await _context.CreateWork(async () => new UnaryTypePatternSyntax(
                 operatorToken,
-                ParseTypeExpression(unaryPrecedence));
+                await ParseTypeExpressionWork(unaryPrecedence)));
         }
         else
         {
-            left = ParseTypePrimaryWithSuffixes();
+            left = await ParseTypePrimaryWithSuffixesWork();
         }
 
         while (true)
@@ -118,8 +128,8 @@ internal sealed class TypePatternParser
             if (precedence == 0 || precedence <= parentPrecedence) break;
 
             var operatorToken = NextToken();
-            var right = ParseTypeExpression(precedence);
-            left = new BinaryTypePatternSyntax(left, operatorToken, right);
+            var right = await ParseTypeExpressionWork(precedence);
+            left = _context.Create(() => new BinaryTypePatternSyntax(left, operatorToken, right));
         }
 
         return left;
@@ -160,9 +170,9 @@ internal sealed class TypePatternParser
                TypePatternSyntaxFacts.IsNamePart(token);
     }
 
-    private TypePatternSyntax ParseTypePrimaryWithSuffixes()
+    private async StackWork<TypePatternSyntax> ParseTypePrimaryWithSuffixesWork()
     {
-        var pattern = ParseTypeAtom();
+        var pattern = await ParseTypeAtomWork();
         while (true)
         {
             switch (Current.Kind)
@@ -182,7 +192,7 @@ internal sealed class TypePatternParser
                         ReportUnexpected(Current, "'?' (must be adjacent to the type pattern)");
                     }
 
-                    pattern = new NullableTypePatternSyntax(pattern, NextToken());
+                    pattern = _context.Create(() => new NullableTypePatternSyntax(pattern, NextToken()));
                     continue;
                 case SyntaxKind.PlusToken:
                     if (Current.Span.Start != pattern.FullSpan.End)
@@ -190,7 +200,7 @@ internal sealed class TypePatternParser
                         ReportUnexpected(Current, "'+' (must be adjacent to the type pattern)");
                     }
 
-                    pattern = new AssignableTypePatternSyntax(pattern, NextToken());
+                    pattern = _context.Create(() => new AssignableTypePatternSyntax(pattern, NextToken()));
                     continue;
                 default:
                     return pattern;
@@ -198,21 +208,21 @@ internal sealed class TypePatternParser
         }
     }
 
-    private TypePatternSyntax ParseTypeAtom()
+    private async StackWork<TypePatternSyntax> ParseTypeAtomWork()
     {
         if (Current.Kind == SyntaxKind.DollarToken) return ParseVariable();
-        if (Current.Kind == SyntaxKind.OpenParenToken) return ParseParenthesizedOrTuple();
-        if (Current.Kind == SyntaxKind.StarToken) return ParseStarOrNamed();
+        if (Current.Kind == SyntaxKind.OpenParenToken) return await ParseParenthesizedOrTupleWork();
+        if (Current.Kind == SyntaxKind.StarToken) return await ParseStarOrNamedWork();
 
         if (TypePatternSyntaxFacts.IsNamePart(Current))
         {
             var first = NextToken();
             if (first.Text == "tasklike")
             {
-                return ParseTaskLike(first);
+                return await ParseTaskLikeWork(first);
             }
 
-            return ParseNamed(first);
+            return await ParseNamedWork(first);
         }
 
         var unexpected = Current;
@@ -225,10 +235,10 @@ internal sealed class TypePatternParser
     {
         var dollar = NextToken();
         var identifier = MatchToken(SyntaxKind.IdentifierToken);
-        return new VariableTypePatternSyntax(dollar, identifier);
+        return _context.Create(() => new VariableTypePatternSyntax(dollar, identifier));
     }
 
-    private TypePatternSyntax ParseStarOrNamed()
+    private async StackWork<TypePatternSyntax> ParseStarOrNamedWork()
     {
         var star = NextToken();
         // 名字延续（标识符、泛型子句、分隔符）必须与 * 相邻；跨空格即槽位边界（§3.4）。
@@ -240,17 +250,17 @@ internal sealed class TypePatternParser
                  SyntaxKind.DotDotToken or
                  SyntaxKind.SlashToken))
         {
-            return ParseNamed(star);
+            return await ParseNamedWork(star);
         }
 
-        return new WildcardTypePatternSyntax(star);
+        return _context.Create(() => new WildcardTypePatternSyntax(star));
     }
 
-    private NamedTypePatternSyntax ParseNamed(SyntaxToken firstNamePart)
+    private async StackWork<NamedTypePatternSyntax> ParseNamedWork(SyntaxToken firstNamePart)
     {
         var segments = new List<NamePatternSegmentSyntax>
         {
-            ParseNameSegment(firstNamePart)
+            await ParseNameSegmentWork(firstNamePart)
         };
         var separators = new List<SyntaxToken>();
         var inNestedType = false;
@@ -280,13 +290,13 @@ internal sealed class TypePatternParser
                     "name pattern (must follow the separator without whitespace)");
             }
 
-            segments.Add(ParseNameSegment());
+            segments.Add(await ParseNameSegmentWork());
         }
 
-        return new NamedTypePatternSyntax(segments, separators);
+        return _context.Create(() => new NamedTypePatternSyntax(segments, separators));
     }
 
-    private NamePatternSegmentSyntax ParseNameSegment(
+    private async StackWork<NamePatternSegmentSyntax> ParseNameSegmentWork(
         SyntaxToken? firstNamePart = null)
     {
         var nameParts = new List<SyntaxToken>();
@@ -307,19 +317,19 @@ internal sealed class TypePatternParser
         {
             ReportUnexpected(Current, "name pattern");
             nameParts.Add(
-                SyntaxToken.Missing(
+                _context.Create(() => SyntaxToken.Missing(
                     SyntaxKind.IdentifierToken,
-                    Current.Span.Start));
+                    Current.Span.Start)));
         }
 
         var genericArguments = Current.Kind == SyntaxKind.LessThanToken &&
             Current.Span.Start == nameParts[nameParts.Count - 1].Span.End
-            ? ParseGenericPatternList()
+            ? await ParseGenericPatternListWork()
             : null;
-        return new NamePatternSegmentSyntax(nameParts, genericArguments);
+        return _context.Create(() => new NamePatternSegmentSyntax(nameParts, genericArguments));
     }
 
-    private GenericPatternListSyntax ParseGenericPatternList()
+    private async StackWork<GenericPatternListSyntax> ParseGenericPatternListWork()
     {
         var lessThan = NextToken();
 
@@ -327,62 +337,62 @@ internal sealed class TypePatternParser
         if (Current.Kind == SyntaxKind.BangToken && PeekNextToken().Kind == SyntaxKind.GreaterThanToken)
         {
             var bang = NextToken();
-            return new GenericPatternListSyntax(
+            return _context.Create(() => new GenericPatternListSyntax(
                 lessThan,
                 GenericPatternForm.FixedArity,
                 0,
                 Array.Empty<TypePatternSyntax>(),
                 Array.Empty<SyntaxToken>(),
                 bang,
-                MatchToken(SyntaxKind.GreaterThanToken));
+                MatchToken(SyntaxKind.GreaterThanToken)));
         }
 
         if (Current.Kind == SyntaxKind.GreaterThanToken)
         {
             // <> = 单个 Any 空槽。
-            return new GenericPatternListSyntax(
+            return _context.Create(() => new GenericPatternListSyntax(
                 lessThan,
                 GenericPatternForm.FixedArity,
                 1,
                 Array.Empty<TypePatternSyntax>(),
                 Array.Empty<SyntaxToken>(),
                 null,
-                NextToken());
+                NextToken()));
         }
 
         if (Current.Kind == SyntaxKind.DotDotToken)
         {
             // <..> = 至少一个泛型参数。
             var wildcard = NextToken();
-            return new GenericPatternListSyntax(
+            return _context.Create(() => new GenericPatternListSyntax(
                 lessThan,
                 GenericPatternForm.AnyPositiveArity,
                 0,
                 Array.Empty<TypePatternSyntax>(),
                 Array.Empty<SyntaxToken>(),
                 wildcard,
-                MatchToken(SyntaxKind.GreaterThanToken));
+                MatchToken(SyntaxKind.GreaterThanToken)));
         }
 
         // <?> = 任意 arity（含零）。
         if (Current.Kind == SyntaxKind.QuestionToken)
         {
             var question = NextToken();
-            return new GenericPatternListSyntax(
+            return _context.Create(() => new GenericPatternListSyntax(
                 lessThan,
                 GenericPatternForm.AnyArity,
                 0,
                 Array.Empty<TypePatternSyntax>(),
                 Array.Empty<SyntaxToken>(),
                 question,
-                MatchToken(SyntaxKind.GreaterThanToken));
+                MatchToken(SyntaxKind.GreaterThanToken)));
         }
 
         // 混合空槽：空槽 = Any 占位，arity = 槽数。
-        return ParseGenericArguments(lessThan);
+        return await ParseGenericArgumentsWork(lessThan);
     }
 
-    private GenericPatternListSyntax ParseGenericArguments(SyntaxToken lessThan)
+    private async StackWork<GenericPatternListSyntax> ParseGenericArgumentsWork(SyntaxToken lessThan)
     {
         var arguments = new List<TypePatternSyntax>();
         var separators = new List<SyntaxToken>();
@@ -395,7 +405,7 @@ internal sealed class TypePatternParser
             }
             else
             {
-                arguments.Add(ParseTypeExpression());
+                arguments.Add(await ParseTypeExpressionWork());
                 hasTypedArgument = true;
             }
 
@@ -403,22 +413,22 @@ internal sealed class TypePatternParser
             separators.Add(NextToken());
         }
 
-        return new GenericPatternListSyntax(
+        return _context.Create(() => new GenericPatternListSyntax(
             lessThan,
             hasTypedArgument ? GenericPatternForm.Arguments : GenericPatternForm.FixedArity,
             arguments.Count,
             hasTypedArgument ? arguments : Array.Empty<TypePatternSyntax>(),
             separators,
             null,
-            MatchToken(SyntaxKind.GreaterThanToken));
+            MatchToken(SyntaxKind.GreaterThanToken)));
     }
 
-    private TaskLikeTypePatternSyntax ParseTaskLike(SyntaxToken keyword)
+    private async StackWork<TaskLikeTypePatternSyntax> ParseTaskLikeWork(SyntaxToken keyword)
     {
         // 裸 tasklike（仅 Standard）：匹配非泛型 Task/ValueTask。
         if (Current.Kind != SyntaxKind.LessThanToken)
         {
-            return new TaskLikeTypePatternSyntax(keyword, null, null, null);
+            return _context.Create(() => new TaskLikeTypePatternSyntax(keyword, null, null, null));
         }
 
         if (Current.Span.Start != keyword.Span.End)
@@ -434,29 +444,29 @@ internal sealed class TypePatternParser
         }
         else
         {
-            resultType = ParseTypeExpression();
+            resultType = await ParseTypeExpressionWork();
         }
 
-        return new TaskLikeTypePatternSyntax(
+        return _context.Create(() => new TaskLikeTypePatternSyntax(
             keyword,
             lessThan,
             resultType,
-            MatchToken(SyntaxKind.GreaterThanToken));
+            MatchToken(SyntaxKind.GreaterThanToken)));
     }
 
-    private TypePatternSyntax ParseParenthesizedOrTuple()
+    private async StackWork<TypePatternSyntax> ParseParenthesizedOrTupleWork()
     {
         var openParen = NextToken();
         if (Current.Kind == SyntaxKind.CloseParenToken)
         {
             ReportUnexpected(Current, "type pattern");
-            return new ParenthesizedTypePatternSyntax(
+            return _context.Create(() => new ParenthesizedTypePatternSyntax(
                 openParen,
                 CreateMissingType(Current.Span.Start),
-                NextToken());
+                NextToken()));
         }
 
-        var first = ParseTypeExpression();
+        var first = await ParseTypeExpressionWork();
         if (Current.Kind != SyntaxKind.CommaToken)
         {
             // 括号类型只保留 Boolean 分组含义；单元素括号按缺元素诊断。
@@ -465,10 +475,10 @@ internal sealed class TypePatternParser
                 ReportUnexpected(Current, "',' and another tuple element (a tuple needs at least two elements)");
             }
 
-            return new ParenthesizedTypePatternSyntax(
+            return _context.Create(() => new ParenthesizedTypePatternSyntax(
                 openParen,
                 first,
-                MatchToken(SyntaxKind.CloseParenToken));
+                MatchToken(SyntaxKind.CloseParenToken)));
         }
 
         var elements = new List<TypePatternSyntax> { first };
@@ -483,14 +493,14 @@ internal sealed class TypePatternParser
                 break;
             }
 
-            elements.Add(ParseTypeExpression());
+            elements.Add(await ParseTypeExpressionWork());
         }
 
-        return new TupleTypePatternSyntax(
+        return _context.Create(() => new TupleTypePatternSyntax(
             openParen,
             elements,
             separators,
-            MatchToken(SyntaxKind.CloseParenToken));
+            MatchToken(SyntaxKind.CloseParenToken)));
     }
 
     private ArrayTypePatternSyntax ParseArraySuffix(TypePatternSyntax elementType)
@@ -502,11 +512,11 @@ internal sealed class TypePatternParser
             commas.Add(NextToken());
         }
 
-        return new ArrayTypePatternSyntax(
+        return _context.Create(() => new ArrayTypePatternSyntax(
             elementType,
             openBracket,
             commas,
-            MatchToken(SyntaxKind.CloseBracketToken));
+            MatchToken(SyntaxKind.CloseBracketToken)));
     }
 
     private SyntaxToken MatchToken(SyntaxKind expectedKind)
@@ -514,7 +524,7 @@ internal sealed class TypePatternParser
         if (Current.Kind == expectedKind) return NextToken();
 
         ReportUnexpected(Current, expectedKind.ToString());
-        return SyntaxToken.Missing(expectedKind, Current.Span.Start);
+        return _context.Create(() => SyntaxToken.Missing(expectedKind, Current.Span.Start));
     }
 
     private SyntaxToken NextToken()
@@ -549,15 +559,15 @@ internal sealed class TypePatternParser
             .ToArray();
     }
 
-    private static WildcardTypePatternSyntax CreateMissingType(int position)
+    private WildcardTypePatternSyntax CreateMissingType(int position)
     {
-        return new WildcardTypePatternSyntax(
-            SyntaxToken.Missing(SyntaxKind.StarToken, position));
+        return _context.Create(() => new WildcardTypePatternSyntax(
+            _context.Create(() => SyntaxToken.Missing(SyntaxKind.StarToken, position))));
     }
 
     private SyntaxToken PeekNextToken(int offset = 1)
     {
-        var lexer = new Lexer(_source);
+        var lexer = new Lexer(_source, _context);
         lexer.Reset(Current.Span.End);
         var token = lexer.Lex();
         for (var index = 1; index < offset; index++) token = lexer.Lex();

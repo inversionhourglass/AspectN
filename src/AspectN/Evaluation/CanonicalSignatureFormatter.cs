@@ -1,5 +1,6 @@
 using System.Text;
 using AspectN.Metadata;
+using AspectN.TypeSystem;
 
 namespace AspectN.Evaluation;
 
@@ -7,12 +8,17 @@ internal static class CanonicalSignatureFormatter
 {
     // Standard 定义签名的泛型形参按扁平槽位渲染为 T1..Tn（外层类型从左到右、
     // 再内层、最后方法泛型），总数为 1 时渲染为裸 T；封闭构造仍展开实际实参。
-    public static string Format(MethodSignature candidate, CancellationToken cancellationToken = default)
+    public static string Format(MethodSignature candidate, CancellationToken cancellationToken = default) =>
+        Format(candidate, new TypeSystemQueryContext(new AspectNMatchOptions(), cancellationToken));
+
+    internal static string Format(MethodSignature candidate, TypeSystemQueryContext context)
     {
-        var builder = new BoundedSignatureBuilder(cancellationToken);
+        var cancellationToken = context.CancellationToken;
+        var builder = new BoundedSignatureBuilder(context);
+        builder.ValidateText(candidate.Name);
         builder.ValidateArity(candidate.GenericParameters.Count);
         var genericNames = GenericParameterNamer.CreatePositionalNames(
-            candidate, builder.ValidateEffectiveArity, cancellationToken);
+            candidate, builder.ValidateEffectiveArity, context, cancellationToken);
         builder.Append(
             FormatAccessibility(candidate.Accessibility));
         if (candidate.IsStatic) builder.Append(" static");
@@ -83,100 +89,66 @@ internal static class CanonicalSignatureFormatter
     }
 
     private static void AppendType(
-        BoundedSignatureBuilder builder,
-        TypeSignature type,
+        BoundedSignatureBuilder builder, TypeSignature type,
         IReadOnlyDictionary<GenericParameterKey, string> genericNames)
     {
-        switch (type)
+        var pending = new Stack<(TypeSignature? Type, string? Text, int Commas)>();
+        pending.Push((type, null, 0));
+        while (pending.Count > 0)
         {
-            case NamedTypeSignature named:
-                AppendNamedType(builder, named, genericNames);
-                break;
-            case ArrayTypeSignature array:
-                AppendType(builder, array.ElementType, genericNames);
-                builder.Append('[');
-                builder.Append(',', array.Rank - 1);
-                builder.Append(']');
-                break;
-            case GenericParameterTypeSignature parameter:
-                AppendGenericParameter(
-                    builder,
-                    parameter.Parameter,
-                    genericNames);
-                break;
-            case UnsupportedTypeSignature unsupported:
-                builder.Append(unsupported.DisplayName);
-                break;
-            default:
-                throw new InvalidOperationException(
-                    $"Unsupported type signature '{type.Kind}'.");
-        }
-    }
-
-    private static void AppendNamedType(
-        BoundedSignatureBuilder builder,
-        NamedTypeSignature named,
-        IReadOnlyDictionary<GenericParameterKey, string> genericNames)
-    {
-        builder.ValidateEffectiveArity(named);
-        var chain = GenericParameterNamer.GetTypeChain(named.Identity);
-        // 开放定义没有实参，回退到按声明链合成的位置形参，类型子句因此与
-        // 使用位置共用同一套 T1..Tn 编号，不会出现一侧抹名一侧保名的分裂。
-        var arguments = GenericParameterNamer.GetEffectiveTypeArguments(named);
-        if (arguments.Length != chain.Sum(identity => identity.GenericArity))
-            throw new CanonicalSignatureUnavailableException("Constructed type arguments are incomplete.");
-        var argumentOffset = 0;
-        for (var index = 0; index < chain.Count; index++)
-        {
-            var identity = chain[index];
-            if (index == 0 && !string.IsNullOrEmpty(identity.Namespace))
+            builder.Context.SpendWork();
+            var item = pending.Pop();
+            if (item.Text is not null) { builder.Append(item.Text); continue; }
+            if (item.Type is null) { builder.Append(',', item.Commas); continue; }
+            switch (item.Type)
             {
-                builder.Append(identity.Namespace);
-                builder.Append('.');
+                case ArrayTypeSignature array:
+                    pending.Push((null, "]", 0));
+                    pending.Push((null, null, array.Rank - 1));
+                    pending.Push((null, "[", 0));
+                    pending.Push((array.ElementType, null, 0));
+                    break;
+                case NamedTypeSignature named:
+                    builder.ValidateEffectiveArity(named);
+                    var chain = GenericParameterNamer.GetTypeChain(named.Identity, builder.Context);
+                    var arguments = GenericParameterNamer.GetEffectiveTypeArguments(named, builder.Context);
+                    var offset = arguments.Length;
+                    // 反向压入声明链和实参，输出仍按由外到内、从左到右的原顺序。
+                    for (var index = chain.Count - 1; index >= 0; index--)
+                    {
+                        var identity = chain[index];
+                        var arity = identity.GenericArity;
+                        if (arity > 0)
+                        {
+                            pending.Push((null, ">", 0));
+                            offset -= arity;
+                            for (var position = arity - 1; position >= 0; position--)
+                            {
+                                builder.Context.SpendWork();
+                                pending.Push((arguments[offset + position], null, 0));
+                                if (position > 0) pending.Push((null, ", ", 0));
+                            }
+                            pending.Push((null, "<", 0));
+                        }
+                        pending.Push((null, identity.MetadataName, 0));
+                        if (index > 0) pending.Push((null, "/", 0));
+                        else if (!string.IsNullOrEmpty(identity.Namespace))
+                        {
+                            pending.Push((null, ".", 0));
+                            pending.Push((null, identity.Namespace, 0));
+                        }
+                    }
+                    break;
+                case GenericParameterTypeSignature parameter:
+                    AppendGenericParameter(builder, parameter.Parameter, genericNames);
+                    break;
+                case UnsupportedTypeSignature unsupported:
+                    builder.Append(unsupported.DisplayName);
+                    break;
+                default:
+                    throw new CanonicalSignatureUnavailableException("The type has no canonical text.");
             }
-            else if (index > 0)
-            {
-                builder.Append('/');
-            }
-
-            builder.Append(identity.MetadataName);
-            AppendNamedGeneric(
-                builder,
-                identity.GenericArity,
-                arguments,
-                ref argumentOffset,
-                genericNames);
         }
-    }
-
-    private static void AppendNamedGeneric(
-        BoundedSignatureBuilder builder,
-        int arity,
-        TypeSignature[] arguments,
-        ref int argumentOffset,
-        IReadOnlyDictionary<GenericParameterKey, string> genericNames)
-    {
-        if (arity == 0) return;
-        builder.Append('<');
-        if (arguments.Length >= argumentOffset + arity)
-        {
-            for (var index = 0; index < arity; index++)
-            {
-                if (index > 0) builder.Append(", ");
-                AppendType(
-                    builder,
-                    arguments[argumentOffset + index],
-                    genericNames);
-            }
-
-            argumentOffset += arity;
-        }
-        else
-        {
-            builder.Append(',', arity - 1);
-        }
-
-        builder.Append('>');
     }
 
     private static void AppendTypeList(
@@ -206,27 +178,31 @@ internal static class CanonicalSignatureFormatter
     }
 
     // 深度合规的共享图也可能展开成指数长度文本，必须在分配输出前限制累计大小。
-    private sealed class BoundedSignatureBuilder(CancellationToken cancellationToken)
+    private sealed class BoundedSignatureBuilder(TypeSystemQueryContext context)
     {
-        private const int MAX_LENGTH = 65_536;
         private readonly StringBuilder _builder = new();
+        public TypeSystemQueryContext Context { get; } = context;
 
         public void ValidateEffectiveArity(NamedTypeSignature named)
         {
             long arity = 0;
             for (var identity = named.Identity; identity is not null; identity = identity.ContainingType)
             {
+                Context.SpendWork();
+                ValidateText(identity.MetadataName);
+                ValidateText(identity.Namespace);
                 arity += identity.GenericArity;
                 ValidateArity(arity);
             }
         }
 
+        public void ValidateText(string text) => Context.ValidateTextLength(0, text.Length,
+            Context.Options.MaximumCanonicalSignatureLength, nameof(Context.Options.MaximumCanonicalSignatureLength));
+
         public void ValidateArity(long arity)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (arity > MAX_LENGTH)
-                throw new CanonicalSignatureUnavailableException(
-                    $"Generic arity exceeds the {MAX_LENGTH}-character formatting budget.");
+            Context.CancellationToken.ThrowIfCancellationRequested();
+            if (arity > 0) Context.CheckTextLength(0, arity, Context.Options.MaximumCanonicalSignatureLength, nameof(Context.Options.MaximumCanonicalSignatureLength));
         }
 
         public void Append(string? value)
@@ -251,10 +227,8 @@ internal static class CanonicalSignatureFormatter
 
         private void EnsureSpace(int length)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (length > MAX_LENGTH - _builder.Length)
-                throw new CanonicalSignatureUnavailableException(
-                    $"Canonical signature exceeds the {MAX_LENGTH}-character formatting limit.");
+            Context.CheckTextLength(_builder.Length, length, Context.Options.MaximumCanonicalSignatureLength,
+                nameof(Context.Options.MaximumCanonicalSignatureLength));
         }
     }
 

@@ -1,4 +1,70 @@
 #nullable enable
+AspectN.Syntax.AspectNSyntaxTree.ParseOptions.get -> AspectN.AspectNParseOptions!
+AspectN.AspectNCompilationOptions.AspectNCompilationOptions(AspectN.GenericVariableMode genericVariableMode = AspectN.GenericVariableMode.Declaration, AspectN.AspectNMatchOptions? matchOptions = null) -> void
+AspectN.AspectNCompilationOptions.MatchOptions.get -> AspectN.AspectNMatchOptions!
+AspectN.AspectNEngine.CompileMemberExpression(string! source, AspectN.AspectNParseOptions? parseOptions = null, AspectN.AspectNCompilationOptions? compilationOptions = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.AspectNCompilation!
+AspectN.AspectNEngine.CompileTypePattern(string! source, AspectN.AspectNParseOptions? parseOptions = null, AspectN.AspectNCompilationOptions? compilationOptions = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.AspectNCompilation!
+AspectN.TypeSystem.ITypeSystem.AreEqual(AspectN.Metadata.TypeSignature! left, AspectN.Metadata.TypeSignature! right, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.TypeSystem.TypeRelationResult!
+static AspectN.AspectNCompilation.Create(AspectN.Syntax.AspectNSyntaxTree! syntaxTree, AspectN.AspectNCompilationOptions? options = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.AspectNCompilation!
+static AspectN.AspectNParser.ParseMemberExpression(string! source, AspectN.AspectNParseOptions? parseOptions = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.Syntax.AspectNSyntaxTree!
+static AspectN.AspectNParser.ParseTypePattern(string! source, AspectN.AspectNParseOptions? parseOptions = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.Syntax.AspectNSyntaxTree!
+static AspectN.Diagnostics.DiagnosticCodes.ParseResourceLimitExceeded.get -> string!
+static AspectN.Diagnostics.DiagnosticCodes.ResourceLimitExceeded.get -> string!
+static AspectN.TypeSystem.StructuralTypeComparer.AreEqual(AspectN.Metadata.TypeSignature! left, AspectN.Metadata.TypeSignature! right, AspectN.AspectNMatchOptions? options = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.TypeSystem.TypeRelationResult!
+AspectN.AspectNMappingOptions
+AspectN.AspectNMappingOptions.AspectNMappingOptions(AspectN.ResourceLimit? maximumTypeDepth = null, AspectN.ResourceLimit? maximumTypeGenericParameters = null, AspectN.ResourceLimit? maximumMethodGenericParameters = null, AspectN.ResourceLimit? maximumWork = null, AspectN.ResourceLimit? maximumAttributeRecords = null, AspectN.ResourceLimit? maximumGeneratedTextLength = null) -> void
+AspectN.AspectNMappingOptions.MaximumAttributeRecords.get -> AspectN.ResourceLimit
+AspectN.AspectNMappingOptions.MaximumGeneratedTextLength.get -> AspectN.ResourceLimit
+AspectN.AspectNMappingOptions.MaximumMethodGenericParameters.get -> AspectN.ResourceLimit
+AspectN.AspectNMappingOptions.MaximumTypeDepth.get -> AspectN.ResourceLimit
+AspectN.AspectNMappingOptions.MaximumTypeGenericParameters.get -> AspectN.ResourceLimit
+AspectN.AspectNMappingOptions.MaximumWork.get -> AspectN.ResourceLimit
+AspectN.AspectNMatchOptions
+AspectN.AspectNMatchOptions.AspectNMatchOptions(AspectN.ResourceLimit? maximumTypeDepth = null, AspectN.ResourceLimit? maximumTypeGenericParameters = null, AspectN.ResourceLimit? maximumMethodGenericParameters = null, AspectN.ResourceLimit? maximumWork = null, AspectN.ResourceLimit? maximumRelationNodes = null, AspectN.ResourceLimit? maximumRelationEdges = null, AspectN.ResourceLimit? maximumAttributeRecords = null, AspectN.ResourceLimit? maximumCanonicalSignatureLength = null, AspectN.ResourceLimit? maximumBindingAlternatives = null, AspectN.ResourceLimit? maximumBindingWork = null, AspectN.TimeLimit? regexTimeout = null) -> void
+AspectN.AspectNMatchOptions.MaximumAttributeRecords.get -> AspectN.ResourceLimit
+AspectN.AspectNMatchOptions.MaximumBindingAlternatives.get -> AspectN.ResourceLimit
+AspectN.AspectNMatchOptions.MaximumBindingWork.get -> AspectN.ResourceLimit
+AspectN.AspectNMatchOptions.MaximumCanonicalSignatureLength.get -> AspectN.ResourceLimit
+AspectN.AspectNMatchOptions.MaximumMethodGenericParameters.get -> AspectN.ResourceLimit
+AspectN.AspectNMatchOptions.MaximumRelationEdges.get -> AspectN.ResourceLimit
+AspectN.AspectNMatchOptions.MaximumRelationNodes.get -> AspectN.ResourceLimit
+AspectN.AspectNMatchOptions.MaximumTypeDepth.get -> AspectN.ResourceLimit
+AspectN.AspectNMatchOptions.MaximumTypeGenericParameters.get -> AspectN.ResourceLimit
+AspectN.AspectNMatchOptions.MaximumWork.get -> AspectN.ResourceLimit
+AspectN.AspectNMatchOptions.RegexTimeout.get -> AspectN.TimeLimit
+AspectN.AspectNParseOptions
+AspectN.AspectNParseOptions.AspectNParseOptions(AspectN.ResourceLimit? maximumSourceLength = null, AspectN.ResourceLimit? maximumTokens = null, AspectN.ResourceLimit? maximumSyntaxNodes = null, AspectN.ResourceLimit? maximumParserDepth = null, AspectN.ResourceLimit? maximumSyntaxDepth = null, AspectN.ResourceLimit? maximumTypeDepth = null, AspectN.ResourceLimit? maximumTypeGenericParameters = null, AspectN.ResourceLimit? maximumMethodGenericParameters = null) -> void
+AspectN.AspectNParseOptions.MaximumMethodGenericParameters.get -> AspectN.ResourceLimit
+AspectN.AspectNParseOptions.MaximumParserDepth.get -> AspectN.ResourceLimit
+AspectN.AspectNParseOptions.MaximumSourceLength.get -> AspectN.ResourceLimit
+AspectN.AspectNParseOptions.MaximumSyntaxDepth.get -> AspectN.ResourceLimit
+AspectN.AspectNParseOptions.MaximumSyntaxNodes.get -> AspectN.ResourceLimit
+AspectN.AspectNParseOptions.MaximumTokens.get -> AspectN.ResourceLimit
+AspectN.AspectNParseOptions.MaximumTypeDepth.get -> AspectN.ResourceLimit
+AspectN.AspectNParseOptions.MaximumTypeGenericParameters.get -> AspectN.ResourceLimit
+AspectN.ResourceLimit
+AspectN.ResourceLimit.Equals(AspectN.ResourceLimit other) -> bool
+AspectN.ResourceLimit.IsUnlimited.get -> bool
+AspectN.ResourceLimit.ResourceLimit() -> void
+AspectN.ResourceLimit.Value.get -> long
+AspectN.TimeLimit
+AspectN.TimeLimit.Equals(AspectN.TimeLimit other) -> bool
+AspectN.TimeLimit.IsUnlimited.get -> bool
+AspectN.TimeLimit.TimeLimit() -> void
+AspectN.TimeLimit.Value.get -> System.TimeSpan
+override AspectN.ResourceLimit.Equals(object? obj) -> bool
+override AspectN.ResourceLimit.GetHashCode() -> int
+override AspectN.ResourceLimit.ToString() -> string!
+override AspectN.TimeLimit.Equals(object? obj) -> bool
+override AspectN.TimeLimit.GetHashCode() -> int
+static AspectN.ResourceLimit.Finite(long value) -> AspectN.ResourceLimit
+static AspectN.ResourceLimit.Unlimited.get -> AspectN.ResourceLimit
+static AspectN.ResourceLimit.operator !=(AspectN.ResourceLimit left, AspectN.ResourceLimit right) -> bool
+static AspectN.ResourceLimit.operator ==(AspectN.ResourceLimit left, AspectN.ResourceLimit right) -> bool
+static AspectN.TimeLimit.Finite(System.TimeSpan value) -> AspectN.TimeLimit
+static AspectN.TimeLimit.Unlimited.get -> AspectN.TimeLimit
+static AspectN.TimeLimit.operator !=(AspectN.TimeLimit left, AspectN.TimeLimit right) -> bool
+static AspectN.TimeLimit.operator ==(AspectN.TimeLimit left, AspectN.TimeLimit right) -> bool
 AspectN.AspectNCompilation
 AspectN.AspectNCompilation.Diagnostics.get -> System.Collections.Generic.IReadOnlyList<AspectN.Diagnostics.AspectNDiagnostic!>!
 AspectN.AspectNCompilation.Options.get -> AspectN.AspectNCompilationOptions!
@@ -6,16 +72,9 @@ AspectN.AspectNCompilation.SyntaxTree.get -> AspectN.Syntax.AspectNSyntaxTree!
 AspectN.AspectNCompilation.TryGetMemberPattern(out AspectN.CompiledMemberPattern? pattern) -> bool
 AspectN.AspectNCompilation.TryGetTypePattern(out AspectN.CompiledTypePattern? pattern) -> bool
 AspectN.AspectNCompilationOptions
-AspectN.AspectNCompilationOptions.AspectNCompilationOptions(System.TimeSpan? regexTimeout = null) -> void
-AspectN.AspectNCompilationOptions.AspectNCompilationOptions(System.TimeSpan? regexTimeout, AspectN.GenericVariableMode genericVariableMode, int maximumBindingAlternatives = 4096, long maximumBindingWork = 1000000) -> void
 AspectN.AspectNCompilationOptions.GenericVariableMode.get -> AspectN.GenericVariableMode
-AspectN.AspectNCompilationOptions.MaximumBindingAlternatives.get -> int
-AspectN.AspectNCompilationOptions.MaximumBindingWork.get -> long
-AspectN.AspectNCompilationOptions.RegexTimeout.get -> System.TimeSpan
 AspectN.AspectNEngine
 AspectN.AspectNEngine.AspectNEngine(AspectN.AspectNEngineOptions? options = null) -> void
-AspectN.AspectNEngine.CompileMemberExpression(string! source, AspectN.AspectNCompilationOptions? compilationOptions = null) -> AspectN.AspectNCompilation!
-AspectN.AspectNEngine.CompileTypePattern(string! source, AspectN.AspectNCompilationOptions? compilationOptions = null) -> AspectN.AspectNCompilation!
 AspectN.AspectNEngine.Options.get -> AspectN.AspectNEngineOptions!
 AspectN.AspectNEngineOptions
 AspectN.AspectNEngineOptions.AspectNEngineOptions(int cacheCapacity = 256) -> void
@@ -424,7 +483,6 @@ AspectN.TypeSystem.AttributeTarget.Parameter.get -> AspectN.Metadata.ParameterSi
 AspectN.TypeSystem.AttributeTarget.Property.get -> AspectN.Metadata.PropertySignature?
 AspectN.TypeSystem.AttributeTarget.Type.get -> AspectN.Metadata.TypeSignature?
 AspectN.TypeSystem.ITypeSystem
-AspectN.TypeSystem.ITypeSystem.AreEqual(AspectN.Metadata.TypeSignature! left, AspectN.Metadata.TypeSignature! right) -> AspectN.TypeSystem.TypeRelationResult!
 AspectN.TypeSystem.ITypeSystem.Capabilities.get -> AspectN.TypeSystem.TypeSystemCapabilities
 AspectN.TypeSystem.ITypeSystem.HasDirectAttribute(AspectN.TypeSystem.AttributeTarget! target, AspectN.Metadata.TypeSignature! attributeType, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.TypeSystem.TypeRelationResult!
 AspectN.TypeSystem.ITypeSystem.IsAssignableTo(AspectN.Metadata.TypeSignature! candidate, AspectN.Metadata.TypeSignature! target, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> AspectN.TypeSystem.TypeRelationResult!
@@ -450,9 +508,6 @@ override AspectN.Metadata.TypeIdentity.GetHashCode() -> int
 override AspectN.Text.SourceText.ToString() -> string!
 override AspectN.Text.TextSpan.Equals(object? obj) -> bool
 override AspectN.Text.TextSpan.GetHashCode() -> int
-static AspectN.AspectNCompilation.Create(AspectN.Syntax.AspectNSyntaxTree! syntaxTree, AspectN.AspectNCompilationOptions? options = null) -> AspectN.AspectNCompilation!
-static AspectN.AspectNParser.ParseMemberExpression(string! source) -> AspectN.Syntax.AspectNSyntaxTree!
-static AspectN.AspectNParser.ParseTypePattern(string! source) -> AspectN.Syntax.AspectNSyntaxTree!
 static AspectN.Diagnostics.DiagnosticCodes.AttributePositionMigration.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.BadCharacter.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.CompoundAccessibilityMigration.get -> string!
@@ -497,7 +552,6 @@ static AspectN.TypeSystem.AttributeTarget.ForParameter(AspectN.Metadata.Paramete
 static AspectN.TypeSystem.AttributeTarget.ForProperty(AspectN.Metadata.PropertySignature! property) -> AspectN.TypeSystem.AttributeTarget!
 static AspectN.TypeSystem.AttributeTarget.ForReturn(AspectN.Metadata.MethodSignature! method) -> AspectN.TypeSystem.AttributeTarget!
 static AspectN.TypeSystem.AttributeTarget.ForType(AspectN.Metadata.TypeSignature! type) -> AspectN.TypeSystem.AttributeTarget!
-static AspectN.TypeSystem.StructuralTypeComparer.AreEqual(AspectN.Metadata.TypeSignature! left, AspectN.Metadata.TypeSignature! right) -> AspectN.TypeSystem.TypeRelationResult!
 static AspectN.TypeSystem.TypeRelationResult.Matched.get -> AspectN.TypeSystem.TypeRelationResult!
 static AspectN.TypeSystem.TypeRelationResult.NotMatched.get -> AspectN.TypeSystem.TypeRelationResult!
 static AspectN.TypeSystem.TypeRelationResult.Unknown(params AspectN.Diagnostics.AspectNDiagnostic![]! diagnostics) -> AspectN.TypeSystem.TypeRelationResult!
@@ -575,9 +629,6 @@ AspectN.Metadata.ArrayTypeSignature.ArrayTypeSignature(AspectN.Metadata.TypeSign
 AspectN.Metadata.ArrayTypeSignature.Shape.get -> AspectN.Metadata.ArrayShape
 static AspectN.Diagnostics.DiagnosticCodes.InputDepthExceeded.get -> string!
 static AspectN.Diagnostics.DiagnosticCodes.MetadataDepthExceeded.get -> string!
-AspectN.AspectNLimits
-static AspectN.AspectNLimits.MaximumTypeDepth.get -> int
-static AspectN.AspectNLimits.MaximumGenericParameters.get -> int
 AspectN.AspectNLimitException
 AspectN.AspectNLimitException.AspectNLimitException(AspectN.Diagnostics.AspectNDiagnostic! diagnostic) -> void
 AspectN.AspectNLimitException.Diagnostic.get -> AspectN.Diagnostics.AspectNDiagnostic!

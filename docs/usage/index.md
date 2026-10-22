@@ -8,7 +8,8 @@
     "USE-REF-001",
     "USE-ARRAY-001",
     "CROSS-AVAILABILITY-001",
-    "CROSS-LOGIC-001"
+    "CROSS-LOGIC-001",
+    "CROSS-RESOURCES-001"
   ],
   "inventory_refs": [
     "INV-0007",
@@ -29,6 +30,7 @@ AspectN 是通用的 .NET 类型和成员匹配工具。它将元数据映射为
 - [编写匹配表达式](matching.md)：选择器、泛型、ref 和数组。
 - [语言功能与元数据边界](language-and-metadata.md)：名称、变量、成员、类型包装、特性和正则表达式。
 - [结果与诊断](results-and-diagnostics.md)：三态、缺失信息和调用方策略。
+- [配置资源限额](resource-limits.md)：解析、映射、匹配的独立额度、取消与失败。
 - [限制和常见坑](limits-and-pitfalls.md)：不支持的形式、原因及阶段失败。
 - [生命周期与运行环境](lifetimes-and-compatibility.md)：复用、释放、并发、取消、兼容性和候选加载。
 - [迁移](migration.md)：从 Shared.Cecil.AspectN 迁移。

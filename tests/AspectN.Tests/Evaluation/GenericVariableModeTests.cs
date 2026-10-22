@@ -12,16 +12,16 @@ public sealed class GenericVariableModeTests
     {
         var defaults = new AspectNCompilationOptions();
         Assert.Equal(GenericVariableMode.Declaration, defaults.GenericVariableMode);
-        var capture = new AspectNCompilationOptions(null, GenericVariableMode.Capture, 7, 123);
+        var capture = new AspectNCompilationOptions(GenericVariableMode.Capture, new AspectNMatchOptions(maximumBindingAlternatives: ResourceLimit.Finite(7), maximumBindingWork: ResourceLimit.Finite(123)));
         Assert.Equal(GenericVariableMode.Capture, capture.GenericVariableMode);
-        Assert.Equal(7, capture.MaximumBindingAlternatives);
-        Assert.Equal(123, capture.MaximumBindingWork);
-        Assert.Throws<ArgumentOutOfRangeException>(() => new AspectNCompilationOptions(null, (GenericVariableMode)99));
-        Assert.Throws<ArgumentOutOfRangeException>(() => new AspectNCompilationOptions(null, GenericVariableMode.Capture, 0));
-        Assert.Throws<ArgumentOutOfRangeException>(() => new AspectNCompilationOptions(null, GenericVariableMode.Capture, 1, 0));
-        Assert.Equal(defaults.RegexTimeout, new AspectNCompilationOptions(null).RegexTimeout);
-        Assert.Equal(defaults.RegexTimeout, new AspectNCompilationOptions(default).RegexTimeout);
-        Assert.Equal(TimeSpan.FromSeconds(1), new AspectNCompilationOptions(TimeSpan.FromSeconds(1)).RegexTimeout);
+        Assert.Equal(7, capture.MatchOptions.MaximumBindingAlternatives.Value);
+        Assert.Equal(123, capture.MatchOptions.MaximumBindingWork.Value);
+        Assert.Throws<ArgumentOutOfRangeException>(() => new AspectNCompilationOptions((GenericVariableMode)99));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new AspectNCompilationOptions(GenericVariableMode.Capture, new AspectNMatchOptions(maximumBindingAlternatives: ResourceLimit.Finite(0))));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new AspectNCompilationOptions(GenericVariableMode.Capture, new AspectNMatchOptions(maximumBindingAlternatives: ResourceLimit.Finite(1), maximumBindingWork: ResourceLimit.Finite(0))));
+        Assert.Equal(defaults.MatchOptions.RegexTimeout.Value, new AspectNCompilationOptions().MatchOptions.RegexTimeout.Value);
+        Assert.Equal(defaults.MatchOptions.RegexTimeout.Value, new AspectNCompilationOptions().MatchOptions.RegexTimeout.Value);
+        Assert.Equal(TimeSpan.FromSeconds(1), new AspectNCompilationOptions(matchOptions: new AspectNMatchOptions(regexTimeout: TimeLimit.Finite(TimeSpan.FromSeconds(1)))).MatchOptions.RegexTimeout.Value);
     }
 
     [Fact]
@@ -29,11 +29,11 @@ public sealed class GenericVariableModeTests
     {
         var engine = new AspectNEngine();
         var first = engine.CompileTypePattern("Box<$T>");
-        var capture = engine.CompileTypePattern("Box<$T>", new AspectNCompilationOptions(null, GenericVariableMode.Capture));
+        var capture = engine.CompileTypePattern("Box<$T>", compilationOptions: new AspectNCompilationOptions(GenericVariableMode.Capture));
         Assert.NotSame(first, capture);
-        Assert.Same(capture, engine.CompileTypePattern("Box<$T>", new AspectNCompilationOptions(null, GenericVariableMode.Capture)));
-        Assert.NotSame(capture, engine.CompileTypePattern("Box<$T>", new AspectNCompilationOptions(null, GenericVariableMode.Capture, 5)));
-        Assert.NotSame(capture, engine.CompileTypePattern("Box<$T>", new AspectNCompilationOptions(null, GenericVariableMode.Capture, 4096, 20)));
+        Assert.Same(capture, engine.CompileTypePattern("Box<$T>", compilationOptions: new AspectNCompilationOptions(GenericVariableMode.Capture)));
+        Assert.NotSame(capture, engine.CompileTypePattern("Box<$T>", compilationOptions: new AspectNCompilationOptions(GenericVariableMode.Capture, new AspectNMatchOptions(maximumBindingAlternatives: ResourceLimit.Finite(5)))));
+        Assert.NotSame(capture, engine.CompileTypePattern("Box<$T>", compilationOptions: new AspectNCompilationOptions(GenericVariableMode.Capture, new AspectNMatchOptions(maximumBindingAlternatives: ResourceLimit.Finite(4096), maximumBindingWork: ResourceLimit.Finite(20)))));
     }
 
     [Fact]
@@ -150,7 +150,7 @@ public sealed class GenericVariableModeTests
     {
         var source = string.Join(" && ", Enumerable.Range(0, groups).Select(index => $"(Box<$L{index}> || Box<$R{index}>)"));
         var tree = AspectNParser.ParseTypePattern(source);
-        var options = new AspectNCompilationOptions(null, GenericVariableMode.Declaration, 1, 1);
+        var options = new AspectNCompilationOptions(GenericVariableMode.Declaration, new AspectNMatchOptions(maximumBindingAlternatives: ResourceLimit.Finite(1), maximumBindingWork: ResourceLimit.Finite(1)));
         var root = Assert.IsAssignableFrom<BoundTypePattern>(new Binder(tree, options).Bind());
         var context = new EvaluationContext(new StubTypeSystem(), options, default, type: Definition());
         var result = context.CreateResult(TypePatternEvaluator.Evaluate(root, Definition(), context));

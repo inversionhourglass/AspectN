@@ -1,3 +1,4 @@
+using AspectN.Execution;
 using AspectN.AdapterInternals;
 using AspectN.Diagnostics;
 using AspectN.Evaluation;
@@ -7,10 +8,14 @@ using Mono.Cecil;
 
 namespace AspectN.Cecil.Internal;
 
-internal sealed class CecilResolver(CecilSignatureMapper mapper)
+internal sealed class CecilResolver(CecilMappingOperation mapper, TypeSystemQueryContext query, MappingContext resources)
 {
 
-    private readonly CecilSignatureMapper _mapper = mapper;
+    private readonly CecilMappingOperation _mapper = mapper;
+    private readonly TypeSystemQueryContext _query = query;
+    private readonly MappingContext _resources = resources;
+    private readonly CecilNativeTypeLimitGuard _guard = new(resources);
+    private readonly CecilTypeMapper _native = new(resources);
 
     // 解析继承链时遇到损坏元数据不能直接让匹配崩溃，而是转换为可诊断的 Unknown 结果。
     // + 只匹配声明的继承/实现关系：基类与接口沿名义闭包遍历；
@@ -20,10 +25,10 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
         TypeSignature target,
         CancellationToken cancellationToken)
     {
-        cancellationToken.ThrowIfCancellationRequested();
-        var arrayRelation = ArrayRelations.Compare(candidate, target, UnqualifiedTypeComparer.AreEqual);
+        _query.ThrowIfExhausted();
+        var arrayRelation = ArrayRelations.Compare(candidate, target, CompareUnqualified, _query);
         if (arrayRelation is not null) return arrayRelation;
-        var structural = UnqualifiedTypeComparer.AreEqual(candidate, target);
+        var structural = CompareUnqualified(candidate, target);
         if (structural.Status == MatchStatus.Matched) return structural;
 
         if (!_mapper.TryGetTypeReference(candidate, out var candidateReference) ||
@@ -33,21 +38,22 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
         }
 
         var pending = new Queue<(TypeReference Type, GenericInstanceType? Context)>();
-        var visited = new HashSet<(CecilTypeCacheKey Type, CecilTypeCacheKey? Context)>();
+        var visited = new HashSet<(CecilTypeCacheKey Type, CecilTypeCacheKey? Context)>(new KeyComparer(_resources));
         pending.Enqueue((candidateReference, null));
         TypeRelationResult? unresolved = structural.Status == MatchStatus.Unknown ? structural : null;
 
         while (pending.Count > 0)
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            _query.ThrowIfExhausted();
             var (current, constraintContext) = pending.Dequeue();
             try
             {
-                CecilNativeTypeLimitGuard.ValidateType(current);
-                if (constraintContext is not null) CecilNativeTypeLimitGuard.ValidateType(constraintContext);
-                if (!visited.Add((CecilTypeCacheKey.Create(current), constraintContext is null ? null : CecilTypeCacheKey.Create(constraintContext)))) continue;
+                _guard.ValidateType(current);
+                if (constraintContext is not null) _guard.ValidateType(constraintContext);
+                if (!visited.Add((_mapper.GetKey(current), constraintContext is null ? null : _mapper.GetKey(constraintContext)))) continue;
+                if (!_query.TryConsumeRelationNodes(1)) _query.ThrowIfExhausted();
 
-                var relation = UnqualifiedTypeComparer.AreEqual(
+                var relation = CompareUnqualified(
                     _mapper.MapType(current),
                     target);
                 if (relation.Status == MatchStatus.Matched) return relation;
@@ -99,37 +105,46 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
     // 获取声明的继承/实现闭包（不含候选自身）；数组按运行时固定事实产出合成关系。
     // 祖先引用先产出再解析展开（与具体目标路径的顺序一致）——匹配只需要签名，不需要定义；
     // 解析失败时该祖先已产出，但其上层关系不可知，闭包标记为部分并携带失败诊断。
+    private void AddAncestor(List<TypeSignature> ancestors, TypeSignature signature, ref TypeRelationResult? failure)
+    {
+        var diagnostic = MetadataLimitGuard.GetFailure(signature, _query);
+        if (diagnostic is not null) failure ??= TypeRelationResult.Unknown(diagnostic);
+        else { _query.SpendWork(); ancestors.Add(signature); }
+    }
+
     public InheritanceClosure GetInheritanceClosure(
         TypeSignature candidate,
         CancellationToken cancellationToken)
     {
-        cancellationToken.ThrowIfCancellationRequested();
+        _query.ThrowIfExhausted();
+        var candidateFailure = MetadataLimitGuard.GetFailure(candidate, _query);
         if (!_mapper.TryGetTypeReference(candidate, out var reference) ||
             reference is null)
         {
             return new InheritanceClosure(
                 Array.Empty<TypeSignature>(),
-                MissingNativeReference(candidate));
+                candidateFailure is null ? MissingNativeReference(candidate) : TypeRelationResult.Unknown(candidateFailure));
         }
 
         var ancestors = new List<TypeSignature>();
         var pending = new Queue<(TypeReference Type, GenericInstanceType? Context)>();
-        var visited = new HashSet<(CecilTypeCacheKey Type, CecilTypeCacheKey? Context)>();
+        var visited = new HashSet<(CecilTypeCacheKey Type, CecilTypeCacheKey? Context)>(new KeyComparer(_resources));
         pending.Enqueue((reference, null));
-        TypeRelationResult? unresolved = null;
+        TypeRelationResult? unresolved = candidateFailure is null ? null : TypeRelationResult.Unknown(candidateFailure);
         while (pending.Count > 0)
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            _query.ThrowIfExhausted();
             var (current, constraintContext) = pending.Dequeue();
             try
             {
-                CecilNativeTypeLimitGuard.ValidateType(current);
-                if (constraintContext is not null) CecilNativeTypeLimitGuard.ValidateType(constraintContext);
-                if (!visited.Add((CecilTypeCacheKey.Create(current), constraintContext is null ? null : CecilTypeCacheKey.Create(constraintContext)))) continue;
+                _guard.ValidateType(current);
+                if (constraintContext is not null) _guard.ValidateType(constraintContext);
+                if (!visited.Add((_mapper.GetKey(current), constraintContext is null ? null : _mapper.GetKey(constraintContext)))) continue;
+                if (!_query.TryConsumeRelationNodes(1)) _query.ThrowIfExhausted();
 
                 if (current is ArrayType array)
                 {
-                    ancestors.AddRange(EnumerateArrayRelations(array));
+                    foreach (var ancestor in EnumerateArrayRelations(array)) AddAncestor(ancestors, ancestor, ref unresolved);
                     continue;
                 }
 
@@ -137,7 +152,7 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
 
                 if (!ReferenceEquals(current, reference))
                 {
-                    ancestors.Add(_mapper.MapType(current));
+                    AddAncestor(ancestors, _mapper.MapType(current), ref unresolved);
                 }
 
                 if (current is GenericParameter parameter)
@@ -167,16 +182,33 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
         return new InheritanceClosure(ancestors, unresolved);
     }
 
-    private static TypeRelationResult? EnqueueAncestors(TypeReference current, TypeDefinition definition,
+    private sealed class KeyComparer(MappingContext resources) : IEqualityComparer<(CecilTypeCacheKey Type, CecilTypeCacheKey? Context)>
+    {
+        public int GetHashCode((CecilTypeCacheKey Type, CecilTypeCacheKey? Context) item) => unchecked(item.Type.GetHashCode() * 397 ^ item.Context.GetHashCode());
+        public bool Equals((CecilTypeCacheKey Type, CecilTypeCacheKey? Context) left, (CecilTypeCacheKey Type, CecilTypeCacheKey? Context) right) =>
+            left.Type.Equals(right.Type, resources) && left.Context.HasValue == right.Context.HasValue &&
+            (!left.Context.HasValue || left.Context.Value.Equals(right.Context!.Value, resources));
+    }
+
+    private TypeRelationResult CompareUnqualified(TypeSignature actual, TypeSignature expected) =>
+        StructuralTypeComparer.AreEqual(actual, expected, _query, unqualified: true);
+
+    private void Enqueue(Queue<(TypeReference Type, GenericInstanceType? Context)> pending, (TypeReference Type, GenericInstanceType? Context) item)
+    {
+        if (!_query.TryConsumeRelationEdges(1)) _query.ThrowIfExhausted();
+        pending.Enqueue(item);
+    }
+
+    private TypeRelationResult? EnqueueAncestors(TypeReference current, TypeDefinition definition,
         Queue<(TypeReference Type, GenericInstanceType? Context)> pending)
     {
         try
         {
             var constructed = current as GenericInstanceType;
             if (definition.BaseType is not null)
-                pending.Enqueue((Substitute(definition.BaseType, constructed), null));
+                Enqueue(pending, (Substitute(definition.BaseType, constructed), null));
             foreach (var implementation in definition.Interfaces)
-                pending.Enqueue((Substitute(implementation.InterfaceType, constructed), null));
+                Enqueue(pending, (Substitute(implementation.InterfaceType, constructed), null));
             return null;
         }
         catch (Exception exception) when (CecilMetadataReader.IsRecoverable(exception))
@@ -190,9 +222,9 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
     {
         // 泛型形参不能 Resolve 为类型定义；约束及隐含基类本身构成可遍历的名义关系。
         var module = parameter.Module ?? _mapper.Module;
-        pending.Enqueue((module.TypeSystem.Object, null));
+        Enqueue(pending, (module.TypeSystem.Object, null));
         var valueTypeQueued = parameter.HasNotNullableValueTypeConstraint;
-        if (valueTypeQueued) pending.Enqueue((SyntheticReference(module, "System", "ValueType"), null));
+        if (valueTypeQueued) Enqueue(pending, (SyntheticReference(module, "System", "ValueType"), null));
         try
         {
             // 游离引用的声明不可解析，但已经知道的隐含基类仍应保留在队列中。
@@ -205,7 +237,7 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
                 : parameter.Owner as GenericInstanceType);
             var declaration = parameter.Owner switch
             {
-                MethodReference method when !method.IsDefinition => CecilTypeMapper.ResolveMethodDeclaration(method)?.GenericParameters,
+                MethodReference method when !method.IsDefinition => _native.ResolveMethodDeclaration(method)?.GenericParameters,
                 TypeReference type when !type.IsDefinition => type.Resolve()?.GenericParameters,
                 _ => null
             };
@@ -216,9 +248,9 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
                 parameter = declaration[parameter.Position];
             }
             if (!valueTypeQueued && parameter.HasNotNullableValueTypeConstraint)
-                pending.Enqueue((SyntheticReference(parameter.Module ?? module, "System", "ValueType"), null));
+                Enqueue(pending, (SyntheticReference(parameter.Module ?? module, "System", "ValueType"), null));
             foreach (var constraint in parameter.Constraints)
-                pending.Enqueue((Substitute(constraint.ConstraintType, constructed), constructed));
+                Enqueue(pending, (Substitute(constraint.ConstraintType, constructed), constructed));
             return null;
         }
         catch (Exception exception) when (CecilMetadataReader.IsRecoverable(exception))
@@ -234,7 +266,7 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
         TypeRelationResult? unknown = null;
         foreach (var relation in EnumerateArrayRelations(candidate))
         {
-            var comparison = UnqualifiedTypeComparer.AreEqual(relation, target);
+            var comparison = CompareUnqualified(relation, target);
             if (comparison.Status == MatchStatus.Matched) return comparison;
             if (comparison.Status == MatchStatus.Unknown) unknown ??= comparison;
         }
@@ -246,29 +278,25 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
     // 以及 SZ 向量数组的五个泛型集合接口（实参与元素精确一致）；多维数组不实现泛型集合接口。
     private IEnumerable<TypeSignature> EnumerateArrayRelations(ArrayType array)
     {
-        // 游离数组没有所属模块，固定关系仍可使用当前映射上下文的核心库身份。
         var module = array.Module ?? _mapper.Module;
-        yield return _mapper.MapType(
-            SyntheticReference(module, "System", "Array"));
-        yield return _mapper.MapType(
-            SyntheticReference(module, "System", "Object"));
+        yield return MapSyntheticRelation(module, "System", "Array");
+        yield return MapSyntheticRelation(module, "System", "Object");
         foreach (var (namespaceName, name) in NonGenericCollectionInterfaces())
-        {
-            yield return _mapper.MapType(
-                SyntheticReference(module, namespaceName, name));
-        }
-
+            yield return MapSyntheticRelation(module, namespaceName, name);
         if (!array.IsVector) yield break;
         foreach (var name in GenericCollectionInterfaceNames())
-        {
-            var definition = SyntheticReference(
-                module,
-                "System.Collections.Generic",
-                name + "`1");
-            var instance = new GenericInstanceType(definition);
-            instance.GenericArguments.Add(array.ElementType);
-            yield return _mapper.MapType(instance);
-        }
+            yield return MapSyntheticRelation(module, "System.Collections.Generic", name + ((char)96) + "1", array.ElementType);
+    }
+
+    private TypeSignature MapSyntheticRelation(ModuleDefinition module, string namespaceName, string name, TypeReference? argument = null)
+    {
+        if (!_query.TryConsumeRelationEdges(1)) _query.ThrowIfExhausted();
+        if (!_query.TryConsumeRelationNodes(1)) _query.ThrowIfExhausted();
+        var definition = SyntheticReference(module, namespaceName, name);
+        if (argument is null) return _mapper.MapType(definition);
+        var instance = new GenericInstanceType(definition);
+        instance.GenericArguments.Add(argument);
+        return _mapper.MapType(instance);
     }
 
     private static TypeReference SyntheticReference(
@@ -323,10 +351,11 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
         return null;
     }
 
-    private static TypeReference Substitute(
-        TypeReference typeReference,
-        GenericInstanceType? constructed)
+    private TypeReference Substitute(TypeReference typeReference, GenericInstanceType? constructed) => WorkStack.Run(SubstituteWork(typeReference, constructed), _resources.CancellationToken);
+
+    private async StackWork<TypeReference> SubstituteWork(TypeReference typeReference, GenericInstanceType? constructed)
     {
+        _resources.SpendWork();
         if (constructed is null) return typeReference;
 
         switch (typeReference)
@@ -339,17 +368,17 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
             case GenericInstanceType generic:
                 {
                     var substituted = new GenericInstanceType(
-                        Substitute(generic.ElementType, constructed));
+                        await SubstituteWork(generic.ElementType, constructed));
                     foreach (var argument in generic.GenericArguments)
                     {
                         substituted.GenericArguments.Add(
-                            Substitute(argument, constructed));
+                            await SubstituteWork(argument, constructed));
                     }
 
                     return substituted;
                 }
             case ArrayType array:
-                var substitutedElement = Substitute(
+                var substitutedElement = await SubstituteWork(
                     array.ElementType,
                     constructed);
                 if (ReferenceEquals(substitutedElement, array.ElementType))
@@ -370,24 +399,24 @@ internal sealed class CecilResolver(CecilSignatureMapper mapper)
                 return substitutedArray;
             case ByReferenceType byReference:
                 return new ByReferenceType(
-                    Substitute(byReference.ElementType, constructed));
+                    await SubstituteWork(byReference.ElementType, constructed));
             case PointerType pointer:
                 return new PointerType(
-                    Substitute(pointer.ElementType, constructed));
+                    await SubstituteWork(pointer.ElementType, constructed));
             case OptionalModifierType optional:
                 return new OptionalModifierType(
-                    Substitute(optional.ModifierType, constructed),
-                    Substitute(optional.ElementType, constructed));
+                    await SubstituteWork(optional.ModifierType, constructed),
+                    await SubstituteWork(optional.ElementType, constructed));
             case RequiredModifierType required:
                 return new RequiredModifierType(
-                    Substitute(required.ModifierType, constructed),
-                    Substitute(required.ElementType, constructed));
+                    await SubstituteWork(required.ModifierType, constructed),
+                    await SubstituteWork(required.ElementType, constructed));
             case PinnedType pinned:
                 return new PinnedType(
-                    Substitute(pinned.ElementType, constructed));
+                    await SubstituteWork(pinned.ElementType, constructed));
             case SentinelType sentinel:
                 return new SentinelType(
-                    Substitute(sentinel.ElementType, constructed));
+                    await SubstituteWork(sentinel.ElementType, constructed));
             default:
                 return typeReference;
         }

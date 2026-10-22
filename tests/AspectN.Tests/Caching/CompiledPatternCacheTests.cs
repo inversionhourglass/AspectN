@@ -6,6 +6,71 @@ namespace AspectN.Tests.Caching;
 public sealed class CompiledPatternCacheTests
 {
     [Fact]
+    public async Task GetOrAdd_ConcurrentMissCancellation_DoesNotCancelOtherCaller()
+    {
+        var cache = new CompiledPatternCache(4);
+        var key = new CompiledPatternCacheKey("*", AspectN.Parsing.AspectNParseKind.TypePattern,
+            new AspectNParseOptions(), new AspectNCompilationOptions());
+        var completed = new AspectNEngine().CompileTypePattern("*");
+        using var entered = new ManualResetEventSlim();
+        using var cancellation = new CancellationTokenSource();
+        var canceled = Task.Run(() => cache.GetOrAdd(key, () =>
+        {
+            entered.Set();
+            cancellation.Token.WaitHandle.WaitOne();
+            cancellation.Token.ThrowIfCancellationRequested();
+            return completed;
+        }, cancellation.Token));
+        Assert.True(entered.Wait(TimeSpan.FromSeconds(5)));
+        try
+        {
+            var independent = Task.Run(() => cache.GetOrAdd(key, () => completed));
+            Assert.Same(completed, await independent.WaitAsync(TimeSpan.FromSeconds(5)));
+        }
+        finally { cancellation.Cancel(); }
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await canceled);
+        Assert.Same(completed, cache.GetOrAdd(key, () => throw new InvalidOperationException()));
+        Assert.Equal(1, cache.Count);
+    }
+
+    [Fact]
+    public void GetOrAdd_FactoryException_IsNotCached()
+    {
+        var cache = new CompiledPatternCache(4);
+        var key = new CompiledPatternCacheKey("*", AspectN.Parsing.AspectNParseKind.TypePattern,
+            new AspectNParseOptions(), new AspectNCompilationOptions());
+        Assert.Throws<InvalidOperationException>(() => cache.GetOrAdd(key, () => throw new InvalidOperationException()));
+        Assert.Equal(0, cache.Count);
+        var completed = new AspectNEngine().CompileTypePattern("*");
+        Assert.Same(completed, cache.GetOrAdd(key, () => completed));
+    }
+
+    [Fact]
+    public void Compile_CanceledWhileWaitingForCacheLock_ThrowsAndKeepsCompletedPlan()
+    {
+        var engine = new AspectNEngine();
+        var cached = engine.CompileTypePattern("*");
+        var cache = typeof(AspectNEngine).GetField("_cache", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(engine)!;
+        var gate = cache.GetType().GetField("_gate", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(cache)!;
+        using var cancellation = new CancellationTokenSource();
+        Exception? error = null;
+        var worker = new Thread(() =>
+        {
+            try { engine.CompileTypePattern("*", cancellationToken: cancellation.Token); }
+            catch (Exception failure) { error = failure; }
+        });
+        lock (gate)
+        {
+            worker.Start();
+            Assert.True(SpinWait.SpinUntil(() => (worker.ThreadState & ThreadState.WaitSleepJoin) != 0, TimeSpan.FromSeconds(5)));
+            cancellation.Cancel();
+        }
+        Assert.True(worker.Join(TimeSpan.FromSeconds(5)));
+        Assert.IsType<OperationCanceledException>(error);
+        Assert.Same(cached, engine.CompileTypePattern("*"));
+    }
+
+    [Fact]
     public void Compile_CapacityUsesLeastRecentlyUsedEviction()
     {
         var engine = new AspectNEngine(
@@ -35,10 +100,7 @@ public sealed class CompiledPatternCacheTests
         Assert.NotSame(baseline, engine.CompileMemberExpression("Name"));
         Assert.NotSame(
             baseline,
-            engine.CompileTypePattern(
-                "Name",
-                compilationOptions: new AspectNCompilationOptions(
-                    TimeSpan.FromMilliseconds(10))));
+            engine.CompileTypePattern("Name", compilationOptions: new AspectNCompilationOptions(matchOptions: new AspectNMatchOptions(regexTimeout: TimeLimit.Finite(TimeSpan.FromMilliseconds(10))))));
     }
 
     [Fact]

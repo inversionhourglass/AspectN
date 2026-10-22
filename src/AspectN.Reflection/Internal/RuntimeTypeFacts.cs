@@ -1,3 +1,4 @@
+using AspectN.TypeSystem;
 using System.Reflection;
 
 namespace AspectN.Reflection.Internal;
@@ -6,27 +7,35 @@ namespace AspectN.Reflection.Internal;
 // 旧 CLR 可把函数指针暴露为 IntPtr，不能把这种降级误当完整签名事实。
 internal static class RuntimeTypeFacts
 {
-    internal static bool MayHideFunctionPointer(Type type)
+    internal static bool MayHideFunctionPointer(Type type, MappingContext resources)
     {
 #if NETSTANDARD2_0
         if (_IsFunctionPointerProperty is not null) return false;
-        return ContainsIntPtr(type);
+        return ContainsIntPtrWithBudget(type, resources);
 #else
         return false;
 #endif
     }
 
-    internal static bool ContainsIntPtr(Type type)
+    internal static bool ContainsIntPtr(Type type) => ContainsIntPtrWithBudget(type,
+        new MappingContext(new AspectNMappingOptions(maximumWork: ResourceLimit.Unlimited), default));
+
+    private static bool ContainsIntPtrWithBudget(Type type, MappingContext resources)
     {
         var pending = new Stack<Type>();
         pending.Push(type);
         while (pending.Count > 0)
         {
+            resources.SpendWork();
             var current = pending.Pop();
             if (current == typeof(IntPtr)) return true;
             if (current.HasElementType) pending.Push(current.GetElementType()!);
             else if (current.IsGenericType)
-                foreach (var argument in current.GetGenericArguments()) pending.Push(argument);
+                foreach (var argument in current.GetGenericArguments())
+                {
+                    resources.SpendWork();
+                    pending.Push(argument);
+                }
         }
         return false;
     }
@@ -204,7 +213,21 @@ internal static class RuntimeTypeFacts
         }
     }
 
-    internal static string CallingConvention(Type type, bool isModified)
+    private static string NativeName(Type type, MappingContext resources)
+    {
+        var chain = new Stack<string>();
+        Type? outer = null;
+        for (var level = type; level is not null; level = level.DeclaringType)
+        {
+            resources.SpendWork();
+            chain.Push(level.Name);
+            outer = level;
+        }
+        var name = resources.Join("+", chain);
+        return string.IsNullOrEmpty(outer?.Namespace) ? name : resources.Concat(outer!.Namespace!, ".", name);
+    }
+
+    internal static string CallingConvention(Type type, bool isModified, MappingContext resources)
     {
         try
         {
@@ -223,7 +246,7 @@ internal static class RuntimeTypeFacts
             var conventions = type.GetFunctionPointerCallingConventions();
 #endif
             return AspectN.AdapterInternals.FunctionPointerConventions.Format("unmanaged",
-                conventions.Select(convention => convention.FullName ?? convention.Name));
+                conventions.Select(convention => NativeName(convention, resources)), resources);
         }
         catch (Exception exception) when (exception is NotSupportedException or TargetInvocationException)
         {

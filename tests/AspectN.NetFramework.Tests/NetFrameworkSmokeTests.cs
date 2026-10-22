@@ -13,14 +13,12 @@ public sealed class NetFrameworkSmokeTests
         var engine = new AspectNEngine();
         foreach (var mode in new[] { GenericVariableMode.Declaration, GenericVariableMode.Capture })
         {
-            Assert.True(engine.CompileMemberExpression("method($T NetFrameworkFixture.Identity<$T>($T))",
-                new AspectNCompilationOptions(null, mode)).TryGetMemberPattern(out var pattern));
+            Assert.True(engine.CompileMemberExpression("method($T NetFrameworkFixture.Identity<$T>($T))", compilationOptions: new AspectNCompilationOptions(mode)).TryGetMemberPattern(out var pattern));
             Assert.Equal(MatchStatus.Matched, pattern!.Match(system.Mapper.MapMethod(method), system).Status);
             Assert.Equal(mode == GenericVariableMode.Declaration ? MatchStatus.NotMatched : MatchStatus.Matched,
                 pattern.Match(system.Mapper.MapMethod(method.MakeGenericMethod(typeof(int))), system).Status);
         }
-        Assert.True(engine.CompileMemberExpression("method(* Identity<$L>(..)) || method(* Identity<$R>(..))",
-            new AspectNCompilationOptions(null, GenericVariableMode.Capture, 1)).TryGetMemberPattern(out var limited));
+        Assert.True(engine.CompileMemberExpression("method(* Identity<$L>(..)) || method(* Identity<$R>(..))", compilationOptions: new AspectNCompilationOptions(GenericVariableMode.Capture, new AspectNMatchOptions(maximumBindingAlternatives: ResourceLimit.Finite(1)))).TryGetMemberPattern(out var limited));
         var result = limited!.Match(system.Mapper.MapMethod(method), system);
         Assert.Equal(MatchStatus.Unknown, result.Status);
         Assert.Contains(result.Diagnostics, item => item.Code == "AN3007");
@@ -29,8 +27,7 @@ public sealed class NetFrameworkSmokeTests
     [Fact]
     public void CompileAndMatch_ReflectionMethod_WorksOnNet472()
     {
-        var compilation = new AspectNEngine().CompileMemberExpression(
-            "method(public string " +
+        var compilation = new AspectNEngine().CompileMemberExpression("method(public string " +
             "AspectN.NetFramework.Tests.NetFrameworkFixture.Echo(string))");
         Assert.True(compilation.TryGetMemberPattern(out var pattern));
         var method = Assert.IsAssignableFrom<System.Reflection.MethodInfo>(

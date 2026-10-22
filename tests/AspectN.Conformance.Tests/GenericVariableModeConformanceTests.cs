@@ -87,7 +87,7 @@ public sealed class GenericVariableModeConformanceTests
         RoslynView(RoslynTypeSystem system, Compilation compilation) =>
         (system, compilation.GetTypeByMetadataName("Review.Outer`1+Inner`1")!,
             compilation.GetTypeByMetadataName("Review.Other`1")!.TypeParameters[0], compilation.GetSpecialType(SpecialType.System_Int32),
-            system.Mapper.MapType, system.Mapper.MapMethod);
+            type => system.Mapper.MapType(type), method => system.Mapper.MapMethod(method));
 
     private static void AssertView(ITypeSystem system, TypeSignature definition, TypeSignature closed, TypeSignature borrowed,
         MethodSignature method, MethodSignature closedMethod, MethodSignature getter)
@@ -95,20 +95,18 @@ public sealed class GenericVariableModeConformanceTests
         var engine = new AspectNEngine();
         foreach (var mode in new[] { GenericVariableMode.Declaration, GenericVariableMode.Capture })
         {
-            var options = new AspectNCompilationOptions(null, mode);
-            Assert.True(engine.CompileTypePattern("Review.Outer<$T>/Inner<$U>", options).TryGetTypePattern(out var typePattern));
+            var options = new AspectNCompilationOptions(mode);
+            Assert.True(engine.CompileTypePattern("Review.Outer<$T>/Inner<$U>", compilationOptions: options).TryGetTypePattern(out var typePattern));
             Assert.Equal(MatchStatus.Matched, typePattern.Match(definition, system).Status);
             var constructionStatus = mode == GenericVariableMode.Declaration ? MatchStatus.NotMatched : MatchStatus.Matched;
             Assert.Equal(constructionStatus, typePattern.Match(closed, system).Status);
             Assert.Equal(constructionStatus, typePattern.Match(borrowed, system).Status);
-            Assert.True(engine.CompileMemberExpression(
-                "method($V Review.Outer<$T>/Inner<$U>.Echo<$V>($T, $U, List<$V[]>))", options).TryGetMemberPattern(out var memberPattern));
+            Assert.True(engine.CompileMemberExpression("method($V Review.Outer<$T>/Inner<$U>.Echo<$V>($T, $U, List<$V[]>))", compilationOptions: options).TryGetMemberPattern(out var memberPattern));
             Assert.Equal(MatchStatus.Matched, memberPattern.Match(method, system).Status);
             Assert.Equal(constructionStatus, memberPattern.Match(closedMethod, system).Status);
-            Assert.True(engine.CompileMemberExpression("getter($U Review.Outer<$T>/Inner<$U>.Value)", options).TryGetMemberPattern(out var propertyPattern));
+            Assert.True(engine.CompileMemberExpression("getter($U Review.Outer<$T>/Inner<$U>.Value)", compilationOptions: options).TryGetMemberPattern(out var propertyPattern));
             Assert.Equal(MatchStatus.Matched, propertyPattern.Match(getter, system).Status);
-            Assert.True(engine.CompileMemberExpression("method(* Echo<$T>(..)) || method(* Echo<$U>(..))",
-                new AspectNCompilationOptions(null, GenericVariableMode.Capture, 1)).TryGetMemberPattern(out var limited));
+            Assert.True(engine.CompileMemberExpression("method(* Echo<$T>(..)) || method(* Echo<$U>(..))", compilationOptions: new AspectNCompilationOptions(GenericVariableMode.Capture, new AspectNMatchOptions(maximumBindingAlternatives: ResourceLimit.Finite(1)))).TryGetMemberPattern(out var limited));
             var failure = limited.Match(method, system);
             Assert.Equal(MatchStatus.Unknown, failure.Status);
             Assert.Contains(failure.Diagnostics, item => item.Code == "AN3007");

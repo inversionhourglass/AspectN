@@ -425,7 +425,7 @@ public sealed class AttributePatternTests
         ITypeSystem typeSystem, GenericVariableMode mode = GenericVariableMode.Declaration)
     {
         var compilation = AspectNCompilation.Create(
-            AspectNParser.ParseMemberExpression(source), new AspectNCompilationOptions(null, mode));
+            AspectNParser.ParseMemberExpression(source), new AspectNCompilationOptions(mode));
         Assert.True(compilation.TryGetMemberPattern(out var pattern));
         return pattern!.Match(candidate, typeSystem);
     }
@@ -585,9 +585,9 @@ public sealed class AttributePatternTests
 
         public TypeRelationResult AreEqual(
             TypeSignature left,
-            TypeSignature right)
+            TypeSignature right, CancellationToken cancellationToken = default)
         {
-            return StructuralTypeComparer.AreEqual(left, right);
+            return StructuralTypeComparer.AreEqual(left, right, cancellationToken: cancellationToken);
         }
 
         public TypeRelationResult IsAssignableTo(
@@ -596,7 +596,7 @@ public sealed class AttributePatternTests
             CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            return StructuralTypeComparer.AreEqual(candidate, target);
+            return StructuralTypeComparer.AreEqual(candidate, target, cancellationToken: cancellationToken);
         }
 
         public TypeRelationResult HasDirectAttribute(

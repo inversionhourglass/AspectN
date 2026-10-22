@@ -1,3 +1,4 @@
+using AspectN.Execution;
 using AspectN.Binding;
 using AspectN.Diagnostics;
 using AspectN.Metadata;
@@ -6,8 +7,11 @@ namespace AspectN.Evaluation;
 
 internal static class MemberPatternEvaluator
 {
+    public static MatchStatus Evaluate(BoundExpression pattern, MethodSignature candidate, EvaluationContext context) =>
+        WorkStack.Run(EvaluateWork(pattern, candidate, context), context.CancellationToken);
+
     // 成员匹配按选择器种类分派，再合并名称、泛型、参数和属性等独立约束的结果。
-    public static MatchStatus Evaluate(
+    internal static async StackWork<MatchStatus> EvaluateWork(
         BoundExpression pattern,
         MethodSignature candidate,
         EvaluationContext context)
@@ -16,23 +20,23 @@ internal static class MemberPatternEvaluator
         switch (pattern)
         {
             case BoundSelector selector:
-                return EvaluateSelector(selector, candidate, context);
+                return await EvaluateSelectorWork(selector, candidate, context);
             case BoundUnaryExpression unary:
-                return context.EvaluateNegation(
-                    branch => Evaluate(unary.Operand, candidate, branch));
+                return await context.EvaluateNegationWork(
+                    branch => EvaluateWork(unary.Operand, candidate, branch));
             case BoundBinaryExpression binary
                 when binary.Operator == BoundLogicalOperator.And:
                 {
-                    var left = Evaluate(binary.Left, candidate, context);
-                    var right = Evaluate(binary.Right, candidate, context);
+                    var left = await EvaluateWork(binary.Left, candidate, context);
+                    var right = await EvaluateWork(binary.Right, candidate, context);
                     return MatchLogic.And(left, right);
                 }
             case BoundBinaryExpression binary:
                 {
                     var leftContext = context.Fork();
                     var rightContext = context.Fork();
-                    var left = Evaluate(binary.Left, candidate, leftContext);
-                    var right = Evaluate(binary.Right, candidate, rightContext);
+                    var left = await EvaluateWork(binary.Left, candidate, leftContext);
+                    var right = await EvaluateWork(binary.Right, candidate, rightContext);
                     context.MergeDiagnosticsFrom(leftContext);
                     context.MergeDiagnosticsFrom(rightContext);
                     var alternatives = context.CreateAlternativeCollector();
@@ -50,7 +54,7 @@ internal static class MemberPatternEvaluator
         }
     }
 
-    private static MatchStatus EvaluateSelector(
+    private static async StackWork<MatchStatus> EvaluateSelectorWork(
         BoundSelector selector,
         MethodSignature candidate,
         EvaluationContext context)
@@ -67,21 +71,21 @@ internal static class MemberPatternEvaluator
         var status = selector.SelectorKind switch
         {
             BoundSelectorKind.Callable or BoundSelectorKind.Method =>
-                EvaluateCallable(
+                await EvaluateCallableWork(
                     (BoundMethodSignature)selector.Payload,
                     candidate,
                     context),
             BoundSelectorKind.Property or
             BoundSelectorKind.Getter or
-            BoundSelectorKind.Setter => EvaluateProperty(
+            BoundSelectorKind.Setter => await EvaluatePropertyWork(
                 (BoundPropertySignature)selector.Payload,
                 candidate,
                 context),
-            BoundSelectorKind.Constructor => EvaluateConstructor(
+            BoundSelectorKind.Constructor => await EvaluateConstructorWork(
                 (BoundConstructorSignature)selector.Payload,
                 candidate,
                 context),
-            BoundSelectorKind.StaticConstructor => EvaluateStaticConstructor(
+            BoundSelectorKind.StaticConstructor => await EvaluateStaticConstructorWork(
                 (BoundStaticConstructorSignature)selector.Payload,
                 candidate,
                 context),
@@ -101,7 +105,7 @@ internal static class MemberPatternEvaluator
         return MatchLogic.And(domainStatus, status);
     }
 
-    private static MatchStatus EvaluateCallable(
+    private static async StackWork<MatchStatus> EvaluateCallableWork(
         BoundMethodSignature pattern,
         MethodSignature candidate,
         EvaluationContext context)
@@ -111,7 +115,7 @@ internal static class MemberPatternEvaluator
             candidate.Availability, pattern, context);
         if (modifierStatus == MatchStatus.NotMatched) return modifierStatus;
 
-        var memberStatus = EvaluateMember(
+        var memberStatus = await EvaluateMemberWork(
             pattern.Member,
             candidate.DeclaringType,
             candidate.Name,
@@ -125,11 +129,11 @@ internal static class MemberPatternEvaluator
         var refStatus = ModifierMatcher.EvaluateRefKind(pattern.ReturnType, candidate.ReturnType, pattern, context);
         if (refStatus == MatchStatus.NotMatched) return refStatus;
 
-        var returnStatus = TypePatternEvaluator.Evaluate(
+        var returnStatus = await TypePatternEvaluator.EvaluateWork(
                 pattern.ReturnType.TypePattern,
                 candidate.ReturnType.Type,
                 context);
-        var parameterStatus = EvaluateParameters(
+        var parameterStatus = await EvaluateParametersWork(
             pattern.Parameters,
             pattern.MatchesAnyParameters,
             candidate.Parameters,
@@ -139,7 +143,7 @@ internal static class MemberPatternEvaluator
             MatchLogic.And(refStatus, MatchLogic.And(returnStatus, parameterStatus)));
     }
 
-    private static MatchStatus EvaluateProperty(
+    private static async StackWork<MatchStatus> EvaluatePropertyWork(
         BoundPropertySignature pattern,
         MethodSignature candidate,
         EvaluationContext context)
@@ -152,7 +156,7 @@ internal static class MemberPatternEvaluator
         if (property is null || !candidate.Availability.IsKnown(MetadataFacts.AssociatedProperty))
         {
             // 声明类型仍可判断，但属性名不可读；复用完整路径的否定与绑定隔离逻辑。
-            var unavailableMemberStatus = EvaluateMember(
+            var unavailableMemberStatus = await EvaluateMemberWork(
                 pattern.Member,
                 candidate.DeclaringType,
                 string.Empty,
@@ -174,30 +178,30 @@ internal static class MemberPatternEvaluator
         // 不能取关联属性的整体权限：public get / private set 时两者不同。
         var refStatus = ModifierMatcher.EvaluateRefKind(pattern.PropertyType, property.PropertyType, pattern, context);
 
-        var memberStatus = EvaluateMember(
+        var memberStatus = await EvaluateMemberWork(
             pattern.Member,
             property.DeclaringType,
             property.Name,
             null,
             context,
             property.Availability);
-        var typeStatus = TypePatternEvaluator.Evaluate(
+        var typeStatus = await TypePatternEvaluator.EvaluateWork(
             pattern.PropertyType.TypePattern,
             property.PropertyType.Type,
             context);
         return MatchLogic.And(MatchLogic.And(modifierStatus, refStatus), MatchLogic.And(memberStatus, typeStatus));
     }
 
-    private static MatchStatus EvaluateConstructor(
+    private static async StackWork<MatchStatus> EvaluateConstructorWork(
         BoundConstructorSignature pattern,
         MethodSignature candidate,
         EvaluationContext context)
     {
-        var declaringTypeStatus = TypePatternEvaluator.Evaluate(
+        var declaringTypeStatus = await TypePatternEvaluator.EvaluateWork(
             pattern.DeclaringType,
             candidate.DeclaringType,
             context);
-        var parameterStatus = EvaluateParameters(
+        var parameterStatus = await EvaluateParametersWork(
             pattern.Parameters,
             pattern.MatchesAnyParameters,
             candidate.Parameters,
@@ -205,18 +209,18 @@ internal static class MemberPatternEvaluator
         return MatchLogic.And(declaringTypeStatus, parameterStatus);
     }
 
-    private static MatchStatus EvaluateStaticConstructor(
+    private static async StackWork<MatchStatus> EvaluateStaticConstructorWork(
         BoundStaticConstructorSignature pattern,
         MethodSignature candidate,
         EvaluationContext context)
     {
-        return TypePatternEvaluator.Evaluate(
+        return await TypePatternEvaluator.EvaluateWork(
             pattern.DeclaringType,
             candidate.DeclaringType,
             context);
     }
 
-    private static MatchStatus EvaluateParameters(
+    private static async StackWork<MatchStatus> EvaluateParametersWork(
         IReadOnlyList<BoundTypeUsePattern> patterns,
         bool matchesAnyParameters,
         IReadOnlyList<ParameterSignature> candidates,
@@ -236,7 +240,7 @@ internal static class MemberPatternEvaluator
 
             status = MatchLogic.And(
                 status,
-                MatchLogic.And(refStatus, TypePatternEvaluator.Evaluate(
+                MatchLogic.And(refStatus, await TypePatternEvaluator.EvaluateWork(
                     patterns[index].TypePattern,
                     candidates[index].Type.Type,
                     context)));
@@ -245,7 +249,7 @@ internal static class MemberPatternEvaluator
         return status;
     }
 
-    private static MatchStatus EvaluateGeneric(
+    private static async StackWork<MatchStatus> EvaluateGenericWork(
         BoundGenericPattern? pattern,
         MethodSignature candidate,
         BoundNode owner,
@@ -269,7 +273,7 @@ internal static class MemberPatternEvaluator
         if (pattern.Arguments.Count == 0) return MatchStatus.Matched;
         // 定义没有构造实参时使用形式参数；构造候选保留实际值，由所选变量模式检查。
         var candidateArguments = GenericParameterNamer.GetEffectiveMethodArguments(
-            candidate);
+            candidate, context.QueryContext);
         if (candidateArguments.Length != pattern.Arguments.Count)
         {
             return Unknown(
@@ -283,7 +287,7 @@ internal static class MemberPatternEvaluator
         {
             status = MatchLogic.And(
                 status,
-                TypePatternEvaluator.Evaluate(
+                await TypePatternEvaluator.EvaluateWork(
                     pattern.Arguments[index],
                     candidateArguments[index],
                     context));
@@ -292,7 +296,7 @@ internal static class MemberPatternEvaluator
         return status;
     }
 
-    private static MatchStatus EvaluateMember(
+    private static async StackWork<MatchStatus> EvaluateMemberWork(
         BoundMemberPattern pattern,
         TypeSignature declaringType,
         string memberName,
@@ -300,12 +304,12 @@ internal static class MemberPatternEvaluator
         EvaluationContext context,
         MetadataAvailability? nameAvailability = null)
     {
-        if (!pattern.IsNegated) return EvaluateMemberCore(pattern, declaringType, memberName, candidate, context, nameAvailability);
-        return context.EvaluateNegation(
-            branch => EvaluateMemberCore(pattern, declaringType, memberName, candidate, branch, nameAvailability));
+        if (!pattern.IsNegated) return await EvaluateMemberCoreWork(pattern, declaringType, memberName, candidate, context, nameAvailability);
+        return await context.EvaluateNegationWork(
+            branch => EvaluateMemberCoreWork(pattern, declaringType, memberName, candidate, branch, nameAvailability));
     }
 
-    private static MatchStatus EvaluateMemberCore(
+    private static async StackWork<MatchStatus> EvaluateMemberCoreWork(
         BoundMemberPattern pattern,
         TypeSignature declaringType,
         string memberName,
@@ -315,12 +319,12 @@ internal static class MemberPatternEvaluator
     {
         var declaringStatus = pattern.DeclaringType is null
             ? MatchStatus.Matched
-            : TypePatternEvaluator.Evaluate(pattern.DeclaringType, declaringType, context);
+            : await TypePatternEvaluator.EvaluateWork(pattern.DeclaringType, declaringType, context);
         if (declaringStatus == MatchStatus.NotMatched) return declaringStatus;
-        return MatchLogic.And(declaringStatus, EvaluateMemberName(pattern.Name, memberName, candidate, context, nameAvailability));
+        return MatchLogic.And(declaringStatus, await EvaluateMemberNameWork(pattern.Name, memberName, candidate, context, nameAvailability));
     }
 
-    private static MatchStatus EvaluateMemberName(
+    private static async StackWork<MatchStatus> EvaluateMemberNameWork(
         BoundMemberNamePattern pattern,
         string memberName,
         MethodSignature? candidate,
@@ -331,25 +335,26 @@ internal static class MemberPatternEvaluator
         switch (pattern)
         {
             case BoundNamedMemberPattern named:
+                if (named.NamePattern.Length > 0) context.QueryContext.SpendWork(named.NamePattern.Length);
                 var availability = nameAvailability ?? candidate?.Availability ?? MetadataAvailability.Complete;
                 var nameStatus = named.NamePattern.All(character => character == '*') ? MatchStatus.Matched :
                     MetadataQuery.Require(availability, MetadataFacts.Name, named, context);
-                if (nameStatus == MatchStatus.Matched && !NamePatternMatcher.IsMatch(named.NamePattern, memberName))
+                if (nameStatus == MatchStatus.Matched && !NamePatternMatcher.IsMatch(named.NamePattern, memberName, context.QueryContext))
                     return MatchStatus.NotMatched;
                 return MatchLogic.And(nameStatus,
-                    candidate is null ? MatchStatus.Matched : EvaluateGeneric(named.Generic, candidate, named, context));
+                    candidate is null ? MatchStatus.Matched : await EvaluateGenericWork(named.Generic, candidate, named, context));
             case BoundUnaryMemberNamePattern unary:
-                return context.EvaluateNegation(
-                    branch => EvaluateMemberName(unary.Operand, memberName, candidate, branch, nameAvailability));
+                return await context.EvaluateNegationWork(
+                    branch => EvaluateMemberNameWork(unary.Operand, memberName, candidate, branch, nameAvailability));
             case BoundBinaryMemberNamePattern binary when binary.Operator == BoundLogicalOperator.And:
                 return MatchLogic.And(
-                    EvaluateMemberName(binary.Left, memberName, candidate, context, nameAvailability),
-                    EvaluateMemberName(binary.Right, memberName, candidate, context, nameAvailability));
+                    await EvaluateMemberNameWork(binary.Left, memberName, candidate, context, nameAvailability),
+                    await EvaluateMemberNameWork(binary.Right, memberName, candidate, context, nameAvailability));
             case BoundBinaryMemberNamePattern binary:
                 var leftContext = context.Fork();
                 var rightContext = context.Fork();
-                var left = EvaluateMemberName(binary.Left, memberName, candidate, leftContext, nameAvailability);
-                var right = EvaluateMemberName(binary.Right, memberName, candidate, rightContext, nameAvailability);
+                var left = await EvaluateMemberNameWork(binary.Left, memberName, candidate, leftContext, nameAvailability);
+                var right = await EvaluateMemberNameWork(binary.Right, memberName, candidate, rightContext, nameAvailability);
                 context.MergeDiagnosticsFrom(leftContext);
                 context.MergeDiagnosticsFrom(rightContext);
                 var matchedBranches = context.CreateAlternativeCollector();

@@ -20,6 +20,10 @@
     {
       "path": "src/AspectN/TypeSystem/ITypeSystem.cs",
       "section": "AreEqual / IsAssignableTo / HasDirectAttribute"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-10-22-configurable-resource-limits-design.md",
+      "section": "2—6；仅资源策略与公开入口"
     }
   ],
   "scenarios": [
@@ -28,17 +32,20 @@
       "adapter": "core",
       "input_mode": "neutral",
       "entry_point": "公开 API 反射与程序集引用检查",
-      "conditions": "PublicApiTests、SyntaxTreeTests、SignatureTests 和 ClosedLanguageTests 的公开表面；新增枚举/选项/AN3007登记于PublicAPI，GenericVariableModeTests验证原null/default/位置构造调用",
+      "conditions": "PublicApiTests、ResourceOptionsTests、ResourceContractTests、ResourceApiTests：新三阶段选项、值类型、取消参数、无公开执行上下文、完整缓存字段；旧语言/扩展排除仍由原fixture验证",
       "target": "working-tree",
-      "expected_behavior": "核心不暴露后端类型、不引用适配器程序集；没有语言选择器或自定义扩展参数；旧TimeSpan?构造器签名保留，新重载前两参必填；默认变量语义明确改为Declaration",
+      "expected_behavior": "核心不暴露后端或内部上下文类型；统一新编译选项签名，旧TimeSpan重载及AspectNLimits移除；AreEqual含取消；默认Declaration不变",
       "contract_status": "supported",
       "verification_status": "verified",
       "verification_methods": [
-        "automated"
+        "automated",
+        "manual"
       ],
       "evidence_ids": [
         "EV-20261014-001",
-        "EV-20261021-007"
+        "EV-20261021-007",
+        "EV-20261022-201",
+        "EV-20261022-202"
       ],
       "unverified_notes": ""
     },
@@ -57,7 +64,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-003",
-        "EV-20261021-007"
+        "EV-20261021-007",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -76,7 +84,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-007",
-        "EV-20261021-007"
+        "EV-20261021-007",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -95,7 +104,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-008",
-        "EV-20261021-007"
+        "EV-20261021-007",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -110,12 +120,15 @@
       "contract_status": "supported",
       "verification_status": "verified",
       "verification_methods": [
-        "automated"
+        "automated",
+        "manual"
       ],
       "evidence_ids": [
-        "EV-20261021-003"
+        "EV-20261021-003",
+        "EV-20261022-201",
+        "EV-20261022-202"
       ],
-      "unverified_notes": "记录型后端仅证明核心传参，不验证任意第三方匹配实现；文档一致性另经独立复核。"
+      "unverified_notes": ""
     }
   ],
   "invariant_checks": [
@@ -229,4 +242,10 @@ S5 补全公开 `ITypeSystem` 的查询侧契约与第三方接入指南。生�
 
 本轮Windows证据不代表远端Linux CI已经运行；未新增已发布版本或任意历史依赖版本的证明。Fody的netstandard运行资产、其他宿主版本留待专门矩阵场景。
 
-2026-10-21 选项新增不暴露后端类型，不改变 ITypeSystem。旧构造器二进制签名保留；默认语义变化的迁移要求见 GEN-BINDING-001。Fody 在独立程序集执行共享测试；本轮未新增Fody的netstandard兼容宿主，不外推S3/S4到该组合。S5 的非限定查询契约及无公开比较器决定保持，核心槽位相等不放宽 AreEqual。
+2026-10-22 的 [RI-02 裁决](../../../reviews/2026-10-22-ri02-fork-ci-triggers.md)将 CI 和 Compatibility 限定为 dev/main 的 push、目标为这两个分支的 PR 及手动运行。fork 的开发分支验证与上游的 PR 验证各自保留；兼容矩阵和所有 job 内容不变。该执行入口调整对应 INV-0014，只取得配置静态校验证据，不扩展 S1—S5 的已验证范围，也不证明当前工作区的产品测试或远端工作流通过。
+
+2026-10-21 选项新增不暴露后端类型，不改变 ITypeSystem。该句为当时的兼容范围；后续资源配置明确移除旧构造器与AspectNLimits，AreEqual增加取消参数，当前入口依新资源规范。默认变量仍Declaration，迁移见[用户说明](../../../usage/migration.md)。Fody 在独立程序集执行共享测试；本轮未新增Fody的netstandard兼容宿主，不外推S3/S4到该组合。S5 的非限定查询契约及无公开比较器决定保持，核心槽位相等不放宽 AreEqual。
+
+2026-10-22 的 [RM-01 文档修订](../../../reviews/2026-10-22-rm01-public-api-xml.md)补全公开 XML 的参数用途、返回状态、现有前置条件和异常；三种后端实现通过 inheritdoc 引用 ITypeSystem 的既有查询契约。对应 S1、S5 的公开说明，没有改动声明、方法体或既有场景状态/N/A；编译成功只验证源码及 XML，不新增兼容宿主或所有后端行为的证据。
+
+2026-10-22资源配置变更按[实施审查](../../../reviews/2026-10-22-configurable-resource-limits.md)重评当前证据。历史报告不改写；新增配置的范围由CROSS-RESOURCES-001/S9—S15区分。未新增或改动N/A记录；没有从缺少某后端场景推断排除。

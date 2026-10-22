@@ -1,0 +1,236 @@
+{
+  "schema_version": 1,
+  "id": "EV-20261022-101",
+  "method": "automated",
+  "scenario_refs": [
+    {
+      "capability_id": "CROSS-LIFETIME-001",
+      "scenario_id": "S2"
+    },
+    {
+      "capability_id": "CROSS-LIFETIME-001",
+      "scenario_id": "S3"
+    }
+  ],
+  "oracle_refs": [
+    {
+      "path": "docs/superpowers/specs/2026-07-31-aspectn-redesign-design.md",
+      "section": "9.1"
+    },
+    {
+      "path": "docs/reviews/2026-10-22-ri01-cecil-module-ownership.md",
+      "section": "维护者裁决与适用范围"
+    }
+  ],
+  "procedure": "dotnet test tests/AspectN.Cecil.Tests/AspectN.Cecil.Tests.csproj -c Release --no-restore -m:1 -nr:false -p:UseSharedCompilation=false --filter FullyQualifiedName~CecilOwnershipTests\r\ndotnet test artifacts/ri01/cecil/RI01.Cecil.Tests.csproj -c Release --no-restore -m:1 -nr:false -p:UseSharedCompilation=false --filter 'FullyQualifiedName~CecilOwnershipTests|FullyQualifiedName~CecilContextTests|FullyQualifiedName~Dispose_CachedTypes|FullyQualifiedName~Dispose_LeaveOpen' --logger trx --results-directory artifacts/ri01/final-cecil -v:minimal\r\ndotnet test artifacts/ri01/cecil/RI01.Cecil.Tests.csproj -c Release --no-build --no-restore --filter FullyQualifiedName~MapType_NestedDefinitionWithOnlyInheritedParameters_PreservesZeroOwnArity --logger trx --results-directory artifacts/ri01/factory-cecil -v:minimal\r\ndotnet test artifacts/ri01/fody/RI01.Fody.Tests.csproj -c Release --no-restore -m:1 -nr:false -p:UseSharedCompilation=false --filter 'FullyQualifiedName~CecilOwnershipTests|FullyQualifiedName~CecilContextTests|FullyQualifiedName~Dispose_CachedTypes|FullyQualifiedName~Dispose_LeaveOpen|FullyQualifiedName~MapType_NestedDefinitionWithOnlyInheritedParameters_PreservesZeroOwnArity' --logger trx --results-directory artifacts/ri01/final-fody -v:minimal\r\ndotnet build src/AspectN.Cecil/AspectN.Cecil.csproj -c Release --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -v:minimal\r\ndotnet build src/AspectN.Cecil.Fody/AspectN.Cecil.Fody.csproj -c Release --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -v:minimal\r\ndotnet format whitespace src/AspectN.Cecil/AspectN.Cecil.csproj --verify-no-changes --no-restore --include src/AspectN.Cecil/CecilMappingOptions.cs src/AspectN.Cecil/CecilTypeSystem.cs --verbosity quiet\r\ndotnet format whitespace artifacts/ri01/cecil/RI01.Cecil.Tests.csproj --verify-no-changes --no-restore --include tests/AspectN.Cecil.Tests/CecilOwnershipTests.cs tests/AspectN.Cecil.Tests/Fixtures/CallableFixture.cs --verbosity quiet",
+  "result": "passed",
+  "recorded_on": "2026-10-22",
+  "environment": {
+    "os": "Windows",
+    "sdk": "10.0.401",
+    "runtime": "10.0.12",
+    "cecil": "0.11.5",
+    "fody_helpers": "6.8.1",
+    "execution_target": "net10.0",
+    "build_targets": [
+      "netstandard2.0",
+      "net10.0"
+    ],
+    "notes": "独立宿主直接链接真实生产项目及仓库原测试源码，生命周期9项加独占文件工厂消费者1项，每后端10个独立用例；不是完整项目/矩阵。宿主继承仓库集中版本和构建属性；VSTest和格式工具在允许本地通信的环境执行。",
+    "hosts": [
+      {
+        "path": "artifacts/ri01/cecil/RI01.Cecil.Tests.csproj",
+        "project_xml": "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>net10.0</TargetFramework>\n    <IsTestProject>true</IsTestProject>\n    <IsPackable>false</IsPackable>\n    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>\n  </PropertyGroup>\n  <ItemGroup>\n    <ProjectReference Include=\"../../../src/AspectN.Cecil/AspectN.Cecil.csproj\" />\n    <Compile Include=\"../../../tests/AspectN.Cecil.Tests/CecilOwnershipTests.cs\" Link=\"CecilOwnershipTests.cs\" />\n    <Compile Include=\"../../../tests/AspectN.Cecil.Tests/CecilContextTests.cs\" Link=\"CecilContextTests.cs\" />\n    <Compile Include=\"../../../tests/AspectN.Cecil.Tests/TestModuleFactory.cs\" Link=\"TestModuleFactory.cs\" />\n    <Compile Include=\"../../../tests/AspectN.Cecil.Tests/CecilTypeSystemTests.cs\" Link=\"CecilTypeSystemTests.cs\" />\n    <Compile Include=\"../../../tests/AspectN.Cecil.Tests/CecilTypeMappingTests.cs\" Link=\"CecilTypeMappingTests.cs\" />\n    <Compile Include=\"../../../tests/AspectN.Cecil.Tests/Fixtures/**/*.cs\" Link=\"Fixtures/%(Filename)%(Extension)\" />\n    <Compile Include=\"../../../tests/Shared/OwnerIdentityFixture.cs\" Link=\"OwnerIdentityFixture.cs\" />\n    <Using Include=\"Xunit\" />\n    <PackageReference Include=\"Microsoft.NET.Test.Sdk\" />\n    <PackageReference Include=\"xunit\" />\n    <PackageReference Include=\"xunit.runner.visualstudio\" PrivateAssets=\"all\" />\n  </ItemGroup>\n</Project>\n"
+      },
+      {
+        "path": "artifacts/ri01/fody/RI01.Fody.Tests.csproj",
+        "project_xml": "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>net10.0</TargetFramework>\n    <IsTestProject>true</IsTestProject>\n    <IsPackable>false</IsPackable>\n    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>\n  </PropertyGroup>\n  <ItemGroup>\n    <ProjectReference Include=\"../../../src/AspectN.Cecil.Fody/AspectN.Cecil.Fody.csproj\" />\n    <Compile Include=\"../../../tests/AspectN.Cecil.Tests/CecilOwnershipTests.cs\" Link=\"CecilOwnershipTests.cs\" />\n    <Compile Include=\"../../../tests/AspectN.Cecil.Tests/CecilContextTests.cs\" Link=\"CecilContextTests.cs\" />\n    <Compile Include=\"../../../tests/AspectN.Cecil.Tests/TestModuleFactory.cs\" Link=\"TestModuleFactory.cs\" />\n    <Compile Include=\"../../../tests/AspectN.Cecil.Tests/CecilTypeSystemTests.cs\" Link=\"CecilTypeSystemTests.cs\" />\n    <Compile Include=\"../../../tests/AspectN.Cecil.Tests/CecilTypeMappingTests.cs\" Link=\"CecilTypeMappingTests.cs\" />\n    <Compile Include=\"../../../tests/AspectN.Cecil.Tests/Fixtures/**/*.cs\" Link=\"Fixtures/%(Filename)%(Extension)\" />\n    <Compile Include=\"../../../tests/Shared/OwnerIdentityFixture.cs\" Link=\"OwnerIdentityFixture.cs\" />\n    <Using Include=\"Xunit\" />\n    <PackageReference Include=\"Microsoft.NET.Test.Sdk\" />\n    <PackageReference Include=\"xunit\" />\n    <PackageReference Include=\"xunit.runner.visualstudio\" PrivateAssets=\"all\" />\n  </ItemGroup>\n</Project>\n"
+      }
+    ]
+  },
+  "code_state": {
+    "dirty": true,
+    "files": [
+      {
+        "path": "src/AspectN.Cecil/CecilMappingOptions.cs",
+        "sha256": "f953d857609b0d8bd45e497396fa189907e54b4a6781441793bde2387dbef3eb"
+      },
+      {
+        "path": "src/AspectN.Cecil/CecilTypeSystem.cs",
+        "sha256": "915e87a71109574a560e387365015e9717569ac088a3a8dd142a79ffae2abe05"
+      },
+      {
+        "path": "src/AspectN.Cecil/CecilSignatureMapper.cs",
+        "sha256": "1433996d5ec9d941ea4355d484b3d497b4481deed63b409d47f3b3406954932b"
+      },
+      {
+        "path": "src/AspectN.Cecil/CecilMappingOperation.cs",
+        "sha256": "0c46292a49edd39e881deea93d0b59758e294f870e59da87cb4ffca37f1bd1a4"
+      },
+      {
+        "path": "src/AspectN.Cecil/PublicAPI.Unshipped.txt",
+        "sha256": "8db9416d7c30d90da32ab3f01022a10e6d847012dd51989b7efb7cc954b70b56"
+      },
+      {
+        "path": "src/AspectN.Cecil/AspectN.Cecil.csproj",
+        "sha256": "b7d1e7e858c1a60adc7a9554f0a7654262c4e7b78ad9990863a8436fdefb6992"
+      },
+      {
+        "path": "src/AspectN.Cecil.Fody/AspectN.Cecil.Fody.csproj",
+        "sha256": "e88e3e6bfd03488c9fe568a2602cf7caacb9b0d0667b1e7bf12ee88db0b57b9c"
+      },
+      {
+        "path": "tests/AspectN.Cecil.Tests/CecilOwnershipTests.cs",
+        "sha256": "9e60b41ea3a2181a68d8f04332930ca46f5ff698d661fe8444f800722815ae72"
+      },
+      {
+        "path": "tests/AspectN.Cecil.Tests/CecilContextTests.cs",
+        "sha256": "4de693a1d6742367661e0b1318aa01b21487679488c8fb99cdeaf97c13575472"
+      },
+      {
+        "path": "tests/AspectN.Cecil.Tests/CecilTypeMappingTests.cs",
+        "sha256": "aabbadd5a802ef8b5fbfa2e11ed7216c84860d3dd1258c460dafba54b3daa96c"
+      },
+      {
+        "path": "tests/AspectN.Cecil.Tests/CecilTypeSystemTests.cs",
+        "sha256": "75b5167adfbf6f0883a2130e60f723ed1a1fa0a549feed13283a46725a18b679"
+      },
+      {
+        "path": "tests/AspectN.Cecil.Tests/TestModuleFactory.cs",
+        "sha256": "08ff5b8e98f8e490c90ce49e1e35219e9c7fd90e66cbaff39b43f5a7ebbb9893"
+      },
+      {
+        "path": "tests/Shared/OwnerIdentityFixture.cs",
+        "sha256": "f7f722f1d52d8b1f367efb1bb6b6519ac8cf948f9e728dae537801eaad261966"
+      },
+      {
+        "path": "tests/AspectN.Cecil.Fody.Tests/AspectN.Cecil.Fody.Tests.csproj",
+        "sha256": "cbd60bfcbbb15da4ae57114b1e74584d205e78b8490ec89497d133958e7204e2"
+      },
+      {
+        "path": "Directory.Build.props",
+        "sha256": "21511672e6680b86521f1d2d275e9fe2d914092073007c8be353f3202c38115a"
+      },
+      {
+        "path": "Directory.Packages.props",
+        "sha256": "a0df07b7d4df78415d87666c16e30c665d285d0e39ed9d300c52aeb7a3837c9a"
+      },
+      {
+        "path": "docs/superpowers/specs/2026-07-31-aspectn-redesign-design.md",
+        "sha256": "c090bbae4bf42ff7e396633052385fd2d71a315c8ea15ebbd45fd429aac886c0"
+      },
+      {
+        "path": "tests/AspectN.Cecil.Tests/Fixtures/CallableFixture.cs",
+        "sha256": "79170fb934d7400f7080cdd95dd27210aebc26a9c9a149793e3e47ebf4d24e13"
+      },
+      {
+        "path": "tests/AspectN.Cecil.Tests/Fixtures/FunctionPointerFixture.cs",
+        "sha256": "0a0b98c872a93e77b03c52c455eb15857505185d4a752c7887b37ba76aac3e89"
+      },
+      {
+        "path": "tests/AspectN.Cecil.Tests/Fixtures/InteropRefKindFixture.cs",
+        "sha256": "350d072ae456375309e8660691a15f40ab59b1320c53fecd009dc1718f9153ef"
+      },
+      {
+        "path": "tests/AspectN.Cecil.Tests/Fixtures/NestedParamFixture.cs",
+        "sha256": "1a803b5bf08831a01c475c4c30b70e649f3ba475e7bc95ad55f9b00dabd049c6"
+      }
+    ],
+    "head": "2f1d56a717983dc4b72d747200b58f39ac272925"
+  },
+  "dependency_scope": {
+    "environment_keys": [
+      "sdk",
+      "runtime",
+      "cecil",
+      "fody_helpers",
+      "execution_target",
+      "build_targets"
+    ],
+    "paths": [
+      "src/AspectN.Cecil/CecilMappingOptions.cs",
+      "src/AspectN.Cecil/CecilTypeSystem.cs",
+      "src/AspectN.Cecil/CecilSignatureMapper.cs",
+      "src/AspectN.Cecil/CecilMappingOperation.cs",
+      "src/AspectN.Cecil/PublicAPI.Unshipped.txt",
+      "src/AspectN.Cecil/AspectN.Cecil.csproj",
+      "src/AspectN.Cecil.Fody/AspectN.Cecil.Fody.csproj",
+      "tests/AspectN.Cecil.Tests/CecilOwnershipTests.cs",
+      "tests/AspectN.Cecil.Tests/CecilContextTests.cs",
+      "tests/AspectN.Cecil.Tests/CecilTypeMappingTests.cs",
+      "tests/AspectN.Cecil.Tests/CecilTypeSystemTests.cs",
+      "tests/AspectN.Cecil.Tests/TestModuleFactory.cs",
+      "tests/Shared/OwnerIdentityFixture.cs",
+      "tests/AspectN.Cecil.Fody.Tests/AspectN.Cecil.Fody.Tests.csproj",
+      "Directory.Build.props",
+      "Directory.Packages.props",
+      "docs/superpowers/specs/2026-07-31-aspectn-redesign-design.md",
+      "tests/AspectN.Cecil.Tests/Fixtures/CallableFixture.cs",
+      "tests/AspectN.Cecil.Tests/Fixtures/FunctionPointerFixture.cs",
+      "tests/AspectN.Cecil.Tests/Fixtures/InteropRefKindFixture.cs",
+      "tests/AspectN.Cecil.Tests/Fixtures/NestedParamFixture.cs"
+    ]
+  },
+  "revalidation_conditions": "模块所有权默认值、Dispose/缓存释放及守卫、映射器原生关联、真实文件读取方式、Fody源码/测试链接、所列测试及依赖版本变化时重验；并发资源配置工作改变相关源码哈希后需重新评估。",
+  "observations": {
+    "runs": [
+      {
+        "name": "red-cecil",
+        "trx": "artifacts/ri01/red-cecil/Administrator_LAPTOP-ERQOPF47_2026-10-22_02_31_31_net10.0.trx",
+        "sha256": "77a73670d8f4e7e02b41d1b2bf3d7d673538bad4f2c0e4c2755f1faf7f2fd864",
+        "total": 5,
+        "passed": 2,
+        "failed": 3,
+        "not_executed": 0
+      },
+      {
+        "name": "final-cecil",
+        "trx": "artifacts/ri01/final-cecil/Administrator_LAPTOP-ERQOPF47_2026-10-22_02_50_24_net10.0.trx",
+        "sha256": "ec456115d3d87604fee52741d3c9e8ad8888788e5581caef78fcd61ed58bef28",
+        "total": 9,
+        "passed": 9,
+        "failed": 0,
+        "not_executed": 0
+      },
+      {
+        "name": "factory-cecil",
+        "trx": "artifacts/ri01/factory-cecil/Administrator_LAPTOP-ERQOPF47_2026-10-22_02_51_04_net10.0.trx",
+        "sha256": "88d9763a46349054ec9e0957261832f082b74a057f10a916ad2d6d5be42017ae",
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "not_executed": 0
+      },
+      {
+        "name": "final-fody",
+        "trx": "artifacts/ri01/final-fody/Administrator_LAPTOP-ERQOPF47_2026-10-22_02_51_23_net10.0.trx",
+        "sha256": "2f096562278aecf41fd1791a657c6c03aec2fb34c2c0efc20f1699e755341b14",
+        "total": 10,
+        "passed": 10,
+        "failed": 0,
+        "not_executed": 0
+      }
+    ],
+    "red": "旧默认下省略选项、默认选项及共享适配器三项读取已关闭文件失败；显式true/false两项控制通过。红灯宿主当时只链接新增所有权测试，environment.hosts记录扩展后的最终宿主。",
+    "build": "Cecil与Fody两个生产项目分别在netstandard2.0/net10.0构建通过，零警告零错误。",
+    "full_project_blocker": "CecilReturnOnlyOwnerIdentityTests.cs:46 Select(system.Mapper.MapMethod) 因同目录资源配置WIP的可选取消参数产生CS0411；没有作为RI-01范围修改。",
+    "scope": "默认借用、显式接管、延迟读取/写回、共享模块、重复释放、mapper/Module守卫及既有缓存回收。未验证完整项目、完整解决方案、所有Cecil版本、任意并发原生操作。 工厂消费者用既有MapType_NestedDefinitionWithOnlyInheritedParameters_PreservesZeroOwnArity验证实际打开程序集文件的路径。",
+    "documentation": "文档生成和全仓校验单独记录于处置报告，不纳入本证据passed结果。",
+    "final": {
+      "notes": "Cecil的9项生命周期与1项工厂消费者分两次执行；Fody在同次执行9+1项。",
+      "cecil": {
+        "skipped": 0,
+        "unique_tests": 10,
+        "passed": 10,
+        "failed": 0
+      },
+      "cecil_fody": {
+        "skipped": 0,
+        "unique_tests": 10,
+        "passed": 10,
+        "failed": 0
+      }
+    },
+    "format": "仅两个修改生产文件、新增所有权测试和CallableFixture.cs的dotnet format whitespace聚焦校验通过。"
+  }
+}

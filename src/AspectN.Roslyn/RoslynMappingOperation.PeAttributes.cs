@@ -1,3 +1,4 @@
+using AspectN.TypeSystem;
 using System.Collections.Immutable;
 using System.Reflection;
 using System.Reflection.Metadata;
@@ -8,7 +9,7 @@ using Microsoft.CodeAnalysis;
 
 namespace AspectN.Roslyn;
 
-public sealed partial class RoslynSignatureMapper
+internal sealed partial class RoslynMappingOperation
 {
     private AttributeSignature[] MapPeReturnAttributes(IMethodSymbol method, MetadataReader reader,
         AttributeSignature[] attributes, out MetadataAvailability availability)
@@ -22,7 +23,7 @@ public sealed partial class RoslynSignatureMapper
         {
             var parameter = reader.GetParameter(parameterHandle);
             if (parameter.SequenceNumber != 0) continue;
-            foreach (var attributeHandle in parameter.GetCustomAttributes())
+            foreach (var attributeHandle in _resources.Attributes(parameter.GetCustomAttributes()))
             {
                 var attribute = reader.GetCustomAttribute(attributeHandle);
                 var (typeHandle, signature, name) = GetPeConstructor(reader, attribute.Constructor);
@@ -39,7 +40,7 @@ public sealed partial class RoslynSignatureMapper
                 var type = MapType(symbol);
                 // 只按真实类型身份去重；读者或其他依赖的同名类型不能覆盖原始记录。
                 if (result.Any(item => item.AttributeType is NamedTypeSignature existing && type is NamedTypeSignature marker &&
-                    existing.Identity.FullMetadataName == marker.Identity.FullMetadataName &&
+                    _resources.FullName(existing.Identity) == _resources.FullName(marker.Identity) &&
                     existing.Identity.Assembly.Equals(marker.Identity.Assembly))) continue;
                 result.Add(new AttributeSignature(type, AttributeTargetKind.Return));
             }

@@ -16,6 +16,10 @@
     {
       "path": "docs/superpowers/specs/2026-10-21-generic-variable-modes-design.md",
       "section": "3 / 4 / 9"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-10-22-configurable-resource-limits-design.md",
+      "section": "2—6；仅资源策略与公开入口"
     }
   ],
   "scenarios": [
@@ -34,7 +38,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-001",
-        "EV-20261021-007"
+        "EV-20261021-007",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -53,7 +58,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-005",
-        "EV-20261021-007"
+        "EV-20261021-007",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -72,7 +78,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-001",
-        "EV-20261021-007"
+        "EV-20261021-007",
+        "EV-20261022-201"
       ],
       "unverified_notes": "",
       "exclusion": {
@@ -102,7 +109,8 @@
       ],
       "evidence_ids": [
         "EV-20261020-002",
-        "EV-20261021-007"
+        "EV-20261021-007",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -120,7 +128,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261021-007"
+        "EV-20261021-007",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -138,7 +147,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261021-007"
+        "EV-20261021-007",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -156,7 +166,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261021-007"
+        "EV-20261021-007",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -174,7 +185,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261021-007"
+        "EV-20261021-007",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -192,7 +204,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261021-007"
+        "EV-20261021-007",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -210,7 +223,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261021-007"
+        "EV-20261021-007",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -228,7 +242,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261021-007"
+        "EV-20261021-007",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     }
@@ -357,3 +372,5 @@ S4 现按 [2026-10-20 维护者裁决](../../../reviews/2026-10-20-c02-generic-s
 [构造回归](../../../../tests/AspectN.Tests/Metadata/GenericSignatureValidationTests.cs)、[合法匹配对照](../../../../tests/AspectN.Tests/Evaluation/IncompleteGenericArgumentTests.cs)和[真实后端构造](../../../../tests/AspectN.Conformance.Tests/GenericSignatureConstructionTests.cs)记录当前证据；没有声明槽位及原始定义的方法仍可由完整实参列表确定元数。
 
 本轮双模式与预算按 [批准设计](../../../superpowers/specs/2026-10-21-generic-variable-modes-design.md)和[实施报告](../../../reviews/2026-10-21-generic-variable-modes.md)执行。S1–S4 的历史证据保留，当前重新执行时明确选择模式；不能将旧动态捕获报告解释为新默认语义。S5–S11 才是本轮新增实现断言的入口和输入范围。间接首次捕获默认编译失败（AN2006），闭合实际实参默认不匹配，两者不能混为同一种迁移。
+
+2026-10-22资源配置变更按[实施审查](../../../reviews/2026-10-22-configurable-resource-limits.md)重评当前证据。历史报告不改写；新增配置的范围由CROSS-RESOURCES-001/S9—S15区分。未新增或改动N/A记录；没有从缺少某后端场景推断排除。

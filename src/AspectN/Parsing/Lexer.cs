@@ -11,8 +11,10 @@ internal sealed class Lexer
     private readonly DiagnosticBag _diagnostics = new();
     private readonly SourceText _source;
     private int _position;
+    private readonly ParseContext _context;
+    private int _charactersUntilCancellationCheck;
 
-    public Lexer(SourceText source)
+    public Lexer(SourceText source, ParseContext? context = null)
     {
 #if NET10_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(source);
@@ -21,6 +23,7 @@ internal sealed class Lexer
 #endif
 
         _source = source;
+        _context = context ?? new ParseContext(new AspectNParseOptions(), default);
     }
 
     public IReadOnlyList<AspectNDiagnostic> Diagnostics => _diagnostics.ToArray();
@@ -34,15 +37,18 @@ internal sealed class Lexer
 
     public SyntaxToken Lex()
     {
+        _context.CancellationToken.ThrowIfCancellationRequested();
+        _context.EnsureNodeAvailable(new TextSpan(_position, 0));
         SkipWhitespace();
         if (IsAtEnd)
         {
-            return new SyntaxToken(
+            return _context.Create(() => new SyntaxToken(
                 SyntaxKind.EndOfFileToken,
                 new TextSpan(_position, 0),
-                string.Empty);
+                string.Empty));
         }
 
+        _context.Token(new TextSpan(_position, 0));
         if (IsIdentifierStart(Current)) return LexIdentifier();
         if (IsAsciiDigit(Current) || (Current == '-' && IsAsciiDigit(Peek(1))))
         {
@@ -109,6 +115,8 @@ internal sealed class Lexer
 
     public SyntaxToken LexRegexBody()
     {
+        _context.EnsureNodeAvailable(new TextSpan(_position, 0));
+        _context.Token(new TextSpan(_position, 0));
         var start = _position;
         var groupDepth = 0;
         var inClass = false;
@@ -206,11 +214,11 @@ internal sealed class Lexer
         while (!IsAtEnd && IsIdentifierPart(Current)) _position++;
 
         var text = _source.Substring(new TextSpan(start, _position - start));
-        return new SyntaxToken(
+        return _context.Create(() => new SyntaxToken(
             SyntaxKind.IdentifierToken,
             new TextSpan(start, _position - start),
             text,
-            text);
+            text));
     }
 
     private SyntaxToken LexInteger()
@@ -227,7 +235,7 @@ internal sealed class Lexer
             CultureInfo.InvariantCulture,
             out var value))
         {
-            return new SyntaxToken(SyntaxKind.IntegerToken, span, text, value);
+            return _context.Create(() => new SyntaxToken(SyntaxKind.IntegerToken, span, text, value));
         }
 
         _diagnostics.Add(
@@ -235,7 +243,7 @@ internal sealed class Lexer
             DiagnosticSeverity.Error,
             "Integer literal is outside the supported range.",
             span);
-        return new SyntaxToken(SyntaxKind.IntegerToken, span, text);
+        return _context.Create(() => new SyntaxToken(SyntaxKind.IntegerToken, span, text));
     }
 
     private SyntaxToken LexString()
@@ -337,11 +345,11 @@ internal sealed class Lexer
                 span);
         }
 
-        return new SyntaxToken(
+        return _context.Create(() => new SyntaxToken(
             SyntaxKind.StringToken,
             span,
             _source.Substring(span),
-            value.ToString());
+            value.ToString()));
     }
 
     private static bool IsAsciiDigit(char character) => character is >= '0' and <= '9';
@@ -380,18 +388,28 @@ internal sealed class Lexer
     private SyntaxToken CreateToken(SyntaxKind kind, int start)
     {
         var span = new TextSpan(start, _position - start);
-        return new SyntaxToken(kind, span, _source.Substring(span));
+        return _context.Create(() => new SyntaxToken(kind, span, _source.Substring(span)));
     }
 
     private char Peek(int offset)
     {
+        // 长单 token 也要轮询；不能等整段文本或 StringBuilder 构造完才响应取消。
+        if (--_charactersUntilCancellationCheck <= 0)
+        {
+            _context.CancellationToken.ThrowIfCancellationRequested();
+            _charactersUntilCancellationCheck = 1024;
+        }
         var index = _position + offset;
         return index >= _source.Length ? '\0' : _source[index];
     }
 
     private void SkipWhitespace()
     {
-        while (!IsAtEnd && char.IsWhiteSpace(Current)) _position++;
+        while (!IsAtEnd && char.IsWhiteSpace(Current))
+        {
+            _context.CancellationToken.ThrowIfCancellationRequested();
+            _position++;
+        }
     }
 
     private static bool IsIdentifierStart(char character)

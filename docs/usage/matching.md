@@ -9,7 +9,8 @@
     "USE-REF-001",
     "USE-ARRAY-001",
     "CROSS-AVAILABILITY-001",
-    "CROSS-LOGIC-001"
+    "CROSS-LOGIC-001",
+    "CROSS-RESOURCES-001"
   ],
   "inventory_refs": [
     "INV-0007",
@@ -60,12 +61,13 @@
 
 ```csharp
 var capture = new AspectNCompilationOptions(
-    regexTimeout: null, genericVariableMode: GenericVariableMode.Capture,
-    maximumBindingAlternatives: 4096, maximumBindingWork: 1_000_000);
-var compilation = new AspectNEngine().CompileTypePattern("List<$T>", capture);
+    GenericVariableMode.Capture,
+    new AspectNMatchOptions(maximumBindingAlternatives: ResourceLimit.Finite(512)));
+var compilation = new AspectNEngine().CompileTypePattern(
+    "List<$T>", compilationOptions: capture);
 ```
 
-Capture 在预算内保留原通用捕获语义，包括具体类型及多备选筛选。预算耗尽时整次匹配为 Unknown/AN3007；不会只保留前几个备选。[边界示例](examples/MatchingBoundaries/Program.cs)可直接运行两种模式及超限对照。编译后的模式固定，选项按值进入缓存键。
+Capture 在预算内保留原通用捕获语义，包括具体类型及多备选筛选。默认每个收集器 256 个备选、每次匹配 50,000 个绑定工作单位；专项预算耗尽时整次匹配为 Unknown/AN3007；不会只保留前几个备选。[边界示例](examples/MatchingBoundaries/Program.cs)可直接运行两种模式及超限对照。编译后的模式固定，全部解析/匹配选项按值进入缓存键。总工作等额度另见[资源配置](resource-limits.md)。
 
 `Owner<string>`.`M<V>` 与 `Owner<int>`.`M<V>` 中 V 的声明可相同，但有效约束查询上下文不同；同名不同程序集或不同重载不能按显示名称合并。详见[泛型身份](../knowledge/capabilities/generics/GEN-IDENTITY-001.md)。
 

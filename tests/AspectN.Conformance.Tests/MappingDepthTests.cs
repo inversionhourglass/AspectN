@@ -7,6 +7,23 @@ namespace AspectN.Conformance.Tests;
 public sealed class MappingDepthTests
 {
     [Theory]
+    [InlineData("CecilUnlimited", "array", 1000)]
+    [InlineData("ReflectionUnlimited", "array", 1000)]
+    [InlineData("RoslynUnlimited", "array", 1000)]
+    [InlineData("CecilUnlimited", "generic", 1000)]
+    [InlineData("CecilUnlimited", "owner", 1000)]
+    [InlineData("CecilUnlimited", "attribute-target", 2000)]
+    [InlineData("CecilUnlimited", "by-reference", 1000)]
+    [InlineData("Core", "parse-generic", 1000)]
+    [InlineData("Core", "parse-member-type", 1000)]
+    [InlineData("Core", "parse-expression", 1000)]
+    [InlineData("Core", "compile-generic", 1000)]
+    [InlineData("Core", "compile-member-type", 1000)]
+    [InlineData("Core", "compile-expression", 1000)]
+    [InlineData("Core", "match-array", 1000)]
+    [InlineData("Core", "match-expression", 1000)]
+    [InlineData("Core", "match-concrete", 1000)]
+    [InlineData("Core", "match-attribute", 1000)]
     [InlineData("Cecil", "array", 1024)]
     [InlineData("Reflection", "array", 1024)]
     [InlineData("Roslyn", "array", 1024)]
@@ -81,7 +98,7 @@ public sealed class MappingDepthTests
             if (!process.HasExited) process.Kill(entireProcessTree: true);
         }
         Assert.True(process.ExitCode == 0, $"{backend}/{shape}: {await output}\n{await error}");
-        var limited = shape != "hidden-pointer" && (shape is "containing" or "owner" or "owner-reference" ? depth > 64 :
+        var limited = !backend.EndsWith("Unlimited", StringComparison.Ordinal) && backend != "Core" && shape != "hidden-pointer" && (shape is "containing" or "owner" or "owner-reference" ? depth > 64 :
             shape is "pointer" or "by-reference" ? depth > 62 : depth > 63);
         Assert.Contains($"{(limited ? "limited" : "mapped")}:{backend}:{shape}:{depth}", await output);
     }

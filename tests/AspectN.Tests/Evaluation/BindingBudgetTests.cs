@@ -20,8 +20,12 @@ public sealed class BindingBudgetTests(ITestOutputHelper output)
     public void Evaluate_DistinctOrGroups_RecordsBoundedWorkAndAllocations(int groups, GenericVariableMode mode)
     {
         var source = string.Join(" && ", Enumerable.Range(0, groups).Select(index => $"(Box<$L{index}> || Box<$R{index}>)"));
-        var options = new AspectNCompilationOptions(null, mode);
-        var root = Assert.IsAssignableFrom<BoundTypePattern>(new Binder(AspectNParser.ParseTypePattern(source), options).Bind());
+        // 此用例保留原压力规模，用显式配置验证可提高预算；默认值另由 ResourceOptionsTests 覆盖。
+        var options = new AspectNCompilationOptions(mode, new AspectNMatchOptions(maximumWork: ResourceLimit.Unlimited,
+            maximumBindingAlternatives: ResourceLimit.Finite(4096), maximumBindingWork: ResourceLimit.Finite(1_000_000)));
+        var root = Assert.IsAssignableFrom<BoundTypePattern>(new Binder(AspectNParser.ParseTypePattern(source,
+            new AspectNParseOptions(maximumSourceLength: ResourceLimit.Unlimited, maximumTokens: ResourceLimit.Unlimited,
+                maximumSyntaxNodes: ResourceLimit.Unlimited)), options).Bind());
         var candidate = new NamedTypeSignature(Box().Identity);
         var system = new StubTypeSystem();
         (MatchResult Result, long Work) Run()
@@ -36,7 +40,7 @@ public sealed class BindingBudgetTests(ITestOutputHelper output)
         var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
         output.WriteLine($"mode={mode}; groups={groups}; status={result.Status}; work={work}; allocatedBytes={allocated}");
         Assert.Equal(mode == GenericVariableMode.Declaration || groups <= 12 ? MatchStatus.Matched : MatchStatus.Unknown, result.Status);
-        Assert.InRange(work, 0, options.MaximumBindingWork);
+        Assert.InRange(work, 0, options.MatchOptions.MaximumBindingWork.Value);
         Assert.True(allocated < 64 * 1024 * 1024, $"Allocated {allocated} bytes.");
         if (mode == GenericVariableMode.Declaration) Assert.Equal(0, work);
         if (result.Status == MatchStatus.Unknown) Assert.Contains(result.Diagnostics, item => item.Code == "AN3007");
@@ -51,6 +55,26 @@ public sealed class BindingBudgetTests(ITestOutputHelper output)
         var result = pattern.Match(Box(), new StubTypeSystem());
         Assert.Equal(expected, result.Status);
         if (expected == MatchStatus.Unknown) AssertBudget(result, "MaximumBindingAlternatives", limit);
+    }
+
+    [Theory]
+    [InlineData(4, MatchStatus.Matched)]
+    [InlineData(8, MatchStatus.Matched)]
+    [InlineData(9, MatchStatus.Unknown)]
+    public void Match_DefaultCaptureLimits_BoundAlternativeGrowth(int groups, MatchStatus expected)
+    {
+        var source = string.Join(" && ", Enumerable.Range(0, groups)
+            .Select(index => $"(Box<$L{index}> || Box<$R{index}>)"));
+        var compilation = new AspectNEngine().CompileTypePattern(source,
+            parseOptions: new AspectNParseOptions(maximumSourceLength: ResourceLimit.Unlimited),
+            compilationOptions: new AspectNCompilationOptions(GenericVariableMode.Capture));
+        Assert.True(compilation.TryGetTypePattern(out var pattern));
+
+        var result = pattern.Match(Box(), new StubTypeSystem());
+
+        Assert.Equal(expected, result.Status);
+        if (expected == MatchStatus.Unknown)
+            Assert.Contains(result.Diagnostics, item => item.Code == DiagnosticCodes.BindingBudgetExceeded);
     }
 
     [Fact]
@@ -101,7 +125,7 @@ public sealed class BindingBudgetTests(ITestOutputHelper output)
     [Fact]
     public void Clone_InsufficientWork_RejectsBeforeCopyingEntries()
     {
-        var budget = new BindingBudget(new AspectNCompilationOptions(null, GenericVariableMode.Capture, 1, 4), default);
+        var budget = new BindingBudget(new AspectNCompilationOptions(GenericVariableMode.Capture, new AspectNMatchOptions(maximumBindingAlternatives: ResourceLimit.Finite(1), maximumBindingWork: ResourceLimit.Finite(4))), default);
         var environment = new BindingEnvironment(budget);
         environment.Bind(new VariableSymbol("T"), Box(), new StubTypeSystem(), static _ => { });
         Assert.Equal(3, budget.WorkUsed);
@@ -112,7 +136,7 @@ public sealed class BindingBudgetTests(ITestOutputHelper output)
     [Fact]
     public void Fork_WorkConsumedByChild_IsSharedWithParent()
     {
-        var context = new EvaluationContext(new StubTypeSystem(), new AspectNCompilationOptions(null, GenericVariableMode.Capture, 1, 3), default);
+        var context = new EvaluationContext(new StubTypeSystem(), new AspectNCompilationOptions(GenericVariableMode.Capture, new AspectNMatchOptions(maximumBindingAlternatives: ResourceLimit.Finite(1), maximumBindingWork: ResourceLimit.Finite(3))), default);
         var fork = context.Fork();
         fork.Visit(new AspectN.Text.TextSpan(0, 1));
         Assert.Equal(3, context.BindingWorkUsed);
@@ -168,17 +192,16 @@ public sealed class BindingBudgetTests(ITestOutputHelper output)
         var candidate = new MethodSignature("M", MethodKind.OrdinaryMethod, Accessibility.Public, false, false, Box(),
             new TypeUseSignature(Box(), RefKind.None, TypeUseKind.Return), [], [], [],
             [new AttributeSignature(Box(), AttributeTargetKind.Method), new AttributeSignature(Box(), AttributeTargetKind.Method)], []);
-        Assert.True(new AspectNEngine().CompileMemberExpression("attr(call Box<$T>)",
-            new AspectNCompilationOptions(null, GenericVariableMode.Capture, 1)).TryGetMemberPattern(out var pattern));
+        Assert.True(new AspectNEngine().CompileMemberExpression("attr(call Box<$T>)", compilationOptions: new AspectNCompilationOptions(GenericVariableMode.Capture, new AspectNMatchOptions(maximumBindingAlternatives: ResourceLimit.Finite(1)))).TryGetMemberPattern(out var pattern));
         AssertBudget(pattern.Match(candidate, new StubTypeSystem()), "MaximumBindingAlternatives", 1);
     }
 
     private static BindingEnvironment Environment(int limit) => new(new BindingBudget(
-        new AspectNCompilationOptions(null, GenericVariableMode.Capture, limit), default));
+        new AspectNCompilationOptions(GenericVariableMode.Capture, new AspectNMatchOptions(maximumBindingAlternatives: ResourceLimit.Finite(limit))), default));
 
     private static CompiledTypePattern Compile(string source, int alternatives = 4096, long work = 1_000_000)
     {
-        var compilation = new AspectNEngine().CompileTypePattern(source, new AspectNCompilationOptions(null, GenericVariableMode.Capture, alternatives, work));
+        var compilation = new AspectNEngine().CompileTypePattern(source, compilationOptions: new AspectNCompilationOptions(GenericVariableMode.Capture, new AspectNMatchOptions(maximumBindingAlternatives: ResourceLimit.Finite(alternatives), maximumBindingWork: ResourceLimit.Finite(work))));
         Assert.True(compilation.TryGetTypePattern(out var pattern), string.Join("; ", compilation.Diagnostics.Select(item => item.Message)));
         return pattern;
     }

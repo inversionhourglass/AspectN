@@ -29,9 +29,21 @@ foreach (var candidate in new[] { typeof(string), typeof(int) })
 // Matched、NotMatched。
 ```
 
-引擎缓存属于实例，键包含源码、解析种类、RegexTimeout、变量模式和两个捕获预算。Declaration 的唯一槽位事实缓存、Capture 的动态环境/预算和诊断都属于每次 Match；后续候选与并发匹配互不消耗额度。模式的并发隔离不表示任意第三方 ModuleDefinition 或 Compilation 可以按任意方式并发修改。后台工具可以复用编译模式，在自己的候选遍历逻辑中处理结果。
+引擎缓存属于实例，键按字段值包含源码、解析种类、全部解析/匹配配置和变量模式。缓存只发布完成结果，不保留取消或异常；并发未命中独立响应各自令牌。Declaration 的唯一槽位事实缓存、Capture 的动态环境/预算和诊断都属于每次 Match；后续候选与并发匹配互不消耗额度。模式的并发隔离不表示任意第三方 ModuleDefinition 或 Compilation 可以按任意方式并发修改。后台工具可以复用编译模式，在自己的候选遍历逻辑中处理结果。
 
-CecilTypeSystem 释放后，受守卫的入口可能抛 ObjectDisposedException。使用外部 module 时明确选择 LeaveOpen；Reflection 弱关联不永久锁住可收集程序集，但仍需让当前查询所需原生对象存活。不同后端之间传递中立签名，不会自动建立另一后端的原生关联。[生命周期专题](../knowledge/capabilities/cross-cutting/CROSS-LIFETIME-001.md)给出各后端证据和限制。
+CecilTypeSystem 默认借用传入的模块：`LeaveOpen=true`，释放适配器会清空缓存并使受守卫的入口抛 ObjectDisposedException，但保留模块供调用方继续分析、修改或写回。模块的最终释放由调用方或 Fody 等宿主负责；只有显式 `new CecilMappingOptions(leaveOpen: false)` 才由适配器同时释放模块。保留模块不代表已释放的适配器或其 mapper 仍可使用。
+
+```csharp
+using var module = Mono.Cecil.ModuleDefinition.ReadModule(assemblyPath);
+using (var backend = new AspectN.Cecil.CecilTypeSystem(module))
+{
+    var signature = backend.Mapper.MapType(module.Types[0]);
+}
+// 默认保留模块，可继续写回；外层 using 最终释放模块。
+module.Write(outputPath);
+```
+
+同一模块可按需借给多个适配器，各自释放只结束各自作用域；这不代表原生模块的任意并发访问得到支持。Fody 插件应将模块的最终释放留给宿主。Reflection 弱关联不永久锁住可收集程序集，但仍需让当前查询所需原生对象存活。不同后端之间传递中立签名，不会自动建立另一后端的原生关联。[生命周期专题](../knowledge/capabilities/cross-cutting/CROSS-LIFETIME-001.md)给出各后端证据和限制。
 
 ## 取消与资源上限
 
@@ -46,8 +58,8 @@ _ = pattern.Match(signature, typeSystem, cancellation.Token);
 Cecil/Fody 的直接继承闭包入口也遵守取消，包括没有原生关联的有效中立签名：
 
 ```csharp
-using var cecil = new AspectN.Cecil.CecilTypeSystem(
-    Mono.Cecil.ModuleDefinition.CreateModule("Example", Mono.Cecil.ModuleKind.Dll));
+using var module = Mono.Cecil.ModuleDefinition.CreateModule("Example", Mono.Cecil.ModuleKind.Dll);
+using var cecil = new AspectN.Cecil.CecilTypeSystem(module);
 var detached = new NamedTypeSignature(
     new TypeIdentity(new AssemblyIdentity("Example"), "Example", "Detached", 0, AspectN.Metadata.TypeKind.Class));
 using var cancellation = new CancellationTokenSource();
@@ -58,7 +70,7 @@ _ = cecil.GetInheritanceClosure(detached, cancellation.Token);
 
 未取消、但仍没有原生关联的同一输入返回不完整闭包 Unknown/AN3001。[历史取消缺陷及当前回归](../reviews/findings/FND-20261013-001.md)记录修复范围；当前工作树结论不等于所有已发布包都具备该修复。
 
-结构最多64层含根；有效类型泛型元数最多64含外层，方法自身元数独立最多64。原生映射超限抛 AspectNLimitException，带 AN3005/AN3006；外部中立签名匹配超限则 Unknown 带相同诊断。解析和正则文本另有保护，不能把不同阶段统一为普通不匹配。[资源专题](../knowledge/capabilities/cross-cutting/CROSS-RESOURCES-001.md)和[具体代码例子](limits-and-pitfalls.md)说明阶段差别。
+默认结构最多64层含根；有效类型泛型元数默认最多64含外层，方法自身元数独立默认最多64。这些限额可按解析、映射、匹配阶段独立配置；独立公开查询使用适配器的 queryOptions，Match 内部查询使用编译计划的匹配配置。查询中的映射共享子预算，并同时消耗外层预算，详见[资源配置](resource-limits.md)。原生映射超限抛 AspectNLimitException，带 AN3005/AN3006；外部中立签名匹配超限则 Unknown 带相同诊断。解析和正则文本另有保护，不能把不同阶段统一为普通不匹配。[资源专题](../knowledge/capabilities/cross-cutting/CROSS-RESOURCES-001.md)和[具体代码例子](limits-and-pitfalls.md)说明阶段差别。
 
 ## 选择兼容资产和后端
 

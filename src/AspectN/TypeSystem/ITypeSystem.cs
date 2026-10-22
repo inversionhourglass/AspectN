@@ -3,6 +3,7 @@ using AspectN.Metadata;
 namespace AspectN.TypeSystem;
 
 /// <summary>Defines the backend-neutral type and metadata operations used by AspectN matching.</summary>
+/// <remarks>Built-in public queries use the instance's immutable standalone query options and an independent budget per call. Queries issued internally by a compiled match share that match's fixed options and cumulative budget instead. Structural limits return Unknown with AN3005/AN3006; work, relation, attribute, or generated-text exhaustion aborts the operation with AN3008. Cancellation always propagates. Third-party implementations receive ordinary inputs and the original token; Core cannot precisely account for their hidden internal work or pre-return allocations.</remarks>
 public interface ITypeSystem
 {
     /// <summary>Gets advertised backend operations. Structural equality can succeed without native metadata; attribute selectors require DirectAttributeLookup.</summary>
@@ -11,18 +12,21 @@ public interface ITypeSystem
     /// <summary>Compares two type signatures for structural equality.</summary>
     /// <param name="left">The first type signature.</param>
     /// <param name="right">The second type signature.</param>
-    /// <returns>The comparison result.</returns>
+    /// <param name="cancellationToken">Cancels this query. Implementations should check it during work as well as at entry.</param>
+    /// <returns>Matched for equal structures, NotMatched for a definite difference, or Unknown with diagnostics when the comparison cannot be decided.</returns>
+    /// <exception cref="OperationCanceledException">Cancellation is requested.</exception>
     /// <remarks>
     /// This operation is symmetric structural equality. Empty identity fields and
     /// <see cref="TypeKind.Unknown"/> do not act as query wildcards here.
     /// </remarks>
-    TypeRelationResult AreEqual(TypeSignature left, TypeSignature right);
+    TypeRelationResult AreEqual(TypeSignature left, TypeSignature right, CancellationToken cancellationToken = default);
 
     /// <summary>Tests structural identity or declared base/interface/constraint relationships, excluding arbitrary CLR conversions.</summary>
     /// <param name="candidate">The candidate type signature.</param>
     /// <param name="target">The directional query signature to satisfy, which may omit identity qualifiers.</param>
     /// <param name="cancellationToken">The token used to cancel the operation.</param>
-    /// <returns>The type relation result.</returns>
+    /// <returns>Matched when the query is satisfied, NotMatched when it is definitely not satisfied, or Unknown with diagnostics when required facts are unavailable.</returns>
+    /// <exception cref="OperationCanceledException">Cancellation is requested.</exception>
     /// <remarks>
     /// <para>For each named identity in <paramref name="target"/>, an empty assembly name leaves
     /// the assembly unconstrained; otherwise the complete <see cref="AssemblyIdentity"/> must match.
@@ -44,6 +48,7 @@ public interface ITypeSystem
     /// <param name="candidate">The candidate type signature.</param>
     /// <param name="cancellationToken">The token used to cancel the operation.</param>
     /// <returns>The known ancestors in nominal closure order and the failure, if any, that stopped expansion.</returns>
+    /// <exception cref="OperationCanceledException">Cancellation is requested.</exception>
     InheritanceClosure GetInheritanceClosure(
         TypeSignature candidate,
         CancellationToken cancellationToken = default);
@@ -52,7 +57,8 @@ public interface ITypeSystem
     /// <param name="target">The metadata target to inspect.</param>
     /// <param name="attributeType">The directional attribute-type query, which may omit identity qualifiers.</param>
     /// <param name="cancellationToken">The token used to cancel the operation.</param>
-    /// <returns>The attribute lookup result.</returns>
+    /// <returns>Matched when a direct record satisfies the query, NotMatched when its absence is known, or Unknown with diagnostics when the lookup cannot be decided.</returns>
+    /// <exception cref="OperationCanceledException">Cancellation is requested.</exception>
     /// <remarks>
     /// <para>Use the query-side identity rules documented by <see cref="IsAssignableTo"/>:
     /// empty assembly names and namespaces are unconstrained, and <see cref="TypeKind.Unknown"/>

@@ -10,16 +10,28 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Mono.Cecil;
 
-var backend = args[0];
+var backendLabel = args[0];
+var unlimited = backendLabel.EndsWith("Unlimited", StringComparison.Ordinal);
+var backend = unlimited ? backendLabel.Substring(0, backendLabel.Length - "Unlimited".Length) : backendLabel;
 var shape = args[1];
 var depth = int.Parse(args[2], System.Globalization.CultureInfo.InvariantCulture);
+if (backend == "Core")
+{
+    FrontendProbe.Run(shape, depth);
+    Console.WriteLine($"mapped:{backendLabel}:{shape}:{depth}");
+    return;
+}
 using var module = ModuleDefinition.CreateModule("MappingDepth", ModuleKind.Dll);
 var references = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!).Split(Path.PathSeparator)
     .Select(path => MetadataReference.CreateFromFile(path));
 var compilation = CSharpCompilation.Create("MappingDepth", references: references);
-using var cecil = new CecilTypeSystem(module, new CecilMappingOptions(leaveOpen: true));
-var reflection = new ReflectionTypeSystem();
-var roslyn = new RoslynTypeSystem(compilation);
+var mappingOptions = new AspectNMappingOptions(maximumWork: ResourceLimit.Unlimited,
+    maximumTypeDepth: unlimited ? ResourceLimit.Unlimited : null,
+    maximumGeneratedTextLength: unlimited ? ResourceLimit.Unlimited : null);
+var queryOptions = new AspectNMatchOptions(maximumTypeDepth: unlimited ? ResourceLimit.Unlimited : null, maximumWork: ResourceLimit.Unlimited);
+using var cecil = new CecilTypeSystem(module, new CecilMappingOptions(leaveOpen: true, resources: mappingOptions), queryOptions);
+var reflection = new ReflectionTypeSystem(mappingOptions, queryOptions);
+var roslyn = new RoslynTypeSystem(compilation, mappingOptions, queryOptions);
 var definition = new TypeDefinition("Example", "Box`1", Mono.Cecil.TypeAttributes.Public, module.TypeSystem.Object);
 definition.GenericParameters.Add(new GenericParameter("T", definition));
 module.Types.Add(definition);
@@ -29,7 +41,7 @@ ITypeSymbol symbol = compilation.GetSpecialType(SpecialType.System_Int32);
 TypeDefinition? containing = null;
 for (var index = 0; index < depth; index++)
 {
-    if (shape is "containing" or "owner" or "owner-reference")
+    if (shape is "containing" or "attribute-target" or "owner" or "owner-reference")
     {
         if (shape == "owner-reference")
         {
@@ -74,7 +86,7 @@ if (shape == "containing" && backend == "Roslyn")
     using var image = new MemoryStream();
     module.Write(image);
     compilation = compilation.AddReferences(MetadataReference.CreateFromImage(image.ToArray()));
-    roslyn = new RoslynTypeSystem(compilation);
+    roslyn = new RoslynTypeSystem(compilation, mappingOptions, queryOptions);
     symbol = compilation.GetTypeByMetadataName("Example." + string.Join("+", Enumerable.Range(0, depth).Select(index => "Level" + index)))!;
 }
 if (shape == "pointer")
@@ -118,6 +130,13 @@ var thread = new Thread(() =>
                 throw new InvalidOperationException("Wrong deep declaration owner.");
             return;
         }
+        if (shape == "attribute-target")
+        {
+            var missing = new NamedTypeSignature(new TypeIdentity(new AspectN.Metadata.AssemblyIdentity(""), "Example", "Missing", 0, AspectN.Metadata.TypeKind.Unknown));
+            if (system.HasDirectAttribute(AttributeTarget.ForType(mapped), missing).Status != MatchStatus.NotMatched)
+                throw new InvalidOperationException("An empty deep target should have no attributes.");
+            return;
+        }
         if (shape == "containing")
         {
             if (mapped is not NamedTypeSignature named) throw new InvalidOperationException("Missing named type.");
@@ -140,7 +159,7 @@ var thread = new Thread(() =>
             _ => throw new InvalidOperationException($"Missing mapped layer {index}.")
         };
         if (current is not NamedTypeSignature { Identity.MetadataName: "Int32" }) throw new InvalidOperationException("Wrong leaf.");
-        if (!new AspectNEngine().CompileTypePattern("*").TryGetTypePattern(out var pattern)) throw new InvalidOperationException("Cannot compile.");
+        if (!new AspectNEngine().CompileTypePattern("*", compilationOptions: new AspectNCompilationOptions(matchOptions: queryOptions)).TryGetTypePattern(out var pattern)) throw new InvalidOperationException("Cannot compile.");
         if (pattern.Match(mapped, system).Status != MatchStatus.Matched)
             throw new InvalidOperationException("A supported mapped shape did not match.");
     }
@@ -156,7 +175,7 @@ var thread = new Thread(() =>
 thread.Start();
 thread.Join();
 if (failure is not null) throw failure;
-Console.WriteLine($"{(limited ? "limited" : "mapped")}:{backend}:{shape}:{depth}");
+Console.WriteLine($"{(limited ? "limited" : "mapped")}:{backendLabel}:{shape}:{depth}");
 
 internal sealed class ContainingType(int index, Type? containing) : System.Reflection.TypeDelegator(typeof(object))
 {

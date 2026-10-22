@@ -89,7 +89,7 @@ public sealed class CompiledPatternTests
     private static CompiledTypePattern CompileTypePattern(string source, GenericVariableMode mode = GenericVariableMode.Declaration)
     {
         var compilation = AspectNCompilation.Create(
-            AspectNParser.ParseTypePattern(source), new AspectNCompilationOptions(null, mode));
+            AspectNParser.ParseTypePattern(source), new AspectNCompilationOptions(mode));
         Assert.True(compilation.TryGetTypePattern(out var pattern));
         return pattern!;
     }

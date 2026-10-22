@@ -1,0 +1,160 @@
+{
+  "schema_version": 1,
+  "id": "EV-20261022-202",
+  "method": "manual",
+  "scenario_refs": [
+    {
+      "capability_id": "CROSS-COMPAT-001",
+      "scenario_id": "S1"
+    },
+    {
+      "capability_id": "CROSS-COMPAT-001",
+      "scenario_id": "S5"
+    },
+    {
+      "capability_id": "CROSS-RESOURCES-001",
+      "scenario_id": "S9"
+    },
+    {
+      "capability_id": "CROSS-RESOURCES-001",
+      "scenario_id": "S10"
+    },
+    {
+      "capability_id": "CROSS-RESOURCES-001",
+      "scenario_id": "S11"
+    },
+    {
+      "capability_id": "CROSS-RESOURCES-001",
+      "scenario_id": "S12"
+    },
+    {
+      "capability_id": "CROSS-RESOURCES-001",
+      "scenario_id": "S13"
+    },
+    {
+      "capability_id": "CROSS-RESOURCES-001",
+      "scenario_id": "S14"
+    },
+    {
+      "capability_id": "CROSS-RESOURCES-001",
+      "scenario_id": "S15"
+    },
+    {
+      "capability_id": "SYN-GRAMMAR-001",
+      "scenario_id": "S1"
+    }
+  ],
+  "oracle_refs": [
+    {
+      "path": "docs/knowledge/profiles.json",
+      "section": "feature-v1 / INVCANCEL"
+    },
+    {
+      "path": "docs/plans/2026-10-21-configurable-resource-limits.md",
+      "section": "5.1—5.2"
+    }
+  ],
+  "procedure": "非作者/root/options_review于2026-10-22只读核对公开选项/入口XML、默认表、作用域、缓存与第三方边界；独立小输入复跑Roslyn错误符号129/文本128和100空语句/work80，均AN3008；最后确认AspectNLimitException XML覆盖新资源且正确声明null异常。另按profile确认SYN-GRAMMAR INVCANCEL改applicable，其他三项在Parse/Compile范围仍confirmed N/A。完整审查范围与发现/修复见实施报告。",
+  "result": "passed",
+  "recorded_on": "2026-10-22",
+  "environment": {
+    "reviewer": "/root/options_review",
+    "reviewed_on": "2026-10-22",
+    "notes": "审查者未重跑最终全矩阵、压力、小栈、格式或生成器，未审定本机器快照；主代理保存当前取证哈希。不是新增N/A豁免或所有配置组合证明。"
+  },
+  "code_state": {
+    "head": "d12feb25c798e8bd7458d4ccc123273d0bde2a62",
+    "dirty": true,
+    "files": [
+      {
+        "path": "src/AspectN/AspectNLimitException.cs",
+        "sha256": "59e534037f96f091396e6abda9df185586549463ae115336ff1ee00bec91c11f"
+      },
+      {
+        "path": "src/AspectN/ResourceLimit.cs",
+        "sha256": "d925714710c140d2eebb64c98ec40a66cda6cee2effab60dc85411c83580827c"
+      },
+      {
+        "path": "src/AspectN/TimeLimit.cs",
+        "sha256": "397fc681e09e0b5948fe514e1df9253ae3de60ecf65005744d5338b42b872e5a"
+      },
+      {
+        "path": "src/AspectN/AspectNParseOptions.cs",
+        "sha256": "63d752311307afb08017eecdd0a6871d64f3a61bd913ebd1a827431316ffe188"
+      },
+      {
+        "path": "src/AspectN/AspectNMappingOptions.cs",
+        "sha256": "545f5316ebb8b8b1b4af802caa69c47c39ebf3d02d62363a2a217f2064fb8800"
+      },
+      {
+        "path": "src/AspectN/AspectNMatchOptions.cs",
+        "sha256": "32bbb153dd2f8d931c84facc95ef83e7f0959e9dc59b915f992763c995109932"
+      },
+      {
+        "path": "src/AspectN/AspectNCompilationOptions.cs",
+        "sha256": "30805fd4e275fc38ec048ef5d0b1230d9dc5c3f5c69dd2548378ee7120b45c6f"
+      },
+      {
+        "path": "src/AspectN/TypeSystem/ITypeSystem.cs",
+        "sha256": "5611f2309f09bb14be720bd005af170bb1cfede010286f24a3983d4fce889aae"
+      },
+      {
+        "path": "src/AspectN.Roslyn/RoslynMappingOperation.cs",
+        "sha256": "fcecdb9515b1b6111f80184e9c69d23c7e915b0b5a694346e3a129d3906689dd"
+      },
+      {
+        "path": "src/AspectN.Roslyn/RoslynMappingOperation.TypeForms.cs",
+        "sha256": "31033bbd97b0e469bc649b2bd46a9bd46f250a73c4b94b20543b673604381b98"
+      },
+      {
+        "path": "src/AspectN/AspectNParser.cs",
+        "sha256": "885f771803ad5fc3a3b798b25891be772c47cd6d1ab1562cdc01a4b663965117"
+      },
+      {
+        "path": "src/AspectN/AspectNEngine.cs",
+        "sha256": "ee326890605fdc1012cc7f007f934a8a830e418215c9e3c079a2b8ba271ba2f3"
+      },
+      {
+        "path": "docs/knowledge/profiles.json",
+        "sha256": "c4e4036623aab8d88883aa13cb40932abc5e86ef61f93ca896017d6d5bfcf6a2"
+      },
+      {
+        "path": "docs/knowledge/capabilities/syntax/SYN-GRAMMAR-001.md",
+        "sha256": "141288692f9cb531e02ebe85e8a698f83c4c22bf23c5af722ea0e32760744c08"
+      },
+      {
+        "path": "docs/superpowers/specs/2026-10-22-configurable-resource-limits-design.md",
+        "sha256": "343cb0f6e8d2bc2bc6db9f78d47592320f31f489486e723da49df35935dc7e3f"
+      },
+      {
+        "path": "docs/usage/resource-limits.md",
+        "sha256": "0c34d47ca13810f0c499f6c3cb8fad30e97db79580577aae2f9c12503286c58f"
+      }
+    ]
+  },
+  "dependency_scope": {
+    "paths": [
+      "src/AspectN/AspectNLimitException.cs",
+      "src/AspectN/ResourceLimit.cs",
+      "src/AspectN/TimeLimit.cs",
+      "src/AspectN/AspectNParseOptions.cs",
+      "src/AspectN/AspectNMappingOptions.cs",
+      "src/AspectN/AspectNMatchOptions.cs",
+      "src/AspectN/AspectNCompilationOptions.cs",
+      "src/AspectN/TypeSystem/ITypeSystem.cs",
+      "src/AspectN.Roslyn/RoslynMappingOperation.cs",
+      "src/AspectN.Roslyn/RoslynMappingOperation.TypeForms.cs",
+      "src/AspectN/AspectNParser.cs",
+      "src/AspectN/AspectNEngine.cs",
+      "docs/knowledge/profiles.json",
+      "docs/knowledge/capabilities/syntax/SYN-GRAMMAR-001.md",
+      "docs/superpowers/specs/2026-10-22-configurable-resource-limits-design.md",
+      "docs/usage/resource-limits.md"
+    ],
+    "environment_keys": [
+      "reviewer",
+      "reviewed_on"
+    ]
+  },
+  "revalidation_conditions": "公开选项/API/XML、两处Roslyn修复、资源规范/指南、语法入口或profile条件变化需重验；N/A只适用纯解析/绑定，不外推匹配流程。"
+}

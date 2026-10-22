@@ -1,50 +1,56 @@
 using System.Runtime.CompilerServices;
-using AspectN.Diagnostics;
+using AspectN.TypeSystem;
 
 namespace AspectN.AdapterInternals;
 
 internal static class NativeTypeLimitGuard
 {
+    public static HashSet<T> CreateValidated<T>() where T : class => new(ReferenceComparer<T>.Instance);
+
     public static void Validate<T>(T root, Func<T, int> arity, Func<T, IEnumerable<T>> children,
-        Func<T, IEnumerable<T>> contexts) where T : class
+        Func<T, IEnumerable<T>> contexts, MappingContext resources, ISet<T> validated) where T : class
     {
-        var pending = new Stack<(T Type, int Depth)>();
+        resources.SpendWork();
+        if (validated.Contains(root)) return;
+        var pending = new Stack<(T? Type, int Depth, IEnumerator<T>? Items, bool Declaration)>();
         var visited = new Dictionary<T, int>(ReferenceComparer<T>.Instance);
         var declarations = new HashSet<T>(ReferenceComparer<T>.Instance);
-        pending.Push((root, 1));
-        while (pending.Count > 0)
+        pending.Push((root, 1, null, false));
+        try
         {
-            var (type, depth) = pending.Pop();
-            CheckDepth(depth);
-            if (visited.TryGetValue(type, out var previous) && previous >= depth) continue;
-            visited[type] = depth;
-            CheckArity(arity(type));
-            foreach (var child in children(type)) pending.Push((child, depth + 1));
-            // owner 是身份上下文，不是结构子节点；独立检查并去重，避免普通泛型声明的回环。
-            foreach (var declaration in contexts(type))
-                if (declarations.Add(declaration)) pending.Push((declaration, 1));
+            while (pending.Count > 0)
+            {
+                resources.SpendWork();
+                var (type, depth, items, declaration) = pending.Pop();
+                if (items is not null)
+                {
+                    if (!items.MoveNext()) { items.Dispose(); continue; }
+                    pending.Push((null, depth, items, declaration));
+                    if (!declaration || declarations.Add(items.Current))
+                        pending.Push((items.Current, depth, null, false));
+                    continue;
+                }
+                resources.CheckDepth(depth);
+                if (visited.TryGetValue(type!, out var previous) && previous >= depth) continue;
+                visited[type!] = depth;
+                resources.CheckArity(arity(type!));
+                // 按需枚举，宽输入不能在预算检查前把全部后代放进工作栈。
+                pending.Push((null, 1, contexts(type!).GetEnumerator(), true));
+                pending.Push((null, checked(depth + 1), children(type!).GetEnumerator(), false));
+            }
+            foreach (var type in visited.Keys) { resources.SpendWork(); validated.Add(type); }
+        }
+        finally
+        {
+            foreach (var frame in pending) frame.Items?.Dispose();
         }
     }
 
-    public static void CheckDepth(int depth)
+    public static int AddArity(int total, int own, MappingContext resources)
     {
-        if (depth > AspectNLimits.MaximumTypeDepth)
-            throw new AspectNLimitException(new AspectNDiagnostic(DiagnosticCodes.MetadataDepthExceeded,
-                DiagnosticSeverity.Warning, "The type structure exceeds the supported depth of 64 levels."));
-    }
-
-    public static void CheckArity(int arity)
-    {
-        if (arity > AspectNLimits.MaximumGenericParameters)
-            throw new AspectNLimitException(new AspectNDiagnostic(DiagnosticCodes.MetadataGenericArityExceeded,
-                DiagnosticSeverity.Warning, "The effective type arity or method generic arity exceeds the supported limit of 64 parameters."));
-    }
-
-    public static int AddArity(int total, int own)
-    {
-        CheckArity(own);
-        if (own > AspectNLimits.MaximumGenericParameters - total) CheckArity(AspectNLimits.MaximumGenericParameters + 1);
-        return total + own;
+        var result = (long)total + own;
+        resources.CheckArity(result);
+        return checked((int)result);
     }
 
     private sealed class ReferenceComparer<T> : IEqualityComparer<T> where T : class

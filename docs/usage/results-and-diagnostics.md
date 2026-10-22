@@ -6,7 +6,8 @@
   "capability_ids": [
     "CROSS-AVAILABILITY-001",
     "CROSS-LOGIC-001",
-    "USE-REF-001"
+    "USE-REF-001",
+    "CROSS-RESOURCES-001"
   ],
   "inventory_refs": [
     "INV-0012",
@@ -41,7 +42,9 @@ Service.Run 返回 Int32，只有 Accessibility 不可用，其他事实已知�
 
 AND 的 NotMatched 支配，OR 的 Matched 支配，NOT Unknown=Unknown。结果已知时 Unknown 相关诊断仍可能保留。
 
-Capture 的资源中止是整次求值边界：任一绑定预算耗尽立即返回 Unknown/AN3007，即使先前局部分支已经 Matched；它不继续套用未求完表达式的真值表。诊断保留触发跨度、预算名/限额及已收集的其他诊断。默认 Declaration 不建立动态备选集，也不消耗捕获预算。取消继续抛 OperationCanceledException。
+资源中止是整次求值边界：Capture 专项额度耗尽返回 Unknown/AN3007；总工作、关系、特性或文本额度耗尽返回 Unknown/AN3008，即使先前局部分支已经 Matched；它不继续套用未求完表达式的真值表。诊断保留触发跨度、预算名/限额及已收集的其他诊断。默认 Declaration 不建立动态备选集，也不消耗捕获预算。取消继续抛 OperationCanceledException。
+
+AN3005/AN3006 的结构超限仍为局部分支失败，可继续其他合法祖先；正则超时 AN3003 仍遵循局部三态逻辑。源码、token、语法节点额度超限产生 AN1003 编译错误；深度保护保留 AN1002、泛型条款保留 AN2011。[资源配置](resource-limits.md)列出完整默认值和作用域。
 
 编译诊断先于匹配；原生映射超限抛 AspectNLimitException，中立超限签名匹配按契约返回 Unknown。取消传播。读取失败 AN3004 与无原生关联 AN3001 不混用。regex 非法/超时规则另依规范，当前不从三态值测试推断所有 regex 场景。
 

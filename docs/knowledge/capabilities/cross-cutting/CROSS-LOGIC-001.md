@@ -34,7 +34,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-001",
-        "EV-20261021-007"
+        "EV-20261021-007",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -53,7 +54,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-001",
-        "EV-20261021-007"
+        "EV-20261021-007",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     }
@@ -157,3 +159,5 @@ EV-20261012-003 仅补充 NOT U、F AND U 和 Unknown→False 三个观察；未
 三项 N/A 已由非作者核验；它们仅适用于本条目的纯值函数。[审查记录](../../../reviews/2026-10-12-documentation-pilot.md)保留范围与结果。
 
 2026-10-21 重验 S1/S2，MatchLogic 纯值函数和现有 N/A 适用范围均未改变。Capture 预算中止在整次 Match 边界发生，未完成表达式直接 Unknown/AN3007，不改纯值真值表；运行时回归归 CROSS-RESOURCES-001/S8 和 GEN-BINDING-001/S6。新增预算不把本条目的纯值 N/A 扩展到 DSL 求值器。
+
+2026-10-22资源配置变更按[实施审查](../../../reviews/2026-10-22-configurable-resource-limits.md)重评当前证据。历史报告不改写；新增配置的范围由CROSS-RESOURCES-001/S9—S15区分。本条目S1/S2仍仅覆盖纯值三态与转换，既有N/A范围不变；整次资源中止归资源条目，不扩张本条目的纯值N/A。

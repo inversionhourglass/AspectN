@@ -1,10 +1,10 @@
-# CROSS-RESOURCES-001 取消、类型深度、元数与文本预算
+# CROSS-RESOURCES-001 分阶段资源配置、预算与取消
 
 <!-- aspectn-capability:v1
 {
   "schema_version": 1,
   "id": "CROSS-RESOURCES-001",
-  "title": "取消、类型深度、元数与文本预算",
+  "title": "分阶段资源配置、预算与取消",
   "category": "cross-cutting",
   "kind": "cross_cutting",
   "profile": "cross-cutting-v1",
@@ -20,6 +20,10 @@
     {
       "path": "docs/reviews/2026-10-21-d01-direct-attribute-limits.md",
       "section": "维护者裁决与取代范围"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-10-22-configurable-resource-limits-design.md",
+      "section": "2—6；仅资源策略与公开入口"
     }
   ],
   "scenarios": [
@@ -30,7 +34,7 @@
       "entry_point": "Parse/Compile / CompiledPattern.Match",
       "conditions": "InputDepthTests、SignatureLimitTests、RegexPatternTests 和 MemberPathTests 的实际边界及取消 fixture；InheritanceClosureLimitTests 的第三方祖先深度/元数、64边界、正常分支顺序和Unknown绑定备选；原C05变量备选用例显式Capture",
       "target": "working-tree",
-      "expected_behavior": "结构深度64含根、类型有效元数64和方法自身元数64；解析/编译给诊断，外部中立匹配超限 Unknown；取消传播；核心闭包模式遍历对每个祖先先检查限制，超限为Unknown并保留诊断和备选，继续其他祖先，确定匹配仍为Matched",
+      "expected_behavior": "默认结构深度64含根、默认类型有效元数64和默认方法自身元数64；解析/编译给诊断，外部中立匹配超限 Unknown；取消传播；核心闭包模式遍历对每个祖先先检查限制，超限为Unknown并保留诊断和备选，继续其他祖先，确定匹配仍为Matched",
       "contract_status": "supported",
       "verification_status": "verified",
       "verification_methods": [
@@ -39,7 +43,8 @@
       "evidence_ids": [
         "EV-20261014-001",
         "EV-20261021-002",
-        "EV-20261021-007"
+        "EV-20261021-007",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -58,7 +63,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-006",
-        "EV-20261021-005"
+        "EV-20261021-005",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -77,7 +83,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-006",
-        "EV-20261021-005"
+        "EV-20261021-005",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -96,7 +103,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-006",
-        "EV-20261021-005"
+        "EV-20261021-005",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -115,7 +123,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-003",
-        "EV-20261021-005"
+        "EV-20261021-005",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -134,7 +143,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-002",
-        "EV-20261014-010"
+        "EV-20261014-010",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -153,7 +163,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-003",
-        "EV-20261014-010"
+        "EV-20261014-010",
+        "EV-20261022-201"
       ],
       "unverified_notes": ""
     },
@@ -171,7 +182,148 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261021-007"
+        "EV-20261021-007",
+        "EV-20261022-201"
+      ],
+      "unverified_notes": ""
+    },
+    {
+      "id": "S9",
+      "adapter": "core",
+      "input_mode": "neutral",
+      "entry_point": "Parse* / Compile* / AspectNCompilation.Create",
+      "conditions": "ResourceOptionsTests、ResourceContractTests、ResourceXmlExampleTests及FrontendProbe：256/257、UTF-16/空白/换行/转义、token/节点/根深度、类型/方法元数、保留解析选项；千层解析/恢复/绑定小栈",
+      "target": "working-tree",
+      "expected_behavior": "新默认值与配置按值生效；重扫/临时节点继续计量；AN1003/1002/2011；提高或Unlimited跨过旧限制，取消传播",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated",
+        "manual"
+      ],
+      "evidence_ids": [
+        "EV-20261022-201",
+        "EV-20261022-202"
+      ],
+      "unverified_notes": ""
+    },
+    {
+      "id": "S10",
+      "adapter": "core",
+      "input_mode": "neutral",
+      "entry_point": "CompiledPattern.Match / StructuralTypeComparer / cache",
+      "conditions": "ResourceBudgetTests、BindingBudgetTests、CompiledPatternCacheTests和ResourceContractTests：宽DTO/长文本提前检查、OR资源中止、第三方资源诊断、Capture默认4/8/9组、并发与缓存取消；不含第三方内部计量",
+      "target": "working-tree",
+      "expected_behavior": "AN3007/3008整次中止；结构失败局部；默认8组256备选允许，9组中止；独立调用互不消耗；配置全字段入缓存，异常/取消不发布",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated",
+        "manual"
+      ],
+      "evidence_ids": [
+        "EV-20261022-201",
+        "EV-20261022-202"
+      ],
+      "unverified_notes": ""
+    },
+    {
+      "id": "S11",
+      "adapter": "cecil",
+      "input_mode": "native_member",
+      "entry_point": "Mapper / public query / internal match query",
+      "conditions": "NativeResourceBudgetTests Cecil参数行、CecilResourceBudgetTests、MappingDepthTests：工作/文本/特性、独立查询、查询子预算、跨查询三边累计、类型/方法80槽、千层形状和2000层直接特性目标；关系节点含根的逐次重置和普通第三方装饰器作用域对照",
+      "target": "working-tree",
+      "expected_behavior": "固定映射配置与计划匹配配置分别生效；子映射共享额度并通知外层；AN3008整次中止；提高/不限额度保留结构语义和取消；失败不发布残缺根",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated",
+        "manual"
+      ],
+      "evidence_ids": [
+        "EV-20261022-201",
+        "EV-20261022-202"
+      ],
+      "unverified_notes": ""
+    },
+    {
+      "id": "S12",
+      "adapter": "cecil_fody",
+      "input_mode": "native_member",
+      "entry_point": "Mapper / native query",
+      "conditions": "独立Fody程序集链接CecilResourceBudgetTests：长命名空间、调用约定列表、600个工作额度的失败发布重试、类型/方法限额独立；既有深度/元数/取消回归",
+      "target": "working-tree",
+      "expected_behavior": "相同源码在Fody Cecil身份执行这些资源检查；失败发布重试保留关联。未据此宣称全部NativeResourceBudgetTests或80槽同源PE在Fody已执行",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated",
+        "manual"
+      ],
+      "evidence_ids": [
+        "EV-20261022-201",
+        "EV-20261022-202"
+      ],
+      "unverified_notes": ""
+    },
+    {
+      "id": "S13",
+      "adapter": "reflection",
+      "input_mode": "native_member",
+      "entry_point": "Mapper / public query / internal match query",
+      "conditions": "NativeResourceBudgetTests Reflection参数行、Reflection ResourceBudgetTests、MappingDepthTests：独立策略、查询映射子预算和累计边、80槽、千层数组、万层委托类型前检查；关系节点含根的逐次重置和普通第三方装饰器作用域对照",
+      "target": "working-tree",
+      "expected_behavior": "映射和匹配独立配置；独立公开查询与内部查询作用域区分；提前检查工作、文本和结构，取消优先；原生API自身限制仍存在",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated",
+        "manual"
+      ],
+      "evidence_ids": [
+        "EV-20261022-201",
+        "EV-20261022-202"
+      ],
+      "unverified_notes": ""
+    },
+    {
+      "id": "S14",
+      "adapter": "roslyn",
+      "input_mode": "source_symbol",
+      "entry_point": "Mapper / public query / internal match query",
+      "conditions": "NativeResourceBudgetTests Roslyn参数行、Roslyn ResourceBudgetTests：特性/关系/查询子预算、累计边、80槽源符号；129字符错误符号与100空语句方法体扫描；关系节点含根的逐次重置和普通第三方装饰器作用域对照",
+      "target": "working-tree",
+      "expected_behavior": "错误类型生成文本也受限；源码yield检测扫描计费并传取消；独立查询策略不覆盖计划；子预算资源失败按AN3008传播",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated",
+        "manual"
+      ],
+      "evidence_ids": [
+        "EV-20261022-201",
+        "EV-20261022-202"
+      ],
+      "unverified_notes": ""
+    },
+    {
+      "id": "S15",
+      "adapter": "roslyn",
+      "input_mode": "pe_symbol",
+      "entry_point": "Mapper.MapMethod / CompiledMemberPattern.Match",
+      "conditions": "NativeResourceBudgetTests.MapMethod_RaisedAndUnlimitedArity_AgreesAcrossNativeViews 的80个类型及方法槽位同源PE；有限80和Unlimited两行",
+      "target": "working-tree",
+      "expected_behavior": "提高映射和匹配元数后成功，独立查询默认64仍Unknown；不将PE槽位控制外推所有新增资源配置",
+      "contract_status": "supported",
+      "verification_status": "verified",
+      "verification_methods": [
+        "automated",
+        "manual"
+      ],
+      "evidence_ids": [
+        "EV-20261022-201",
+        "EV-20261022-202"
       ],
       "unverified_notes": ""
     }
@@ -252,7 +404,7 @@
 
 ## 契约
 
-类型结构最多64层含根；类型泛型有效元数含外层链最多64，方法自身最多64，二者可以各64。解析另有递归入口128、语法树深度256保护。规范正则签名预算65,536个UTF-16字符；匹配/关系声明 CancellationToken 的入口传播取消。
+解析、映射、匹配分别使用不可变配置和每次操作预算。默认类型深度64含根，含外层类型槽位64和方法自身槽位64互相独立；解析逻辑帧128、树深256、完整源码256。规范文本默认16,384 UTF-16代码单元。全部项目支持正有限值或显式Unlimited，默认值和计数口径见[资源规范](../../../superpowers/specs/2026-10-22-configurable-resource-limits-design.md)及[使用指南](../../../usage/resource-limits.md)。
 
 ## 输入条件
 
@@ -266,7 +418,7 @@
 
 ## 阶段失败
 
-显式原生映射抛 AspectNLimitException/AN3005或AN3006；HasDirectAttribute 内部原生特性类型映射超限则在查询边界返回 Unknown 并保留原诊断；中立匹配 Unknown及同码；解析保护AN1002、显式泛型子句超槽AN2011；规范文本预算Unknown/AN3001。取消不转成 Unknown/AN3004。
+显式原生映射抛 AspectNLimitException/AN3005或AN3006；HasDirectAttribute 内部原生特性类型映射超限则在查询边界返回 Unknown 并保留原诊断；中立匹配 Unknown及同码；解析深度AN1002、显式泛型子句超槽AN2011、源码/token/节点AN1003；规范文本及总工作、关系、特性额度耗尽Unknown/AN3008，Capture专项AN3007。资源耗尽中止整次操作，不由成功OR覆盖；真正缺失格式化事实仍AN3001。取消不转成 Unknown/AN3004。
 
 D01 的查询边界由维护者于 2026-10-21 批准，S2–S5 增加对应入口，Roslyn PE 单列于 ATTR-TARGETS-001/S25。当前新证据仅补该查询及显式映射控制，不替代旧小栈、修饰符或关系遍历证据。
 
@@ -298,4 +450,6 @@ CROSS-AVAILABILITY-001 处理事实缺失，SEM-REGEX-001 处理正则编译/超
 
 S6/S7 的提前返回吞取消已修复：CecilResolver.GetInheritanceClosure 在关联查找之前检查 Token。普通 Cecil 与 Fody 分别执行关联/脱离关联预先取消及未取消缺关联控制，见 [CecilCancellationTests](../../../../tests/AspectN.Cecil.Tests/CecilCancellationTests.cs)。
 
-Capture 默认每集合 4096 个唯一备选、每次 Match 1,000,000 个累计逻辑工作单位；逐项去重计费、复制前检查。耗尽即整体 Unknown/AN3007，保留诊断和触发跨度，取消优先。它不是墙钟或精确字节配额，不抢占第三方后端/闭包物化。Declaration 固定槽位缓存不使用动态预算。独立后端入口预算断言见 GEN-BINDING-001/S7–S11；兼容资产见 CROSS-COMPAT-001/S3–S4。[压力报告](../../../reviews/2026-10-21-generic-variable-modes.md)不代替整体性能闸门。
+Capture 默认每集合 256 个唯一备选、每次 Match 50,000 个累计绑定工作单位；逐项去重计费、复制前检查。耗尽即整体 Unknown/AN3007，保留诊断和触发跨度，取消优先。它不是墙钟或精确字节配额，不抢占第三方后端/闭包物化。Declaration 固定槽位缓存不使用Capture预算，仍受总工作额度约束。独立后端入口预算断言见 GEN-BINDING-001/S7–S11；兼容资产见 CROSS-COMPAT-001/S3–S4。[压力报告](../../../reviews/2026-10-21-generic-variable-modes.md)不代替整体性能闸门。
+
+2026-10-22资源配置变更按[实施审查](../../../reviews/2026-10-22-configurable-resource-limits.md)重评当前证据。历史报告不改写；新增配置的范围由CROSS-RESOURCES-001/S9—S15区分。未新增或改动N/A记录；没有从缺少某后端场景推断排除。

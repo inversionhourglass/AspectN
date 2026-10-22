@@ -1,60 +1,27 @@
 namespace AspectN;
 
-/// <summary>Controls generic variable semantics, capture budgets, and the finite regular-expression timeout.</summary>
+/// <summary>Fixes generic variable semantics and match limits for a compiled plan.</summary>
+/// <remarks>Immutable and safe for concurrent reuse. Parsing limits belong to the syntax tree and cannot be replaced here. MatchOptions are used for every Match call; each call has independent counters. Adapter mapping limits remain independent.</remarks>
 public sealed class AspectNCompilationOptions
 {
-    // 保留旧二进制签名；新重载前两个参数必填，与旧 null/default/位置调用无歧义。
-#pragma warning disable RS0026
-    private static readonly TimeSpan _DefaultRegexTimeout =
-        TimeSpan.FromMilliseconds(250);
-
-    /// <summary>Initializes a new instance of the AspectNCompilationOptions class.</summary>
-    /// <param name="regexTimeout">Positive finite timeout; null uses 250 milliseconds.</param>
-    /// <exception cref="ArgumentOutOfRangeException">The timeout is not positive and finite.</exception>
-    public AspectNCompilationOptions(TimeSpan? regexTimeout = null)
-        : this(regexTimeout, GenericVariableMode.Declaration)
-    {
-    }
-
-    /// <summary>Initializes immutable variable semantics and finite per-match capture budgets.</summary>
-    /// <param name="regexTimeout">Positive finite regex timeout; null uses 250 milliseconds.</param>
-    /// <param name="genericVariableMode">Declaration slot references or general type capture.</param>
-    /// <param name="maximumBindingAlternatives">Positive maximum number of unique alternatives in each capture collection.</param>
-    /// <param name="maximumBindingWork">Positive maximum logical work charged to one capture match.</param>
-    /// <exception cref="ArgumentOutOfRangeException">The mode, timeout, or either budget is invalid.</exception>
-    public AspectNCompilationOptions(TimeSpan? regexTimeout, GenericVariableMode genericVariableMode,
-        int maximumBindingAlternatives = 4096, long maximumBindingWork = 1_000_000)
+    /// <summary>Creates the options retained by the compilation and its compiled pattern.</summary>
+    /// <param name="genericVariableMode">Declaration (default) references declaration slots; Capture binds arbitrary candidate types.</param>
+    /// <param name="matchOptions">Limits for candidate validation, evaluation, and queries; null uses the defaults in AspectNMatchOptions.</param>
+    /// <exception cref="ArgumentOutOfRangeException">The variable mode is undefined.</exception>
+    public AspectNCompilationOptions(GenericVariableMode genericVariableMode = GenericVariableMode.Declaration,
+        AspectNMatchOptions? matchOptions = null)
     {
         if (genericVariableMode is not (GenericVariableMode.Declaration or GenericVariableMode.Capture))
             throw new ArgumentOutOfRangeException(nameof(genericVariableMode));
-#if NET10_0_OR_GREATER
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maximumBindingAlternatives);
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maximumBindingWork);
-#else
-        if (maximumBindingAlternatives <= 0) throw new ArgumentOutOfRangeException(nameof(maximumBindingAlternatives));
-        if (maximumBindingWork <= 0) throw new ArgumentOutOfRangeException(nameof(maximumBindingWork));
-#endif
         GenericVariableMode = genericVariableMode;
-        MaximumBindingAlternatives = maximumBindingAlternatives;
-        MaximumBindingWork = maximumBindingWork;
-        RegexTimeout = regexTimeout ?? _DefaultRegexTimeout;
-        if (RegexTimeout <= TimeSpan.Zero ||
-            RegexTimeout == System.Threading.Timeout.InfiniteTimeSpan)
-        {
-            throw new ArgumentOutOfRangeException(nameof(regexTimeout));
-        }
+        MatchOptions = matchOptions ?? new AspectNMatchOptions();
     }
-#pragma warning restore RS0026
 
-    /// <summary>Gets the positive finite regular-expression timeout.</summary>
-    public TimeSpan RegexTimeout { get; }
-
-    /// <summary>Gets the variable semantics fixed when the pattern is compiled.</summary>
+    /// <summary>Gets the variable semantics fixed at compilation, Declaration by default.</summary>
     public GenericVariableMode GenericVariableMode { get; }
 
-    /// <summary>Gets the positive unique-alternative limit for capture collections; unused in Declaration mode.</summary>
-    public int MaximumBindingAlternatives { get; }
-
-    /// <summary>Gets the positive per-match capture work limit; it is not a timeout or byte quota.</summary>
-    public long MaximumBindingWork { get; }
+    /// <summary>Gets the immutable limits shared by all branches and built-in queries of each match.</summary>
+    /// <value>The supplied object, or a default AspectNMatchOptions instance.</value>
+    /// <remarks>Each match creates a fresh budget. Declaration mode does not use Capture quotas but still uses total work. Independent public type-system queries use their instance defaults instead.</remarks>
+    public AspectNMatchOptions MatchOptions { get; }
 }

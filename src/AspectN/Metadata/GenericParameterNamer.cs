@@ -1,3 +1,5 @@
+using AspectN.TypeSystem;
+
 namespace AspectN.Metadata;
 
 // 定义签名的形式泛型参数按扁平 ECMA 槽位合成 T1..Tn：外层声明类型从左到右，
@@ -13,11 +15,10 @@ internal static class GenericParameterNamer
             ? definition.GenericParameters.Count
             : candidate.GenericParameters.Count > 0 ? candidate.GenericParameters.Count : candidate.GenericArguments.Count;
 
-    public static TypeSignature[] GetEffectiveMethodArguments(MethodSignature candidate)
+    public static TypeSignature[] GetEffectiveMethodArguments(MethodSignature candidate, TypeSystemQueryContext context)
     {
-        if (candidate.GenericArguments.Count > AspectNLimits.MaximumGenericParameters ||
-            candidate.GenericParameters.Count > AspectNLimits.MaximumGenericParameters)
-            throw new AspectNLimitException(AspectNLimits.ArityFailure());
+        var count = candidate.GenericArguments.Count > 0 ? candidate.GenericArguments.Count : candidate.GenericParameters.Count;
+        if (count > 0) context.SpendWork(count);
         if (candidate.GenericArguments.Count > 0)
             return candidate.GenericArguments.Count == GetMethodArity(candidate)
                 ? candidate.GenericArguments.ToArray()
@@ -29,18 +30,15 @@ internal static class GenericParameterNamer
     }
 
     public static TypeSignature[] GetEffectiveTypeArguments(
-        NamedTypeSignature candidate)
+        NamedTypeSignature candidate, TypeSystemQueryContext? context = null)
     {
-        var identities = GetTypeChain(candidate.Identity);
+        var identities = GetTypeChain(candidate.Identity, context);
         var totalArity = 0;
         foreach (var identity in identities)
         {
-            if (identity.GenericArity > AspectNLimits.MaximumGenericParameters - totalArity)
-                throw new AspectNLimitException(AspectNLimits.ArityFailure());
-            totalArity += identity.GenericArity;
+            totalArity = checked(totalArity + identity.GenericArity);
         }
-        if (candidate.TypeArguments.Count > AspectNLimits.MaximumGenericParameters)
-            throw new AspectNLimitException(AspectNLimits.ArityFailure());
+        if (totalArity > 0) context?.SpendWork(totalArity);
         if (candidate.TypeArguments.Count == totalArity)
         {
             return candidate.TypeArguments.ToArray();
@@ -55,7 +53,7 @@ internal static class GenericParameterNamer
         var slot = 0;
         foreach (var identity in identities)
         {
-            var ownerId = identity.FullMetadataName;
+            var ownerId = GetOwnerId(identity, context);
             for (var localPosition = 0;
                  localPosition < identity.GenericArity;
                  localPosition++,
@@ -81,20 +79,22 @@ internal static class GenericParameterNamer
     public static Dictionary<GenericParameterKey, string> CreatePositionalNames(
         MethodSignature candidate,
         Action<NamedTypeSignature> validateEffectiveArity,
-        CancellationToken cancellationToken)
+        TypeSystemQueryContext? context, CancellationToken cancellationToken)
     {
         var declaring = candidate.DeclaringType as NamedTypeSignature;
-        var typeParameters = GetDeclaringTypeParameters(declaring, validateEffectiveArity, cancellationToken);
-        var seen = new HashSet<GenericParameterKey>(typeParameters.Select(parameter => new GenericParameterKey(parameter)));
+        var typeParameters = GetDeclaringTypeParameters(declaring, validateEffectiveArity, context, cancellationToken);
+        var comparer = context is null ? null : new BudgetedGenericParameterKeyComparer(context);
+        var seen = new HashSet<GenericParameterKey>(typeParameters.Select(parameter => new GenericParameterKey(parameter)), comparer);
         var methodParameters = candidate.GenericParameters
             .Where(parameter => seen.Add(new GenericParameterKey(parameter)))
             .ToArray();
-        var names = new Dictionary<GenericParameterKey, string>();
+        var names = new Dictionary<GenericParameterKey, string>(comparer);
         foreach (var (parameter, name) in EnumeratePositionalNames(
                      typeParameters,
                      methodParameters))
         {
             cancellationToken.ThrowIfCancellationRequested();
+            context?.SpendWork();
             names[new GenericParameterKey(parameter)] = name;
         }
 
@@ -104,20 +104,21 @@ internal static class GenericParameterNamer
     private static GenericParameterSignature[] GetDeclaringTypeParameters(
         NamedTypeSignature? declaring,
         Action<NamedTypeSignature> validateEffectiveArity,
-        CancellationToken cancellationToken)
+        TypeSystemQueryContext? context, CancellationToken cancellationToken)
     {
         if (declaring is null) return Array.Empty<GenericParameterSignature>();
 
         // 开放构造类型的形参可能藏在 List<T> 或 T[] 中；按实参从左到右首次出现
         // 的顺序编号，并按声明身份去重，避免同一个 T 占据多个位置名。
         var parameters = new List<GenericParameterSignature>();
-        var seen = new HashSet<GenericParameterKey>();
+        var seen = new HashSet<GenericParameterKey>(context is null ? null : new BudgetedGenericParameterKeyComparer(context));
         var visited = new HashSet<TypeSignature>();
         var pending = new Stack<TypeSignature>();
         pending.Push(declaring);
         while (pending.Count > 0)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            context?.SpendWork();
             var current = pending.Pop();
             if (!visited.Add(current)) continue;
 
@@ -129,7 +130,7 @@ internal static class GenericParameterNamer
                     break;
                 case NamedTypeSignature named:
                     validateEffectiveArity(named);
-                    var arguments = GetEffectiveTypeArguments(named);
+                    var arguments = GetEffectiveTypeArguments(named, context);
                     for (var index = arguments.Length - 1; index >= 0; index--)
                         pending.Push(arguments[index]);
                     break;
@@ -140,6 +141,23 @@ internal static class GenericParameterNamer
         }
 
         return parameters.ToArray();
+    }
+
+    internal static string GetOwnerId(TypeIdentity identity, TypeSystemQueryContext? context)
+    {
+        if (context is null) return identity.FullMetadataName;
+        long length = 0;
+        for (var current = identity; current is not null; current = current.ContainingType)
+        {
+            context.SpendWork();
+            length += current.MetadataName.Length;
+            if (current.GenericArity > 0) length += 1 + current.GenericArity.ToString(System.Globalization.CultureInfo.InvariantCulture).Length;
+            if (current.ContainingType is not null) length++;
+            else if (current.Namespace.Length > 0) length += 1L + current.Namespace.Length;
+        }
+        // StringBuilder 生成和最终快照各处理一次文本；在任何大文本分配前扣费。
+        if (length > 0) context.SpendWork(checked(length * 2));
+        return identity.FullMetadataName;
     }
 
     internal static IEnumerable<(GenericParameterSignature Parameter, string Name)>
@@ -168,15 +186,14 @@ internal static class GenericParameterNamer
         }
     }
 
-    internal static List<TypeIdentity> GetTypeChain(TypeIdentity identity)
+    internal static List<TypeIdentity> GetTypeChain(TypeIdentity identity, TypeSystemQueryContext? context = null)
     {
         var identities = new List<TypeIdentity>();
         for (var current = identity;
              current is not null;
              current = current.ContainingType)
         {
-            if (identities.Count >= AspectNLimits.MaximumTypeDepth)
-                throw new AspectNLimitException(AspectNLimits.DepthFailure());
+            context?.SpendWork();
             identities.Add(current);
         }
 
@@ -192,6 +209,17 @@ internal readonly struct GenericParameterKey(GenericParameterSignature parameter
     private readonly string _ownerId = parameter.OwnerId;
     private readonly AssemblyIdentity _ownerAssembly = parameter.OwnerAssembly;
     private readonly int _position = parameter.Position;
+
+    internal bool Equals(GenericParameterKey other, TypeSystemQueryContext context) =>
+        _ownerKind == other._ownerKind && _position == other._position &&
+        context.AssembliesEqual(_ownerAssembly, other._ownerAssembly) && context.StringsEqual(_ownerId, other._ownerId);
+
+    internal int GetHashCode(TypeSystemQueryContext context)
+    {
+        context.SpendWork(Math.Max(1L, (long)_ownerId.Length + _ownerAssembly.Name.Length +
+            _ownerAssembly.CultureName.Length + _ownerAssembly.PublicKeyToken.Length));
+        return GetHashCode();
+    }
 
     public bool Equals(GenericParameterKey other)
     {
