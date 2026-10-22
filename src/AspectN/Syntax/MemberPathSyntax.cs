@@ -44,7 +44,7 @@ public sealed class NamedMemberPatternSyntax(NamePatternSegmentSyntax segment) :
 
 /// <summary>Represents a negated member-name pattern.</summary>
 /// <param name="operatorToken">Specifies the negation token.</param>
-/// <param name="operand">Specifies the operand.</param>
+/// <param name="operand">The member-name pattern being negated.</param>
 public sealed class UnaryMemberNamePatternSyntax(
     SyntaxToken operatorToken,
     MemberNamePatternSyntax operand) : MemberNamePatternSyntax(

@@ -6,10 +6,11 @@ namespace AspectN.Diagnostics;
 public sealed class AspectNDiagnostic
 {
     /// <summary>Initializes a new instance of the AspectNDiagnostic class.</summary>
-    /// <param name="code">Specifies the code.</param>
-    /// <param name="severity">Specifies the severity.</param>
-    /// <param name="message">Specifies the message.</param>
-    /// <param name="span">Specifies the span.</param>
+    /// <param name="code">The diagnostic identifier, such as AN2001; its text is stored without format validation.</param>
+    /// <param name="severity">The diagnostic's reported severity.</param>
+    /// <param name="message">The explanation intended for the caller or user.</param>
+    /// <param name="span">The affected source range, or null when no source location applies.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="code"/> or <paramref name="message"/> is null.</exception>
     public AspectNDiagnostic(
         string code,
         DiagnosticSeverity severity,
@@ -39,6 +40,6 @@ public sealed class AspectNDiagnostic
     /// <summary>Gets the message.</summary>
     public string Message { get; }
 
-    /// <summary>Gets the span.</summary>
+    /// <summary>Gets the affected source range, or null when no source location applies.</summary>
     public TextSpan? Span { get; }
 }

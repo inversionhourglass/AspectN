@@ -3,15 +3,16 @@ using System.Collections.ObjectModel;
 namespace AspectN.Metadata;
 
 /// <summary>Represents metadata for a property signature.</summary>
-/// <param name="name">Specifies the name.</param>
-/// <param name="accessibility">Specifies the accessibility.</param>
-/// <param name="isStatic">Specifies the is static.</param>
-/// <param name="declaringType">Specifies the declaring type.</param>
-/// <param name="propertyType">Specifies the property type.</param>
+/// <param name="name">The recorded property name.</param>
+/// <param name="accessibility">The property's recorded accessibility.</param>
+/// <param name="isStatic">Whether the property is static.</param>
+/// <param name="declaringType">The type declaring the property, including its construction when applicable.</param>
+/// <param name="propertyType">The property type use, including by-reference classification and fact availability.</param>
 /// <param name="parameters">Index parameters in declaration order; each position must equal its list index.</param>
-/// <param name="attributes">Specifies the attributes.</param>
+/// <param name="attributes">Direct property attribute records; copied into an immutable snapshot.</param>
 /// <param name="availability">Identifies facts whose values could not be read.</param>
 /// <exception cref="ArgumentException">A parameter is null or its position does not equal its list index.</exception>
+/// <exception cref="ArgumentNullException">A required name, type, or collection is null.</exception>
 public sealed class PropertySignature(
     string name,
     Accessibility accessibility,
@@ -33,7 +34,7 @@ public sealed class PropertySignature(
     /// <summary>Gets the accessibility.</summary>
     public Accessibility Accessibility { get; } = accessibility;
 
-    /// <summary>Gets the is static.</summary>
+    /// <summary>Gets whether the property is static, when that fact is available.</summary>
     public bool IsStatic { get; } = isStatic;
 
     /// <summary>Gets the declaring type.</summary>

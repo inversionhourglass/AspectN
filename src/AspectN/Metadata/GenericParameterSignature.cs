@@ -5,10 +5,12 @@ public sealed class GenericParameterSignature
 {
     /// <summary>Initializes a new instance of the GenericParameterSignature class.</summary>
     /// <param name="name">Source display name; it does not participate in parameter identity.</param>
-    /// <param name="ownerKind">Specifies the owner kind.</param>
+    /// <param name="ownerKind">Whether this slot belongs to a type or method declaration.</param>
     /// <param name="ownerId">Canonical declaration identity, including method overload parameter shapes.</param>
     /// <param name="ownerAssembly">Specifies the assembly identity of the owner declaration.</param>
     /// <param name="position">Zero-based method slot, or type slot flattened across the containing type chain. OwnerId identifies the actual declaring level.</param>
+    /// <exception cref="ArgumentNullException">The name, owner identity, or owner assembly is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="position"/> is negative.</exception>
     public GenericParameterSignature(
         string name,
         GenericParameterOwnerKind ownerKind,

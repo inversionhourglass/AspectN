@@ -1,9 +1,12 @@
 namespace AspectN.Metadata;
 
 /// <summary>Records a directly declared attribute type, its location, and optional parameter index.</summary>
-/// <param name="attributeType">Specifies the attribute type.</param>
+/// <param name="attributeType">The attribute's declared type signature; no attribute instance is created.</param>
 /// <param name="target">Location where the attribute is directly declared.</param>
 /// <param name="parameterIndex">Required zero-based index for Parameter targets; null for every other target.</param>
+/// <exception cref="ArgumentNullException"><paramref name="attributeType"/> is null.</exception>
+/// <exception cref="ArgumentOutOfRangeException">The target is undefined or the parameter index is negative.</exception>
+/// <exception cref="ArgumentException">A Parameter target has no index, or another target has an index.</exception>
 public sealed class AttributeSignature(
     TypeSignature attributeType,
     AttributeTargetKind target,

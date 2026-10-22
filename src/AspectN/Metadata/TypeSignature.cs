@@ -3,7 +3,7 @@ using System.Collections.ObjectModel;
 namespace AspectN.Metadata;
 
 /// <summary>Represents metadata for a type signature.</summary>
-/// <param name="kind">Specifies the kind.</param>
+/// <param name="kind">The structural category represented by this signature.</param>
 public abstract class TypeSignature(TypeSignatureKind kind)
 {
     /// <summary>Gets the kind.</summary>
@@ -11,7 +11,7 @@ public abstract class TypeSignature(TypeSignatureKind kind)
 }
 
 /// <summary>Represents metadata for a named type signature.</summary>
-/// <param name="identity">Specifies the identity.</param>
+/// <param name="identity">The declaration identity, including the containing-type chain and per-segment arity.</param>
 /// <param name="typeArguments">Specifies all arguments, including containing-type slots, or an empty collection for a definition.</param>
 /// <param name="originalDefinition">Specifies an unconstructed definition with the same identity.</param>
 /// <exception cref="ArgumentNullException">The identity is null.</exception>
@@ -33,7 +33,7 @@ public sealed class NamedTypeSignature(
     /// <summary>Gets the original definition.</summary>
     public NamedTypeSignature? OriginalDefinition { get; } = originalDefinition;
 
-    /// <summary>Gets the is constructed.</summary>
+    /// <summary>Gets whether this signature supplies a nonempty, complete generic argument list.</summary>
     public bool IsConstructed => _typeArguments.Count > 0;
 }
 
@@ -49,18 +49,22 @@ public enum ArrayShape
 /// <summary>Represents metadata for an array type signature.</summary>
 public sealed class ArrayTypeSignature : TypeSignature
 {
-    /// <summary>Initializes a new instance of the ArrayTypeSignature class.</summary>
-    /// <param name="elementType">Specifies the element type.</param>
-    /// <param name="rank">Specifies the rank.</param>
+    /// <summary>Creates a vector for rank one, or a general CLI array for higher ranks.</summary>
+    /// <param name="elementType">The type of each array element.</param>
+    /// <param name="rank">The positive number of array dimensions.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="elementType"/> is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="rank"/> is less than one.</exception>
     public ArrayTypeSignature(TypeSignature elementType, int rank)
         : this(elementType, rank, rank == 1 ? ArrayShape.Vector : ArrayShape.General)
     {
     }
 
     /// <summary>Creates an array signature with explicit CLI shape.</summary>
-    /// <param name="elementType">Specifies the element type.</param>
+    /// <param name="elementType">The type of each array element.</param>
     /// <param name="rank">Specifies the positive rank.</param>
     /// <param name="shape">Specifies vector or general shape; vectors must have rank one.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="elementType"/> is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">The rank is less than one, the shape is undefined, or a vector has a rank other than one.</exception>
     public ArrayTypeSignature(TypeSignature elementType, int rank, ArrayShape shape)
         : base(TypeSignatureKind.Array)
     {
@@ -93,7 +97,8 @@ public sealed class ArrayTypeSignature : TypeSignature
 }
 
 /// <summary>Represents metadata for a generic parameter type signature.</summary>
-/// <param name="parameter">Specifies the parameter.</param>
+/// <param name="parameter">The generic declaration slot whose owner and position identify this type.</param>
+/// <exception cref="ArgumentNullException"><paramref name="parameter"/> is null.</exception>
 public sealed class GenericParameterTypeSignature(GenericParameterSignature parameter) : TypeSignature(TypeSignatureKind.GenericParameter)
 {
     /// <summary>Gets the parameter.</summary>
@@ -102,8 +107,9 @@ public sealed class GenericParameterTypeSignature(GenericParameterSignature para
 }
 
 /// <summary>Preserves the display form and reason for a type that cannot be matched structurally.</summary>
-/// <param name="displayName">Specifies the display name.</param>
-/// <param name="reason">Specifies the reason.</param>
+/// <param name="displayName">A display representation of the unsupported type.</param>
+/// <param name="reason">The explanation retained for diagnostics requiring structural type information.</param>
+/// <exception cref="ArgumentNullException"><paramref name="displayName"/> or <paramref name="reason"/> is null.</exception>
 public sealed class UnsupportedTypeSignature(string displayName, string reason) : TypeSignature(TypeSignatureKind.Unsupported)
 {
     /// <summary>Gets the display name.</summary>

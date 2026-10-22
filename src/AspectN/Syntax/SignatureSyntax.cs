@@ -14,25 +14,25 @@ public abstract class SignatureSyntax : SyntaxNode
 }
 
 /// <summary>Represents a callable signature syntax node.</summary>
-/// <param name="parts">Specifies the parts.</param>
+/// <param name="parts">The signature nodes and tokens in source order, including modifiers, types, names, and parameters as applicable.</param>
 public sealed class MethodSignatureSyntax(IEnumerable<SyntaxNode> parts) : SignatureSyntax(SyntaxKind.MethodSignature, parts)
 {
 }
 
 /// <summary>Represents a property signature syntax node.</summary>
-/// <param name="parts">Specifies the parts.</param>
+/// <param name="parts">The signature nodes and tokens in source order, including modifiers, types, names, and parameters as applicable.</param>
 public sealed class PropertySignatureSyntax(IEnumerable<SyntaxNode> parts) : SignatureSyntax(SyntaxKind.PropertySignature, parts)
 {
 }
 
 /// <summary>Represents a constructor signature syntax node.</summary>
-/// <param name="parts">Specifies the parts.</param>
+/// <param name="parts">The signature nodes and tokens in source order, including modifiers, types, names, and parameters as applicable.</param>
 public sealed class ConstructorSignatureSyntax(IEnumerable<SyntaxNode> parts) : SignatureSyntax(SyntaxKind.ConstructorSignature, parts)
 {
 }
 
 /// <summary>Represents a parameter syntax node.</summary>
-/// <param name="typeUse">Specifies the type use.</param>
+/// <param name="typeUse">The parameter type pattern and its ref annotations.</param>
 public sealed class ParameterSyntax(TypeUseSyntax typeUse) : SyntaxNode(SyntaxKind.Parameter, SyntaxChildren.Create(typeUse))
 {
     /// <summary>Gets the type use.</summary>
@@ -45,7 +45,7 @@ public sealed class ModifierSyntax : SyntaxNode
     private readonly IReadOnlyList<SyntaxToken> _tokens;
 
     /// <summary>Initializes a new instance of the ModifierSyntax class.</summary>
-    /// <param name="tokens">Specifies the tokens.</param>
+    /// <param name="tokens">The modifier tokens in source order, including combined accessibility forms.</param>
     public ModifierSyntax(IEnumerable<SyntaxToken> tokens)
         : this(Array.AsReadOnly(tokens.ToArray()))
     {
@@ -77,13 +77,13 @@ public sealed class GenericPatternListSyntax : SyntaxNode
     private readonly IReadOnlyList<SyntaxToken> _separators;
 
     /// <summary>Initializes a new instance of the GenericPatternListSyntax class.</summary>
-    /// <param name="lessThanToken">Specifies the less than token.</param>
-    /// <param name="form">Specifies the form.</param>
-    /// <param name="arity">Specifies the arity.</param>
-    /// <param name="arguments">Specifies the arguments.</param>
-    /// <param name="separators">Specifies the separators.</param>
-    /// <param name="wildcardToken">Specifies the wildcard token.</param>
-    /// <param name="greaterThanToken">Specifies the greater than token.</param>
+    /// <param name="lessThanToken">The opening generic-clause delimiter, which may be missing during error recovery.</param>
+    /// <param name="form">The recorded fixed-arity, wildcard-arity, or argument-pattern form.</param>
+    /// <param name="arity">The recorded arity for forms that specify a fixed slot count.</param>
+    /// <param name="arguments">Type argument patterns in declaration order for the argument-pattern form.</param>
+    /// <param name="separators">Comma tokens retained between generic slots or argument patterns.</param>
+    /// <param name="wildcardToken">The arity wildcard token when present, or null otherwise.</param>
+    /// <param name="greaterThanToken">The closing generic-clause delimiter, which may be missing during error recovery.</param>
     public GenericPatternListSyntax(
         SyntaxToken lessThanToken,
         GenericPatternForm form,
@@ -175,8 +175,8 @@ public sealed class TypeUseSyntax : SyntaxNode
     private readonly IReadOnlyList<SyntaxToken> _refKindTokens;
 
     /// <summary>Initializes a new instance of the TypeUseSyntax class.</summary>
-    /// <param name="refKindTokens">Specifies the ref kind tokens.</param>
-    /// <param name="typePattern">Specifies the type pattern.</param>
+    /// <param name="refKindTokens">The ordered ref, out, in, or readonly annotation tokens preceding the type pattern.</param>
+    /// <param name="typePattern">The underlying type pattern after any ref annotations.</param>
     /// <param name="negatedRefTokens">Specifies the '!ref' negation tokens.</param>
     public TypeUseSyntax(
         IEnumerable<SyntaxToken> refKindTokens,

@@ -3,21 +3,21 @@ using System.Collections.ObjectModel;
 namespace AspectN.Metadata;
 
 /// <summary>Represents metadata for a callable signature.</summary>
-/// <param name="name">Specifies the name.</param>
-/// <param name="kind">Specifies the kind.</param>
-/// <param name="accessibility">Specifies the accessibility.</param>
-/// <param name="isStatic">Specifies the is static.</param>
-/// <param name="isAsync">Specifies the is async.</param>
-/// <param name="declaringType">Specifies the declaring type.</param>
-/// <param name="returnType">Specifies the return type.</param>
+/// <param name="name">The recorded callable name.</param>
+/// <param name="kind">The callable category, such as a method, constructor, or property accessor.</param>
+/// <param name="accessibility">The callable's recorded accessibility.</param>
+/// <param name="isStatic">Whether the callable is static.</param>
+/// <param name="isAsync">Whether the compiler declared an async method or async iterator; this is independent of the return type.</param>
+/// <param name="declaringType">The type declaring this callable, including its construction when applicable.</param>
+/// <param name="returnType">The return type use, including by-reference classification and fact availability.</param>
 /// <param name="parameters">Specifies parameters in declaration order; each position must equal its list index.</param>
 /// <param name="genericParameters">Specifies method declaration slots in order, or an empty collection for a construction.</param>
 /// <param name="genericArguments">Specifies a complete construction, or an empty collection for a definition. Without declaration slots or an original definition, the arguments determine arity.</param>
-/// <param name="attributes">Specifies the attributes.</param>
-/// <param name="returnAttributes">Specifies the return attributes.</param>
-/// <param name="typeAttributes">Specifies the declaring type attributes.</param>
+/// <param name="attributes">Direct attribute records on the callable; copied into an immutable snapshot.</param>
+/// <param name="returnAttributes">Direct return-value attribute records; copied into an immutable snapshot.</param>
+/// <param name="typeAttributes">Direct declaring-type attribute records; null supplies an empty snapshot whose availability is described separately.</param>
 /// <param name="originalDefinition">Specifies an unconstructed method definition whose arity agrees with the current slots.</param>
-/// <param name="associatedProperty">Specifies the associated property.</param>
+/// <param name="associatedProperty">The property associated with an accessor, or null when no property association is supplied.</param>
 /// <param name="availability">Identifies facts whose values could not be read.</param>
 /// <exception cref="ArgumentNullException">A required name, type, or collection is null.</exception>
 /// <exception cref="ArgumentException">A parameter is null or has an invalid position, a generic slot is null, generic slot counts are inconsistent, or the original definition is constructed.</exception>
@@ -59,7 +59,7 @@ public sealed class MethodSignature(
     /// <summary>Gets the accessibility.</summary>
     public Accessibility Accessibility { get; } = accessibility;
 
-    /// <summary>Gets the is static.</summary>
+    /// <summary>Gets whether the callable is static, when that fact is available.</summary>
     public bool IsStatic { get; } = isStatic;
 
     /// <summary>Gets whether the compiler declared an async method or async iterator, independently of its return type.</summary>

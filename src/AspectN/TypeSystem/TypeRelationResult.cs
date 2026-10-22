@@ -4,7 +4,7 @@ using AspectN.Evaluation;
 
 namespace AspectN.TypeSystem;
 
-/// <summary>Represents type relation result.</summary>
+/// <summary>Contains a three-valued type or attribute relation and an immutable diagnostic snapshot.</summary>
 public sealed class TypeRelationResult
 {
     private static readonly TypeRelationResult _Matched =
@@ -15,8 +15,8 @@ public sealed class TypeRelationResult
     private readonly ReadOnlyCollection<AspectNDiagnostic> _diagnostics;
 
     /// <summary>Initializes a new instance of the TypeRelationResult class.</summary>
-    /// <param name="status">Specifies the status.</param>
-    /// <param name="diagnostics">Specifies the diagnostics.</param>
+    /// <param name="status">The relation's matching state.</param>
+    /// <param name="diagnostics">Diagnostics to snapshot in deterministic source/code order, removing exact duplicates.</param>
     public TypeRelationResult(
         MatchStatus status,
         IEnumerable<AspectNDiagnostic>? diagnostics = null)
@@ -46,8 +46,8 @@ public sealed class TypeRelationResult
     public static TypeRelationResult NotMatched => _NotMatched;
 
     /// <summary>Creates an unknown result with the supplied diagnostics.</summary>
-    /// <param name="diagnostics">Specifies the diagnostics.</param>
-    /// <returns>Returns the result of the operation.</returns>
+    /// <param name="diagnostics">Diagnostics explaining why the relation cannot be decided.</param>
+    /// <returns>An Unknown relation carrying a normalized snapshot of the supplied diagnostics.</returns>
     public static TypeRelationResult Unknown(
         params AspectNDiagnostic[] diagnostics)
     {

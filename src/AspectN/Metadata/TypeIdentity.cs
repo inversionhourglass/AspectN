@@ -1,15 +1,17 @@
 namespace AspectN.Metadata;
 
-/// <summary>Represents type identity.</summary>
+/// <summary>Identifies a named type declaration, including its assembly and containing-type chain.</summary>
 public sealed class TypeIdentity : IEquatable<TypeIdentity>
 {
     /// <summary>Initializes a new instance of the TypeIdentity class.</summary>
-    /// <param name="assembly">Specifies the assembly.</param>
-    /// <param name="namespace">Specifies the namespace.</param>
-    /// <param name="metadataName">Specifies the metadata name.</param>
-    /// <param name="genericArity">Specifies the generic arity.</param>
-    /// <param name="kind">Specifies the kind.</param>
-    /// <param name="containingType">Specifies the containing type.</param>
+    /// <param name="assembly">The declaring assembly identity.</param>
+    /// <param name="namespace">The namespace text, or an empty string for the global namespace.</param>
+    /// <param name="metadataName">The name of this type segment without a namespace, nesting separator, or generic-arity suffix.</param>
+    /// <param name="genericArity">The nonnegative number of generic parameters introduced by this segment, excluding containing-type parameters.</param>
+    /// <param name="kind">The recorded type classification; Unknown does not act as a wildcard in equality.</param>
+    /// <param name="containingType">The enclosing type identity, or null for a top-level type.</param>
+    /// <exception cref="ArgumentNullException">The assembly, namespace, or metadata name is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="genericArity"/> is negative.</exception>
     public TypeIdentity(
         AssemblyIdentity assembly,
         string @namespace,
@@ -46,7 +48,7 @@ public sealed class TypeIdentity : IEquatable<TypeIdentity>
     /// <summary>Gets the containing type.</summary>
     public TypeIdentity? ContainingType { get; }
 
-    /// <summary>Gets the full metadata name.</summary>
+    /// <summary>Gets the outer namespace and type chain, using '/' between nested types and '`N' for nonzero segment arities.</summary>
     public string FullMetadataName
     {
         get
@@ -69,8 +71,9 @@ public sealed class TypeIdentity : IEquatable<TypeIdentity>
     }
 
     /// <summary>Determines whether the specified value is equal to this instance.</summary>
-    /// <param name="other">Specifies the other.</param>
-    /// <returns>Returns the result of the operation.</returns>
+    /// <param name="other">The identity to compare, or null.</param>
+    /// <returns>True when assembly, ordinal namespace and name, arity, kind, and every containing identity agree; false for null.</returns>
+    /// <remarks>Empty qualifiers and Unknown kinds are ordinary values here, not directional query wildcards.</remarks>
     public bool Equals(TypeIdentity? other)
     {
         TypeIdentity? current = this;
@@ -87,15 +90,15 @@ public sealed class TypeIdentity : IEquatable<TypeIdentity>
     }
 
     /// <summary>Determines whether the specified value is equal to this instance.</summary>
-    /// <param name="obj">Specifies the obj.</param>
-    /// <returns>Returns the result of the operation.</returns>
+    /// <param name="obj">The object to compare, or null.</param>
+    /// <returns>True when the object is an equal type identity; otherwise false.</returns>
     public override bool Equals(object? obj)
     {
         return Equals(obj as TypeIdentity);
     }
 
     /// <summary>Returns the hash code for this instance.</summary>
-    /// <returns>Returns the result of the operation.</returns>
+    /// <returns>A hash code based on this identity and its containing-type chain.</returns>
     public override int GetHashCode()
     {
         unchecked
@@ -116,12 +119,18 @@ public sealed class TypeIdentity : IEquatable<TypeIdentity>
     }
 
     /// <summary>Determines whether the two values are equal.</summary>
+    /// <param name="left">The first identity, or null.</param>
+    /// <param name="right">The second identity, or null.</param>
+    /// <returns>True for two null values or equal identities; otherwise false.</returns>
     public static bool operator ==(TypeIdentity? left, TypeIdentity? right)
     {
         return Equals(left, right);
     }
 
     /// <summary>Determines whether the two values are not equal.</summary>
+    /// <param name="left">The first identity, or null.</param>
+    /// <param name="right">The second identity, or null.</param>
+    /// <returns>True when exactly one value is null or the identities differ.</returns>
     public static bool operator !=(TypeIdentity? left, TypeIdentity? right)
     {
         return !Equals(left, right);

@@ -8,12 +8,14 @@ public sealed class ParameterSignature
     private readonly IReadOnlyList<AttributeSignature> _attributes;
 
     /// <summary>Initializes a new instance of the ParameterSignature class.</summary>
-    /// <param name="name">Specifies the name.</param>
-    /// <param name="position">Specifies the position.</param>
-    /// <param name="type">Specifies the type.</param>
-    /// <param name="attributes">Specifies the attributes.</param>
-    /// <param name="isOptional">Specifies the is optional.</param>
+    /// <param name="name">The recorded parameter name.</param>
+    /// <param name="position">The nonnegative zero-based declaration position; enclosing signatures require it to equal the parameter's list index.</param>
+    /// <param name="type">The parameter type use, including by-reference classification and fact availability.</param>
+    /// <param name="attributes">Direct parameter attribute records; null supplies an empty snapshot.</param>
+    /// <param name="isOptional">Whether metadata marks this parameter as optional.</param>
     /// <param name="availability">Identifies facts whose values could not be read.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="name"/> or <paramref name="type"/> is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="position"/> is negative.</exception>
     public ParameterSignature(
         string name,
         int position,
@@ -44,7 +46,7 @@ public sealed class ParameterSignature
     /// <summary>Gets the attributes.</summary>
     public IReadOnlyList<AttributeSignature> Attributes => _attributes;
 
-    /// <summary>Gets the is optional.</summary>
+    /// <summary>Gets whether metadata marks this parameter as optional.</summary>
     public bool IsOptional { get; }
 
     /// <summary>Gets the availability of the parameter metadata.</summary>

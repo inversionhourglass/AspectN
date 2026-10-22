@@ -6,11 +6,12 @@ namespace AspectN.Syntax;
 public sealed class SyntaxToken : SyntaxNode
 {
     /// <summary>Initializes a new instance of the SyntaxToken class.</summary>
-    /// <param name="kind">Specifies the kind.</param>
-    /// <param name="span">Specifies the span.</param>
-    /// <param name="text">Specifies the text.</param>
-    /// <param name="value">Specifies the value.</param>
-    /// <param name="isMissing">Specifies the is missing.</param>
+    /// <param name="kind">The lexical kind of the token.</param>
+    /// <param name="span">The token range in UTF-16 source code units.</param>
+    /// <param name="text">The original token text, or an empty string for a missing token.</param>
+    /// <param name="value">The interpreted token value when supplied by the lexer, or null.</param>
+    /// <param name="isMissing">Whether this token was inserted for error recovery rather than read from the source.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="text"/> is null.</exception>
     public SyntaxToken(
         SyntaxKind kind,
         TextSpan span,
@@ -36,16 +37,17 @@ public sealed class SyntaxToken : SyntaxNode
     /// <summary>Gets the token value.</summary>
     public object? Value { get; }
 
-    /// <summary>Gets the is missing.</summary>
+    /// <summary>Gets whether the parser inserted this token during error recovery.</summary>
     public bool IsMissing { get; }
 
     /// <summary>Gets the span.</summary>
     public TextSpan Span => FullSpan;
 
     /// <summary>Creates a missing token of the specified kind.</summary>
-    /// <param name="kind">Specifies the kind.</param>
-    /// <param name="position">Specifies the position.</param>
-    /// <returns>Returns the result of the operation.</returns>
+    /// <param name="kind">The lexical kind of the token.</param>
+    /// <param name="position">The nonnegative source offset at which the missing token is inserted.</param>
+    /// <returns>A missing token with empty text and a zero-length span at the requested position.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="position"/> is negative.</exception>
     public static SyntaxToken Missing(SyntaxKind kind, int position)
     {
         return new SyntaxToken(

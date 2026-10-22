@@ -10,7 +10,7 @@ public enum UnknownMatchBehavior
     Throw
 }
 
-/// <summary>Represents match result.</summary>
+/// <summary>Contains a three-valued matching state and an immutable diagnostic snapshot.</summary>
 public sealed class MatchResult
 {
     private static readonly MatchResult _Matched =
@@ -21,8 +21,8 @@ public sealed class MatchResult
     private readonly ReadOnlyCollection<AspectNDiagnostic> _diagnostics;
 
     /// <summary>Initializes a new instance of the MatchResult class.</summary>
-    /// <param name="status">Specifies the status.</param>
-    /// <param name="diagnostics">Specifies the diagnostics.</param>
+    /// <param name="status">The matching state represented by the result.</param>
+    /// <param name="diagnostics">Diagnostics to snapshot in deterministic source/code order, removing exact duplicates.</param>
     public MatchResult(
         MatchStatus status,
         IEnumerable<AspectNDiagnostic>? diagnostics = null)
@@ -51,16 +51,17 @@ public sealed class MatchResult
     public static MatchResult NotMatched => _NotMatched;
 
     /// <summary>Creates an unknown result with the supplied diagnostics.</summary>
-    /// <param name="diagnostics">Specifies the diagnostics.</param>
-    /// <returns>Returns the result of the operation.</returns>
+    /// <param name="diagnostics">Diagnostics explaining why the matching state is unknown.</param>
+    /// <returns>An Unknown result carrying a normalized snapshot of the supplied diagnostics.</returns>
     public static MatchResult Unknown(params AspectNDiagnostic[] diagnostics)
     {
         return new MatchResult(MatchStatus.Unknown, diagnostics);
     }
 
     /// <summary>Converts the match result to a Boolean value.</summary>
-    /// <param name="behavior">Specifies the behavior.</param>
-    /// <returns>Returns the result of the operation.</returns>
+    /// <param name="behavior">The conversion policy used only when the state is Unknown.</param>
+    /// <returns>True for Matched, false for NotMatched, or false for Unknown under the False policy.</returns>
+    /// <exception cref="InvalidOperationException">The state cannot be converted under the supplied policy, including Unknown under the Throw policy.</exception>
     public bool ToBoolean(UnknownMatchBehavior behavior)
     {
         return Status switch

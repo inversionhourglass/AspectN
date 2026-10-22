@@ -1,8 +1,8 @@
 namespace AspectN.Syntax;
 
 /// <summary>Represents a type pattern syntax node.</summary>
-/// <param name="kind">Specifies the kind.</param>
-/// <param name="children">Specifies the children.</param>
+/// <param name="kind">The type-pattern node classification.</param>
+/// <param name="children">Child patterns and tokens in source order.</param>
 public abstract class TypePatternSyntax(SyntaxKind kind, IEnumerable<SyntaxNode> children) : SyntaxNode(kind, children)
 {
 }
@@ -13,8 +13,8 @@ public sealed class NamePatternSegmentSyntax : SyntaxNode
     private readonly IReadOnlyList<SyntaxToken> _nameParts;
 
     /// <summary>Initializes a new instance of the NamePatternSegmentSyntax class.</summary>
-    /// <param name="nameParts">Specifies the name parts.</param>
-    /// <param name="genericArguments">Specifies the generic arguments.</param>
+    /// <param name="nameParts">Identifier and wildcard tokens forming this single name segment.</param>
+    /// <param name="genericArguments">The optional generic clause belonging to this name segment.</param>
     public NamePatternSegmentSyntax(
         IEnumerable<SyntaxToken> nameParts,
         GenericPatternListSyntax? genericArguments = null)
@@ -47,8 +47,8 @@ public sealed class NamedTypePatternSyntax : TypePatternSyntax
     private readonly IReadOnlyList<SyntaxToken> _separators;
 
     /// <summary>Initializes a new instance of the NamedTypePatternSyntax class.</summary>
-    /// <param name="segments">Specifies the segments.</param>
-    /// <param name="separators">Specifies the separators.</param>
+    /// <param name="segments">Namespace and type-name pattern segments in source order.</param>
+    /// <param name="separators">The tokens separating adjacent namespace and type-name segments.</param>
     public NamedTypePatternSyntax(
         IEnumerable<NamePatternSegmentSyntax> segments,
         IEnumerable<SyntaxToken> separators)
@@ -75,7 +75,7 @@ public sealed class NamedTypePatternSyntax : TypePatternSyntax
 }
 
 /// <summary>Represents a wildcard type pattern syntax node.</summary>
-/// <param name="starToken">Specifies the star token.</param>
+/// <param name="starToken">The wildcard token representing an unconstrained type pattern.</param>
 public sealed class WildcardTypePatternSyntax(SyntaxToken starToken) : TypePatternSyntax(
         SyntaxKind.WildcardTypePattern,
         SyntaxChildren.Create(starToken))
@@ -91,10 +91,10 @@ public sealed class TupleTypePatternSyntax : TypePatternSyntax
     private readonly IReadOnlyList<SyntaxToken> _separators;
 
     /// <summary>Initializes a new instance of the TupleTypePatternSyntax class.</summary>
-    /// <param name="openParenToken">Specifies the open paren token.</param>
-    /// <param name="elements">Specifies the elements.</param>
-    /// <param name="separators">Specifies the separators.</param>
-    /// <param name="closeParenToken">Specifies the close paren token.</param>
+    /// <param name="openParenToken">The opening parenthesis token, which may be missing during error recovery.</param>
+    /// <param name="elements">The tuple element type patterns in source order.</param>
+    /// <param name="separators">Comma tokens separating adjacent tuple element patterns.</param>
+    /// <param name="closeParenToken">The closing parenthesis token, which may be missing during error recovery.</param>
     public TupleTypePatternSyntax(
         SyntaxToken openParenToken,
         IEnumerable<TypePatternSyntax> elements,
@@ -139,8 +139,8 @@ public sealed class TupleTypePatternSyntax : TypePatternSyntax
     public SyntaxToken CloseParenToken { get; }
 }
 
-/// <summary>Represents a task like type pattern syntax node.</summary>
-/// <param name="taskLikeKeyword">Specifies the task like keyword.</param>
+/// <summary>Represents the tasklike pattern, optionally constrained by an unwrapped result type.</summary>
+/// <param name="taskLikeKeyword">The tasklike keyword token.</param>
 /// <param name="lessThanToken">Specifies the less than token; null for the bare non-generic form.</param>
 /// <param name="resultType">Specifies the result type; null for the bare non-generic form.</param>
 /// <param name="greaterThanToken">Specifies the greater than token; null for the bare non-generic form.</param>
@@ -170,8 +170,8 @@ public sealed class TaskLikeTypePatternSyntax(
 }
 
 /// <summary>Represents a variable type pattern syntax node.</summary>
-/// <param name="dollarToken">Specifies the dollar token.</param>
-/// <param name="identifierToken">Specifies the identifier token.</param>
+/// <param name="dollarToken">The dollar-sign token introducing a pattern variable.</param>
+/// <param name="identifierToken">The variable name token following the dollar sign.</param>
 public sealed class VariableTypePatternSyntax(
     SyntaxToken dollarToken,
     SyntaxToken identifierToken) : TypePatternSyntax(
@@ -191,10 +191,10 @@ public sealed class ArrayTypePatternSyntax : TypePatternSyntax
     private readonly IReadOnlyList<SyntaxToken> _commaTokens;
 
     /// <summary>Initializes a new instance of the ArrayTypePatternSyntax class.</summary>
-    /// <param name="elementType">Specifies the element type.</param>
-    /// <param name="openBracketToken">Specifies the open bracket token.</param>
-    /// <param name="commaTokens">Specifies the comma tokens.</param>
-    /// <param name="closeBracketToken">Specifies the close bracket token.</param>
+    /// <param name="elementType">The array element type pattern.</param>
+    /// <param name="openBracketToken">The opening array-rank bracket token.</param>
+    /// <param name="commaTokens">The rank commas; their count plus one determines the array rank.</param>
+    /// <param name="closeBracketToken">The closing array-rank bracket token.</param>
     public ArrayTypePatternSyntax(
         TypePatternSyntax elementType,
         SyntaxToken openBracketToken,
@@ -244,8 +244,8 @@ public sealed class ArrayTypePatternSyntax : TypePatternSyntax
 }
 
 /// <summary>Represents a nullable type pattern syntax node.</summary>
-/// <param name="underlyingType">Specifies the underlying type.</param>
-/// <param name="questionToken">Specifies the question token.</param>
+/// <param name="underlyingType">The underlying type pattern before the nullable suffix.</param>
+/// <param name="questionToken">The nullable-pattern question-mark suffix token.</param>
 public sealed class NullableTypePatternSyntax(
     TypePatternSyntax underlyingType,
     SyntaxToken questionToken) : TypePatternSyntax(
@@ -260,8 +260,8 @@ public sealed class NullableTypePatternSyntax(
 }
 
 /// <summary>Matches a named target through its declared nominal relationships.</summary>
-/// <param name="targetType">Specifies the target type.</param>
-/// <param name="plusToken">Specifies the plus token.</param>
+/// <param name="targetType">The target type pattern whose declared nominal relationships are queried.</param>
+/// <param name="plusToken">The nominal-relationship plus-sign suffix token.</param>
 public sealed class AssignableTypePatternSyntax(
     TypePatternSyntax targetType,
     SyntaxToken plusToken) : TypePatternSyntax(
@@ -276,9 +276,9 @@ public sealed class AssignableTypePatternSyntax(
 }
 
 /// <summary>Represents a parenthesized type pattern syntax node.</summary>
-/// <param name="openParenToken">Specifies the open paren token.</param>
-/// <param name="pattern">Specifies the pattern.</param>
-/// <param name="closeParenToken">Specifies the close paren token.</param>
+/// <param name="openParenToken">The opening parenthesis token, which may be missing during error recovery.</param>
+/// <param name="pattern">The type pattern enclosed by parentheses.</param>
+/// <param name="closeParenToken">The closing parenthesis token, which may be missing during error recovery.</param>
 public sealed class ParenthesizedTypePatternSyntax(
     SyntaxToken openParenToken,
     TypePatternSyntax pattern,
@@ -297,8 +297,8 @@ public sealed class ParenthesizedTypePatternSyntax(
 }
 
 /// <summary>Negates a type pattern while preserving Unknown results.</summary>
-/// <param name="operatorToken">Specifies the operator token.</param>
-/// <param name="operand">Specifies the operand.</param>
+/// <param name="operatorToken">The type-pattern Boolean operator token.</param>
+/// <param name="operand">The type-pattern operand of this unary or suffix node.</param>
 public sealed class UnaryTypePatternSyntax(
     SyntaxToken operatorToken,
     TypePatternSyntax operand) : TypePatternSyntax(
@@ -313,9 +313,9 @@ public sealed class UnaryTypePatternSyntax(
 }
 
 /// <summary>Represents a binary type pattern syntax node.</summary>
-/// <param name="left">Specifies the left.</param>
-/// <param name="operatorToken">Specifies the operator token.</param>
-/// <param name="right">Specifies the right.</param>
+/// <param name="left">The left type-pattern operand.</param>
+/// <param name="operatorToken">The type-pattern Boolean operator token.</param>
+/// <param name="right">The right type-pattern operand.</param>
 public sealed class BinaryTypePatternSyntax(
     TypePatternSyntax left,
     SyntaxToken operatorToken,

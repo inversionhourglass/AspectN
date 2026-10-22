@@ -4,14 +4,18 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace AspectN.Roslyn;
 
-/// <summary>Represents roslyn syntax extensions.</summary>
+/// <summary>Maps C# type and method declarations using the compilation associated with a Roslyn mapper.</summary>
 public static class RoslynSyntaxExtensions
 {
-    /// <summary>Maps type metadata to an AspectN signature.</summary>
-    /// <param name="mapper">Specifies the mapper.</param>
-    /// <param name="declaration">Specifies the declaration.</param>
-    /// <param name="semanticModel">Specifies the semantic model.</param>
-    /// <returns>Returns the result of the operation.</returns>
+    /// <summary>Resolves a C# type declaration and maps its declared symbol to a type signature.</summary>
+    /// <param name="mapper">The mapper whose compilation owns the declaration.</param>
+    /// <param name="declaration">A type declaration in the semantic model's syntax tree.</param>
+    /// <param name="semanticModel">A model from the same compilation instance as the mapper.</param>
+    /// <returns>The declared type's backend-neutral signature.</returns>
+    /// <exception cref="ArgumentNullException">Any argument is null.</exception>
+    /// <exception cref="ArgumentException">The compilation instances differ, or the declaration and model refer to different syntax tree instances.</exception>
+    /// <exception cref="InvalidOperationException">The declaration has no declared type symbol.</exception>
+    /// <remarks>Identical source text does not make separately created compilations or syntax trees interchangeable. Mapping limitations and failures follow <see cref="RoslynSignatureMapper.MapType"/>.</remarks>
     public static TypeSignature MapType(
         this RoslynSignatureMapper mapper,
         TypeDeclarationSyntax declaration,
@@ -24,11 +28,15 @@ public static class RoslynSyntaxExtensions
         return mapper.MapType(symbol);
     }
 
-    /// <summary>Maps type metadata to an AspectN signature.</summary>
-    /// <param name="mapper">Specifies the mapper.</param>
-    /// <param name="declaration">Specifies the declaration.</param>
-    /// <param name="compilation">Specifies the compilation.</param>
-    /// <returns>Returns the result of the operation.</returns>
+    /// <summary>Obtains a semantic model from a compilation and maps a C# type declaration.</summary>
+    /// <param name="mapper">The mapper associated with the supplied compilation.</param>
+    /// <param name="declaration">A type declaration whose syntax tree belongs to the compilation.</param>
+    /// <param name="compilation">The same compilation instance used to create the mapper.</param>
+    /// <returns>The declared type's backend-neutral signature.</returns>
+    /// <exception cref="ArgumentNullException">Any argument is null.</exception>
+    /// <exception cref="ArgumentException">The compilation differs from the mapper's instance, or does not contain the declaration's syntax tree.</exception>
+    /// <exception cref="InvalidOperationException">The declaration has no declared type symbol.</exception>
+    /// <remarks>Mapping limitations and failures follow <see cref="RoslynSignatureMapper.MapType"/>.</remarks>
     public static TypeSignature MapType(
         this RoslynSignatureMapper mapper,
         TypeDeclarationSyntax declaration,
@@ -40,11 +48,15 @@ public static class RoslynSyntaxExtensions
             compilation.GetSemanticModel(declaration.SyntaxTree));
     }
 
-    /// <summary>Maps callable metadata to an AspectN signature.</summary>
-    /// <param name="mapper">Specifies the mapper.</param>
-    /// <param name="declaration">Specifies the declaration.</param>
-    /// <param name="semanticModel">Specifies the semantic model.</param>
-    /// <returns>Returns the result of the operation.</returns>
+    /// <summary>Resolves a C# method declaration and maps its declared symbol to a callable signature.</summary>
+    /// <param name="mapper">The mapper whose compilation owns the declaration.</param>
+    /// <param name="declaration">A method declaration in the semantic model's syntax tree.</param>
+    /// <param name="semanticModel">A model from the same compilation instance as the mapper.</param>
+    /// <returns>The declared method's backend-neutral signature.</returns>
+    /// <exception cref="ArgumentNullException">Any argument is null.</exception>
+    /// <exception cref="ArgumentException">The compilation instances differ, or the declaration and model refer to different syntax tree instances.</exception>
+    /// <exception cref="InvalidOperationException">The declaration has no declared method symbol.</exception>
+    /// <remarks>Identical source text does not make separately created compilations or syntax trees interchangeable. Mapping limitations and failures follow <see cref="RoslynSignatureMapper.MapMethod"/>.</remarks>
     public static MethodSignature MapMethod(
         this RoslynSignatureMapper mapper,
         MethodDeclarationSyntax declaration,
@@ -57,11 +69,15 @@ public static class RoslynSyntaxExtensions
         return mapper.MapMethod(symbol);
     }
 
-    /// <summary>Maps callable metadata to an AspectN signature.</summary>
-    /// <param name="mapper">Specifies the mapper.</param>
-    /// <param name="declaration">Specifies the declaration.</param>
-    /// <param name="compilation">Specifies the compilation.</param>
-    /// <returns>Returns the result of the operation.</returns>
+    /// <summary>Obtains a semantic model from a compilation and maps a C# method declaration.</summary>
+    /// <param name="mapper">The mapper associated with the supplied compilation.</param>
+    /// <param name="declaration">A method declaration whose syntax tree belongs to the compilation.</param>
+    /// <param name="compilation">The same compilation instance used to create the mapper.</param>
+    /// <returns>The declared method's backend-neutral signature.</returns>
+    /// <exception cref="ArgumentNullException">Any argument is null.</exception>
+    /// <exception cref="ArgumentException">The compilation differs from the mapper's instance, or does not contain the declaration's syntax tree.</exception>
+    /// <exception cref="InvalidOperationException">The declaration has no declared method symbol.</exception>
+    /// <remarks>Mapping limitations and failures follow <see cref="RoslynSignatureMapper.MapMethod"/>.</remarks>
     public static MethodSignature MapMethod(
         this RoslynSignatureMapper mapper,
         MethodDeclarationSyntax declaration,
