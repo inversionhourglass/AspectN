@@ -3,6 +3,10 @@ namespace AspectN.Syntax;
 /// <summary>Represents a signature syntax node.</summary>
 public abstract class SignatureSyntax : SyntaxNode
 {
+    /// <summary>Initializes a signature from a snapshot of its syntax parts in source order.</summary>
+    /// <param name="kind">The signature syntax kind to store.</param>
+    /// <param name="parts">Non-null signature nodes and tokens in source order.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="parts"/> is null.</exception>
     protected SignatureSyntax(SyntaxKind kind, IEnumerable<SyntaxNode> parts)
         : base(kind, parts)
     {
@@ -64,9 +68,13 @@ public sealed class ModifierSyntax : SyntaxNode
 /// <summary>Specifies the generic pattern form values.</summary>
 public enum GenericPatternForm
 {
+    /// <summary>A fixed number of generic slots without argument patterns.</summary>
     FixedArity,
+    /// <summary>Any positive generic arity.</summary>
     AnyPositiveArity,
+    /// <summary>Any generic arity, including zero.</summary>
     AnyArity,
+    /// <summary>An explicit list of per-slot type argument patterns.</summary>
     Arguments
 }
 

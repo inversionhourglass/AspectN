@@ -6,7 +6,9 @@ namespace AspectN.Evaluation;
 /// <summary>Specifies the unknown match behavior values.</summary>
 public enum UnknownMatchBehavior
 {
+    /// <summary>Converts an Unknown result to <see langword="false"/>.</summary>
     False,
+    /// <summary>Rejects conversion of an Unknown result with <see cref="InvalidOperationException"/>.</summary>
     Throw
 }
 

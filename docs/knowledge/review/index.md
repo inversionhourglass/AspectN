@@ -7,6 +7,8 @@
 5. 已修复附原复现或等价映射回归；rejected 附反证；accepted_risk 附维护者决定与重验条件；documentation_resolved 附修订证据。未证实不能假装 fixed。
 6. 同步条目、用户受影响章节和证据；记录本轮未覆盖范围。修复产品 bug 不把 supported 改 excluded；维护者不修复风险仍对受影响用户可见。
 
+生产库构建启用 CS1591，并将 C# 编译告警视为错误：有效对外公开的类型、成员、枚举值及受保护构造器缺少 XML 文档时会阻止构建。公开 XML 继续使用英文。该检查只保证存在文档，参数、异常、语义准确性及内容是否有用仍需人工核对；内部类型中形式上 public 的成员按其有效可见性处理，不因本项检查扩大为公共 API。
+
 源码重命名后保留历史证据的原路径和哈希，不将当前路径回填成原始快照。快照与依赖路径的结构校验见[格式说明](../format.md)；通过校验不自动恢复证据的当前适用性。当前规范、依据和正文断链仍需修复，不能借历史快照声明豁免。
 
 [能力模板](../templates/capability.md)、[Finding 模板](../templates/finding.md)、[证据格式](../templates/evidence.json)。正式 Finding 放 docs/reviews/findings/，正式报告放 docs/reviews/evidence/。

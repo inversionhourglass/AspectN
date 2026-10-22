@@ -7,19 +7,33 @@ namespace AspectN.Metadata;
 [Flags]
 public enum MetadataFacts
 {
+    /// <summary>No metadata facts are selected.</summary>
     None = 0,
+    /// <summary>The member's kind classification.</summary>
     Kind = 1 << 0,
+    /// <summary>The member's accessibility.</summary>
     Accessibility = 1 << 1,
+    /// <summary>Whether the member is static.</summary>
     IsStatic = 1 << 2,
+    /// <summary>Whether the method is classified as async.</summary>
     IsAsync = 1 << 3,
+    /// <summary>The direct custom-attribute records on the target.</summary>
     Attributes = 1 << 4,
+    /// <summary>The direct custom-attribute records on the return value.</summary>
     ReturnAttributes = 1 << 5,
+    /// <summary>The direct custom-attribute records on the declaring type.</summary>
     TypeAttributes = 1 << 6,
+    /// <summary>The property associated with an accessor, including a known absence.</summary>
     AssociatedProperty = 1 << 7,
+    /// <summary>The exact ref, out, in, or ref readonly classification.</summary>
     RefKind = 1 << 8,
+    /// <summary>The name stored in the signature.</summary>
     Name = 1 << 9,
+    /// <summary>Whether a parameter is optional.</summary>
     IsOptional = 1 << 10,
+    /// <summary>Whether a by-reference marker is present, independently of the exact ref classification.</summary>
     ByReference = 1 << 11,
+    /// <summary>The callable's complete parameter list.</summary>
     Parameters = 1 << 12
 }
 

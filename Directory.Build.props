@@ -22,6 +22,6 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <!-- 保持 CS1591 启用；缺少公开 API 的 XML 文档时，由 C# 告警视为错误规则阻止构建。 -->
   </PropertyGroup>
 </Project>

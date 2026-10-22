@@ -3,6 +3,12 @@ namespace AspectN.Syntax;
 /// <summary>Represents a selector syntax node.</summary>
 public abstract class SelectorSyntax : ExpressionSyntax
 {
+    /// <summary>Initializes a selector with its keyword, delimiters, and optional body in source order.</summary>
+    /// <param name="kind">The selector syntax kind to store.</param>
+    /// <param name="keywordToken">The token naming the selector.</param>
+    /// <param name="openParenToken">The opening delimiter, which may be a missing token during recovery.</param>
+    /// <param name="body">The selector body, or null when no body node is available.</param>
+    /// <param name="closeParenToken">The closing delimiter, which may be a missing token during recovery.</param>
     protected SelectorSyntax(
         SyntaxKind kind,
         SyntaxToken keywordToken,
@@ -23,6 +29,10 @@ public abstract class SelectorSyntax : ExpressionSyntax
         CloseParenToken = closeParenToken;
     }
 
+    /// <summary>Initializes a selector from custom children; derived types provide any selector-specific properties.</summary>
+    /// <param name="kind">The selector syntax kind to store.</param>
+    /// <param name="children">Non-null child nodes in source order; the sequence is copied.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="children"/> is null.</exception>
     protected SelectorSyntax(SyntaxKind kind, IEnumerable<SyntaxNode> children)
         : base(kind, children)
     {

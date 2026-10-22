@@ -8,6 +8,9 @@ public abstract class SyntaxNode
 {
     private readonly IReadOnlyList<SyntaxNode> _children;
 
+    /// <summary>Initializes a leaf syntax node with an explicit source span and no children.</summary>
+    /// <param name="kind">The syntax kind to store.</param>
+    /// <param name="span">The node's source span in UTF-16 code units.</param>
     protected SyntaxNode(SyntaxKind kind, TextSpan span)
     {
         Kind = kind;
@@ -16,6 +19,10 @@ public abstract class SyntaxNode
         Depth = 1;
     }
 
+    /// <summary>Initializes a syntax node from a snapshot of its children and derives its span from their source order.</summary>
+    /// <param name="kind">The syntax kind to store.</param>
+    /// <param name="children">Non-null child nodes in source order. An empty sequence produces a zero-length span at position zero.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="children"/> is null.</exception>
     protected SyntaxNode(SyntaxKind kind, IEnumerable<SyntaxNode> children)
     {
 #if NET10_0_OR_GREATER
