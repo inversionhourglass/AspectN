@@ -238,6 +238,8 @@
 
 ## 关联与缺口
 
+2026-10-24 的 [O-02 版本策略](../../../reviews/2026-10-24-o02-release-version-policy.md)将五个包的基础版本集中在根 props，正式 tag 必须匹配，prerelease 分支生成一次 preview-时间戳供整次流程复用。对应发布工程盘点 INV-0021；[用户版本说明](../../../usage/lifetimes-and-compatibility.md)与[发布指南](../../../../eng/release-versioning.md)同步。该变更未改变公共 API、目标框架或后端依赖版本，不升级 S1—S5 的场景验证状态、证据或 N/A；整包构建与包元数据核验的实际范围见本轮处置记录，既有消费者缺口单独保留。
+
 S5 补全公开 `ITypeSystem` 的查询侧契约与第三方接入指南。生产源码只更新 XML，未新增公开比较器或改变 API 形状/运行逻辑。记录型后端测试证明核心传参，四视图查询行为证据另见 TYPE-NOMINAL-001/S7–S10、ATTR-TARGETS-001/S17–S20，不外推到任意第三方实现。
 
 本轮Windows证据不代表远端Linux CI已经运行；未新增已发布版本或任意历史依赖版本的证明。Fody的netstandard运行资产、其他宿主版本留待专门矩阵场景。

@@ -1,0 +1,795 @@
+{
+  "date": "2026-10-24",
+  "item": "O-02",
+  "origin": "K3-M16",
+  "baseline_commit": "cc69141362727fc2ae9154467970865c5327ccc4",
+  "rougamo_reference_commit": "8237bf203fa72d21fec18a4932a4cd1436f03dbe",
+  "sources": [
+    {
+      "path": ".editorconfig",
+      "sha256": "f3bcc783ce945131c4cfea8fb14fca498f0483a9a525b4eeedbb8846a18b1eba"
+    },
+    {
+      "path": "Directory.Build.props",
+      "sha256": "f3d3704488023c9b94d0cbf03b27b39b524484aa3bd4ece5cf7c6247831b8b5b"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "sha256": "d59cf6f869513367593028de95e3691e8ba7181d5bff27840ca13ffb995aca13"
+    },
+    {
+      "path": ".github/workflows/release.yml",
+      "sha256": "095f5cbdc05f3560accda923d0fc7ff9267de05ab69c1aa56e8110fabdf378d3"
+    },
+    {
+      "path": "eng/get-release-version.ps1",
+      "sha256": "cd0bc811e262d75531b1e9dcbbfc4ce039d20d0c42e0b27729feaf33fec02efc"
+    },
+    {
+      "path": "eng/tests/get-release-version.Tests.ps1",
+      "sha256": "55f848ef03635847543aa3835beb158711cff0e4361c5afee2b122441e9195b0"
+    },
+    {
+      "path": "eng/verify-packages.ps1",
+      "sha256": "61c1e8770488eacca7f82b0ee261d868b75719be10f9ab71bf3677df1ee53cf9"
+    }
+  ],
+  "helper_runs": [
+    {
+      "path": "artifacts/release-version-tests/d47f713810d44c8fb076f77ac599b53b/results.json",
+      "sha256": "282f75974eaa001097f8c0e68b5ee46247c6e437f82f18b27abf998257a84c3c",
+      "host": "pwsh",
+      "script_sha256": "cd0bc811e262d75531b1e9dcbbfc4ce039d20d0c42e0b27729feaf33fec02efc",
+      "passed": 23,
+      "failed": 0,
+      "cases": [
+        {
+          "name": "正式tag与基础版本一致",
+          "passed": true
+        },
+        {
+          "name": "拒绝正式tag：v1.2.4",
+          "passed": true
+        },
+        {
+          "name": "拒绝正式tag：1.2.3",
+          "passed": true
+        },
+        {
+          "name": "拒绝正式tag：V1.2.3",
+          "passed": true
+        },
+        {
+          "name": "拒绝正式tag：v1.2.3-preview-123",
+          "passed": true
+        },
+        {
+          "name": "拒绝正式tag：v1.2.3+build.42",
+          "passed": true
+        },
+        {
+          "name": "拒绝正式tag：v1.2.3-rc.1+build.42",
+          "passed": true
+        },
+        {
+          "name": "拒绝正式tag：",
+          "passed": true
+        },
+        {
+          "name": "预发布完整版本复用同一后缀",
+          "passed": true
+        },
+        {
+          "name": "预发布不混入tag版本",
+          "passed": true
+        },
+        {
+          "name": "版本解析不修改基础配置",
+          "passed": true
+        },
+        {
+          "name": "缺少基础版本",
+          "passed": true
+        },
+        {
+          "name": "重复基础版本",
+          "passed": true
+        },
+        {
+          "name": "空基础版本",
+          "passed": true
+        },
+        {
+          "name": "基础版本带预发布",
+          "passed": true
+        },
+        {
+          "name": "基础版本带元数据",
+          "passed": true
+        },
+        {
+          "name": "基础版本含前导零",
+          "passed": true
+        },
+        {
+          "name": "基础版本含第四段",
+          "passed": true
+        },
+        {
+          "name": "基础版本数值溢出",
+          "passed": true
+        },
+        {
+          "name": "条件属性",
+          "passed": true
+        },
+        {
+          "name": "条件属性组",
+          "passed": true
+        },
+        {
+          "name": "缺少配置文件",
+          "passed": true
+        },
+        {
+          "name": "无效XML",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "path": "artifacts/release-version-tests/f6ba81db60e1472eb1b8d6663f687759/results.json",
+      "sha256": "ea3209eadbcee61d81a5b2bb6f2d5deb63825f6184fd9b5fc5338d236d475614",
+      "host": "powershell",
+      "script_sha256": "cd0bc811e262d75531b1e9dcbbfc4ce039d20d0c42e0b27729feaf33fec02efc",
+      "passed": 23,
+      "failed": 0,
+      "cases": [
+        {
+          "name": "正式tag与基础版本一致",
+          "passed": true
+        },
+        {
+          "name": "拒绝正式tag：v1.2.4",
+          "passed": true
+        },
+        {
+          "name": "拒绝正式tag：1.2.3",
+          "passed": true
+        },
+        {
+          "name": "拒绝正式tag：V1.2.3",
+          "passed": true
+        },
+        {
+          "name": "拒绝正式tag：v1.2.3-preview-123",
+          "passed": true
+        },
+        {
+          "name": "拒绝正式tag：v1.2.3+build.42",
+          "passed": true
+        },
+        {
+          "name": "拒绝正式tag：v1.2.3-rc.1+build.42",
+          "passed": true
+        },
+        {
+          "name": "拒绝正式tag：",
+          "passed": true
+        },
+        {
+          "name": "预发布完整版本复用同一后缀",
+          "passed": true
+        },
+        {
+          "name": "预发布不混入tag版本",
+          "passed": true
+        },
+        {
+          "name": "版本解析不修改基础配置",
+          "passed": true
+        },
+        {
+          "name": "缺少基础版本",
+          "passed": true
+        },
+        {
+          "name": "重复基础版本",
+          "passed": true
+        },
+        {
+          "name": "空基础版本",
+          "passed": true
+        },
+        {
+          "name": "基础版本带预发布",
+          "passed": true
+        },
+        {
+          "name": "基础版本带元数据",
+          "passed": true
+        },
+        {
+          "name": "基础版本含前导零",
+          "passed": true
+        },
+        {
+          "name": "基础版本含第四段",
+          "passed": true
+        },
+        {
+          "name": "基础版本数值溢出",
+          "passed": true
+        },
+        {
+          "name": "条件属性",
+          "passed": true
+        },
+        {
+          "name": "条件属性组",
+          "passed": true
+        },
+        {
+          "name": "缺少配置文件",
+          "passed": true
+        },
+        {
+          "name": "无效XML",
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "workflow_validation": {
+    "passed": 9,
+    "failed": 0,
+    "structure": "passed",
+    "sign_job_unchanged": true,
+    "ci_triggers_unchanged": true,
+    "results": [
+      {
+        "type": "tag",
+        "name": "v1.0.0",
+        "exit": 0,
+        "values": {
+          "version": "1.0.0",
+          "version_prefix": "1.0.0",
+          "version_suffix": ""
+        },
+        "stderr": ""
+      },
+      {
+        "type": "tag",
+        "name": "v1.0.1",
+        "exit": 1,
+        "values": null,
+        "stderr": "Exception: D:\\Code\\Hourglass\\AspectN\\artifacts\\o02\\workflow-fixture\\eng\\get-release-version.ps1:33\r\nLine |\r\n  33 |  … $prefix)) { throw \"Release tag must match VersionPrefix exactly: expe …\r\n     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n     | Release tag must match VersionPrefix exactly: expected 'v1.0.0', received 'v1.0.1'.\r\n"
+      },
+      {
+        "type": "tag",
+        "name": "v1.0.0-preview-123",
+        "exit": 1,
+        "values": null,
+        "stderr": "Exception: D:\\Code\\Hourglass\\AspectN\\artifacts\\o02\\workflow-fixture\\eng\\get-release-version.ps1:33\r\nLine |\r\n  33 |  … $prefix)) { throw \"Release tag must match VersionPrefix exactly: expe …\r\n     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n     | Release tag must match VersionPrefix exactly: expected 'v1.0.0', received 'v1.0.0-preview-123'.\r\n"
+      },
+      {
+        "type": "tag",
+        "name": "v1.0.0+build.42",
+        "exit": 1,
+        "values": null,
+        "stderr": "Exception: D:\\Code\\Hourglass\\AspectN\\artifacts\\o02\\workflow-fixture\\eng\\get-release-version.ps1:33\r\nLine |\r\n  33 |  … $prefix)) { throw \"Release tag must match VersionPrefix exactly: expe …\r\n     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n     | Release tag must match VersionPrefix exactly: expected 'v1.0.0', received 'v1.0.0+build.42'.\r\n"
+      },
+      {
+        "type": "tag",
+        "name": "1.0.0",
+        "exit": 1,
+        "values": null,
+        "stderr": "Exception: D:\\Code\\Hourglass\\AspectN\\artifacts\\o02\\workflow-fixture\\eng\\get-release-version.ps1:33\r\nLine |\r\n  33 |  … $prefix)) { throw \"Release tag must match VersionPrefix exactly: expe …\r\n     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n     | Release tag must match VersionPrefix exactly: expected 'v1.0.0', received '1.0.0'.\r\n"
+      },
+      {
+        "type": "branch",
+        "name": "prerelease",
+        "exit": 0,
+        "values": {
+          "version": "1.0.0-preview-1792779759892",
+          "version_prefix": "1.0.0",
+          "version_suffix": "preview-1792779759892"
+        },
+        "stderr": ""
+      },
+      {
+        "type": "branch",
+        "name": "dev",
+        "exit": 1,
+        "values": null,
+        "stderr": "Exception: D:\\Code\\Hourglass\\AspectN\\artifacts\\o02\\workflow-fixture\\driver.ps1:7\r\nLine |\r\n   7 |    throw \"Unsupported release ref: $env:GITHUB_REF_TYPE/$env:GITHUB_RE …\r\n     |    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n     | Unsupported release ref: branch/dev.\r\n"
+      },
+      {
+        "type": "branch",
+        "name": "main",
+        "exit": 1,
+        "values": null,
+        "stderr": "Exception: D:\\Code\\Hourglass\\AspectN\\artifacts\\o02\\workflow-fixture\\driver.ps1:7\r\nLine |\r\n   7 |    throw \"Unsupported release ref: $env:GITHUB_REF_TYPE/$env:GITHUB_RE …\r\n     |    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n     | Unsupported release ref: branch/main.\r\n"
+      },
+      {
+        "type": "other",
+        "name": "prerelease",
+        "exit": 1,
+        "values": null,
+        "stderr": "Exception: D:\\Code\\Hourglass\\AspectN\\artifacts\\o02\\workflow-fixture\\driver.ps1:7\r\nLine |\r\n   7 |    throw \"Unsupported release ref: $env:GITHUB_REF_TYPE/$env:GITHUB_RE …\r\n     |    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n     | Unsupported release ref: other/prerelease.\r\n"
+      }
+    ]
+  },
+  "defaults_unchanged": true,
+  "default_properties": [
+    {
+      "project": "AspectN",
+      "properties": {
+        "VersionPrefix": "1.0.0",
+        "VersionSuffix": "",
+        "Version": "1.0.0",
+        "PackageVersion": "1.0.0"
+      }
+    },
+    {
+      "project": "AspectN.Cecil",
+      "properties": {
+        "VersionPrefix": "1.0.0",
+        "VersionSuffix": "",
+        "Version": "1.0.0",
+        "PackageVersion": "1.0.0"
+      }
+    },
+    {
+      "project": "AspectN.Cecil.Fody",
+      "properties": {
+        "VersionPrefix": "1.0.0",
+        "VersionSuffix": "",
+        "Version": "1.0.0",
+        "PackageVersion": "1.0.0"
+      }
+    },
+    {
+      "project": "AspectN.Roslyn",
+      "properties": {
+        "VersionPrefix": "1.0.0",
+        "VersionSuffix": "",
+        "Version": "1.0.0",
+        "PackageVersion": "1.0.0"
+      }
+    },
+    {
+      "project": "AspectN.Reflection",
+      "properties": {
+        "VersionPrefix": "1.0.0",
+        "VersionSuffix": "",
+        "Version": "1.0.0",
+        "PackageVersion": "1.0.0"
+      }
+    }
+  ],
+  "builds": [
+    {
+      "build_exit": 0,
+      "errors": 0,
+      "restore_exit": 0,
+      "warnings": 1,
+      "label": "release"
+    },
+    {
+      "build_exit": 0,
+      "errors": 0,
+      "restore_exit": 0,
+      "warnings": 1,
+      "label": "preview"
+    }
+  ],
+  "package_validation": {
+    "source_sha256": "61c1e8770488eacca7f82b0ee261d868b75719be10f9ab71bf3677df1ee53cf9",
+    "probe_sha256": "8043ce4d017f683498c504569fcea867ea91160baa69842928f273b7b2a17d93",
+    "results": [
+      {
+        "label": "release",
+        "version": "1.0.0",
+        "exit": 0,
+        "stage": "metadata-and-symbols-only",
+        "consumers_executed": false,
+        "inputs_unchanged": true,
+        "directory": "artifacts/o02/release-packages",
+        "packages": [
+          {
+            "name": "AspectN.1.0.0.nupkg",
+            "sha256": "d3d60f0490d5fa5cc560283ae0dcc8a8298ddaf526c534920ecd5e1972a50311"
+          },
+          {
+            "name": "AspectN.1.0.0.snupkg",
+            "sha256": "18ffd96d79a0ce78b896eb18bfb0db2a067359108cb473695fe559be53eb8280"
+          },
+          {
+            "name": "AspectN.Cecil.1.0.0.nupkg",
+            "sha256": "2e4ffb85e1a3a4dc68db23fe6c8465672079a9a0b5264dbaaa924697286128cc"
+          },
+          {
+            "name": "AspectN.Cecil.1.0.0.snupkg",
+            "sha256": "731bd51ba49c3269548a1aec109569a31088d7af6e64ed2e069e63f766f679a8"
+          },
+          {
+            "name": "AspectN.Cecil.Fody.1.0.0.nupkg",
+            "sha256": "da396c23e161ec50ff7e4eec97ec850e47f0bc3fc43d757626f560d66d772d88"
+          },
+          {
+            "name": "AspectN.Cecil.Fody.1.0.0.snupkg",
+            "sha256": "7bc402906b5097af8e7f97987631961da0bc92b433c5c1757eaa8dcba2394cbb"
+          },
+          {
+            "name": "AspectN.Reflection.1.0.0.nupkg",
+            "sha256": "ecd8691fb2d83f2ddb45909f6e1d3496d73762a9440013be541cb8f4fa1dcfb7"
+          },
+          {
+            "name": "AspectN.Reflection.1.0.0.snupkg",
+            "sha256": "2ebb1d65fd37febe804452200f08bb52e968beec7cf6d6603841bc9f5f4205b7"
+          },
+          {
+            "name": "AspectN.Roslyn.1.0.0.nupkg",
+            "sha256": "f37daa4e75bafb0dd28d3b187173be9ff020410921669b79d906f0e6e671c801"
+          },
+          {
+            "name": "AspectN.Roslyn.1.0.0.snupkg",
+            "sha256": "f5a52db38f69a3ddee44b7385209bdb43b5d9f09acb940695f336fea3924c0b9"
+          }
+        ]
+      },
+      {
+        "label": "preview",
+        "version": "1.0.0-preview-1792780029103",
+        "exit": 0,
+        "stage": "metadata-and-symbols-only",
+        "consumers_executed": false,
+        "inputs_unchanged": true,
+        "directory": "artifacts/o02/preview-packages",
+        "packages": [
+          {
+            "name": "AspectN.1.0.0-preview-1792780029103.nupkg",
+            "sha256": "cc2d85a836b74363c5af79b7a10280f6e244991ee1dc420878e96d7345c20d2d"
+          },
+          {
+            "name": "AspectN.1.0.0-preview-1792780029103.snupkg",
+            "sha256": "aa69d9991bc15da442422253a453667674f253762b5989ab27e7faf7bac16067"
+          },
+          {
+            "name": "AspectN.Cecil.1.0.0-preview-1792780029103.nupkg",
+            "sha256": "553ac859814f3e2a4a1cd29f02f8b072cd9a0faf9edeec8daada3d55f04f4bbe"
+          },
+          {
+            "name": "AspectN.Cecil.1.0.0-preview-1792780029103.snupkg",
+            "sha256": "22a15234932a8298f9e9cca98937f34de31442cc64853e6de40d570fcef95c34"
+          },
+          {
+            "name": "AspectN.Cecil.Fody.1.0.0-preview-1792780029103.nupkg",
+            "sha256": "e6a0a058bc8ba4ecf231e38b82abe7d1c9c9d750deb989328e23d1b83630811a"
+          },
+          {
+            "name": "AspectN.Cecil.Fody.1.0.0-preview-1792780029103.snupkg",
+            "sha256": "05692aa65b41fc0560d88212dcda3630008b249843d8ec5211f9584ebd764205"
+          },
+          {
+            "name": "AspectN.Reflection.1.0.0-preview-1792780029103.nupkg",
+            "sha256": "532a3884ef203f68c3a237c48719a032e6db1798ff5228f71e05c4ff3eedb513"
+          },
+          {
+            "name": "AspectN.Reflection.1.0.0-preview-1792780029103.snupkg",
+            "sha256": "3843448c6859a0c79b994673469fd0f9a6cf44db60dc58eb1b141ed24f61090e"
+          },
+          {
+            "name": "AspectN.Roslyn.1.0.0-preview-1792780029103.nupkg",
+            "sha256": "238bc30241635c74f9f9c55fe27f78576376da98cf0482e28806e6a05d689b13"
+          },
+          {
+            "name": "AspectN.Roslyn.1.0.0-preview-1792780029103.snupkg",
+            "sha256": "677fa6fb021416becad6ad4f83cac696c980e1a6b780ab0a3d62d8bf01781ee3"
+          }
+        ]
+      }
+    ]
+  },
+  "all_nuspec_versions": [
+    {
+      "name": "AspectN.1.0.0.nupkg",
+      "version": "1.0.0",
+      "sha256": "d3d60f0490d5fa5cc560283ae0dcc8a8298ddaf526c534920ecd5e1972a50311"
+    },
+    {
+      "name": "AspectN.1.0.0.snupkg",
+      "version": "1.0.0",
+      "sha256": "18ffd96d79a0ce78b896eb18bfb0db2a067359108cb473695fe559be53eb8280"
+    },
+    {
+      "name": "AspectN.Cecil.1.0.0.nupkg",
+      "version": "1.0.0",
+      "sha256": "2e4ffb85e1a3a4dc68db23fe6c8465672079a9a0b5264dbaaa924697286128cc"
+    },
+    {
+      "name": "AspectN.Cecil.1.0.0.snupkg",
+      "version": "1.0.0",
+      "sha256": "731bd51ba49c3269548a1aec109569a31088d7af6e64ed2e069e63f766f679a8"
+    },
+    {
+      "name": "AspectN.Cecil.Fody.1.0.0.nupkg",
+      "version": "1.0.0",
+      "sha256": "da396c23e161ec50ff7e4eec97ec850e47f0bc3fc43d757626f560d66d772d88"
+    },
+    {
+      "name": "AspectN.Cecil.Fody.1.0.0.snupkg",
+      "version": "1.0.0",
+      "sha256": "7bc402906b5097af8e7f97987631961da0bc92b433c5c1757eaa8dcba2394cbb"
+    },
+    {
+      "name": "AspectN.Reflection.1.0.0.nupkg",
+      "version": "1.0.0",
+      "sha256": "ecd8691fb2d83f2ddb45909f6e1d3496d73762a9440013be541cb8f4fa1dcfb7"
+    },
+    {
+      "name": "AspectN.Reflection.1.0.0.snupkg",
+      "version": "1.0.0",
+      "sha256": "2ebb1d65fd37febe804452200f08bb52e968beec7cf6d6603841bc9f5f4205b7"
+    },
+    {
+      "name": "AspectN.Roslyn.1.0.0.nupkg",
+      "version": "1.0.0",
+      "sha256": "f37daa4e75bafb0dd28d3b187173be9ff020410921669b79d906f0e6e671c801"
+    },
+    {
+      "name": "AspectN.Roslyn.1.0.0.snupkg",
+      "version": "1.0.0",
+      "sha256": "f5a52db38f69a3ddee44b7385209bdb43b5d9f09acb940695f336fea3924c0b9"
+    },
+    {
+      "name": "AspectN.1.0.0-preview-1792780029103.nupkg",
+      "version": "1.0.0-preview-1792780029103",
+      "sha256": "cc2d85a836b74363c5af79b7a10280f6e244991ee1dc420878e96d7345c20d2d"
+    },
+    {
+      "name": "AspectN.1.0.0-preview-1792780029103.snupkg",
+      "version": "1.0.0-preview-1792780029103",
+      "sha256": "aa69d9991bc15da442422253a453667674f253762b5989ab27e7faf7bac16067"
+    },
+    {
+      "name": "AspectN.Cecil.1.0.0-preview-1792780029103.nupkg",
+      "version": "1.0.0-preview-1792780029103",
+      "sha256": "553ac859814f3e2a4a1cd29f02f8b072cd9a0faf9edeec8daada3d55f04f4bbe"
+    },
+    {
+      "name": "AspectN.Cecil.1.0.0-preview-1792780029103.snupkg",
+      "version": "1.0.0-preview-1792780029103",
+      "sha256": "22a15234932a8298f9e9cca98937f34de31442cc64853e6de40d570fcef95c34"
+    },
+    {
+      "name": "AspectN.Cecil.Fody.1.0.0-preview-1792780029103.nupkg",
+      "version": "1.0.0-preview-1792780029103",
+      "sha256": "e6a0a058bc8ba4ecf231e38b82abe7d1c9c9d750deb989328e23d1b83630811a"
+    },
+    {
+      "name": "AspectN.Cecil.Fody.1.0.0-preview-1792780029103.snupkg",
+      "version": "1.0.0-preview-1792780029103",
+      "sha256": "05692aa65b41fc0560d88212dcda3630008b249843d8ec5211f9584ebd764205"
+    },
+    {
+      "name": "AspectN.Reflection.1.0.0-preview-1792780029103.nupkg",
+      "version": "1.0.0-preview-1792780029103",
+      "sha256": "532a3884ef203f68c3a237c48719a032e6db1798ff5228f71e05c4ff3eedb513"
+    },
+    {
+      "name": "AspectN.Reflection.1.0.0-preview-1792780029103.snupkg",
+      "version": "1.0.0-preview-1792780029103",
+      "sha256": "3843448c6859a0c79b994673469fd0f9a6cf44db60dc58eb1b141ed24f61090e"
+    },
+    {
+      "name": "AspectN.Roslyn.1.0.0-preview-1792780029103.nupkg",
+      "version": "1.0.0-preview-1792780029103",
+      "sha256": "238bc30241635c74f9f9c55fe27f78576376da98cf0482e28806e6a05d689b13"
+    },
+    {
+      "name": "AspectN.Roslyn.1.0.0-preview-1792780029103.snupkg",
+      "version": "1.0.0-preview-1792780029103",
+      "sha256": "677fa6fb021416becad6ad4f83cac696c980e1a6b780ab0a3d62d8bf01781ee3"
+    }
+  ],
+  "product_test_run": {
+    "exit": 0,
+    "totals": {
+      "total": 2436,
+      "passed": 2436,
+      "failed": 0,
+      "skipped": 0
+    },
+    "runs": [
+      {
+        "file": "o02_net10.0_20261024023020.trx",
+        "total": 1398,
+        "passed": 1398,
+        "failed": 0,
+        "sha256": "23c163c89fcbe72e645bf1e370b59e4a8a4036e6ae0194921645a4a19bef81bb"
+      },
+      {
+        "file": "o02_net10.0_20261024023025.trx",
+        "total": 232,
+        "passed": 232,
+        "failed": 0,
+        "sha256": "606f496317411677a1b467ec4dcff3faafccd3716c4c87d74fd9946c7b4b385f"
+      },
+      {
+        "file": "o02_net10.0_20261024023028.trx",
+        "total": 110,
+        "passed": 110,
+        "failed": 0,
+        "sha256": "316de29bdbc88e9f882d50837d270b2d593248035020ed9eda06000e22dc89ab"
+      },
+      {
+        "file": "o02_net10.0_20261024023035.trx",
+        "total": 30,
+        "passed": 30,
+        "failed": 0,
+        "sha256": "d47e363ff0e07775433476b567959b839b042db140bd08be3bc2872652b7fb80"
+      },
+      {
+        "file": "o02_net10.0_20261024023111.trx",
+        "total": 415,
+        "passed": 415,
+        "failed": 0,
+        "sha256": "3ab3ce1b16c2b6c4ca110e4355fb987a2ab67cb55ebc640d29c1688d3e6939f1"
+      },
+      {
+        "file": "o02_net10.0_20261024023124.trx",
+        "total": 9,
+        "passed": 9,
+        "failed": 0,
+        "sha256": "4d3fb44f369138eed80c17be93baacd90a6b3ba9f871e9696e3b685160c5f5b9"
+      },
+      {
+        "file": "o02_net10.0_20261024023129.trx",
+        "total": 234,
+        "passed": 234,
+        "failed": 0,
+        "sha256": "62a5d8fcf5b345f539dac594d26c9a2e96c22e5e897f3c161ad31b874c700a4d"
+      },
+      {
+        "file": "o02_net472_20261024023120.trx",
+        "total": 8,
+        "passed": 8,
+        "failed": 0,
+        "sha256": "9102c3aaadaf2bd9ecdeddccc4048154833d7e42bd4a43615fcc016d90e59a8c"
+      }
+    ]
+  },
+  "artifact_refs": [
+    {
+      "path": "artifacts/o02/verify-version-packages.ps1",
+      "sha256": "42e9bfccde2f57a73264390cf54b7df6101650d34c72662a0a83e5d8c2ab1347"
+    },
+    {
+      "path": "artifacts/o02/verify-workflow.cjs",
+      "sha256": "529d93c9e10646b800ea0077c4904762133315314154ffcbc20bd232d5cacfcf"
+    },
+    {
+      "path": "artifacts/o02/verify-package-metadata.ps1",
+      "sha256": "393e860691760f52690e21eac3948bc1a71a57ee6c2a940f87350c9d0887e6ed"
+    },
+    {
+      "path": "artifacts/o02/verify-package-metadata-probe.ps1",
+      "sha256": "8043ce4d017f683498c504569fcea867ea91160baa69842928f273b7b2a17d93"
+    },
+    {
+      "path": "artifacts/o02/workflow-results.json",
+      "sha256": "9c42ae2cffc2f1ce2254ef4883d8e6fa5fcfcab648896f5e386f5b3919b30ec0"
+    },
+    {
+      "path": "artifacts/o02/default-before.json",
+      "sha256": "a9b2c849619f2173a479dd98f25e9534db95b258d233fe140fd2780de0bcb997"
+    },
+    {
+      "path": "artifacts/o02/default-after.json",
+      "sha256": "91cd0378887bc05adf1fb711e837761d77c2940d38bfac9b864aa749b71a2f8d"
+    },
+    {
+      "path": "artifacts/o02/release-properties.json",
+      "sha256": "91cd0378887bc05adf1fb711e837761d77c2940d38bfac9b864aa749b71a2f8d"
+    },
+    {
+      "path": "artifacts/o02/preview-properties.json",
+      "sha256": "a744e39f29b99fee70c8ed2aa263a78f56c6ef87d62f3594354d166fe45ce43e"
+    },
+    {
+      "path": "artifacts/o02/release-restore.log",
+      "sha256": "14b25cd33f26208330da4241e3ae95e367552ce3da0b279e8c9e0c8a4b3d0fa8"
+    },
+    {
+      "path": "artifacts/o02/preview-restore.log",
+      "sha256": "a351e8bdfa8f8cbbf6a9feb41be3342aacf4f790ae59f971ce1aae1d1797bf1b"
+    },
+    {
+      "path": "artifacts/o02/release-build.log",
+      "sha256": "3a08b48383ebf536fb461b3bf0a8c0e7a7601e75448f49f04c830b49ae1a0420"
+    },
+    {
+      "path": "artifacts/o02/preview-build.log",
+      "sha256": "458939c33fdba4811c0b17387e5d4b24b465b29b9bbe831124f46c9b87a28c58"
+    },
+    {
+      "path": "artifacts/o02/release-metadata.log",
+      "sha256": "0219ba12f53b3d609a6038908558b7d5ce79591143d4f9aea580a0ac7dda9a53"
+    },
+    {
+      "path": "artifacts/o02/preview-metadata.log",
+      "sha256": "0219ba12f53b3d609a6038908558b7d5ce79591143d4f9aea580a0ac7dda9a53"
+    },
+    {
+      "path": "artifacts/o02/all-nuspec-versions.json",
+      "sha256": "19c00f6a1160f4ede6743900abaf9ce2673e46e1257d2d3d93b4a360d7b802ee"
+    },
+    {
+      "path": "artifacts/o02/preview-tests.log",
+      "sha256": "3336c23651e0e4e61f9065bba10d471e3ddbc80087de65b32c5aed2063fb3f2f"
+    },
+    {
+      "path": "artifacts/o02/test-summary.json",
+      "sha256": "f0d797039fdbde86a0c5f9491bf3bc983a526eba84e6a1da8e2e68b35f3991d9"
+    },
+    {
+      "path": "artifacts/o02/version-red.log",
+      "sha256": "2576e642008bf9a5ad912f30183639636b9ba7dea38bb2d78d15aa2f46fd0e11"
+    },
+    {
+      "path": "artifacts/o02/version-windows-powershell-before-bom.log",
+      "sha256": "9828040e85a21153a30707fa5cf3322fd945ac1f73b1af62001d31041f3e440e"
+    },
+    {
+      "path": "artifacts/o02/windows-comment-before-bom.log",
+      "sha256": "f33a3906dd03e008d064efee14bc315d5e2e6203ece53697fee86d0fb61db4e0"
+    },
+    {
+      "path": "artifacts/o02/release-restore-core.log",
+      "sha256": "3fedd9211202c8a7aaeebbb9f19e5859a2a94369043642c6b8986d9940162d29"
+    },
+    {
+      "path": "artifacts/o02/knowledge-generate.log",
+      "sha256": "dc4799efb0283ee484c8a2dd7b312be03f5ebc9cae11981d45649e2ac53473bd"
+    },
+    {
+      "path": "artifacts/o02/knowledge-check.log",
+      "sha256": "4c82827f9b06be1b2ae06ba56063b2e67114a216f19fc3acfa4d068c9bae8aab"
+    },
+    {
+      "path": "artifacts/o02/documentation-verification.json",
+      "sha256": "ff51e2c147b0aca1c880f45622b4ded232c4c5b17c544837198f7dfbbfece043"
+    }
+  ],
+  "consumers_executed": false,
+  "known_consumer_blocker": "Roslyn/net472 MSB3277 System.Memory; existing RM-13 evidence retained",
+  "remote_actions_executed": false,
+  "packages_signed": false,
+  "packages_published": false,
+  "branches_pushed": false,
+  "documentation_validation": {
+    "generation_exit": 0,
+    "check_exit": 0,
+    "verifier_exit": 0,
+    "errors": 0,
+    "warnings": 0,
+    "generated_change": "INV-0021 subject and notes in support-matrix only"
+  },
+  "initial_independent_review": {
+    "reviewer": "/root/o02_version_review",
+    "critical": 0,
+    "important": 0,
+    "minor": 0,
+    "scope": "implementation, helper tests, workflow cases; later package and final report not included"
+  },
+  "final_independent_review": {
+    "reviewer": "/root/o02_version_review",
+    "critical": 0,
+    "important": 0,
+    "minor": 0,
+    "scope": "final implementation, docs, source/artifact/package hashes, eight TRX files, build logs, package probe boundary, unchanged product scenario metadata",
+    "files_modified_by_reviewer": false
+  }
+}

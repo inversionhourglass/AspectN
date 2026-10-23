@@ -11,7 +11,9 @@
     "CROSS-AVAILABILITY-001",
     "SEM-REGEX-001"
   ],
-  "inventory_refs": []
+  "inventory_refs": [
+    "INV-0021"
+  ]
 }
 -->
 
@@ -80,6 +82,8 @@ _ = cecil.GetInheritanceClosure(detached, cancellation.Token);
 库项目提供 netstandard2.0 和 net10.0；正式 .NET Framework 使用下限为4.7.2。兼容验证既要检查加载的资产，也要实际执行指定 API。现代宿主通过 net10 资产的测试，不能单独证明 netstandard 资产在旧宿主可运行。
 
 AspectN.Cecil 与 AspectN.Cecil.Fody 面向不同强名称的 Mono.Cecil 程序集。FodyHelpers 项目选后者，普通程序集分析选前者，两者不能同时引用。包版本按实际目标发布版本选择；当前工作树文档不等于所有已发布版本的证明。
+
+五个包共用基础版本；正式包示例为 `1.0.0`，预发布包示例为 `1.0.0-preview-1792779709513`。需要多个 AspectN 包时选择同一完整版本。发布入口和版本生成规则见[发布版本指南](../../eng/release-versioning.md)，本节的包版本格式不扩大运行时兼容性验证范围。
 
 本轮实际验证为 Windows 上的 net10.0 和 net472 测试宿主；兼容项目确认核心、Cecil、Roslyn、Reflection 加载 netstandard2.0 资产并执行指定例子。没有由此宣称 Fody 的全部兼容宿主、任意历史 CLR/NuGet 版本或远程 Linux CI 已验证。[兼容专题](../knowledge/capabilities/cross-cutting/CROSS-COMPAT-001.md)和[场景矩阵](../knowledge/generated/support-matrix.md)列出精确范围。
 

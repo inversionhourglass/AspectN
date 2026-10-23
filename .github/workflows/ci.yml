@@ -140,6 +140,12 @@ jobs:
         shell: pwsh
         run: ./eng/tests/verify-package-versions.Tests.ps1 -VerifierHost powershell
 
+      - name: Test release version policy
+        shell: pwsh
+        run: |
+          ./eng/tests/get-release-version.Tests.ps1
+          ./eng/tests/get-release-version.Tests.ps1 -PowerShellHost powershell
+
       - name: Test package dependency diagnostics
         shell: pwsh
         run: ./eng/tests/verify-package-dependencies.Tests.ps1 -VerifierHost powershell

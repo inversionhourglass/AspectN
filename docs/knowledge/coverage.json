@@ -420,6 +420,10 @@
         {
           "path": "docs/reviews/2026-10-23-rm14-package-dependency-diagnostics.md",
           "section": "问题与修改 / 回归与实际输入 / CI、能力与文档影响"
+        },
+        {
+          "path": "docs/reviews/2026-10-24-o02-release-version-policy.md",
+          "section": "能力与证据影响"
         }
       ],
       "assessment_status": "reviewed",
@@ -580,16 +584,20 @@
     },
     {
       "id": "INV-0021",
-      "subject": "发布包交接与签名前摘要校验",
+      "subject": "发布版本、包交接与签名前摘要校验",
       "origin_refs": [
         {
           "path": "docs/reviews/2026-10-23-rm10-unsigned-checksums.md",
           "section": "问题与处理 / 当前验证"
+        },
+        {
+          "path": "docs/reviews/2026-10-24-o02-release-version-policy.md",
+          "section": "批准规则与实现 / 当前验证与限制 / 能力与证据影响"
         }
       ],
       "assessment_status": "unassessed",
       "capability_ids": [],
-      "notes": "发布工程尚未独立建立产品能力条目。RM-10要求下载后、证书处理及签名前，未签名清单存在、包文件集合完全一致且逐包SHA256匹配；保留原包内容/消费者与签名验证、签后摘要。本地Windows两个PowerShell宿主各32项黑盒通过，YAML结构与实际清单生成步骤输出检查通过；Linux仅接入CI，未执行远端Actions、真实签名或发布。摘要不提供独立来源认证，不改变库场景验证状态。"
+      "notes": "发布工程尚未独立建立产品能力条目。RM-10要求下载后、证书处理及签名前，未签名清单存在、包文件集合完全一致且逐包SHA256匹配；保留原包内容/消费者与签名验证、签后摘要。本地Windows两个PowerShell宿主各32项黑盒通过，YAML结构与实际清单生成步骤输出检查通过；Linux仅接入CI，未执行远端Actions、真实签名或发布。摘要不提供独立来源认证，不改变库场景验证状态。 2026-10-24 O-02按维护者裁决统一基础VersionPrefix，正式tag必须匹配，prerelease分支push生成一次preview-UTC毫秒时间戳供五包共用；dev/main验证及既有签名、摘要、消费者闸门保持。版本辅助脚本两宿主各23项、工作流真实版本步骤9项通过；包与环境范围见本轮报告，不扩展产品场景或宣称已远端发包。"
     },
     {
       "id": "INV-0022",

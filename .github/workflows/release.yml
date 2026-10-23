@@ -2,6 +2,8 @@ name: Release
 
 on:
   push:
+    branches:
+      - prerelease
     tags:
       - "v*"
 
@@ -35,32 +37,38 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
-      - name: Validate tag version
+      - name: Resolve release version
         id: version
         shell: pwsh
         run: |
-          if ($env:GITHUB_REF_NAME -notmatch '^v(?<version>\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)$') {
-            throw "Tag '$env:GITHUB_REF_NAME' is not a supported NuGet version tag."
+          if ($env:GITHUB_REF_TYPE -eq 'tag') {
+            $version = ./eng/get-release-version.ps1 -Mode Release -Tag $env:GITHUB_REF_NAME | ConvertFrom-Json
+          } elseif ($env:GITHUB_REF_TYPE -eq 'branch' -and $env:GITHUB_REF_NAME -ceq 'prerelease') {
+            $version = ./eng/get-release-version.ps1 -Mode Preview | ConvertFrom-Json
+          } else {
+            throw "Unsupported release ref: $env:GITHUB_REF_TYPE/$env:GITHUB_REF_NAME."
           }
-          "version=$($Matches.version)" >> $env:GITHUB_OUTPUT
+          "version=$($version.Version)" >> $env:GITHUB_OUTPUT
+          "version_prefix=$($version.VersionPrefix)" >> $env:GITHUB_OUTPUT
+          "version_suffix=$($version.VersionSuffix)" >> $env:GITHUB_OUTPUT
 
       - name: Restore
-        run: dotnet restore AspectN.sln -p:CecilVersion=${{ env.CECIL_VERSION }} -p:RoslynVersion=${{ env.ROSLYN_VERSION }} -p:FodyHelpersVersion=${{ env.FODY_HELPERS_VERSION }} -p:Version=${{ steps.version.outputs.version }} -p:PackageVersion=${{ steps.version.outputs.version }}
+        run: dotnet restore AspectN.sln -p:CecilVersion=${{ env.CECIL_VERSION }} -p:RoslynVersion=${{ env.ROSLYN_VERSION }} -p:FodyHelpersVersion=${{ env.FODY_HELPERS_VERSION }} -p:Version=${{ steps.version.outputs.version }} -p:PackageVersion=${{ steps.version.outputs.version }} -p:VersionPrefix=${{ steps.version.outputs.version_prefix }} "-p:VersionSuffix=${{ steps.version.outputs.version_suffix }}"
 
       - name: Build all release assets and tests
-        run: dotnet build AspectN.sln -c Release --no-restore -p:CecilVersion=${{ env.CECIL_VERSION }} -p:RoslynVersion=${{ env.ROSLYN_VERSION }} -p:FodyHelpersVersion=${{ env.FODY_HELPERS_VERSION }} -p:Version=${{ steps.version.outputs.version }} -p:PackageVersion=${{ steps.version.outputs.version }}
+        run: dotnet build AspectN.sln -c Release --no-restore -p:CecilVersion=${{ env.CECIL_VERSION }} -p:RoslynVersion=${{ env.ROSLYN_VERSION }} -p:FodyHelpersVersion=${{ env.FODY_HELPERS_VERSION }} -p:Version=${{ steps.version.outputs.version }} -p:PackageVersion=${{ steps.version.outputs.version }} -p:VersionPrefix=${{ steps.version.outputs.version_prefix }} "-p:VersionSuffix=${{ steps.version.outputs.version_suffix }}"
 
       - name: Test core, adapters, and conformance
         shell: bash
         run: |
-          dotnet test tests/AspectN.Tests/AspectN.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=core.trx" --results-directory artifacts/test-results/${{ runner.os }} -p:CecilVersion=${{ env.CECIL_VERSION }} -p:RoslynVersion=${{ env.ROSLYN_VERSION }} -p:FodyHelpersVersion=${{ env.FODY_HELPERS_VERSION }} -p:Version=${{ steps.version.outputs.version }} -p:PackageVersion=${{ steps.version.outputs.version }}
-          dotnet test tests/AspectN.Cecil.Tests/AspectN.Cecil.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=cecil.trx" --results-directory artifacts/test-results/${{ runner.os }} -p:CecilVersion=${{ env.CECIL_VERSION }} -p:RoslynVersion=${{ env.ROSLYN_VERSION }} -p:FodyHelpersVersion=${{ env.FODY_HELPERS_VERSION }} -p:Version=${{ steps.version.outputs.version }} -p:PackageVersion=${{ steps.version.outputs.version }}
-          dotnet test tests/AspectN.Cecil.Fody.Tests/AspectN.Cecil.Fody.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=cecil-fody.trx" --results-directory artifacts/test-results/${{ runner.os }} -p:CecilVersion=${{ env.CECIL_VERSION }} -p:RoslynVersion=${{ env.ROSLYN_VERSION }} -p:FodyHelpersVersion=${{ env.FODY_HELPERS_VERSION }} -p:Version=${{ steps.version.outputs.version }} -p:PackageVersion=${{ steps.version.outputs.version }}
-          dotnet test tests/AspectN.Reflection.Tests/AspectN.Reflection.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=reflection.trx" --results-directory artifacts/test-results/${{ runner.os }} -p:CecilVersion=${{ env.CECIL_VERSION }} -p:RoslynVersion=${{ env.ROSLYN_VERSION }} -p:FodyHelpersVersion=${{ env.FODY_HELPERS_VERSION }} -p:Version=${{ steps.version.outputs.version }} -p:PackageVersion=${{ steps.version.outputs.version }}
-          dotnet test tests/AspectN.Roslyn.Tests/AspectN.Roslyn.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=roslyn.trx" --results-directory artifacts/test-results/${{ runner.os }} -p:CecilVersion=${{ env.CECIL_VERSION }} -p:RoslynVersion=${{ env.ROSLYN_VERSION }} -p:FodyHelpersVersion=${{ env.FODY_HELPERS_VERSION }} -p:Version=${{ steps.version.outputs.version }} -p:PackageVersion=${{ steps.version.outputs.version }}
-          dotnet test tests/AspectN.Conformance.Tests/AspectN.Conformance.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=conformance.trx" --results-directory artifacts/test-results/${{ runner.os }} -p:CecilVersion=${{ env.CECIL_VERSION }} -p:RoslynVersion=${{ env.ROSLYN_VERSION }} -p:FodyHelpersVersion=${{ env.FODY_HELPERS_VERSION }} -p:Version=${{ steps.version.outputs.version }} -p:PackageVersion=${{ steps.version.outputs.version }}
-          dotnet test tests/AspectN.NetFramework.Tests/AspectN.NetFramework.Tests.csproj -c Release -f net472 --no-build --no-restore --logger "trx;LogFileName=net472.trx" --results-directory artifacts/test-results/${{ runner.os }} -p:CecilVersion=${{ env.CECIL_VERSION }} -p:RoslynVersion=${{ env.ROSLYN_VERSION }} -p:FodyHelpersVersion=${{ env.FODY_HELPERS_VERSION }} -p:Version=${{ steps.version.outputs.version }} -p:PackageVersion=${{ steps.version.outputs.version }}
-          dotnet test tests/AspectN.NetFramework.Tests/AspectN.NetFramework.Tests.csproj -c Release -f net10.0 --no-build --no-restore --logger "trx;LogFileName=netstandard-modern.trx" --results-directory artifacts/test-results/${{ runner.os }} -p:CecilVersion=${{ env.CECIL_VERSION }} -p:RoslynVersion=${{ env.ROSLYN_VERSION }} -p:FodyHelpersVersion=${{ env.FODY_HELPERS_VERSION }} -p:Version=${{ steps.version.outputs.version }} -p:PackageVersion=${{ steps.version.outputs.version }}
+          dotnet test tests/AspectN.Tests/AspectN.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=core.trx" --results-directory artifacts/test-results/${{ runner.os }} -p:CecilVersion=${{ env.CECIL_VERSION }} -p:RoslynVersion=${{ env.ROSLYN_VERSION }} -p:FodyHelpersVersion=${{ env.FODY_HELPERS_VERSION }} -p:Version=${{ steps.version.outputs.version }} -p:PackageVersion=${{ steps.version.outputs.version }} -p:VersionPrefix=${{ steps.version.outputs.version_prefix }} "-p:VersionSuffix=${{ steps.version.outputs.version_suffix }}"
+          dotnet test tests/AspectN.Cecil.Tests/AspectN.Cecil.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=cecil.trx" --results-directory artifacts/test-results/${{ runner.os }} -p:CecilVersion=${{ env.CECIL_VERSION }} -p:RoslynVersion=${{ env.ROSLYN_VERSION }} -p:FodyHelpersVersion=${{ env.FODY_HELPERS_VERSION }} -p:Version=${{ steps.version.outputs.version }} -p:PackageVersion=${{ steps.version.outputs.version }} -p:VersionPrefix=${{ steps.version.outputs.version_prefix }} "-p:VersionSuffix=${{ steps.version.outputs.version_suffix }}"
+          dotnet test tests/AspectN.Cecil.Fody.Tests/AspectN.Cecil.Fody.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=cecil-fody.trx" --results-directory artifacts/test-results/${{ runner.os }} -p:CecilVersion=${{ env.CECIL_VERSION }} -p:RoslynVersion=${{ env.ROSLYN_VERSION }} -p:FodyHelpersVersion=${{ env.FODY_HELPERS_VERSION }} -p:Version=${{ steps.version.outputs.version }} -p:PackageVersion=${{ steps.version.outputs.version }} -p:VersionPrefix=${{ steps.version.outputs.version_prefix }} "-p:VersionSuffix=${{ steps.version.outputs.version_suffix }}"
+          dotnet test tests/AspectN.Reflection.Tests/AspectN.Reflection.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=reflection.trx" --results-directory artifacts/test-results/${{ runner.os }} -p:CecilVersion=${{ env.CECIL_VERSION }} -p:RoslynVersion=${{ env.ROSLYN_VERSION }} -p:FodyHelpersVersion=${{ env.FODY_HELPERS_VERSION }} -p:Version=${{ steps.version.outputs.version }} -p:PackageVersion=${{ steps.version.outputs.version }} -p:VersionPrefix=${{ steps.version.outputs.version_prefix }} "-p:VersionSuffix=${{ steps.version.outputs.version_suffix }}"
+          dotnet test tests/AspectN.Roslyn.Tests/AspectN.Roslyn.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=roslyn.trx" --results-directory artifacts/test-results/${{ runner.os }} -p:CecilVersion=${{ env.CECIL_VERSION }} -p:RoslynVersion=${{ env.ROSLYN_VERSION }} -p:FodyHelpersVersion=${{ env.FODY_HELPERS_VERSION }} -p:Version=${{ steps.version.outputs.version }} -p:PackageVersion=${{ steps.version.outputs.version }} -p:VersionPrefix=${{ steps.version.outputs.version_prefix }} "-p:VersionSuffix=${{ steps.version.outputs.version_suffix }}"
+          dotnet test tests/AspectN.Conformance.Tests/AspectN.Conformance.Tests.csproj -c Release --no-build --no-restore --logger "trx;LogFileName=conformance.trx" --results-directory artifacts/test-results/${{ runner.os }} -p:CecilVersion=${{ env.CECIL_VERSION }} -p:RoslynVersion=${{ env.ROSLYN_VERSION }} -p:FodyHelpersVersion=${{ env.FODY_HELPERS_VERSION }} -p:Version=${{ steps.version.outputs.version }} -p:PackageVersion=${{ steps.version.outputs.version }} -p:VersionPrefix=${{ steps.version.outputs.version_prefix }} "-p:VersionSuffix=${{ steps.version.outputs.version_suffix }}"
+          dotnet test tests/AspectN.NetFramework.Tests/AspectN.NetFramework.Tests.csproj -c Release -f net472 --no-build --no-restore --logger "trx;LogFileName=net472.trx" --results-directory artifacts/test-results/${{ runner.os }} -p:CecilVersion=${{ env.CECIL_VERSION }} -p:RoslynVersion=${{ env.ROSLYN_VERSION }} -p:FodyHelpersVersion=${{ env.FODY_HELPERS_VERSION }} -p:Version=${{ steps.version.outputs.version }} -p:PackageVersion=${{ steps.version.outputs.version }} -p:VersionPrefix=${{ steps.version.outputs.version_prefix }} "-p:VersionSuffix=${{ steps.version.outputs.version_suffix }}"
+          dotnet test tests/AspectN.NetFramework.Tests/AspectN.NetFramework.Tests.csproj -c Release -f net10.0 --no-build --no-restore --logger "trx;LogFileName=netstandard-modern.trx" --results-directory artifacts/test-results/${{ runner.os }} -p:CecilVersion=${{ env.CECIL_VERSION }} -p:RoslynVersion=${{ env.ROSLYN_VERSION }} -p:FodyHelpersVersion=${{ env.FODY_HELPERS_VERSION }} -p:Version=${{ steps.version.outputs.version }} -p:PackageVersion=${{ steps.version.outputs.version }} -p:VersionPrefix=${{ steps.version.outputs.version_prefix }} "-p:VersionSuffix=${{ steps.version.outputs.version_suffix }}"
 
       - name: Upload test results
         if: always()
@@ -90,7 +98,7 @@ jobs:
             "src/AspectN.Roslyn/AspectN.Roslyn.csproj",
             "src/AspectN.Reflection/AspectN.Reflection.csproj")
           foreach ($project in $projects) {
-            dotnet pack $project -c Release --no-build --no-restore --output $output -p:Version=$version -p:PackageVersion=$version -p:CecilVersion=${{ env.CECIL_VERSION }} -p:RoslynVersion=${{ env.ROSLYN_VERSION }} -p:FodyHelpersVersion=${{ env.FODY_HELPERS_VERSION }}
+            dotnet pack $project -c Release --no-build --no-restore --output $output -p:Version=$version -p:PackageVersion=$version -p:VersionPrefix=${{ steps.version.outputs.version_prefix }} "-p:VersionSuffix=${{ steps.version.outputs.version_suffix }}" -p:CecilVersion=${{ env.CECIL_VERSION }} -p:RoslynVersion=${{ env.ROSLYN_VERSION }} -p:FodyHelpersVersion=${{ env.FODY_HELPERS_VERSION }}
             if ($LASTEXITCODE -ne 0) {
               throw "Packing '$project' failed."
             }
