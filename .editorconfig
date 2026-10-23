@@ -55,3 +55,7 @@ dotnet_naming_style.underscore_camel_case.capitalization = camel_case
 
 [*.md]
 trim_trailing_whitespace = false
+
+# Windows PowerShell 5.1 需要 BOM 才能正确读取脚本内的中文注释。
+[eng/verify-unsigned-packages.ps1]
+charset = utf-8-bom

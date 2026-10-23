@@ -129,6 +129,12 @@ jobs:
       name: nuget-release
       url: https://www.nuget.org/packages/AspectN/${{ needs.build.outputs.version }}
     steps:
+      - name: Check out verification script
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
@@ -139,6 +145,10 @@ jobs:
         with:
           name: unsigned-packages-${{ needs.build.outputs.version }}
           path: artifacts/release
+
+      - name: Verify unsigned release checksums
+        shell: pwsh
+        run: ./eng/verify-unsigned-packages.ps1 -PackageDirectory artifacts/release
 
       - name: Sign and verify NuGet packages
         shell: pwsh

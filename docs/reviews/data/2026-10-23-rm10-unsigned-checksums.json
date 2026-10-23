@@ -1,0 +1,509 @@
+{
+  "date": "2026-10-23",
+  "item": "RM-10",
+  "origin": "K3-M15",
+  "baseline_commit": "0cdcdc0d6712e279bf1aaac24b6bc835d7a35849",
+  "scope": "发布工程本地验证，非产品能力或真实发布证据",
+  "implementation_baseline": {
+    "local_result_file": "artifacts/unsigned-package-tests/762b1236bb394db4a00b356405bd3283/results.json",
+    "sha256": "ca337bf3dbac2dbc1e1b133a23aaf630ef667383a4ee08d9a35579cd1aad8aa0",
+    "passed": 0,
+    "failed": 32,
+    "reason": "新增入口脚本不存在；没有运行旧远端工作流"
+  },
+  "runs": [
+    {
+      "host": "pwsh",
+      "local_result_file": "artifacts/unsigned-package-tests/242435042da1430ea95098ef6c78adb1/results.json",
+      "sha256": "08b1ee13e3dbf777042958286b9dc3bf09e14db8200af1de7673e1b66710bafe",
+      "verifier_sha256": "07402bb9dd7f9b9ada716c4ae9c4f497b799864722ea248f7d60096770a22b39",
+      "passed": 32,
+      "failed": 0,
+      "cases": [
+        {
+          "name": "valid-ten-packages",
+          "passed": true,
+          "exit": 0,
+          "expected_message": ""
+        },
+        {
+          "name": "lowercase-hashes",
+          "passed": true,
+          "exit": 0,
+          "expected_message": ""
+        },
+        {
+          "name": "crlf-manifest",
+          "passed": true,
+          "exit": 0,
+          "expected_message": ""
+        },
+        {
+          "name": "reordered-manifest",
+          "passed": true,
+          "exit": 0,
+          "expected_message": ""
+        },
+        {
+          "name": "missing-manifest",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Missing unsigned checksum manifest"
+        },
+        {
+          "name": "empty-manifest",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Unsigned checksum manifest is empty"
+        },
+        {
+          "name": "blank-record",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Invalid unsigned checksum entry"
+        },
+        {
+          "name": "trailing-blank-record",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Invalid unsigned checksum entry"
+        },
+        {
+          "name": "invalid-hex",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Invalid unsigned checksum entry"
+        },
+        {
+          "name": "short-hash",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Invalid unsigned checksum entry"
+        },
+        {
+          "name": "missing-binary-marker",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Invalid unsigned checksum entry"
+        },
+        {
+          "name": "garbage-record",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Invalid unsigned checksum entry"
+        },
+        {
+          "name": "duplicate-record",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Duplicate unsigned package entry"
+        },
+        {
+          "name": "case-alias-duplicate",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Duplicate unsigned package entry"
+        },
+        {
+          "name": "extra-package",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Unexpected release entry"
+        },
+        {
+          "name": "extra-symbol-package",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Unexpected release entry"
+        },
+        {
+          "name": "extra-file",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Unexpected release entry"
+        },
+        {
+          "name": "hidden-extra-file",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Unexpected release entry"
+        },
+        {
+          "name": "extra-directory",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Unexpected release entry"
+        },
+        {
+          "name": "missing-package",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Missing release package"
+        },
+        {
+          "name": "missing-symbol-package",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Missing release package"
+        },
+        {
+          "name": "tampered-package",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "SHA256 mismatch"
+        },
+        {
+          "name": "tampered-symbol-package",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "SHA256 mismatch"
+        },
+        {
+          "name": "parent-path",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Invalid unsigned checksum entry"
+        },
+        {
+          "name": "windows-parent-path",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Invalid unsigned checksum entry"
+        },
+        {
+          "name": "absolute-path",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Invalid unsigned checksum entry"
+        },
+        {
+          "name": "drive-path",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Invalid unsigned checksum entry"
+        },
+        {
+          "name": "missing-manifest-record",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Unexpected release entry"
+        },
+        {
+          "name": "nonexistent-manifest-package",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Missing release package"
+        },
+        {
+          "name": "manifest-listed-as-package",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Invalid unsigned checksum entry"
+        },
+        {
+          "name": "manifest-is-directory",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Unsigned checksum manifest must be a regular file"
+        },
+        {
+          "name": "package-is-directory",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Unexpected release entry"
+        }
+      ]
+    },
+    {
+      "host": "powershell",
+      "local_result_file": "artifacts/unsigned-package-tests/7de9637830bb4f2d99baa908b41e5623/results.json",
+      "sha256": "8fe6c74020607fce6d94ab64868350121d60cba25da38d6e2c658db9d489f3e7",
+      "verifier_sha256": "07402bb9dd7f9b9ada716c4ae9c4f497b799864722ea248f7d60096770a22b39",
+      "passed": 32,
+      "failed": 0,
+      "cases": [
+        {
+          "name": "valid-ten-packages",
+          "passed": true,
+          "exit": 0,
+          "expected_message": ""
+        },
+        {
+          "name": "lowercase-hashes",
+          "passed": true,
+          "exit": 0,
+          "expected_message": ""
+        },
+        {
+          "name": "crlf-manifest",
+          "passed": true,
+          "exit": 0,
+          "expected_message": ""
+        },
+        {
+          "name": "reordered-manifest",
+          "passed": true,
+          "exit": 0,
+          "expected_message": ""
+        },
+        {
+          "name": "missing-manifest",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Missing unsigned checksum manifest"
+        },
+        {
+          "name": "empty-manifest",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Unsigned checksum manifest is empty"
+        },
+        {
+          "name": "blank-record",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Invalid unsigned checksum entry"
+        },
+        {
+          "name": "trailing-blank-record",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Invalid unsigned checksum entry"
+        },
+        {
+          "name": "invalid-hex",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Invalid unsigned checksum entry"
+        },
+        {
+          "name": "short-hash",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Invalid unsigned checksum entry"
+        },
+        {
+          "name": "missing-binary-marker",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Invalid unsigned checksum entry"
+        },
+        {
+          "name": "garbage-record",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Invalid unsigned checksum entry"
+        },
+        {
+          "name": "duplicate-record",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Duplicate unsigned package entry"
+        },
+        {
+          "name": "case-alias-duplicate",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Duplicate unsigned package entry"
+        },
+        {
+          "name": "extra-package",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Unexpected release entry"
+        },
+        {
+          "name": "extra-symbol-package",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Unexpected release entry"
+        },
+        {
+          "name": "extra-file",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Unexpected release entry"
+        },
+        {
+          "name": "hidden-extra-file",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Unexpected release entry"
+        },
+        {
+          "name": "extra-directory",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Unexpected release entry"
+        },
+        {
+          "name": "missing-package",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Missing release package"
+        },
+        {
+          "name": "missing-symbol-package",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Missing release package"
+        },
+        {
+          "name": "tampered-package",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "SHA256 mismatch"
+        },
+        {
+          "name": "tampered-symbol-package",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "SHA256 mismatch"
+        },
+        {
+          "name": "parent-path",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Invalid unsigned checksum entry"
+        },
+        {
+          "name": "windows-parent-path",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Invalid unsigned checksum entry"
+        },
+        {
+          "name": "absolute-path",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Invalid unsigned checksum entry"
+        },
+        {
+          "name": "drive-path",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Invalid unsigned checksum entry"
+        },
+        {
+          "name": "missing-manifest-record",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Unexpected release entry"
+        },
+        {
+          "name": "nonexistent-manifest-package",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Missing release package"
+        },
+        {
+          "name": "manifest-listed-as-package",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Invalid unsigned checksum entry"
+        },
+        {
+          "name": "manifest-is-directory",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Unsigned checksum manifest must be a regular file"
+        },
+        {
+          "name": "package-is-directory",
+          "passed": true,
+          "exit": 1,
+          "expected_message": "Unexpected release entry"
+        }
+      ]
+    }
+  ],
+  "workflow": {
+    "local_result_file": "artifacts/rm10/workflow-validation.json",
+    "sha256": "eea340dde605b091bc0ebe0654f3454f58107737acf3e090b0ad5d12551ded3a",
+    "yaml_version": "1.2",
+    "parser_version": "2.9.0",
+    "checks": {
+      "yaml_without_errors_or_warnings": true,
+      "release_only_two_steps_added": true,
+      "same_event_commit_checkout_without_persisted_credentials": true,
+      "verify_before_certificate_sign_and_publish": true,
+      "no_conditional_or_continue_on_error": true,
+      "ci_only_one_test_step_added": true,
+      "compatibility_unchanged": true,
+      "actual_workflow_manifest_producer_accepted": true
+    },
+    "local_checker_file": "artifacts/rm10/validate-workflows.cjs",
+    "local_checker_sha256": "41c6aa708f08f4712e0bb6ca70e585129dbf0754d9f0c8a7c9a22f375e932904",
+    "generated_manifest_fixture_packages": 10,
+    "verifier_output": "Verified 10 unsigned release package checksums.\r\n",
+    "inputs": [
+      {
+        "path": ".github/workflows/release.yml",
+        "sha256": "234b5bc7e3a22fc09111c1635d9d56dcb5c91acb15fdad70380cc4ec173e82dd"
+      },
+      {
+        "path": ".github/workflows/ci.yml",
+        "sha256": "9546823b0fe94ba86a10f530d1070a91cae130cb346afdb3b820fb8fe500236a"
+      },
+      {
+        "path": ".github/workflows/compatibility.yml",
+        "sha256": "9fdb2fd4f6e7915e2f808366a77b8e0aa489131c397f541afa38853ec718fcbd"
+      },
+      {
+        "path": "artifacts/rm10/release-before.yml",
+        "sha256": "c6f5ad6375201803fa541f8ed5af37e9adffcd4c35ff9019c37d50ac4c8eef52"
+      },
+      {
+        "path": "artifacts/rm10/ci-before.yml",
+        "sha256": "2b5cbe883866e93aba4ffa56020d0b0147a1f617093a5a70c6a0cf8f04591b47"
+      },
+      {
+        "path": "artifacts/rm10/record-unsigned-checksums.ps1",
+        "sha256": "cc9be83c1381c2249799630278ae373200b51824381727026e4050d74628eefe"
+      },
+      {
+        "path": "eng/verify-unsigned-packages.ps1",
+        "sha256": "07402bb9dd7f9b9ada716c4ae9c4f497b799864722ea248f7d60096770a22b39"
+      },
+      {
+        "path": "eng/tests/verify-unsigned-packages.Tests.ps1",
+        "sha256": "d1f71e8b5df5f1cf4ef86560dbe4dea38ff5bd69aff451e482cd7b3b440a2454"
+      }
+    ]
+  },
+  "sources": [
+    {
+      "file": ".editorconfig",
+      "sha256": "5db71f4ec4598c408170965f90d1acf9895319c766101de4a4d0b4534d11d6b5"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "sha256": "234b5bc7e3a22fc09111c1635d9d56dcb5c91acb15fdad70380cc4ec173e82dd"
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "sha256": "9546823b0fe94ba86a10f530d1070a91cae130cb346afdb3b820fb8fe500236a"
+    },
+    {
+      "file": "eng/verify-unsigned-packages.ps1",
+      "sha256": "07402bb9dd7f9b9ada716c4ae9c4f497b799864722ea248f7d60096770a22b39"
+    },
+    {
+      "file": "eng/tests/verify-unsigned-packages.Tests.ps1",
+      "sha256": "d1f71e8b5df5f1cf4ef86560dbe4dea38ff5bd69aff451e482cd7b3b440a2454"
+    }
+  ],
+  "local_os": "Windows",
+  "remote_actions_executed": false,
+  "linux_tests_executed": false,
+  "real_certificate_used": false,
+  "signing_executed": false,
+  "publishing_executed": false,
+  "limits": [
+    "合成包用于摘要检查，不作为NuGet内容验证",
+    "未执行重解析点fixture，生产检查仍拒绝重解析点",
+    "CI已配置Windows/Linux入口，本机仅执行Windows",
+    "摘要不提供独立来源认证",
+    "未运行.NET全矩阵，库源码与工程未修改"
+  ]
+}

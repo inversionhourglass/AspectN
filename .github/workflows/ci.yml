@@ -49,6 +49,10 @@ jobs:
         shell: pwsh
         run: ./eng/tests/verify-documentation.Tests.ps1
 
+      - name: Test unsigned package checksum verifier
+        shell: pwsh
+        run: ./eng/tests/verify-unsigned-packages.Tests.ps1
+
       - name: 检查知识库派生资料
         shell: pwsh
         run: ./eng/generate-knowledge.ps1 -Check

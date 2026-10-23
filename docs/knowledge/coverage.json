@@ -557,6 +557,19 @@
       "assessment_status": "unassessed",
       "capability_ids": [],
       "notes": "性能工程尚未独立建立能力条目。RM-17建立九类匹配输入、Declaration/Capture两种模式的BenchmarkDotNet入口，限定.NET 10与Reflection关系查询。只优化证据明确的修饰符临时集合；不替代历史任务35的完整性能闸门，不承诺全部后端、运行时、表达式或整体吞吐。完整Match仍有分配，其他热点另行评估；语义回归关联MEM-SELECTORS-001/S1和CROSS-AVAILABILITY-001/S1。RM-19增加单规则/32规则缓存压力、静态/实例比较、完整编译及独立GC存活堆估计，依据证据保留绑定时创建的Regex；记录多规则分配收益与计划存活内存代价，仅覆盖.NET10单线程简单分支，不扩展性能承诺，语义关联SEM-REGEX-001/S1/S3。RM-20增加普通Cecil公开MapType的三形状×三缓存路径基线；局部写入探针未证实候选装箱收益，保留生产实现，未声称修复或普遍吞吐改善。仅测.NET10单线程，短轮次、根未命中仍可复用子图、真实引用分布与存活内存缺口保留。"
+    },
+    {
+      "id": "INV-0021",
+      "subject": "发布包交接与签名前摘要校验",
+      "origin_refs": [
+        {
+          "path": "docs/reviews/2026-10-23-rm10-unsigned-checksums.md",
+          "section": "问题与处理 / 当前验证"
+        }
+      ],
+      "assessment_status": "unassessed",
+      "capability_ids": [],
+      "notes": "发布工程尚未独立建立产品能力条目。RM-10要求下载后、证书处理及签名前，未签名清单存在、包文件集合完全一致且逐包SHA256匹配；保留原包内容/消费者与签名验证、签后摘要。本地Windows两个PowerShell宿主各32项黑盒通过，YAML结构与实际清单生成步骤输出检查通过；Linux仅接入CI，未执行远端Actions、真实签名或发布。摘要不提供独立来源认证，不改变库场景验证状态。"
     }
   ]
 }
