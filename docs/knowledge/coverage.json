@@ -536,6 +536,19 @@
       "assessment_status": "unassessed",
       "capability_ids": [],
       "notes": "工程测试防线尚未独立建立产品能力条目。RI-03移除逐样本一秒墙钟断言，核心测试项目自动加载60秒VSTest宿主挂起保护；不新增生产API、执行限额或性能承诺。解析语言关联SYN-GRAMMAR-001，既有S1—S3及N/A不变；本轮执行范围和合成挂起证据以处置报告为准，不扩大为所有输入或所有运行器的终止证明。"
+    },
+    {
+      "id": "INV-0020",
+      "subject": "匹配热路径的分配与吞吐专项测量",
+      "origin_refs": [
+        {
+          "path": "docs/reviews/2026-10-23-rm17-matching-allocations.md",
+          "section": "实现与边界 / 当前验证"
+        }
+      ],
+      "assessment_status": "unassessed",
+      "capability_ids": [],
+      "notes": "性能工程尚未独立建立能力条目。RM-17建立九类匹配输入、Declaration/Capture两种模式的BenchmarkDotNet入口，限定.NET 10与Reflection关系查询。只优化证据明确的修饰符临时集合；不替代历史任务35的完整性能闸门，不承诺全部后端、运行时、表达式或整体吞吐。完整Match仍有分配，其他热点另行评估；语义回归关联MEM-SELECTORS-001/S1和CROSS-AVAILABILITY-001/S1。"
     }
   ]
 }

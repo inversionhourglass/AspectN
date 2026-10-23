@@ -1,6 +1,7 @@
 using AspectN.Binding;
 using AspectN.Evaluation;
 using AspectN.Metadata;
+using AspectN.Tests.TestDoubles;
 
 namespace AspectN.Tests.Evaluation;
 
@@ -154,6 +155,32 @@ public sealed class ModifierMatcherTests
             isStatic: false);
 
         Assert.Equal(expected, result);
+    }
+
+    [Theory]
+    [InlineData("method(* Run(..))", Accessibility.Public, true, MatchStatus.Matched)]
+    [InlineData("method(public static * Run(..))", Accessibility.Public, true, MatchStatus.Matched)]
+    [InlineData("method(private static * Run(..))", Accessibility.Public, true, MatchStatus.NotMatched)]
+    [InlineData("method(public|internal static * Run(..))", Accessibility.Internal, true, MatchStatus.Matched)]
+    [InlineData("method(!public !static * Run(..))", Accessibility.Internal, false, MatchStatus.Matched)]
+    public void Evaluate_KnownModifiers_DoesNotAllocate(string source, Accessibility accessibility, bool isStatic,
+        MatchStatus expected)
+    {
+        var signature = Bind(source);
+        var context = new EvaluationContext(new StubTypeSystem(), default);
+        var availability = MetadataAvailability.Complete;
+        var status = MatchStatus.Unknown;
+        // 在计量外完成绑定、上下文构造和预热，只约束已知事实的修饰符判断。
+        for (var index = 0; index < 1024; index++)
+            status = ModifierMatcher.Evaluate(signature.Modifiers, accessibility, isStatic, availability, signature, context);
+
+        var before = GC.GetAllocatedBytesForCurrentThread();
+        for (var index = 0; index < 256; index++)
+            status = ModifierMatcher.Evaluate(signature.Modifiers, accessibility, isStatic, availability, signature, context);
+        var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+
+        Assert.Equal(expected, status);
+        Assert.Equal(0L, allocated);
     }
 
     private static BoundMethodSignature Bind(

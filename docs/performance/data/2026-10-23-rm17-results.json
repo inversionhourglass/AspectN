@@ -1,0 +1,2120 @@
+{
+  "recorded_on": "2026-10-23",
+  "baseline_head": "a8b19b12491646f46ff79866368ab3c29e328acf",
+  "production_change": {
+    "path": "src/AspectN/Evaluation/ModifierMatcher.cs",
+    "before_sha256": "f49618098f50219132af939eb6bdf210f94de63a271fddf580aba97c30cec0f0",
+    "after_sha256": "c40ae8283cae16bf0ae551441ca0a2b01d05139c843244b645e24c89c4db05c4"
+  },
+  "environment_before": {
+    "BenchmarkDotNetCaption": "BenchmarkDotNet",
+    "BenchmarkDotNetVersion": "0.15.8",
+    "OsVersion": "Windows 11 (10.0.26200.9711/25H2/2025Update/HudsonValley2)",
+    "ProcessorName": "13th Gen Intel Core i9-13900H",
+    "PhysicalProcessorCount": 1,
+    "PhysicalCoreCount": 14,
+    "LogicalCoreCount": 20,
+    "RuntimeVersion": ".NET 10.0.12 (10.0.12, 10.0.1226.42308)",
+    "Architecture": "X64",
+    "HasAttachedDebugger": false,
+    "HasRyuJit": true,
+    "Configuration": "RELEASE",
+    "DotNetCliVersion": "10.0.401",
+    "ChronometerFrequency": {
+      "Hertz": 10000000
+    },
+    "HardwareTimerKind": "Unknown"
+  },
+  "environment_after": {
+    "BenchmarkDotNetCaption": "BenchmarkDotNet",
+    "BenchmarkDotNetVersion": "0.15.8",
+    "OsVersion": "Windows 11 (10.0.26200.9711/25H2/2025Update/HudsonValley2)",
+    "ProcessorName": "13th Gen Intel Core i9-13900H",
+    "PhysicalProcessorCount": 1,
+    "PhysicalCoreCount": 14,
+    "LogicalCoreCount": 20,
+    "RuntimeVersion": ".NET 10.0.12 (10.0.12, 10.0.1226.42308)",
+    "Architecture": "X64",
+    "HasAttachedDebugger": false,
+    "HasRyuJit": true,
+    "Configuration": "RELEASE",
+    "DotNetCliVersion": "10.0.401",
+    "ChronometerFrequency": {
+      "Hertz": 10000000
+    },
+    "HardwareTimerKind": "Unknown"
+  },
+  "job": {
+    "runtime": ".NET 10.0",
+    "launch_count": 2,
+    "warmup_count": 3,
+    "iteration_count": 6,
+    "configuration": "Release",
+    "memory_diagnoser": true,
+    "production_resource_options": "defaults"
+  },
+  "source_reports": [
+    {
+      "sha256": "4cf65df8ba4f5a1152ef0183488270795626ad3c08561894926c75a8551d0974",
+      "path": "artifacts/rm17/before/results/AspectN.Benchmarks.MatchingBenchmarks-report-full.json"
+    },
+    {
+      "sha256": "d3aaf9c608b657c037b5934c0c19030008701f20863bf1915956344f8d4f6d85",
+      "path": "artifacts/rm17/after/results/AspectN.Benchmarks.MatchingBenchmarks-report-full.json"
+    }
+  ],
+  "notes": "统计样本经过BenchmarkDotNet默认异常值处理；workload_actual_by_launch是未扣除框架开销、未过滤的每轮实测ns/op。完整原始JSON、CSV及日志保存在本地artifacts/rm17。仅字节差作为本轮确定收益，耗时不构成因果提升或跨机器承诺。",
+  "results": [
+    {
+      "mode": "Declaration",
+      "scenario": "BareMethod",
+      "before": {
+        "mean_ns": 2508.3101792769,
+        "error_ns": 526.584135810978,
+        "stddev_ns": 380.7548317789419,
+        "confidence_lower_ns": 1981.726043465922,
+        "confidence_upper_ns": 3034.8943150878777,
+        "allocated_bytes": 6208,
+        "statistics_samples_ns": [
+          1914.2898559570312,
+          2341.818046569824,
+          2040.646743774414,
+          2298.135185241699,
+          2408.9622497558594,
+          2551.3994216918945,
+          2635.3118896484375,
+          2446.6995239257812,
+          3137.567138671875,
+          3079.601287841797,
+          2736.980628967285
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              1916.2054061889648,
+              2343.733596801758,
+              2042.5622940063477,
+              2300.050735473633,
+              2410.877799987793,
+              2867.6416397094727
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              2553.215789794922,
+              2637.128257751465,
+              2448.5158920288086,
+              3139.3835067749023,
+              3081.417655944824,
+              2738.7969970703125
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 259,
+          "Gen1Collections": 2,
+          "Gen2Collections": 0,
+          "TotalOperations": 524288,
+          "BytesAllocatedPerOperation": 6208
+        }
+      },
+      "after": {
+        "mean_ns": 2056.7940394083657,
+        "error_ns": 238.52650818957454,
+        "stddev_ns": 186.22580803002043,
+        "confidence_lower_ns": 1818.2675312187912,
+        "confidence_upper_ns": 2295.3205475979403,
+        "allocated_bytes": 6208,
+        "statistics_samples_ns": [
+          1903.0365943908691,
+          2226.5585899353027,
+          1867.2484397888184,
+          2149.5211601257324,
+          1753.9931297302246,
+          1974.658489227295,
+          1984.800910949707,
+          2399.297523498535,
+          2007.4804306030273,
+          1997.7846145629883,
+          2132.4867248535156,
+          2284.661865234375
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              1904.5854568481445,
+              2228.107452392578,
+              1868.7973022460938,
+              2151.070022583008,
+              1755.5419921875,
+              1976.2073516845703
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              1986.557960510254,
+              2401.054573059082,
+              2009.2374801635742,
+              1999.5416641235352,
+              2134.2437744140625,
+              2286.418914794922
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 259,
+          "Gen1Collections": 2,
+          "Gen2Collections": 0,
+          "TotalOperations": 524288,
+          "BytesAllocatedPerOperation": 6208
+        }
+      },
+      "allocation_delta_bytes": 0
+    },
+    {
+      "mode": "Declaration",
+      "scenario": "Modifiers",
+      "before": {
+        "mean_ns": 2319.9209733442826,
+        "error_ns": 1215.049170393957,
+        "stddev_ns": 878.5601597435157,
+        "confidence_lower_ns": 1104.8718029503257,
+        "confidence_upper_ns": 3534.9701437382396,
+        "allocated_bytes": 6368,
+        "statistics_samples_ns": [
+          3167.498207092285,
+          3255.8252334594727,
+          2802.7711868286133,
+          2631.942939758301,
+          2851.266288757324,
+          3577.940559387207,
+          1733.1775665283203,
+          1417.282485961914,
+          1409.7465515136719,
+          1384.1075897216797,
+          1287.5720977783203
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 262144,
+            "actual_ns_per_operation": [
+              3169.5411682128906,
+              3257.868194580078,
+              2804.8141479492188,
+              2633.9859008789062,
+              2853.3092498779297,
+              3579.9835205078125
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 262144,
+            "actual_ns_per_operation": [
+              2920.946502685547,
+              1735.2676391601562,
+              1419.37255859375,
+              1411.8366241455078,
+              1386.1976623535156,
+              1289.6621704101562
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 133,
+          "Gen1Collections": 1,
+          "Gen2Collections": 0,
+          "TotalOperations": 262144,
+          "BytesAllocatedPerOperation": 6368
+        }
+      },
+      "after": {
+        "mean_ns": 2544.167184829712,
+        "error_ns": 299.646690653256,
+        "stddev_ns": 233.9444261938143,
+        "confidence_lower_ns": 2244.520494176456,
+        "confidence_upper_ns": 2843.813875482968,
+        "allocated_bytes": 6208,
+        "statistics_samples_ns": [
+          2237.028217315674,
+          2528.846263885498,
+          2866.0841941833496,
+          2629.723644256592,
+          2779.907703399658,
+          2374.3908882141113,
+          2665.053176879883,
+          2808.233070373535,
+          2687.7227783203125,
+          2146.632766723633,
+          2471.670341491699,
+          2334.7131729125977
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              2238.76953125,
+              2530.587577819824,
+              2867.825508117676,
+              2631.464958190918,
+              2781.6490173339844,
+              2376.1322021484375
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              2666.841506958008,
+              2810.02140045166,
+              2689.5111083984375,
+              2148.421096801758,
+              2473.458671569824,
+              2336.5015029907227
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 259,
+          "Gen1Collections": 2,
+          "Gen2Collections": 0,
+          "TotalOperations": 524288,
+          "BytesAllocatedPerOperation": 6208
+        }
+      },
+      "allocation_delta_bytes": -160
+    },
+    {
+      "mode": "Declaration",
+      "scenario": "ModifierMiss",
+      "before": {
+        "mean_ns": 1195.1798525723543,
+        "error_ns": 495.66466902094805,
+        "stddev_ns": 358.3980314583216,
+        "confidence_lower_ns": 699.5151835514063,
+        "confidence_upper_ns": 1690.8445215933025,
+        "allocated_bytes": 4008,
+        "statistics_samples_ns": [
+          937.6925468444824,
+          911.5315437316895,
+          941.9571876525879,
+          934.1248512268066,
+          928.2156944274902,
+          862.4916076660156,
+          1076.005744934082,
+          1745.9332466125488,
+          1555.6912422180176,
+          1583.9503288269043,
+          1669.3843841552734
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              939.6842956542969,
+              913.5232925415039,
+              962.7819061279297,
+              943.9489364624023,
+              936.1166000366211,
+              930.2074432373047
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 1048576,
+            "actual_ns_per_operation": [
+              864.1804695129395,
+              1077.6946067810059,
+              1747.6221084594727,
+              1557.3801040649414,
+              1585.6391906738281,
+              1671.0732460021973
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 334,
+          "Gen1Collections": 1,
+          "Gen2Collections": 0,
+          "TotalOperations": 1048576,
+          "BytesAllocatedPerOperation": 4008
+        }
+      },
+      "after": {
+        "mean_ns": 1482.4392875035603,
+        "error_ns": 179.2252277896069,
+        "stddev_ns": 139.92726895560543,
+        "confidence_lower_ns": 1303.2140597139535,
+        "confidence_upper_ns": 1661.6645152931671,
+        "allocated_bytes": 3848,
+        "statistics_samples_ns": [
+          1314.2768859863281,
+          1733.725929260254,
+          1482.2314262390137,
+          1570.6671714782715,
+          1635.1706504821777,
+          1343.0269241333008,
+          1313.1342887878418,
+          1335.6341361999512,
+          1478.2183647155762,
+          1424.3914604187012,
+          1601.7651557922363,
+          1557.0290565490723
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 1048576,
+            "actual_ns_per_operation": [
+              1316.0059928894043,
+              1735.45503616333,
+              1483.9605331420898,
+              1572.3962783813477,
+              1636.899757385254,
+              1344.756031036377
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              1315.2740478515625,
+              1337.7738952636719,
+              1480.3581237792969,
+              1426.5312194824219,
+              1603.904914855957,
+              1559.168815612793
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 160,
+          "Gen1Collections": 0,
+          "Gen2Collections": 0,
+          "TotalOperations": 524288,
+          "BytesAllocatedPerOperation": 3848
+        }
+      },
+      "allocation_delta_bytes": -160
+    },
+    {
+      "mode": "Declaration",
+      "scenario": "ModifierAlternatives",
+      "before": {
+        "mean_ns": 3601.2448946634927,
+        "error_ns": 654.0126576061997,
+        "stddev_ns": 510.61006405114915,
+        "confidence_lower_ns": 2947.232237057293,
+        "confidence_upper_ns": 4255.2575522696925,
+        "allocated_bytes": 6368,
+        "statistics_samples_ns": [
+          4008.558177947998,
+          4045.6639289855957,
+          3126.4697074890137,
+          3313.767910003662,
+          2859.2738151550293,
+          2757.882595062256,
+          3361.2184524536133,
+          3519.712257385254,
+          4230.127143859863,
+          3990.867042541504,
+          4045.50724029541,
+          3955.890464782715
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              4010.103988647461,
+              4047.2097396850586,
+              3128.0155181884766,
+              3315.313720703125,
+              2860.819625854492,
+              2759.4284057617188
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 262144,
+            "actual_ns_per_operation": [
+              3363.541030883789,
+              3522.0348358154297,
+              4232.449722290039,
+              3993.1896209716797,
+              4047.829818725586,
+              3958.2130432128906
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 133,
+          "Gen1Collections": 1,
+          "Gen2Collections": 0,
+          "TotalOperations": 262144,
+          "BytesAllocatedPerOperation": 6368
+        }
+      },
+      "after": {
+        "mean_ns": 2152.8343200683594,
+        "error_ns": 323.32779656468153,
+        "stddev_ns": 252.43307601672936,
+        "confidence_lower_ns": 1829.5065235036777,
+        "confidence_upper_ns": 2476.162116633041,
+        "allocated_bytes": 6208,
+        "statistics_samples_ns": [
+          2479.932403564453,
+          2448.3476638793945,
+          2144.3984985351562,
+          2208.218193054199,
+          2311.209297180176,
+          2496.0708618164062,
+          2075.186347961426,
+          1850.8543014526367,
+          2179.4952392578125,
+          1806.9660186767578,
+          2042.1375274658203,
+          1791.1954879760742
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              2481.98184967041,
+              2450.3971099853516,
+              2146.4479446411133,
+              2210.2676391601562,
+              2313.258743286133,
+              2498.1203079223633
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              2076.986312866211,
+              1852.6542663574219,
+              2181.2952041625977,
+              1808.765983581543,
+              2043.9374923706055,
+              1792.9954528808594
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 259,
+          "Gen1Collections": 2,
+          "Gen2Collections": 0,
+          "TotalOperations": 524288,
+          "BytesAllocatedPerOperation": 6208
+        }
+      },
+      "allocation_delta_bytes": -160
+    },
+    {
+      "mode": "Declaration",
+      "scenario": "Namespace",
+      "before": {
+        "mean_ns": 2995.007340113322,
+        "error_ns": 211.30977396105243,
+        "stddev_ns": 164.97677218023318,
+        "confidence_lower_ns": 2783.6975661522692,
+        "confidence_upper_ns": 3206.3171140743743,
+        "allocated_bytes": 3520,
+        "statistics_samples_ns": [
+          2976.2853622436523,
+          3270.9535598754883,
+          2857.538414001465,
+          3194.1877365112305,
+          2764.5959854125977,
+          3140.1708602905273,
+          2787.9941940307617,
+          2865.761947631836,
+          2948.0525970458984,
+          2931.9143295288086,
+          3071.200942993164,
+          3131.4321517944336
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 262144,
+            "actual_ns_per_operation": [
+              2978.4393310546875,
+              3273.1075286865234,
+              2859.6923828125,
+              3196.3417053222656,
+              2766.749954223633,
+              3142.3248291015625
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              2789.6682739257812,
+              2867.4360275268555,
+              2949.726676940918,
+              2933.588409423828,
+              3072.8750228881836,
+              3133.106231689453
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 147,
+          "Gen1Collections": 0,
+          "Gen2Collections": 0,
+          "TotalOperations": 524288,
+          "BytesAllocatedPerOperation": 3520
+        }
+      },
+      "after": {
+        "mean_ns": 2443.5633500417075,
+        "error_ns": 275.3945540337797,
+        "stddev_ns": 215.00995315475515,
+        "confidence_lower_ns": 2168.168796007928,
+        "confidence_upper_ns": 2718.957904075487,
+        "allocated_bytes": 3520,
+        "statistics_samples_ns": [
+          2212.191581726074,
+          1954.075050354004,
+          2483.6233139038086,
+          2467.7093505859375,
+          2593.971824645996,
+          2490.1926040649414,
+          2447.0550537109375,
+          2307.093620300293,
+          2358.5647583007812,
+          2693.9258575439453,
+          2722.7540969848633,
+          2591.6030883789062
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              2213.808059692383,
+              1955.6915283203125,
+              2485.239791870117,
+              2469.325828552246,
+              2595.5883026123047,
+              2491.80908203125
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              2448.7524032592773,
+              2308.790969848633,
+              2360.262107849121,
+              2695.623207092285,
+              2724.451446533203,
+              2593.300437927246
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 147,
+          "Gen1Collections": 0,
+          "Gen2Collections": 0,
+          "TotalOperations": 524288,
+          "BytesAllocatedPerOperation": 3520
+        }
+      },
+      "allocation_delta_bytes": 0
+    },
+    {
+      "mode": "Declaration",
+      "scenario": "NamespaceMiss",
+      "before": {
+        "mean_ns": 2294.118995666504,
+        "error_ns": 147.96077826431386,
+        "stddev_ns": 97.86689369552926,
+        "confidence_lower_ns": 2146.15821740219,
+        "confidence_upper_ns": 2442.0797739308177,
+        "allocated_bytes": 3200,
+        "statistics_samples_ns": [
+          2342.83504486084,
+          2415.663719177246,
+          2436.613655090332,
+          2394.55509185791,
+          2264.8849487304688,
+          2176.7730712890625,
+          2255.1239013671875,
+          2211.899185180664,
+          2272.3487854003906,
+          2170.4925537109375
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              2630.274200439453,
+              2345.085334777832,
+              2417.9140090942383,
+              2438.863945007324,
+              2396.8053817749023,
+              2267.135238647461
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 262144,
+            "actual_ns_per_operation": [
+              2179.105758666992,
+              2257.456588745117,
+              2214.2318725585938,
+              2274.6814727783203,
+              2477.979278564453,
+              2172.825241088867
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 66,
+          "Gen1Collections": 0,
+          "Gen2Collections": 0,
+          "TotalOperations": 262144,
+          "BytesAllocatedPerOperation": 3200
+        }
+      },
+      "after": {
+        "mean_ns": 1556.4028072357178,
+        "error_ns": 115.4592604649538,
+        "stddev_ns": 76.3691520323219,
+        "confidence_lower_ns": 1440.943546770764,
+        "confidence_upper_ns": 1671.8620677006716,
+        "allocated_bytes": 3200,
+        "statistics_samples_ns": [
+          1620.9644317626953,
+          1421.6341018676758,
+          1559.991455078125,
+          1635.189437866211,
+          1503.5446166992188,
+          1569.3978309631348,
+          1554.5334815979004,
+          1542.025089263916,
+          1478.873348236084,
+          1677.8742790222168
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              1622.6860046386719,
+              1423.3556747436523,
+              1876.5003204345703,
+              1561.7130279541016,
+              1636.9110107421875,
+              1505.2661895751953
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              1571.0826873779297,
+              1556.2183380126953,
+              1543.709945678711,
+              1930.8122634887695,
+              1480.558204650879,
+              1679.5591354370117
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 133,
+          "Gen1Collections": 0,
+          "Gen2Collections": 0,
+          "TotalOperations": 524288,
+          "BytesAllocatedPerOperation": 3200
+        }
+      },
+      "allocation_delta_bytes": 0
+    },
+    {
+      "mode": "Declaration",
+      "scenario": "NestedType",
+      "before": {
+        "mean_ns": 4309.88110628995,
+        "error_ns": 466.0556860879925,
+        "stddev_ns": 336.9887968287583,
+        "confidence_lower_ns": 3843.825420201958,
+        "confidence_upper_ns": 4775.936792377943,
+        "allocated_bytes": 7104,
+        "statistics_samples_ns": [
+          4326.251411437988,
+          4724.075126647949,
+          4898.666954040527,
+          4425.461387634277,
+          4421.36173248291,
+          4512.594032287598,
+          4221.915435791016,
+          3821.5843200683594,
+          3865.2008056640625,
+          4010.175323486328,
+          4181.4056396484375
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 262144,
+            "actual_ns_per_operation": [
+              4328.00407409668,
+              4725.827789306641,
+              4900.419616699219,
+              4427.214050292969,
+              4423.114395141602,
+              4514.346694946289
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 131072,
+            "actual_ns_per_operation": [
+              4223.773956298828,
+              4937.093353271484,
+              3823.442840576172,
+              3867.059326171875,
+              4012.0338439941406,
+              4183.26416015625
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 74,
+          "Gen1Collections": 1,
+          "Gen2Collections": 0,
+          "TotalOperations": 131072,
+          "BytesAllocatedPerOperation": 7104
+        }
+      },
+      "after": {
+        "mean_ns": 3708.255100250244,
+        "error_ns": 343.53718964362804,
+        "stddev_ns": 268.211240818991,
+        "confidence_lower_ns": 3364.717910606616,
+        "confidence_upper_ns": 4051.7922898938723,
+        "allocated_bytes": 7104,
+        "statistics_samples_ns": [
+          3435.1417541503906,
+          3263.525390625,
+          4099.377059936523,
+          3447.1588134765625,
+          3901.377487182617,
+          3503.3374786376953,
+          3792.158889770508,
+          3940.958023071289,
+          3707.105255126953,
+          3624.1573333740234,
+          3689.3672943115234,
+          4095.3964233398438
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 262144,
+            "actual_ns_per_operation": [
+              3436.6722106933594,
+              3265.0558471679688,
+              4100.907516479492,
+              3448.6892700195312,
+              3902.907943725586,
+              3504.867935180664
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 262144,
+            "actual_ns_per_operation": [
+              3793.602752685547,
+              3942.401885986328,
+              3708.549118041992,
+              3625.6011962890625,
+              3690.8111572265625,
+              4096.840286254883
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 148,
+          "Gen1Collections": 2,
+          "Gen2Collections": 0,
+          "TotalOperations": 262144,
+          "BytesAllocatedPerOperation": 7104
+        }
+      },
+      "allocation_delta_bytes": 0
+    },
+    {
+      "mode": "Declaration",
+      "scenario": "OpenVariables",
+      "before": {
+        "mean_ns": 5233.895206451416,
+        "error_ns": 439.6052355674729,
+        "stddev_ns": 343.21485200594697,
+        "confidence_lower_ns": 4794.289970883943,
+        "confidence_upper_ns": 5673.500442018889,
+        "allocated_bytes": 9728,
+        "statistics_samples_ns": [
+          4703.297805786133,
+          5162.250137329102,
+          5155.346298217773,
+          4924.887466430664,
+          5580.630111694336,
+          5908.208847045898,
+          5163.853073120117,
+          5485.189437866211,
+          5609.433364868164,
+          5027.672576904297,
+          4979.697799682617,
+          5106.27555847168
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 131072,
+            "actual_ns_per_operation": [
+              4705.425262451172,
+              5164.377593994141,
+              5157.4737548828125,
+              4927.014923095703,
+              5582.757568359375,
+              5910.3363037109375
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 262144,
+            "actual_ns_per_operation": [
+              5165.406799316406,
+              5486.7431640625,
+              5610.987091064453,
+              5029.226303100586,
+              4981.251525878906,
+              5107.829284667969
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 203,
+          "Gen1Collections": 3,
+          "Gen2Collections": 0,
+          "TotalOperations": 262144,
+          "BytesAllocatedPerOperation": 9728
+        }
+      },
+      "after": {
+        "mean_ns": 5383.968861897786,
+        "error_ns": 601.4095654470287,
+        "stddev_ns": 469.5410297682443,
+        "confidence_lower_ns": 4782.559296450758,
+        "confidence_upper_ns": 5985.378427344815,
+        "allocated_bytes": 9728,
+        "statistics_samples_ns": [
+          5368.690872192383,
+          5646.485137939453,
+          5392.116165161133,
+          5733.831024169922,
+          4361.722183227539,
+          5319.738006591797,
+          4606.719589233398,
+          5609.514999389648,
+          5823.60954284668,
+          5199.855041503906,
+          5766.54167175293,
+          5778.802108764648
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 262144,
+            "actual_ns_per_operation": [
+              5370.457077026367,
+              5648.2513427734375,
+              5393.882369995117,
+              5735.597229003906,
+              4363.488388061523,
+              5321.504211425781
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 262144,
+            "actual_ns_per_operation": [
+              4608.223724365234,
+              5611.019134521484,
+              5825.113677978516,
+              5201.359176635742,
+              5768.045806884766,
+              5780.306243896484
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 203,
+          "Gen1Collections": 3,
+          "Gen2Collections": 0,
+          "TotalOperations": 262144,
+          "BytesAllocatedPerOperation": 9728
+        }
+      },
+      "allocation_delta_bytes": 0
+    },
+    {
+      "mode": "Declaration",
+      "scenario": "AncestorWalk",
+      "before": {
+        "mean_ns": 20342.659759521484,
+        "error_ns": 1954.9556284860407,
+        "stddev_ns": 1526.3007635541355,
+        "confidence_lower_ns": 18387.704131035443,
+        "confidence_upper_ns": 22297.615388007525,
+        "allocated_bytes": 24956,
+        "statistics_samples_ns": [
+          21994.972229003906,
+          22633.477783203125,
+          21337.428283691406,
+          20269.16046142578,
+          18297.544860839844,
+          19803.82843017578,
+          21385.617065429688,
+          20037.14599609375,
+          17855.95245361328,
+          18395.262145996094,
+          21150.157165527344,
+          20951.370239257812
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 65536,
+            "actual_ns_per_operation": [
+              21997.164916992188,
+              22635.670471191406,
+              21339.620971679688,
+              20271.353149414062,
+              18299.737548828125,
+              19806.021118164062
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 65536,
+            "actual_ns_per_operation": [
+              21387.70751953125,
+              20039.236450195312,
+              17858.042907714844,
+              18397.352600097656,
+              21152.247619628906,
+              20953.460693359375
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 130,
+          "Gen1Collections": 5,
+          "Gen2Collections": 0,
+          "TotalOperations": 65536,
+          "BytesAllocatedPerOperation": 24956
+        }
+      },
+      "after": {
+        "mean_ns": 17147.45038350423,
+        "error_ns": 1161.71936108593,
+        "stddev_ns": 906.9940626909416,
+        "confidence_lower_ns": 15985.7310224183,
+        "confidence_upper_ns": 18309.16974459016,
+        "allocated_bytes": 24956,
+        "statistics_samples_ns": [
+          17244.512176513672,
+          17840.642547607422,
+          17887.616729736328,
+          15869.26498413086,
+          17112.230682373047,
+          16568.779754638672,
+          16061.70654296875,
+          17234.466552734375,
+          18465.545654296875,
+          17136.109924316406,
+          18422.46856689453,
+          15926.060485839844
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 65536,
+            "actual_ns_per_operation": [
+              17246.517944335938,
+              17842.648315429688,
+              17889.622497558594,
+              15871.270751953125,
+              17114.236450195312,
+              16570.785522460938
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 65536,
+            "actual_ns_per_operation": [
+              16063.345336914062,
+              17236.105346679688,
+              18467.184448242188,
+              17137.74871826172,
+              18424.107360839844,
+              15927.699279785156
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 130,
+          "Gen1Collections": 5,
+          "Gen2Collections": 0,
+          "TotalOperations": 65536,
+          "BytesAllocatedPerOperation": 24956
+        }
+      },
+      "allocation_delta_bytes": 0
+    },
+    {
+      "mode": "Capture",
+      "scenario": "BareMethod",
+      "before": {
+        "mean_ns": 2701.97358564897,
+        "error_ns": 432.1542185072034,
+        "stddev_ns": 312.47581455688805,
+        "confidence_lower_ns": 2269.8193671417666,
+        "confidence_upper_ns": 3134.1278041561736,
+        "allocated_bytes": 6472,
+        "statistics_samples_ns": [
+          1902.4211883544922,
+          2740.200996398926,
+          2615.916633605957,
+          2708.565330505371,
+          2762.6089096069336,
+          3093.2414054870605,
+          3100.0433921813965,
+          2796.103000640869,
+          2673.1696128845215,
+          2648.5291481018066,
+          2680.909824371338
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              1904.3622970581055,
+              2742.142105102539,
+              2617.8577423095703,
+              2710.5064392089844,
+              3074.7730255126953,
+              2764.550018310547
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              3094.9953079223633,
+              3101.797294616699,
+              2797.856903076172,
+              2674.923515319824,
+              2650.2830505371094,
+              2682.6637268066406
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 270,
+          "Gen1Collections": 3,
+          "Gen2Collections": 0,
+          "TotalOperations": 524288,
+          "BytesAllocatedPerOperation": 6472
+        }
+      },
+      "after": {
+        "mean_ns": 2158.343861319802,
+        "error_ns": 270.8481355320254,
+        "stddev_ns": 195.84094785406648,
+        "confidence_lower_ns": 1887.4957257877763,
+        "confidence_upper_ns": 2429.1919968518273,
+        "allocated_bytes": 6472,
+        "statistics_samples_ns": [
+          2559.7061157226562,
+          1901.5729904174805,
+          2415.626335144043,
+          2131.502914428711,
+          2287.2806549072266,
+          2146.8469619750977,
+          2078.599262237549,
+          2092.357921600342,
+          2080.8789253234863,
+          1924.0233421325684,
+          2123.387050628662
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              2561.503028869629,
+              1903.3699035644531,
+              2417.4232482910156,
+              2133.2998275756836,
+              2289.077568054199,
+              2148.6438751220703
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              2080.377769470215,
+              2094.136428833008,
+              2244.8450088500977,
+              2082.6574325561523,
+              1925.8018493652344,
+              2125.165557861328
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 270,
+          "Gen1Collections": 3,
+          "Gen2Collections": 0,
+          "TotalOperations": 524288,
+          "BytesAllocatedPerOperation": 6472
+        }
+      },
+      "allocation_delta_bytes": 0
+    },
+    {
+      "mode": "Capture",
+      "scenario": "Modifiers",
+      "before": {
+        "mean_ns": 2845.0464884440103,
+        "error_ns": 520.4868613372308,
+        "stddev_ns": 406.3619052541495,
+        "confidence_lower_ns": 2324.5596271067793,
+        "confidence_upper_ns": 3365.533349781241,
+        "allocated_bytes": 6632,
+        "statistics_samples_ns": [
+          2824.7788429260254,
+          2337.01753616333,
+          2411.394786834717,
+          2246.081829071045,
+          2636.946964263916,
+          2595.984363555908,
+          3082.417678833008,
+          3442.485237121582,
+          3273.287582397461,
+          3289.3844604492188,
+          3178.4460067749023,
+          2822.3325729370117
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              2826.6021728515625,
+              2338.840866088867,
+              2413.218116760254,
+              2247.905158996582,
+              2638.770294189453,
+              2597.8076934814453
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              3084.001350402832,
+              3444.0689086914062,
+              3274.871253967285,
+              3290.968132019043,
+              3180.0296783447266,
+              2823.916244506836
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 277,
+          "Gen1Collections": 2,
+          "Gen2Collections": 0,
+          "TotalOperations": 524288,
+          "BytesAllocatedPerOperation": 6632
+        }
+      },
+      "after": {
+        "mean_ns": 2250.68039894104,
+        "error_ns": 281.5119976187467,
+        "stddev_ns": 219.7860507186499,
+        "confidence_lower_ns": 1969.1684013222934,
+        "confidence_upper_ns": 2532.1923965597866,
+        "allocated_bytes": 6472,
+        "statistics_samples_ns": [
+          2389.719581604004,
+          2457.9275131225586,
+          2570.7632064819336,
+          2343.6159133911133,
+          1970.8803176879883,
+          2016.126823425293,
+          2066.688823699951,
+          2493.112850189209,
+          1987.9385948181152,
+          2162.1365547180176,
+          2110.2471351623535,
+          2439.0074729919434
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              2391.194725036621,
+              2459.402656555176,
+              2572.238349914551,
+              2345.0910568237305,
+              1972.3554611206055,
+              2017.6019668579102
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              2068.202781677246,
+              2494.626808166504,
+              1989.4525527954102,
+              2163.6505126953125,
+              2111.7610931396484,
+              2440.5214309692383
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 270,
+          "Gen1Collections": 3,
+          "Gen2Collections": 0,
+          "TotalOperations": 524288,
+          "BytesAllocatedPerOperation": 6472
+        }
+      },
+      "allocation_delta_bytes": -160
+    },
+    {
+      "mode": "Capture",
+      "scenario": "ModifierMiss",
+      "before": {
+        "mean_ns": 1423.2018566131592,
+        "error_ns": 256.69717310381884,
+        "stddev_ns": 169.7892863689636,
+        "confidence_lower_ns": 1166.5046835093403,
+        "confidence_upper_ns": 1679.899029716978,
+        "allocated_bytes": 4272,
+        "statistics_samples_ns": [
+          1281.261157989502,
+          1542.5862312316895,
+          1684.5332145690918,
+          1655.9853553771973,
+          1509.511661529541,
+          1378.3000946044922,
+          1231.068992614746,
+          1223.6034393310547,
+          1295.485496520996,
+          1429.6829223632812
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              1282.8500747680664,
+              1544.175148010254,
+              1686.1221313476562,
+              1954.8620223999023,
+              1657.5742721557617,
+              1511.1005783081055
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              1380.039405822754,
+              1232.8083038330078,
+              1225.3427505493164,
+              1297.2248077392578,
+              1431.422233581543,
+              1828.2480239868164
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 178,
+          "Gen1Collections": 0,
+          "Gen2Collections": 0,
+          "TotalOperations": 524288,
+          "BytesAllocatedPerOperation": 4272
+        }
+      },
+      "after": {
+        "mean_ns": 1361.1699667843905,
+        "error_ns": 220.66792399195506,
+        "stddev_ns": 159.5573671226682,
+        "confidence_lower_ns": 1140.5020427924353,
+        "confidence_upper_ns": 1581.8378907763456,
+        "allocated_bytes": 4112,
+        "statistics_samples_ns": [
+          1186.4509582519531,
+          1317.3792839050293,
+          1352.7945518493652,
+          1559.3008995056152,
+          1428.552532196045,
+          1723.7116813659668,
+          1337.6925945281982,
+          1219.0638065338135,
+          1351.019048690796,
+          1231.4337253570557,
+          1265.470552444458
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 1048576,
+            "actual_ns_per_operation": [
+              1188.081932067871,
+              1319.0102577209473,
+              1354.4255256652832,
+              1560.9318733215332,
+              1430.183506011963,
+              1725.3426551818848
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 1048576,
+            "actual_ns_per_operation": [
+              1339.305591583252,
+              1220.6768035888672,
+              1352.6320457458496,
+              1515.5296325683594,
+              1233.0467224121094,
+              1267.0835494995117
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 343,
+          "Gen1Collections": 1,
+          "Gen2Collections": 0,
+          "TotalOperations": 1048576,
+          "BytesAllocatedPerOperation": 4112
+        }
+      },
+      "allocation_delta_bytes": -160
+    },
+    {
+      "mode": "Capture",
+      "scenario": "ModifierAlternatives",
+      "before": {
+        "mean_ns": 2950.177796681722,
+        "error_ns": 598.5218677510946,
+        "stddev_ns": 467.2865053514262,
+        "confidence_lower_ns": 2351.6559289306274,
+        "confidence_upper_ns": 3548.699664432817,
+        "allocated_bytes": 6632,
+        "statistics_samples_ns": [
+          2371.6968536376953,
+          2251.3269424438477,
+          3105.98087310791,
+          2961.625289916992,
+          2890.695571899414,
+          3009.6433639526367,
+          2252.025604248047,
+          3049.4117736816406,
+          2980.120086669922,
+          3282.082748413086,
+          3749.574661254883,
+          3497.94979095459
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              2373.3617782592773,
+              2252.9918670654297,
+              3107.645797729492,
+              2963.290214538574,
+              2892.360496520996,
+              3011.3082885742188
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              2253.744125366211,
+              3051.1302947998047,
+              2981.838607788086,
+              3283.80126953125,
+              3751.293182373047,
+              3499.668312072754
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 277,
+          "Gen1Collections": 2,
+          "Gen2Collections": 0,
+          "TotalOperations": 524288,
+          "BytesAllocatedPerOperation": 6632
+        }
+      },
+      "after": {
+        "mean_ns": 2196.697131070224,
+        "error_ns": 294.7359053332334,
+        "stddev_ns": 213.11337053771888,
+        "confidence_lower_ns": 1901.9612257369904,
+        "confidence_upper_ns": 2491.433036403457,
+        "allocated_bytes": 6472,
+        "statistics_samples_ns": [
+          2488.5963439941406,
+          2490.7026290893555,
+          2145.0302124023438,
+          2209.3860626220703,
+          2479.9842834472656,
+          2282.3312759399414,
+          1914.7083282470703,
+          2041.520881652832,
+          2031.7691802978516,
+          2117.5811767578125,
+          1962.0580673217773
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              2490.0375366210938,
+              2492.1438217163086,
+              2146.471405029297,
+              2210.8272552490234,
+              2481.4254760742188,
+              2283.7724685668945
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              1916.2078857421875,
+              2043.0204391479492,
+              2335.549736022949,
+              2033.2687377929688,
+              2119.0807342529297,
+              1963.5576248168945
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 270,
+          "Gen1Collections": 3,
+          "Gen2Collections": 0,
+          "TotalOperations": 524288,
+          "BytesAllocatedPerOperation": 6472
+        }
+      },
+      "allocation_delta_bytes": -160
+    },
+    {
+      "mode": "Capture",
+      "scenario": "Namespace",
+      "before": {
+        "mean_ns": 3496.0556030273438,
+        "error_ns": 480.37331323095304,
+        "stddev_ns": 375.0438854426761,
+        "confidence_lower_ns": 3015.6822897963907,
+        "confidence_upper_ns": 3976.428916258297,
+        "allocated_bytes": 3784,
+        "statistics_samples_ns": [
+          3843.8125610351562,
+          3948.7014770507812,
+          3958.1180572509766,
+          3869.175338745117,
+          3782.8269958496094,
+          3128.784942626953,
+          3495.1526641845703,
+          3517.1398162841797,
+          3212.5694274902344,
+          3129.1969299316406,
+          2968.661117553711,
+          3098.5279083251953
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 262144,
+            "actual_ns_per_operation": [
+              3845.4734802246094,
+              3950.3623962402344,
+              3959.7789764404297,
+              3870.8362579345703,
+              3784.4879150390625,
+              3130.4458618164062
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 262144,
+            "actual_ns_per_operation": [
+              3497.280502319336,
+              3519.2676544189453,
+              3214.697265625,
+              3131.3247680664062,
+              2970.7889556884766,
+              3100.655746459961
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 79,
+          "Gen1Collections": 0,
+          "Gen2Collections": 0,
+          "TotalOperations": 262144,
+          "BytesAllocatedPerOperation": 3784
+        }
+      },
+      "after": {
+        "mean_ns": 2495.5343882242837,
+        "error_ns": 391.61016713757425,
+        "stddev_ns": 305.74345954875986,
+        "confidence_lower_ns": 2103.9242210867096,
+        "confidence_upper_ns": 2887.144555361858,
+        "allocated_bytes": 3784,
+        "statistics_samples_ns": [
+          2273.653030395508,
+          2155.5843353271484,
+          2147.220993041992,
+          2443.207550048828,
+          2084.2613220214844,
+          2293.9016342163086,
+          2777.6844024658203,
+          2842.9439544677734,
+          2751.7932891845703,
+          2545.4172134399414,
+          2983.537483215332,
+          2647.207450866699
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              2275.3318786621094,
+              2157.26318359375,
+              2148.8998413085938,
+              2444.8863983154297,
+              2085.940170288086,
+              2295.58048248291
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              2779.4755935668945,
+              2844.7351455688477,
+              2753.5844802856445,
+              2547.2084045410156,
+              2985.3286743164062,
+              2648.9986419677734
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 158,
+          "Gen1Collections": 1,
+          "Gen2Collections": 0,
+          "TotalOperations": 524288,
+          "BytesAllocatedPerOperation": 3784
+        }
+      },
+      "allocation_delta_bytes": 0
+    },
+    {
+      "mode": "Capture",
+      "scenario": "NamespaceMiss",
+      "before": {
+        "mean_ns": 2630.7138760884604,
+        "error_ns": 738.9039536873281,
+        "stddev_ns": 576.8876041342804,
+        "confidence_lower_ns": 1891.8099224011323,
+        "confidence_upper_ns": 3369.617829775789,
+        "allocated_bytes": 3464,
+        "statistics_samples_ns": [
+          1797.4481582641602,
+          1697.6980209350586,
+          1783.7331771850586,
+          2268.6370849609375,
+          2704.3577194213867,
+          2913.2007598876953,
+          3173.4811782836914,
+          3059.311866760254,
+          3006.961250305176,
+          3010.0072860717773,
+          3062.3037338256836,
+          3091.4262771606445
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              1799.5532989501953,
+              1699.8031616210938,
+              1785.8383178710938,
+              2270.7422256469727,
+              2706.462860107422,
+              2915.3059005737305
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 262144,
+            "actual_ns_per_operation": [
+              3175.6832122802734,
+              3061.513900756836,
+              3009.163284301758,
+              3012.2093200683594,
+              3064.5057678222656,
+              3093.6283111572266
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 72,
+          "Gen1Collections": 0,
+          "Gen2Collections": 0,
+          "TotalOperations": 262144,
+          "BytesAllocatedPerOperation": 3464
+        }
+      },
+      "after": {
+        "mean_ns": 1648.554056340998,
+        "error_ns": 304.5412700421701,
+        "stddev_ns": 220.20329166595906,
+        "confidence_lower_ns": 1344.012786298828,
+        "confidence_upper_ns": 1953.095326383168,
+        "allocated_bytes": 3464,
+        "statistics_samples_ns": [
+          2044.971752166748,
+          1977.144718170166,
+          1807.9751014709473,
+          1776.142978668213,
+          1526.8841743469238,
+          1397.595500946045,
+          1539.3253326416016,
+          1618.7675476074219,
+          1515.243911743164,
+          1430.8135986328125,
+          1499.2300033569336
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              2046.9568252563477,
+              1979.1297912597656,
+              1809.9601745605469,
+              1778.1280517578125,
+              1528.8692474365234,
+              1399.5805740356445
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 524288,
+            "actual_ns_per_operation": [
+              1540.9805297851562,
+              1620.4227447509766,
+              1516.8991088867188,
+              1432.4687957763672,
+              1757.3766708374023,
+              1500.8852005004883
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 144,
+          "Gen1Collections": 0,
+          "Gen2Collections": 0,
+          "TotalOperations": 524288,
+          "BytesAllocatedPerOperation": 3464
+        }
+      },
+      "allocation_delta_bytes": 0
+    },
+    {
+      "mode": "Capture",
+      "scenario": "NestedType",
+      "before": {
+        "mean_ns": 6046.253776550293,
+        "error_ns": 534.0131940317448,
+        "stddev_ns": 416.9223761000849,
+        "confidence_lower_ns": 5512.240582518548,
+        "confidence_upper_ns": 6580.266970582038,
+        "allocated_bytes": 7368,
+        "statistics_samples_ns": [
+          6575.114822387695,
+          6584.894180297852,
+          6481.764602661133,
+          5875.140762329102,
+          5409.074020385742,
+          6139.088821411133,
+          6147.353744506836,
+          6181.205368041992,
+          5927.122116088867,
+          5991.811752319336,
+          6009.700393676758,
+          5232.77473449707
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 131072,
+            "actual_ns_per_operation": [
+              6577.365875244141,
+              6587.145233154297,
+              6484.015655517578,
+              5877.391815185547,
+              5411.3250732421875,
+              6141.339874267578
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 131072,
+            "actual_ns_per_operation": [
+              6149.549865722656,
+              6183.4014892578125,
+              5929.3182373046875,
+              5994.007873535156,
+              6011.896514892578,
+              5234.970855712891
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 76,
+          "Gen1Collections": 1,
+          "Gen2Collections": 0,
+          "TotalOperations": 131072,
+          "BytesAllocatedPerOperation": 7368
+        }
+      },
+      "after": {
+        "mean_ns": 3238.802511041815,
+        "error_ns": 263.9399770879035,
+        "stddev_ns": 190.8458966791141,
+        "confidence_lower_ns": 2974.862533953911,
+        "confidence_upper_ns": 3502.7424881297184,
+        "allocated_bytes": 7368,
+        "statistics_samples_ns": [
+          3614.9362564086914,
+          3279.605293273926,
+          3423.3800888061523,
+          2981.8349838256836,
+          3313.78116607666,
+          2988.97647857666,
+          3322.7848052978516,
+          3150.6614685058594,
+          3150.967025756836,
+          3316.9715881347656,
+          3082.928466796875
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 262144,
+            "actual_ns_per_operation": [
+              3616.5664672851562,
+              3281.2355041503906,
+              3425.010299682617,
+              2983.4651947021484,
+              3315.411376953125,
+              2990.606689453125
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 262144,
+            "actual_ns_per_operation": [
+              3613.100814819336,
+              3324.497604370117,
+              3152.374267578125,
+              3152.6798248291016,
+              3318.6843872070312,
+              3084.6412658691406
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 153,
+          "Gen1Collections": 2,
+          "Gen2Collections": 0,
+          "TotalOperations": 262144,
+          "BytesAllocatedPerOperation": 7368
+        }
+      },
+      "allocation_delta_bytes": 0
+    },
+    {
+      "mode": "Capture",
+      "scenario": "OpenVariables",
+      "before": {
+        "mean_ns": 2976.3418024236507,
+        "error_ns": 349.0434856619568,
+        "stddev_ns": 252.38130932690976,
+        "confidence_lower_ns": 2627.298316761694,
+        "confidence_upper_ns": 3325.3852880856075,
+        "allocated_bytes": 6568,
+        "statistics_samples_ns": [
+          2927.884292602539,
+          2948.158645629883,
+          2902.886962890625,
+          2645.635986328125,
+          2676.719284057617,
+          2838.858413696289,
+          3070.1194763183594,
+          3526.6056060791016,
+          3288.953399658203,
+          2944.272232055664,
+          2969.66552734375
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 262144,
+            "actual_ns_per_operation": [
+              2929.553985595703,
+              3606.344985961914,
+              2949.828338623047,
+              2904.556655883789,
+              2647.305679321289,
+              2678.3889770507812
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 262144,
+            "actual_ns_per_operation": [
+              2840.3751373291016,
+              3071.636199951172,
+              3528.122329711914,
+              3290.4701232910156,
+              2945.7889556884766,
+              2971.1822509765625
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 137,
+          "Gen1Collections": 1,
+          "Gen2Collections": 0,
+          "TotalOperations": 262144,
+          "BytesAllocatedPerOperation": 6568
+        }
+      },
+      "after": {
+        "mean_ns": 3209.8414421081543,
+        "error_ns": 539.188852480999,
+        "stddev_ns": 420.9631897778406,
+        "confidence_lower_ns": 2670.652589627155,
+        "confidence_upper_ns": 3749.0302945891535,
+        "allocated_bytes": 6568,
+        "statistics_samples_ns": [
+          3259.232711791992,
+          3128.272247314453,
+          2772.776412963867,
+          3132.638168334961,
+          2970.796585083008,
+          2716.281509399414,
+          3894.2434310913086,
+          3841.619300842285,
+          2839.0432357788086,
+          3309.14249420166,
+          2879.7441482543945,
+          3774.307060241699
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 262144,
+            "actual_ns_per_operation": [
+              3260.9424591064453,
+              3129.9819946289062,
+              2774.4861602783203,
+              3134.347915649414,
+              2972.506332397461,
+              2717.991256713867
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 262144,
+            "actual_ns_per_operation": [
+              3896.127700805664,
+              3843.5035705566406,
+              2840.927505493164,
+              3311.0267639160156,
+              2881.62841796875,
+              3776.1913299560547
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 137,
+          "Gen1Collections": 1,
+          "Gen2Collections": 0,
+          "TotalOperations": 262144,
+          "BytesAllocatedPerOperation": 6568
+        }
+      },
+      "allocation_delta_bytes": 0
+    },
+    {
+      "mode": "Capture",
+      "scenario": "AncestorWalk",
+      "before": {
+        "mean_ns": 18277.015686035156,
+        "error_ns": 1891.6332986812279,
+        "stddev_ns": 1367.7748140239366,
+        "confidence_lower_ns": 16385.38238735393,
+        "confidence_upper_ns": 20168.648984716383,
+        "allocated_bytes": 27076,
+        "statistics_samples_ns": [
+          16514.76287841797,
+          17710.50262451172,
+          17649.330139160156,
+          19642.103576660156,
+          18918.35479736328,
+          21094.520568847656,
+          16410.250854492188,
+          17533.889770507812,
+          19058.7158203125,
+          18370.57342529297,
+          18144.168090820312
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 32768,
+            "actual_ns_per_operation": [
+              16516.897583007812,
+              17712.637329101562,
+              17651.46484375,
+              19644.23828125,
+              18920.489501953125,
+              21096.6552734375
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 65536,
+            "actual_ns_per_operation": [
+              16411.85760498047,
+              17535.496520996094,
+              21143.418884277344,
+              19060.32257080078,
+              18372.18017578125,
+              18145.774841308594
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 141,
+          "Gen1Collections": 6,
+          "Gen2Collections": 0,
+          "TotalOperations": 65536,
+          "BytesAllocatedPerOperation": 27076
+        }
+      },
+      "after": {
+        "mean_ns": 20145.487005060368,
+        "error_ns": 2916.816202810124,
+        "stddev_ns": 2109.0492232939537,
+        "confidence_lower_ns": 17228.670802250243,
+        "confidence_upper_ns": 23062.303207870493,
+        "allocated_bytes": 27076,
+        "statistics_samples_ns": [
+          18306.9580078125,
+          17346.49658203125,
+          20294.577026367188,
+          18546.783447265625,
+          21716.647338867188,
+          20854.74853515625,
+          24736.289978027344,
+          21712.353515625,
+          18887.159729003906,
+          20600.625610351562,
+          18597.71728515625
+        ],
+        "workload_actual_by_launch": [
+          {
+            "launch": 1,
+            "operations_per_iteration": 32768,
+            "actual_ns_per_operation": [
+              18309.466552734375,
+              17349.005126953125,
+              20297.085571289062,
+              18549.2919921875,
+              21719.155883789062,
+              27348.016357421875
+            ]
+          },
+          {
+            "launch": 2,
+            "operations_per_iteration": 65536,
+            "actual_ns_per_operation": [
+              20856.84814453125,
+              24738.389587402344,
+              21714.453125,
+              18889.259338378906,
+              20602.725219726562,
+              18599.81689453125
+            ]
+          }
+        ],
+        "gc": {
+          "Gen0Collections": 141,
+          "Gen1Collections": 6,
+          "Gen2Collections": 0,
+          "TotalOperations": 65536,
+          "BytesAllocatedPerOperation": 27076
+        }
+      },
+      "allocation_delta_bytes": 0
+    }
+  ]
+}

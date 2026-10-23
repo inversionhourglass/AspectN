@@ -1,0 +1,263 @@
+{
+  "schema_version": 1,
+  "id": "EV-20261023-303",
+  "method": "automated",
+  "scenario_refs": [
+    {
+      "scenario_id": "S1",
+      "capability_id": "MEM-SELECTORS-001"
+    },
+    {
+      "scenario_id": "S1",
+      "capability_id": "CROSS-AVAILABILITY-001"
+    }
+  ],
+  "oracle_refs": [
+    {
+      "section": "5 / 6 / 7 / 8 / 9 / 10",
+      "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md"
+    },
+    {
+      "section": "实现与边界 / 当前验证",
+      "path": "docs/reviews/2026-10-23-rm17-matching-allocations.md"
+    }
+  ],
+  "procedure": "先新增 Evaluate_KnownModifiers_DoesNotAllocate 并以原生产实现执行，4项因40960B/256次失败、空修饰符1项通过；优化后 ModifierMatcherTests 与 MetadataAvailabilityTests 共61项通过。完整矩阵命令：dotnet test AspectN.sln -c Release --no-build --no-restore -m:1 -nr:false --logger trx --results-directory artifacts/rm17/tests -v:minimal。",
+  "result": "passed",
+  "recorded_on": "2026-10-23",
+  "environment": {
+    "os": "Windows 11 25H2",
+    "sdk": "10.0.401",
+    "runtime": "10.0.12",
+    "execution_target": "net10.0",
+    "compatibility_target": "net472",
+    "build_configuration": "Release",
+    "notes": "完整矩阵2343项通过，0失败/0跳过；核心1305项。net472测试工程构建保留MSB3277依赖冲突告警。分配断言仅覆盖预热后的已知事实局部判断，不承诺完整匹配零分配。"
+  },
+  "code_state": {
+    "head": "a8b19b12491646f46ff79866368ab3c29e328acf",
+    "dirty": true,
+    "files": [
+      {
+        "path": "src/AspectN/Evaluation/ModifierMatcher.cs",
+        "sha256": "c40ae8283cae16bf0ae551441ca0a2b01d05139c843244b645e24c89c4db05c4"
+      },
+      {
+        "path": "src/AspectN/Evaluation/MetadataQuery.cs",
+        "sha256": "2585faffb7c5cace8e820ae4363ccb2ddea86ffe29a43a649bd477730833ddce"
+      },
+      {
+        "path": "src/AspectN/Evaluation/MatchLogic.cs",
+        "sha256": "7e5bf5b869d636a130012c5fcd55b7044f72d107fa4d8d1b17d9c187c54dee1e"
+      },
+      {
+        "path": "src/AspectN/Evaluation/MemberPatternEvaluator.cs",
+        "sha256": "c7477f914a697882808181042e656723c3b0422fd5cdc36aa22f3a5418f41feb"
+      },
+      {
+        "path": "src/AspectN/Evaluation/EvaluationContext.cs",
+        "sha256": "54dd89797d97fc1c1fd62490b948a57fc91e345645439d61925c4f45b156c49b"
+      },
+      {
+        "path": "src/AspectN/Binding/BoundSelector.cs",
+        "sha256": "2ce06a21257610d7a30b844471b52f2da4ab916a74ebc35faec839d21a49657c"
+      },
+      {
+        "path": "src/AspectN/Metadata/MetadataAvailability.cs",
+        "sha256": "e8b67e0d05f32a471a4f7b82341d80327508415306f7af905a10f9ebf6c347fb"
+      },
+      {
+        "path": "tests/AspectN.Tests/Evaluation/ModifierMatcherTests.cs",
+        "sha256": "11468cecd53982d129d3f04b6bc504ff2edf60fd1d4a08267e8d3fe1d5e33927"
+      },
+      {
+        "path": "tests/AspectN.Tests/Evaluation/MetadataAvailabilityTests.cs",
+        "sha256": "3ed0eab0aeb37bc62fe141aa44470ef78c0d75a9a315faedc36b581d7517c3dc"
+      },
+      {
+        "path": "tests/AspectN.Tests/Evaluation/CallableSelectorTests.cs",
+        "sha256": "cf64e2b00ad87e3d1be894128bc8aa2456c5bf993b57013725aeb8d07b3f0faa"
+      },
+      {
+        "path": "tests/AspectN.Tests/Evaluation/ConstructorSelectorTests.cs",
+        "sha256": "5e3564d8e7500cc4f8d49feaef1fce1226f324f708ddffd47cca0f08f2a7f3c2"
+      },
+      {
+        "path": "tests/AspectN.Tests/Evaluation/PropertySelectorTests.cs",
+        "sha256": "06375c43f3ac4902de8770c0cafd39c4f57fbb59f771e1f720701d5f367955f9"
+      },
+      {
+        "path": "tests/AspectN.Tests/AspectN.Tests.csproj",
+        "sha256": "3843c220293ff07b304dfcb8db2ccb82e57d423ac384ade1080a479fc2699b28"
+      },
+      {
+        "path": "src/AspectN/AspectN.csproj",
+        "sha256": "e07ca04e5e30610715a0e215f5250944c2454ac581bb9e6996a977ef2101b2fa"
+      },
+      {
+        "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+        "sha256": "cd394c152e10a687ce140f401b4e9bbd4ba5a6b1c2b72c29b601f0211cff916d"
+      },
+      {
+        "path": "docs/language/metadata-availability.md",
+        "sha256": "4b03665ca6c6905a6e77c23771d4c46f94609237fbaf06f09907ee7a2e483f93"
+      },
+      {
+        "path": "Directory.Build.props",
+        "sha256": "590c968a6d115bf1ed04323e48b3dd8cfcc5a7938b7fdee2a133d50d5a5d97f5"
+      },
+      {
+        "path": "Directory.Packages.props",
+        "sha256": "9d948b704945855977f066f31633d774f355f19b78514d8bc791109541746d36"
+      },
+      {
+        "path": "global.json",
+        "sha256": "6cd80ed6f7a93e76c20e47164e3bfedfddc1b42b33519b2cd2dee6febff4e836"
+      }
+    ]
+  },
+  "dependency_scope": {
+    "paths": [
+      "src/AspectN/Evaluation/ModifierMatcher.cs",
+      "src/AspectN/Evaluation/MetadataQuery.cs",
+      "src/AspectN/Evaluation/MatchLogic.cs",
+      "src/AspectN/Evaluation/MemberPatternEvaluator.cs",
+      "src/AspectN/Evaluation/EvaluationContext.cs",
+      "src/AspectN/Binding/BoundSelector.cs",
+      "src/AspectN/Metadata/MetadataAvailability.cs",
+      "tests/AspectN.Tests/Evaluation/ModifierMatcherTests.cs",
+      "tests/AspectN.Tests/Evaluation/MetadataAvailabilityTests.cs",
+      "tests/AspectN.Tests/Evaluation/CallableSelectorTests.cs",
+      "tests/AspectN.Tests/Evaluation/ConstructorSelectorTests.cs",
+      "tests/AspectN.Tests/Evaluation/PropertySelectorTests.cs",
+      "tests/AspectN.Tests/AspectN.Tests.csproj",
+      "src/AspectN/AspectN.csproj",
+      "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+      "docs/language/metadata-availability.md",
+      "Directory.Build.props",
+      "Directory.Packages.props",
+      "global.json"
+    ],
+    "environment_keys": [
+      "os",
+      "sdk",
+      "runtime",
+      "execution_target",
+      "build_configuration"
+    ]
+  },
+  "covered_assertions": [
+    {
+      "test_methods": [
+        "AspectN.Tests.Evaluation.CallableSelectorTests|Match_BooleanExpression_CombinesSelectorResults",
+        "AspectN.Tests.Evaluation.CallableSelectorTests|Match_Callable_UsesCallableDomain",
+        "AspectN.Tests.Evaluation.CallableSelectorTests|Match_ConstructedCallable_UsesSubstitutedSignature",
+        "AspectN.Tests.Evaluation.CallableSelectorTests|Match_DefinitionDeclaringTypeConcreteArgument_ReturnsNotMatched",
+        "AspectN.Tests.Evaluation.CallableSelectorTests|Match_DefinitionDeclaringTypeVariableArgument_BindsFormalParameter",
+        "AspectN.Tests.Evaluation.CallableSelectorTests|Match_DefinitionGenericClauseVariable_BindsFormalParameter",
+        "AspectN.Tests.Evaluation.CallableSelectorTests|Match_EmptyGenericSlot_PreservesVariablePosition",
+        "AspectN.Tests.Evaluation.CallableSelectorTests|Match_Execution_AppliesMethodSignatureToConstructors",
+        "AspectN.Tests.Evaluation.CallableSelectorTests|Match_Execution_UsesAllDomain",
+        "AspectN.Tests.Evaluation.CallableSelectorTests|Match_ExecutionVoidReturn_MatchesConstructorsPositively",
+        "AspectN.Tests.Evaluation.CallableSelectorTests|Match_MemberPath_EvaluatesRecursiveNamespaceAndNestedType",
+        "AspectN.Tests.Evaluation.CallableSelectorTests|Match_Method_AcceptsOrdinaryMethodsOnly",
+        "AspectN.Tests.Evaluation.ConstructorSelectorTests|Bind_Constructor_DeclaringTypeBindsVariablesBeforeParameters",
+        "AspectN.Tests.Evaluation.ConstructorSelectorTests|Match_Constructors_UseDisjointDomains",
+        "AspectN.Tests.Evaluation.ConstructorSelectorTests|Match_InstanceConstructor_MatchesParametersAndRefKinds",
+        "AspectN.Tests.Evaluation.ConstructorSelectorTests|Match_LiteralTaskLikeConstructorDeclaringType_RequiresQualification",
+        "AspectN.Tests.Evaluation.ConstructorSelectorTests|Match_TaskLikeConstructorDeclaringType_UsesShape",
+        "AspectN.Tests.Evaluation.ConstructorSelectorTests|Match_TaskLikeMemberPathDeclaringType_RemainsLiteralName",
+        "AspectN.Tests.Evaluation.ModifierMatcherTests|Evaluate_KnownModifiers_DoesNotAllocate",
+        "AspectN.Tests.Evaluation.ModifierMatcherTests|Match_NegatedAndStaticModifiers_ReturnExpected",
+        "AspectN.Tests.Evaluation.ModifierMatcherTests|Match_NegatedPrivateProtected_NegatesWholeComposite",
+        "AspectN.Tests.Evaluation.ModifierMatcherTests|Match_NegatedProtectedInternal_NegatesWholeComposite",
+        "AspectN.Tests.Evaluation.ModifierMatcherTests|Match_StandardAlternation_MatchesAnyAlternative",
+        "AspectN.Tests.Evaluation.ModifierMatcherTests|Match_StandardCompoundAlternation_MatchesWholeComposite",
+        "AspectN.Tests.Evaluation.ModifierMatcherTests|Match_StandardParenthesizedCompoundWithoutPipe_MatchesWholeComposite",
+        "AspectN.Tests.Evaluation.ModifierMatcherTests|Match_StandardPrivateProtected_IsCompositeAccessibility",
+        "AspectN.Tests.Evaluation.PropertySelectorTests|Match_GetterAndSetter_NarrowAccessorKind",
+        "AspectN.Tests.Evaluation.PropertySelectorTests|Match_Property_AcceptsPropertyAccessorsOnly",
+        "AspectN.Tests.Evaluation.PropertySelectorTests|Match_Property_UsesAssociatedPropertyNameAndType"
+      ],
+      "capability_id": "MEM-SELECTORS-001",
+      "scenario_id": "S1"
+    },
+    {
+      "test_methods": [
+        "AspectN.Tests.Evaluation.MetadataAvailabilityTests|Availability_Diagnostics_AreAnImmutableSnapshot",
+        "AspectN.Tests.Evaluation.MetadataAvailabilityTests|Match_MissingPropertyAssociation_PreservesMemberPathNegation",
+        "AspectN.Tests.Evaluation.MetadataAvailabilityTests|Match_OneUnavailableFact_DoesNotDisableIndependentFacts"
+      ],
+      "capability_id": "CROSS-AVAILABILITY-001",
+      "scenario_id": "S1"
+    }
+  ],
+  "test_runs": [
+    {
+      "path": "artifacts/rm17/tests/Administrator_LAPTOP-ERQOPF47_2026-10-23_13_42_42_net10.0.trx",
+      "sha256": "7d21235660d8dc97e0a8e80df0b3e1bffb0454a95f996bd4fd1afa45dd353d8c",
+      "total": 1305,
+      "passed": 1305,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/rm17/tests/Administrator_LAPTOP-ERQOPF47_2026-10-23_13_42_49_net10.0.trx",
+      "sha256": "09d240f47f3593b876904a299e7db994188a446dd78667f21e8b34dbda264bde",
+      "total": 232,
+      "passed": 232,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/rm17/tests/Administrator_LAPTOP-ERQOPF47_2026-10-23_13_42_53_net10.0.trx",
+      "sha256": "72a7fb0484afa908c0cc24513410566862987efc4b2c65a75f64dca06c57085a",
+      "total": 110,
+      "passed": 110,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/rm17/tests/Administrator_LAPTOP-ERQOPF47_2026-10-23_13_42_57_net10.0.trx",
+      "sha256": "3e0753dc51b23e8f0f1a9c89ae1752d526e3ae326da256061085528dd67a479a",
+      "total": 30,
+      "passed": 30,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/rm17/tests/Administrator_LAPTOP-ERQOPF47_2026-10-23_13_43_05_net10.0.trx",
+      "sha256": "e6301e2119d0e6c2e2bf5ed40d764812c4ba97d73636e3bbe1597ad19387c8c6",
+      "total": 415,
+      "passed": 415,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/rm17/tests/Administrator_LAPTOP-ERQOPF47_2026-10-23_13_43_42_net472.trx",
+      "sha256": "eefb2cbe23c4473da9ac3985e03e5d2e397ebb724c01d82015647a87a32e565b",
+      "total": 8,
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/rm17/tests/Administrator_LAPTOP-ERQOPF47_2026-10-23_13_43_50_net10.0.trx",
+      "sha256": "e7d45b7d02673dba385e8f8cb3c56acb6fcd49a54e6221c96989627dda5e83d9",
+      "total": 9,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/rm17/tests/Administrator_LAPTOP-ERQOPF47_2026-10-23_13_43_54_net10.0.trx",
+      "sha256": "1a3e5a287b93f24ad6daa2b89e75b6b21050cf2a4a40b97e605f6516e1562295",
+      "total": 234,
+      "passed": 234,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "coverage_notes": "为所列中立场景提供当前回归；完整矩阵的总数不等于所有能力、所有输入均验证。未增加语言承诺、公开API、资源/取消行为或N/A；性能数据另由RM-17专项报告解释，不将时间波动外推为吞吐保证。",
+  "revalidation_conditions": "修饰符判断、事实可用性、三态组合、绑定修饰符表示、相关选择器或回归、构建配置及运行环境变化时重验；历史报告保留原快照。"
+}

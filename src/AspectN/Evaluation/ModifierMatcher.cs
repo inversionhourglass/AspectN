@@ -16,8 +16,9 @@ internal static class ModifierMatcher
         EvaluationContext context)
     {
         var status = MatchStatus.Matched;
-        foreach (var modifier in modifiers)
+        for (var index = 0; index < modifiers.Count; index++)
         {
+            var modifier = modifiers[index];
             var fact = modifier.Kind == BoundModifierKind.Static
                 ? MetadataFacts.IsStatic
                 : MetadataFacts.Accessibility;
@@ -25,7 +26,7 @@ internal static class ModifierMatcher
                 availability.IsKnown(fact) ? _UnknownAccessibility : availability;
             var known = MetadataQuery.Require(source, fact, owner, context);
             var result = known == MatchStatus.Unknown ? known :
-                IsMatch(new[] { modifier }, accessibility, isStatic)
+                IsMatch(modifier, accessibility, isStatic)
                     ? MatchStatus.Matched : MatchStatus.NotMatched;
             status = MatchLogic.And(status, result);
         }
@@ -55,30 +56,21 @@ internal static class ModifierMatcher
         Accessibility accessibility,
         bool isStatic)
     {
-        foreach (var modifier in modifiers)
+        for (var index = 0; index < modifiers.Count; index++)
         {
-            if (modifier.Kind == BoundModifierKind.Static)
-            {
-                if (modifier.IsNegated == isStatic) return false;
-                continue;
-            }
-
-            if (modifier.IsNegated)
-            {
-                if (modifier.Accessibility == accessibility) return false;
-                continue;
-            }
-
-            var matches = modifier.Alternatives is not null
-                ? modifier.Alternatives.Contains(accessibility)
-                : modifier.Accessibility == accessibility;
-            if (!matches)
-            {
-                return false;
-            }
+            if (!IsMatch(modifiers[index], accessibility, isStatic)) return false;
         }
 
         return true;
+    }
+
+    private static bool IsMatch(BoundModifier modifier, Accessibility accessibility, bool isStatic)
+    {
+        if (modifier.Kind == BoundModifierKind.Static) return modifier.IsNegated != isStatic;
+        if (modifier.IsNegated) return modifier.Accessibility != accessibility;
+        return modifier.Alternatives is not null
+            ? modifier.Alternatives.Contains(accessibility)
+            : modifier.Accessibility == accessibility;
     }
 
     public static bool IsRefKindMatch(

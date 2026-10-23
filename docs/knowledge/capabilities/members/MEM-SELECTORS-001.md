@@ -33,7 +33,8 @@
         "automated"
       ],
       "evidence_ids": [
-        "EV-20261014-001"
+        "EV-20261014-001",
+        "EV-20261023-303"
       ],
       "unverified_notes": ""
     },
@@ -232,6 +233,8 @@ setter 示例按属性 string 匹配；不是 `setter(void ...)`。ctor 只实�
 ## 实现与证据
 
 [选择器测试](../../../../tests/AspectN.Tests/Evaluation/CallableSelectorTests.cs)、[属性测试](../../../../tests/AspectN.Tests/Evaluation/PropertySelectorTests.cs)、[操作符一致性](../../../../tests/AspectN.Conformance.Tests/InstanceOperatorMappingTests.cs)。后端 PE 特殊边界见 CSH-METADATA-001。
+
+2026-10-23 的 RM-17 将修饰符单元素数组判断改为直接判断，并改用索引遍历。S1 的选择器与修饰符回归由 EV-20261023-303 在当前实现重验；原证据保留历史快照。局部已知事实判断的零分配回归与完整 Match 的性能观察范围不同，详见[处置记录](../../../reviews/2026-10-23-rm17-matching-allocations.md)。不增加语义、公共 API 或整体性能承诺。
 
 ## 关联与缺口
 

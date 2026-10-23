@@ -42,7 +42,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-001",
-        "EV-20261022-201"
+        "EV-20261022-201",
+        "EV-20261023-303"
       ],
       "unverified_notes": ""
     },
@@ -288,6 +289,8 @@ Service.Run 返回 Int32 且只有 Accessibility 未知：method(public * Servic
 ## 实现与证据
 
 实现与回归入口：[MetadataAvailabilityTests.cs](../../../../tests/AspectN.Tests/Evaluation/MetadataAvailabilityTests.cs)。当前证据按元数据 evidence_ids 定位，未验证范围见每个场景。
+
+2026-10-23 的 RM-17 仅消除修饰符判断中的临时集合，保留逐项 Require 与三态 And，不因先遇到已知失败而跳过后续未知事实的诊断。EV-20261023-303 重跑 S1 的原有中立回归；[处置记录](../../../reviews/2026-10-23-rm17-matching-allocations.md)限定局部分配优化及当前证据范围。其他后端场景和 N/A 保持原范围。
 
 ## 关联与缺口
 
