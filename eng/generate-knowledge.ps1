@@ -43,6 +43,12 @@ function Link-To([string]$label, [string]$repositoryPath) {
     return '[' + (Escape-Cell $label) + '](' + $relative.Replace(' ','%20') + ')'
 }
 function Append-Line($builder, [string]$line='') { [void]$builder.Append($line).Append("`n") }
+function Sort-RecordsByOrdinalId($records, [scriptblock]$selectId) {
+    # 标识符使用序号比较，避免将区域语言排序带入派生文件。
+    $sorted = [Collections.Generic.SortedDictionary[string, object]]::new([StringComparer]::Ordinal)
+    foreach ($record in $records) { $sorted.Add((& $selectId $record), $record) }
+    return $sorted.Values
+}
 
 try {
     # 复用唯一文档校验器，避免生成器维护第二套格式规则。
@@ -73,7 +79,7 @@ try {
         Append-Line $pair[0]
     }
     foreach($category in $categories.Keys) {
-        $records = @($capabilities | Where-Object {$_.data.category -ceq $category} | Sort-Object {$_.data.id})
+        $records = @(Sort-RecordsByOrdinalId @($capabilities | Where-Object {$_.data.category -ceq $category}) { param($record) $record.data.id })
         Append-Line $matrix ('## '+$categories[$category]); Append-Line $matrix
         Append-Line $catalog ('## '+$categories[$category]); Append-Line $catalog
         if(!$records.Count){Append-Line $matrix '当前分类尚无已建档能力。'; Append-Line $catalog '当前分类尚无已建档能力。'}else{
@@ -103,7 +109,7 @@ try {
     Append-Line $matrix '## 盘点范围与剩余主题'; Append-Line $matrix
     Append-Line $matrix '| 编号 | 主题 | 盘点状态 | 范围及缺口 |'
     Append-Line $matrix '| --- | --- | --- | --- |'
-    foreach($item in @($coverage.items|Sort-Object id)){
+    foreach($item in @(Sort-RecordsByOrdinalId $coverage.items { param($record) $record.id })){
         Append-Line $matrix ('| '+(Escape-Cell $item.id)+' | '+(Escape-Cell $item.subject)+' | '+$assessmentLabels[$item.assessment_status]+' | '+(Escape-Cell $item.notes)+' |')
     }
     Append-Line $matrix
