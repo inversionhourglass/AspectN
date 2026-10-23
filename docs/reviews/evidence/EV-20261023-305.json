@@ -1,0 +1,418 @@
+{
+  "schema_version": 1,
+  "id": "EV-20261023-305",
+  "method": "automated",
+  "scenario_refs": [
+    {
+      "capability_id": "SEM-REGEX-001",
+      "scenario_id": "S1"
+    },
+    {
+      "capability_id": "SEM-REGEX-001",
+      "scenario_id": "S3"
+    },
+    {
+      "capability_id": "CROSS-LIFETIME-001",
+      "scenario_id": "S1"
+    },
+    {
+      "capability_id": "CROSS-RESOURCES-001",
+      "scenario_id": "S1"
+    }
+  ],
+  "oracle_refs": [
+    {
+      "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+      "section": "15 / 21"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-10-22-configurable-resource-limits-design.md",
+      "section": "2—6；超时配置和编译缓存"
+    },
+    {
+      "path": "docs/reviews/2026-10-23-rm19-regex-reuse.md",
+      "section": "实现与边界 / 当前验证"
+    }
+  ],
+  "procedure": "原实现先执行RegexReuseTests：分配比较失败1338432与2134976 B/256次，其余2项通过；复用实例后相关115项通过，再补4项超时持有断言。完整构建：dotnet build AspectN.sln -c Release --no-restore -m:1 -nr:false -p:UseSharedCompilation=false；完整测试：dotnet test AspectN.sln -c Release --no-build --no-restore -m:1 -nr:false --logger trx --results-directory artifacts/rm19/tests -v:minimal。BDN修改前7项/后3项，五次独立存活堆；命令和原始状态见性能报告。",
+  "result": "passed",
+  "recorded_on": "2026-10-23",
+  "environment": {
+    "os": "Windows 11 25H2",
+    "sdk": "10.0.401",
+    "runtime": "10.0.12",
+    "execution_target": "net10.0",
+    "compatibility_target": "net472",
+    "build_configuration": "Release",
+    "notes": "生产netstandard2.0/net10.0均编译；2436项通过，0失败/0跳过。net472测试工程有既有MSB3277 System.Memory依赖告警。性能仅.NET10单线程简单分支；存活堆是整个计划集合的近似增量。"
+  },
+  "code_state": {
+    "head": "782c38f4952374ecb6141bdcd26065926e11e209",
+    "dirty": true,
+    "files": [
+      {
+        "path": "src/AspectN/Binding/Binder.cs",
+        "sha256": "a3ccd6761efb9fcf345f190bb658a3aff45d57fc7356b97c61dd8a03c0d7ad63"
+      },
+      {
+        "path": "src/AspectN/Binding/BoundSelector.cs",
+        "sha256": "901514caeeca791f9697a24f518ea575d93b25111aaf695307b26138974f41b7"
+      },
+      {
+        "path": "src/AspectN/Evaluation/RegexPatternEvaluator.cs",
+        "sha256": "7c2a136ff50665c0acb2eaf892d157b23dd0998fcf5d9701dec18c3abab5d062"
+      },
+      {
+        "path": "src/AspectN/Evaluation/CanonicalSignatureFormatter.cs",
+        "sha256": "99ad2366f7742b8bf911932f4b140d9597f5082fb67669ac7a54a909239c0c4e"
+      },
+      {
+        "path": "src/AspectN/AspectNCompilation.cs",
+        "sha256": "266cce9750b258bced90fed52711ca73c57811f2a224f833424f8765ab0915dd"
+      },
+      {
+        "path": "src/AspectN/AspectNEngine.cs",
+        "sha256": "ee326890605fdc1012cc7f007f934a8a830e418215c9e3c079a2b8ba271ba2f3"
+      },
+      {
+        "path": "src/AspectN/AspectNEngineOptions.cs",
+        "sha256": "dbcfe5e7569ac60a8beb9789e5f218a04d3b4135399e998acc4effa1bba2f0b3"
+      },
+      {
+        "path": "src/AspectN/AspectNCompilationOptions.cs",
+        "sha256": "30805fd4e275fc38ec048ef5d0b1230d9dc5c3f5c69dd2548378ee7120b45c6f"
+      },
+      {
+        "path": "src/AspectN/AspectNMatchOptions.cs",
+        "sha256": "32bbb153dd2f8d931c84facc95ef83e7f0959e9dc59b915f992763c995109932"
+      },
+      {
+        "path": "src/AspectN/TimeLimit.cs",
+        "sha256": "397fc681e09e0b5948fe514e1df9253ae3de60ecf65005744d5338b42b872e5a"
+      },
+      {
+        "path": "src/AspectN/Caching/CompiledPatternCache.cs",
+        "sha256": "b8031d6292aa9f77fe0d7d412dce01f9efb304db1e1b80bf7a007e4187d83066"
+      },
+      {
+        "path": "tests/AspectN.Tests/Evaluation/RegexReuseTests.cs",
+        "sha256": "e72b55fbbc38ae56b4501ffc270f96e93e72e5ee4e378f2f89847e4cdc24b526"
+      },
+      {
+        "path": "tests/AspectN.Tests/Evaluation/RegexPatternTests.cs",
+        "sha256": "0b9bf9f820d96b3c8825a3f889e25237aaabe104e7fbdaf25a0bf9ad539661bf"
+      },
+      {
+        "path": "tests/AspectN.Tests/Binding/RegexSubsetTests.cs",
+        "sha256": "08a5ecca1b52c8527e477de9a903716210176b40d4bf39693fe424c149f9be6e"
+      },
+      {
+        "path": "tests/AspectN.Tests/Parsing/RegexParserTests.cs",
+        "sha256": "775a7d0ff9e67674ab313444b56aae9650211604e5b0e6fc9aa6c61a08d3d03e"
+      },
+      {
+        "path": "tests/AspectN.Tests/Evaluation/ResourceBudgetTests.cs",
+        "sha256": "6e57c71d38016d23182845708219d98583eb5cd3dc128bba37b27d935628a0b7"
+      },
+      {
+        "path": "tests/AspectN.Tests/Evaluation/BindingBudgetTests.cs",
+        "sha256": "ef714731ef816a1fba44262b116752f5af28a4fa5fe481073cebba287c90dc9e"
+      },
+      {
+        "path": "tests/AspectN.Tests/ResourceContractTests.cs",
+        "sha256": "8323b13c60cea73b2891d36822e4431e23f557cbda9fe0bfd70a91b91dfd976f"
+      },
+      {
+        "path": "tests/AspectN.Tests/Caching/CompiledPatternCacheTests.cs",
+        "sha256": "4f557b3e437fcf1f463aca24957925e5a5df16e9bf2582411d045e56222f547b"
+      },
+      {
+        "path": "benchmarks/AspectN.Benchmarks/Program.cs",
+        "sha256": "4e0306f86ea7156db33b1ae8b296a82875c65ee247fe765fa36767d0570abd45"
+      },
+      {
+        "path": "benchmarks/AspectN.Benchmarks/RegexCompilationBenchmarks.cs",
+        "sha256": "1bea6c5cea45f0566131a99f5a351b5d7a4b503b7d0e4dce5fd63bf97c37a372"
+      },
+      {
+        "path": "benchmarks/AspectN.Benchmarks/RegexMatchingBenchmarks.cs",
+        "sha256": "b416a96975667203a37ff1ca3cb684c1858f7e5f30db6898e6e7688b9dabf17a"
+      },
+      {
+        "path": "benchmarks/AspectN.Benchmarks/RegexReuseBenchmarks.cs",
+        "sha256": "0cc4e52e6849d889c984c069556e3947a403f195e65731b2ee6975fd1c16d79b"
+      },
+      {
+        "path": "benchmarks/AspectN.Benchmarks/RegexRetentionProbe.cs",
+        "sha256": "61dc15a96e14d9af94075fb3f2867981b1608d51dbdfc0049c3a7afc7dc40886"
+      },
+      {
+        "path": "benchmarks/AspectN.Benchmarks/RegexWorkload.cs",
+        "sha256": "9c21aa14f12718591efdc88da60d4c5365de5ef97136d017616310728fed9e24"
+      },
+      {
+        "path": "benchmarks/AspectN.Benchmarks/AspectN.Benchmarks.csproj",
+        "sha256": "fc9076ed328c953b9e35500805622ab429d346f1b2ba03d39c370a316151a539"
+      },
+      {
+        "path": "docs/performance/data/2026-10-23-rm19-results.json",
+        "sha256": "937ce40c307e6d3319e935904ec50e2f0a21d2ffa9f76c489d9cd500191dce90"
+      }
+    ]
+  },
+  "dependency_scope": {
+    "paths": [
+      "src/AspectN/Binding/Binder.cs",
+      "src/AspectN/Binding/BoundSelector.cs",
+      "src/AspectN/Evaluation/RegexPatternEvaluator.cs",
+      "src/AspectN/Evaluation/CanonicalSignatureFormatter.cs",
+      "src/AspectN/AspectNCompilation.cs",
+      "src/AspectN/AspectNEngine.cs",
+      "src/AspectN/AspectNEngineOptions.cs",
+      "src/AspectN/AspectNCompilationOptions.cs",
+      "src/AspectN/AspectNMatchOptions.cs",
+      "src/AspectN/TimeLimit.cs",
+      "src/AspectN/Caching/CompiledPatternCache.cs",
+      "tests/AspectN.Tests/Evaluation/RegexReuseTests.cs",
+      "tests/AspectN.Tests/Evaluation/RegexPatternTests.cs",
+      "tests/AspectN.Tests/Binding/RegexSubsetTests.cs",
+      "tests/AspectN.Tests/Parsing/RegexParserTests.cs",
+      "tests/AspectN.Tests/Evaluation/ResourceBudgetTests.cs",
+      "tests/AspectN.Tests/Evaluation/BindingBudgetTests.cs",
+      "tests/AspectN.Tests/ResourceContractTests.cs",
+      "tests/AspectN.Tests/Caching/CompiledPatternCacheTests.cs",
+      "benchmarks/AspectN.Benchmarks/Program.cs",
+      "benchmarks/AspectN.Benchmarks/RegexCompilationBenchmarks.cs",
+      "benchmarks/AspectN.Benchmarks/RegexMatchingBenchmarks.cs",
+      "benchmarks/AspectN.Benchmarks/RegexReuseBenchmarks.cs",
+      "benchmarks/AspectN.Benchmarks/RegexRetentionProbe.cs",
+      "benchmarks/AspectN.Benchmarks/RegexWorkload.cs",
+      "benchmarks/AspectN.Benchmarks/AspectN.Benchmarks.csproj",
+      "docs/performance/data/2026-10-23-rm19-results.json",
+      "Directory.Build.props",
+      "Directory.Packages.props",
+      "tests/AspectN.Tests/AspectN.Tests.csproj"
+    ],
+    "environment_keys": [
+      "os",
+      "sdk",
+      "runtime",
+      "execution_target",
+      "compatibility_target",
+      "build_configuration"
+    ]
+  },
+  "revalidation_conditions": "Regex绑定/执行、编译选项或缓存、规范文本/资源规则、相关测试、运行时或测量输入变化时重新评估。既有历史报告保留；本报告不扩展为所有正则、并发吞吐、运行时或适配器性能保证。",
+  "scenario_assertions": [
+    {
+      "capability_id": "SEM-REGEX-001",
+      "scenario_id": "S1",
+      "test_methods": [
+        "AspectN.Tests.Binding.RegexSubsetTests|Compile_CommentInConjunction_RejectsWholeExpression",
+        "AspectN.Tests.Binding.RegexSubsetTests|Compile_InvalidRegexSyntax_ReportsErrorWithoutPattern",
+        "AspectN.Tests.Binding.RegexSubsetTests|Compile_SupportedSubset_ProducesPattern",
+        "AspectN.Tests.Binding.RegexSubsetTests|Compile_UnsupportedFeature_DiagnosticPointsToConstruct",
+        "AspectN.Tests.Binding.RegexSubsetTests|Compile_UnsupportedFeature_ReportsErrorWithoutPattern",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Format_Accessibility_UsesSpacedCompoundName",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Format_ComplexConstructedCallable_IsCanonical",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Format_ConstructedGenericUse_RenamesNestedArgument",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Format_MethodOnlySingleGenericParameter_UsesBareT",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Format_NestedOpenGeneric_NumbersFlatSlotsAcrossLevels",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Format_OpenGenericDefinition_RenamesParametersPositionally",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Format_ShadowedMethodGenericParameter_BindsToMethodSlot",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Format_SingleGenericParameter_UsesBareT",
+        "AspectN.Tests.Evaluation.RegexPatternTests|GenericParameterKey_SameDeclarationTextInDifferentAssemblies_IsDistinct",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Match_CanonicalSignatureExceedsOutputLimit_ReturnsUnknown",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Match_CatastrophicRegexTimesOut_ReturnsUnknownDiagnostic",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Match_NestedOpenArgumentExceedsArityLimit_ReturnsUnknown",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Match_OpenGenericArityExceedsArityLimit_ReturnsUnknown",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Match_Regex_AppliesToCanonicalSignature",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Match_Regex_AppliesToPositionalGenericNames",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Match_Regex_SingleGenericParameter_MatchesBareT",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Match_RegexCharacterClassEscapedBracket_IsLiteral",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Match_RegexCharacterClassFirstElement_ConsumesClassStart",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Match_RegexEscapedCommentMarker_DoesNotEnterComment",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Match_RegexNestedGroups_StillMatch",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Match_SharedCanonicalTypeGraph_ReturnsUnknownWithoutExponentialOutput",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Match_UnknownGenericDeclaration_ReturnsUnknownInsteadOfSourceName",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Match_UnterminatedRegexComment_ReportsUnterminated",
+        "AspectN.Tests.Evaluation.RegexReuseTests|Compile_TimeoutConfiguration_RemainsWithCachedRegexPlan",
+        "AspectN.Tests.Evaluation.RegexReuseTests|Match_InterleavedRules_AllocatesNoMoreThanRepeatedRule",
+        "AspectN.Tests.Evaluation.RegexReuseTests|Match_ReusedRegexPlan_StillPropagatesCancellation",
+        "AspectN.Tests.Evaluation.RegexReuseTests|Match_SharedRegexPlan_KeepsConcurrentResultsIndependent",
+        "AspectN.Tests.Parsing.RegexParserTests|ParseMemberExpression_InvalidControlEscape_PreservesDelimiterAndFollowingSelector",
+        "AspectN.Tests.Parsing.RegexParserTests|ParseMemberExpression_RegexNestedGroupsAndClass_LeavesSelectorClose",
+        "AspectN.Tests.Parsing.RegexParserTests|ParseMemberExpression_RegexSelector_PreservesBody",
+        "AspectN.Tests.Parsing.RegexParserTests|ParseMemberExpression_RegexSubsetInConjunction_PreservesBodyAndOuterBoundary",
+        "AspectN.Tests.Parsing.RegexParserTests|ParseMemberExpression_UnterminatedRegex_PreservesLexicalDiagnostic",
+        "AspectN.Tests.Parsing.RegexParserTests|ParseMemberExpression_ValidControlEscape_PreservesOuterBoundary"
+      ]
+    },
+    {
+      "capability_id": "SEM-REGEX-001",
+      "scenario_id": "S3",
+      "test_methods": [
+        "AspectN.Tests.Binding.RegexSubsetTests|Compile_CommentInConjunction_RejectsWholeExpression",
+        "AspectN.Tests.Binding.RegexSubsetTests|Compile_InvalidRegexSyntax_ReportsErrorWithoutPattern",
+        "AspectN.Tests.Binding.RegexSubsetTests|Compile_SupportedSubset_ProducesPattern",
+        "AspectN.Tests.Binding.RegexSubsetTests|Compile_UnsupportedFeature_DiagnosticPointsToConstruct",
+        "AspectN.Tests.Binding.RegexSubsetTests|Compile_UnsupportedFeature_ReportsErrorWithoutPattern"
+      ]
+    },
+    {
+      "capability_id": "CROSS-LIFETIME-001",
+      "scenario_id": "S1",
+      "test_methods": [
+        "AspectN.Tests.Caching.CompiledPatternCacheTests|Cache_IsOwnedByEngineInstanceAndHasNoStaticStorage",
+        "AspectN.Tests.Caching.CompiledPatternCacheTests|Compile_CacheKeyIncludesAllCompilationInputs",
+        "AspectN.Tests.Caching.CompiledPatternCacheTests|Compile_CanceledWhileWaitingForCacheLock_ThrowsAndKeepsCompletedPlan",
+        "AspectN.Tests.Caching.CompiledPatternCacheTests|Compile_CapacityUsesLeastRecentlyUsedEviction",
+        "AspectN.Tests.Caching.CompiledPatternCacheTests|Compile_ConcurrentIdenticalRequests_ReturnOnePlan",
+        "AspectN.Tests.Caching.CompiledPatternCacheTests|Compile_ZeroCapacity_DisablesCaching",
+        "AspectN.Tests.Caching.CompiledPatternCacheTests|GetOrAdd_ConcurrentMissCancellation_DoesNotCancelOtherCaller",
+        "AspectN.Tests.Caching.CompiledPatternCacheTests|GetOrAdd_FactoryException_IsNotCached",
+        "AspectN.Tests.Caching.CompiledPatternCacheTests|Options_NegativeCapacity_Throws",
+        "AspectN.Tests.Evaluation.BindingBudgetTests|Clone_InsufficientWork_RejectsBeforeCopyingEntries",
+        "AspectN.Tests.Evaluation.BindingBudgetTests|Collect_DifferentSignatureInstancesAndCertainty_RemainDistinct",
+        "AspectN.Tests.Evaluation.BindingBudgetTests|Evaluate_DistinctOrGroups_RecordsBoundedWorkAndAllocations",
+        "AspectN.Tests.Evaluation.BindingBudgetTests|Fork_WorkConsumedByChild_IsSharedWithParent",
+        "AspectN.Tests.Evaluation.BindingBudgetTests|Match_AbortInFork_PreservesCollectedDiagnostics",
+        "AspectN.Tests.Evaluation.BindingBudgetTests|Match_AncestorAlternatives_ShareUniqueLimit",
+        "AspectN.Tests.Evaluation.BindingBudgetTests|Match_AttributeAlternatives_ShareUniqueLimit",
+        "AspectN.Tests.Evaluation.BindingBudgetTests|Match_BackendException_IsNotConvertedToBudgetDiagnostic",
+        "AspectN.Tests.Evaluation.BindingBudgetTests|Match_CancellationBeforeNextBudgetCheck_PropagatesCancellation",
+        "AspectN.Tests.Evaluation.BindingBudgetTests|Match_ConcurrentAndRepeatedCalls_ResetBudget",
+        "AspectN.Tests.Evaluation.BindingBudgetTests|Match_DefaultCaptureLimits_BoundAlternativeGrowth",
+        "AspectN.Tests.Evaluation.BindingBudgetTests|Match_Duplicates_DoNotConsumeUniqueLimitButConsumeWork",
+        "AspectN.Tests.Evaluation.BindingBudgetTests|Match_ExhaustionAfterKnownSuccess_ReturnsWholeMatchUnknown",
+        "AspectN.Tests.Evaluation.BindingBudgetTests|Match_UniqueAlternativeLimit_StopsWholeMatch",
+        "AspectN.Tests.Evaluation.BindingBudgetTests|Match_WorkLimit_IncludesEntryAndFinalProcessing",
+        "AspectN.Tests.Evaluation.RegexReuseTests|Compile_TimeoutConfiguration_RemainsWithCachedRegexPlan",
+        "AspectN.Tests.Evaluation.RegexReuseTests|Match_InterleavedRules_AllocatesNoMoreThanRepeatedRule",
+        "AspectN.Tests.Evaluation.RegexReuseTests|Match_ReusedRegexPlan_StillPropagatesCancellation",
+        "AspectN.Tests.Evaluation.RegexReuseTests|Match_SharedRegexPlan_KeepsConcurrentResultsIndependent",
+        "AspectN.Tests.Evaluation.ResourceBudgetTests|AreEqual_IndependentStructureOptions_ApplyAndCanBeUnlimited",
+        "AspectN.Tests.Evaluation.ResourceBudgetTests|AreEqual_LongUnsupportedDisplayName_ChecksBudgetBeforeDiagnosticAllocation",
+        "AspectN.Tests.Evaluation.ResourceBudgetTests|AreEqual_WideInputAndTinyWork_DoesNotAllocateAFullTraversalStack",
+        "AspectN.Tests.Evaluation.ResourceBudgetTests|Match_CanonicalTextLimit_AbortsSuccessfulOr",
+        "AspectN.Tests.Evaluation.ResourceBudgetTests|Match_ConcurrentCalls_HaveIndependentTotalWork",
+        "AspectN.Tests.Evaluation.ResourceBudgetTests|Match_DeclarationSlot_ChecksBudgetBeforeGeneratingOwner",
+        "AspectN.Tests.Evaluation.ResourceBudgetTests|Match_DeclarationTotalWork_ExhaustionIsUnknown",
+        "AspectN.Tests.Evaluation.ResourceBudgetTests|Match_LongMemberWildcard_ConsumesCharacterWork",
+        "AspectN.Tests.Evaluation.ResourceBudgetTests|Match_LongNamespace_ChecksWorkBeforeSplittingText",
+        "AspectN.Tests.Evaluation.ResourceBudgetTests|Match_LongOpenGenericName_ChecksBudgetBeforeOwnerTextAllocation",
+        "AspectN.Tests.Evaluation.ResourceBudgetTests|Match_ThirdPartyResourceFailure_CannotBeCoveredBySuccessfulOr",
+        "AspectN.Tests.Evaluation.ResourceBudgetTests|Match_WideMethodSlots_ChecksBudgetBeforeSynthesizingArguments",
+        "AspectN.Tests.ResourceContractTests|Compile_CacheKey_ContainsEveryParseAndMatchLimitByValue",
+        "AspectN.Tests.ResourceContractTests|Compile_MethodSlots_UseIndependentBindingLimit",
+        "AspectN.Tests.ResourceContractTests|Limits_InvalidFiniteValuesAndDefaultAccess_Reject",
+        "AspectN.Tests.ResourceContractTests|Options_EveryCount_AcceptsFiniteAndUnlimitedAndRejectsInvalid",
+        "AspectN.Tests.ResourceContractTests|Parse_ParserDepth_CountsLogicalFrames",
+        "AspectN.Tests.ResourceContractTests|Parse_SourceBoundary_IncludesWhitespaceEscapesAndSurrogatePairs",
+        "AspectN.Tests.ResourceContractTests|Parse_SyntaxDepth_CountsRootAndTokens",
+        "AspectN.Tests.ResourceContractTests|Parse_SyntaxNodes_CountsTokenEofAndRoot",
+        "AspectN.Tests.ResourceContractTests|Parse_TokenBoundary_ExcludesEof",
+        "AspectN.Tests.ResourceContractTests|ParseAndCompile_PreCanceled_PrioritizeCancellationOverSourceLimit"
+      ]
+    },
+    {
+      "capability_id": "CROSS-RESOURCES-001",
+      "scenario_id": "S1",
+      "test_methods": [
+        "AspectN.Tests.Evaluation.RegexPatternTests|Format_Accessibility_UsesSpacedCompoundName",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Format_ComplexConstructedCallable_IsCanonical",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Format_ConstructedGenericUse_RenamesNestedArgument",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Format_MethodOnlySingleGenericParameter_UsesBareT",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Format_NestedOpenGeneric_NumbersFlatSlotsAcrossLevels",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Format_OpenGenericDefinition_RenamesParametersPositionally",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Format_ShadowedMethodGenericParameter_BindsToMethodSlot",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Format_SingleGenericParameter_UsesBareT",
+        "AspectN.Tests.Evaluation.RegexPatternTests|GenericParameterKey_SameDeclarationTextInDifferentAssemblies_IsDistinct",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Match_CanonicalSignatureExceedsOutputLimit_ReturnsUnknown",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Match_CatastrophicRegexTimesOut_ReturnsUnknownDiagnostic",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Match_NestedOpenArgumentExceedsArityLimit_ReturnsUnknown",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Match_OpenGenericArityExceedsArityLimit_ReturnsUnknown",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Match_Regex_AppliesToCanonicalSignature",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Match_Regex_AppliesToPositionalGenericNames",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Match_Regex_SingleGenericParameter_MatchesBareT",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Match_RegexCharacterClassEscapedBracket_IsLiteral",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Match_RegexCharacterClassFirstElement_ConsumesClassStart",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Match_RegexEscapedCommentMarker_DoesNotEnterComment",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Match_RegexNestedGroups_StillMatch",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Match_SharedCanonicalTypeGraph_ReturnsUnknownWithoutExponentialOutput",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Match_UnknownGenericDeclaration_ReturnsUnknownInsteadOfSourceName",
+        "AspectN.Tests.Evaluation.RegexPatternTests|Match_UnterminatedRegexComment_ReportsUnterminated",
+        "AspectN.Tests.Evaluation.RegexReuseTests|Compile_TimeoutConfiguration_RemainsWithCachedRegexPlan",
+        "AspectN.Tests.Evaluation.RegexReuseTests|Match_InterleavedRules_AllocatesNoMoreThanRepeatedRule",
+        "AspectN.Tests.Evaluation.RegexReuseTests|Match_ReusedRegexPlan_StillPropagatesCancellation",
+        "AspectN.Tests.Evaluation.RegexReuseTests|Match_SharedRegexPlan_KeepsConcurrentResultsIndependent"
+      ]
+    }
+  ],
+  "test_runs": [
+    {
+      "path": "artifacts/rm19/tests/Administrator_LAPTOP-ERQOPF47_2026-10-23_17_24_02_net10.0.trx",
+      "sha256": "585f5f2c7fa4d7af8ea0dcf1ccda67b57470a21ecb2991bff16c169ac9939ede",
+      "total": 1398,
+      "passed": 1398,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/rm19/tests/Administrator_LAPTOP-ERQOPF47_2026-10-23_17_24_07_net10.0.trx",
+      "sha256": "d56901eb5e9731a87eef3fc1432ad5c20419624dcd1eca12f70327f0ba2a94f7",
+      "total": 232,
+      "passed": 232,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/rm19/tests/Administrator_LAPTOP-ERQOPF47_2026-10-23_17_24_09_net10.0.trx",
+      "sha256": "769e856e56fed4c5d6ce933074d8cda39c927f9fb5ead08a45e3146314351bfd",
+      "total": 110,
+      "passed": 110,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/rm19/tests/Administrator_LAPTOP-ERQOPF47_2026-10-23_17_24_11_net10.0.trx",
+      "sha256": "8468d36c43d6cfbc02af8dc839e1f22599960eba819db9b5da3b6c9a688acbad",
+      "total": 30,
+      "passed": 30,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/rm19/tests/Administrator_LAPTOP-ERQOPF47_2026-10-23_17_24_15_net10.0.trx",
+      "sha256": "ed74dd70338922a5f3c7da3adb1688fcdb975832492b2ebf571e2119d3aa666b",
+      "total": 415,
+      "passed": 415,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/rm19/tests/Administrator_LAPTOP-ERQOPF47_2026-10-23_17_24_51_net472.trx",
+      "sha256": "16e32c96567f8d7cb07b1ccffaea6e24a32e392ae21eb6e56a081bed16a8089b",
+      "total": 8,
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/rm19/tests/Administrator_LAPTOP-ERQOPF47_2026-10-23_17_24_55_net10.0.trx",
+      "sha256": "c0854963de4d4781c987aaccde1ffee4524d0ad7477bbb5a443f6256b1bb8f98",
+      "total": 9,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/rm19/tests/Administrator_LAPTOP-ERQOPF47_2026-10-23_17_24_57_net10.0.trx",
+      "sha256": "ddb7a9515d03911e56b86784f1c9fb59392b5eb5adb0486a5701edf7f832688b",
+      "total": 234,
+      "passed": 234,
+      "failed": 0,
+      "skipped": 0
+    }
+  ]
+}

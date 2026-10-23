@@ -544,11 +544,15 @@
         {
           "path": "docs/reviews/2026-10-23-rm17-matching-allocations.md",
           "section": "实现与边界 / 当前验证"
+        },
+        {
+          "path": "docs/reviews/2026-10-23-rm19-regex-reuse.md",
+          "section": "实现与边界 / 当前验证"
         }
       ],
       "assessment_status": "unassessed",
       "capability_ids": [],
-      "notes": "性能工程尚未独立建立能力条目。RM-17建立九类匹配输入、Declaration/Capture两种模式的BenchmarkDotNet入口，限定.NET 10与Reflection关系查询。只优化证据明确的修饰符临时集合；不替代历史任务35的完整性能闸门，不承诺全部后端、运行时、表达式或整体吞吐。完整Match仍有分配，其他热点另行评估；语义回归关联MEM-SELECTORS-001/S1和CROSS-AVAILABILITY-001/S1。"
+      "notes": "性能工程尚未独立建立能力条目。RM-17建立九类匹配输入、Declaration/Capture两种模式的BenchmarkDotNet入口，限定.NET 10与Reflection关系查询。只优化证据明确的修饰符临时集合；不替代历史任务35的完整性能闸门，不承诺全部后端、运行时、表达式或整体吞吐。完整Match仍有分配，其他热点另行评估；语义回归关联MEM-SELECTORS-001/S1和CROSS-AVAILABILITY-001/S1。RM-19增加单规则/32规则缓存压力、静态/实例比较、完整编译及独立GC存活堆估计，依据证据保留绑定时创建的Regex；记录多规则分配收益与计划存活内存代价，仅覆盖.NET10单线程简单分支，不扩展性能承诺，语义关联SEM-REGEX-001/S1/S3。"
     }
   ]
 }

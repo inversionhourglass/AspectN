@@ -8,7 +8,8 @@
     "CROSS-RESOURCES-001",
     "CROSS-COMPAT-001",
     "CROSS-INPUT-001",
-    "CROSS-AVAILABILITY-001"
+    "CROSS-AVAILABILITY-001",
+    "SEM-REGEX-001"
   ],
   "inventory_refs": []
 }
@@ -44,6 +45,8 @@ module.Write(outputPath);
 ```
 
 同一模块可按需借给多个适配器，各自释放只结束各自作用域；这不代表原生模块的任意并发访问得到支持。Fody 插件应将模块的最终释放留给宿主。Reflection 弱关联不永久锁住可收集程序集，但仍需让当前查询所需原生对象存活。不同后端之间传递中立签名，不会自动建立另一后端的原生关联。[生命周期专题](../knowledge/capabilities/cross-cutting/CROSS-LIFETIME-001.md)给出各后端证据和限制。
+
+regex 选择器在编译时创建并保留正则实例及该计划的 RegexTimeout，后续 Match 复用。不同超时配置不会串用同一计划；不需要调整进程全局的 Regex.CacheSize。代价是持有模式或缓存编译结果期间，也会保留正则及其可复用执行缓冲；规则多或输入较大时应结合业务控制引擎缓存容量和自身计划引用。释放引用后由 GC 回收，不提供即时回收或固定内存尺寸承诺。
 
 ## 取消与资源上限
 

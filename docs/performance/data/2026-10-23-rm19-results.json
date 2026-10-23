@@ -1,0 +1,1457 @@
+{
+  "schema_version": 1,
+  "recorded_on": "2026-10-23",
+  "baseline_commit": "782c38f4952374ecb6141bdcd26065926e11e209",
+  "notes": "前7项、后3项；预建字符串上的静态/实例对照只运行一次，实际Match与完整编译按相同设置前后复测。耗时单位ns；64次批量匹配由BDN归一化，编译按每份编译计。存活堆为整个计划集合的近似GC增量；非每次分配量。Actual保留未过滤原始时长；统计样本为BDN默认异常值处理与开销调整后结果。",
+  "job": {
+    "runtime": "net10.0",
+    "launch_count": 2,
+    "warmup_count": 3,
+    "iteration_count": 6,
+    "operations_per_match_invoke": 64,
+    "static_cache_capacity": 15,
+    "regex_timeout_ms": 250
+  },
+  "phases": [
+    {
+      "phase": "before",
+      "sources": [
+        {
+          "path": "src/AspectN/Binding/Binder.cs",
+          "sha256": "fb2a531414716694e8c89e80facf5ba40f263aa8e4938fb3c79340c324295866"
+        },
+        {
+          "path": "src/AspectN/Binding/BoundSelector.cs",
+          "sha256": "2ce06a21257610d7a30b844471b52f2da4ab916a74ebc35faec839d21a49657c"
+        },
+        {
+          "path": "src/AspectN/Evaluation/RegexPatternEvaluator.cs",
+          "sha256": "0f64b4541e84d9ad4eae92b79153254b7ee1be3d53883149354a9edf66f7a5ff"
+        },
+        {
+          "path": "benchmarks/AspectN.Benchmarks/Program.cs",
+          "sha256": "4e0306f86ea7156db33b1ae8b296a82875c65ee247fe765fa36767d0570abd45"
+        },
+        {
+          "path": "benchmarks/AspectN.Benchmarks/RegexWorkload.cs",
+          "sha256": "9c21aa14f12718591efdc88da60d4c5365de5ef97136d017616310728fed9e24"
+        },
+        {
+          "path": "benchmarks/AspectN.Benchmarks/RegexReuseBenchmarks.cs",
+          "sha256": "0cc4e52e6849d889c984c069556e3947a403f195e65731b2ee6975fd1c16d79b"
+        },
+        {
+          "path": "benchmarks/AspectN.Benchmarks/RegexMatchingBenchmarks.cs",
+          "sha256": "b416a96975667203a37ff1ca3cb684c1858f7e5f30db6898e6e7688b9dabf17a"
+        },
+        {
+          "path": "benchmarks/AspectN.Benchmarks/RegexCompilationBenchmarks.cs",
+          "sha256": "1bea6c5cea45f0566131a99f5a351b5d7a4b503b7d0e4dce5fd63bf97c37a372"
+        },
+        {
+          "path": "benchmarks/AspectN.Benchmarks/RegexRetentionProbe.cs",
+          "sha256": "61dc15a96e14d9af94075fb3f2867981b1608d51dbdfc0049c3a7afc7dc40886"
+        }
+      ],
+      "reports": [
+        {
+          "raw_path": "artifacts/rm19/before/results/AspectN.Benchmarks.RegexCompilationBenchmarks-report-full.json",
+          "raw_sha256": "66be614d5e0e6938a772bab8593fe773d4e25257cc4d9260dcace7e66c24e618",
+          "environment": {
+            "BenchmarkDotNetCaption": "BenchmarkDotNet",
+            "BenchmarkDotNetVersion": "0.15.8",
+            "OsVersion": "Windows 11 (10.0.26200.9711/25H2/2025Update/HudsonValley2)",
+            "ProcessorName": "13th Gen Intel Core i9-13900H",
+            "PhysicalProcessorCount": 1,
+            "PhysicalCoreCount": 14,
+            "LogicalCoreCount": 20,
+            "RuntimeVersion": ".NET 10.0.12 (10.0.12, 10.0.1226.42308)",
+            "Architecture": "X64",
+            "HasAttachedDebugger": false,
+            "HasRyuJit": true,
+            "Configuration": "RELEASE",
+            "DotNetCliVersion": "10.0.401",
+            "ChronometerFrequency": {
+              "Hertz": 10000000
+            },
+            "HardwareTimerKind": "Unknown"
+          },
+          "benchmarks": [
+            {
+              "name": "AspectN.Benchmarks.RegexCompilationBenchmarks.Compile",
+              "method": "Compile",
+              "parameters": "",
+              "mean_ns": 2084.3312454223633,
+              "error_ns": 141.10441365918058,
+              "standard_deviation_ns": 93.3318330272913,
+              "filtered_sample_count": 10,
+              "adjusted_samples_ns": [
+                2088.1031036376953,
+                2122.954559326172,
+                2192.750930786133,
+                2056.6726684570312,
+                2056.2477111816406,
+                2266.787338256836,
+                2032.9795837402344,
+                1967.5853729248047,
+                2093.013381958008,
+                1966.2178039550781
+              ],
+              "allocated_bytes_per_operation": 8304,
+              "memory": {
+                "Gen0Collections": 173,
+                "Gen1Collections": 1,
+                "Gen2Collections": 0,
+                "TotalOperations": 262144,
+                "BytesAllocatedPerOperation": 8304
+              },
+              "actual_samples": [
+                {
+                  "launch": 1,
+                  "iteration": 1,
+                  "operations": 262144,
+                  "nanoseconds": 742008600,
+                  "ns_per_operation": 2830.5381774902344
+                },
+                {
+                  "launch": 1,
+                  "iteration": 2,
+                  "operations": 262144,
+                  "nanoseconds": 548067200,
+                  "ns_per_operation": 2090.71044921875
+                },
+                {
+                  "launch": 1,
+                  "iteration": 3,
+                  "operations": 262144,
+                  "nanoseconds": 557203300,
+                  "ns_per_operation": 2125.5619049072266
+                },
+                {
+                  "launch": 1,
+                  "iteration": 4,
+                  "operations": 262144,
+                  "nanoseconds": 575500000,
+                  "ns_per_operation": 2195.3582763671875
+                },
+                {
+                  "launch": 1,
+                  "iteration": 5,
+                  "operations": 262144,
+                  "nanoseconds": 539827900,
+                  "ns_per_operation": 2059.280014038086
+                },
+                {
+                  "launch": 1,
+                  "iteration": 6,
+                  "operations": 262144,
+                  "nanoseconds": 539716500,
+                  "ns_per_operation": 2058.8550567626953
+                },
+                {
+                  "launch": 2,
+                  "iteration": 1,
+                  "operations": 262144,
+                  "nanoseconds": 594886200,
+                  "ns_per_operation": 2269.310760498047
+                },
+                {
+                  "launch": 2,
+                  "iteration": 2,
+                  "operations": 262144,
+                  "nanoseconds": 533594900,
+                  "ns_per_operation": 2035.5030059814453
+                },
+                {
+                  "launch": 2,
+                  "iteration": 3,
+                  "operations": 262144,
+                  "nanoseconds": 516452200,
+                  "ns_per_operation": 1970.1087951660156
+                },
+                {
+                  "launch": 2,
+                  "iteration": 4,
+                  "operations": 262144,
+                  "nanoseconds": 549332400,
+                  "ns_per_operation": 2095.5368041992188
+                },
+                {
+                  "launch": 2,
+                  "iteration": 5,
+                  "operations": 262144,
+                  "nanoseconds": 726475600,
+                  "ns_per_operation": 2771.2844848632812
+                },
+                {
+                  "launch": 2,
+                  "iteration": 6,
+                  "operations": 262144,
+                  "nanoseconds": 516093700,
+                  "ns_per_operation": 1968.741226196289
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "raw_path": "artifacts/rm19/before/results/AspectN.Benchmarks.RegexMatchingBenchmarks-report-full.json",
+          "raw_sha256": "f38cedc37761f0b9536c8bf1b1c32857ca67034ab656d59850a8dcfae3136914",
+          "environment": {
+            "BenchmarkDotNetCaption": "BenchmarkDotNet",
+            "BenchmarkDotNetVersion": "0.15.8",
+            "OsVersion": "Windows 11 (10.0.26200.9711/25H2/2025Update/HudsonValley2)",
+            "ProcessorName": "13th Gen Intel Core i9-13900H",
+            "PhysicalProcessorCount": 1,
+            "PhysicalCoreCount": 14,
+            "LogicalCoreCount": 20,
+            "RuntimeVersion": ".NET 10.0.12 (10.0.12, 10.0.1226.42308)",
+            "Architecture": "X64",
+            "HasAttachedDebugger": false,
+            "HasRyuJit": true,
+            "Configuration": "RELEASE",
+            "DotNetCliVersion": "10.0.401",
+            "ChronometerFrequency": {
+              "Hertz": 10000000
+            },
+            "HardwareTimerKind": "Unknown"
+          },
+          "benchmarks": [
+            {
+              "name": "AspectN.Benchmarks.RegexMatchingBenchmarks.Match(RuleCount: 1)",
+              "method": "Match",
+              "parameters": "RuleCount=1",
+              "mean_ns": 2045.5895857377486,
+              "error_ns": 170.06309048363408,
+              "standard_deviation_ns": 122.96675688715867,
+              "filtered_sample_count": 11,
+              "adjusted_samples_ns": [
+                1922.0508575439453,
+                1980.2589416503906,
+                2059.994888305664,
+                2255.9654235839844,
+                2263.843536376953,
+                2092.5220489501953,
+                2030.093002319336,
+                2073.8853454589844,
+                1956.0249328613281,
+                1973.110580444336,
+                1893.7358856201172
+              ],
+              "allocated_bytes_per_operation": 6112,
+              "memory": {
+                "Gen0Collections": 127,
+                "Gen1Collections": 0,
+                "Gen2Collections": 0,
+                "TotalOperations": 262144,
+                "BytesAllocatedPerOperation": 6112
+              },
+              "actual_samples": [
+                {
+                  "launch": 1,
+                  "iteration": 1,
+                  "operations": 262144,
+                  "nanoseconds": 503860900,
+                  "ns_per_operation": 1922.0767974853516
+                },
+                {
+                  "launch": 1,
+                  "iteration": 2,
+                  "operations": 262144,
+                  "nanoseconds": 519119800,
+                  "ns_per_operation": 1980.2848815917969
+                },
+                {
+                  "launch": 1,
+                  "iteration": 3,
+                  "operations": 262144,
+                  "nanoseconds": 540022100,
+                  "ns_per_operation": 2060.0208282470703
+                },
+                {
+                  "launch": 1,
+                  "iteration": 4,
+                  "operations": 262144,
+                  "nanoseconds": 591394600,
+                  "ns_per_operation": 2255.9913635253906
+                },
+                {
+                  "launch": 1,
+                  "iteration": 5,
+                  "operations": 262144,
+                  "nanoseconds": 593459800,
+                  "ns_per_operation": 2263.8694763183594
+                },
+                {
+                  "launch": 1,
+                  "iteration": 6,
+                  "operations": 262144,
+                  "nanoseconds": 548548900,
+                  "ns_per_operation": 2092.5479888916016
+                },
+                {
+                  "launch": 2,
+                  "iteration": 1,
+                  "operations": 262144,
+                  "nanoseconds": 532183400,
+                  "ns_per_operation": 2030.1185607910156
+                },
+                {
+                  "launch": 2,
+                  "iteration": 2,
+                  "operations": 262144,
+                  "nanoseconds": 543663300,
+                  "ns_per_operation": 2073.910903930664
+                },
+                {
+                  "launch": 2,
+                  "iteration": 3,
+                  "operations": 262144,
+                  "nanoseconds": 682714600,
+                  "ns_per_operation": 2604.3495178222656
+                },
+                {
+                  "launch": 2,
+                  "iteration": 4,
+                  "operations": 262144,
+                  "nanoseconds": 512766900,
+                  "ns_per_operation": 1956.0504913330078
+                },
+                {
+                  "launch": 2,
+                  "iteration": 5,
+                  "operations": 262144,
+                  "nanoseconds": 517245800,
+                  "ns_per_operation": 1973.1361389160156
+                },
+                {
+                  "launch": 2,
+                  "iteration": 6,
+                  "operations": 262144,
+                  "nanoseconds": 496438200,
+                  "ns_per_operation": 1893.7614440917969
+                }
+              ]
+            },
+            {
+              "name": "AspectN.Benchmarks.RegexMatchingBenchmarks.Match(RuleCount: 32)",
+              "method": "Match",
+              "parameters": "RuleCount=32",
+              "mean_ns": 2656.0490001331677,
+              "error_ns": 218.72358974285976,
+              "standard_deviation_ns": 158.15148606854913,
+              "filtered_sample_count": 11,
+              "adjusted_samples_ns": [
+                2773.599624633789,
+                2626.7860412597656,
+                2492.2943115234375,
+                2618.2327270507812,
+                2861.005401611328,
+                2453.7303924560547,
+                2644.8043823242188,
+                2527.6695251464844,
+                2521.3424682617188,
+                2760.7818603515625,
+                2936.292266845703
+              ],
+              "allocated_bytes_per_operation": 7668,
+              "memory": {
+                "Gen0Collections": 160,
+                "Gen1Collections": 17,
+                "Gen2Collections": 0,
+                "TotalOperations": 262144,
+                "BytesAllocatedPerOperation": 7668
+              },
+              "actual_samples": [
+                {
+                  "launch": 1,
+                  "iteration": 1,
+                  "operations": 262144,
+                  "nanoseconds": 727089900,
+                  "ns_per_operation": 2773.6278533935547
+                },
+                {
+                  "launch": 1,
+                  "iteration": 2,
+                  "operations": 262144,
+                  "nanoseconds": 688603600,
+                  "ns_per_operation": 2626.8142700195312
+                },
+                {
+                  "launch": 1,
+                  "iteration": 3,
+                  "operations": 262144,
+                  "nanoseconds": 653347400,
+                  "ns_per_operation": 2492.322540283203
+                },
+                {
+                  "launch": 1,
+                  "iteration": 4,
+                  "operations": 262144,
+                  "nanoseconds": 686361400,
+                  "ns_per_operation": 2618.260955810547
+                },
+                {
+                  "launch": 1,
+                  "iteration": 5,
+                  "operations": 262144,
+                  "nanoseconds": 889281900,
+                  "ns_per_operation": 3392.3412322998047
+                },
+                {
+                  "launch": 1,
+                  "iteration": 6,
+                  "operations": 262144,
+                  "nanoseconds": 750002800,
+                  "ns_per_operation": 2861.0336303710938
+                },
+                {
+                  "launch": 2,
+                  "iteration": 1,
+                  "operations": 262144,
+                  "nanoseconds": 643238000,
+                  "ns_per_operation": 2453.7582397460938
+                },
+                {
+                  "launch": 2,
+                  "iteration": 2,
+                  "operations": 262144,
+                  "nanoseconds": 693326900,
+                  "ns_per_operation": 2644.832229614258
+                },
+                {
+                  "launch": 2,
+                  "iteration": 3,
+                  "operations": 262144,
+                  "nanoseconds": 662620700,
+                  "ns_per_operation": 2527.6973724365234
+                },
+                {
+                  "launch": 2,
+                  "iteration": 4,
+                  "operations": 262144,
+                  "nanoseconds": 660962100,
+                  "ns_per_operation": 2521.370315551758
+                },
+                {
+                  "launch": 2,
+                  "iteration": 5,
+                  "operations": 262144,
+                  "nanoseconds": 723729700,
+                  "ns_per_operation": 2760.8097076416016
+                },
+                {
+                  "launch": 2,
+                  "iteration": 6,
+                  "operations": 262144,
+                  "nanoseconds": 769738700,
+                  "ns_per_operation": 2936.320114135742
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "raw_path": "artifacts/rm19/before/results/AspectN.Benchmarks.RegexReuseBenchmarks-report-full.json",
+          "raw_sha256": "0737480ef2021ad4d6bb6ca6184c1d1edb01eb6c786d1de789c215eb5066bf61",
+          "environment": {
+            "BenchmarkDotNetCaption": "BenchmarkDotNet",
+            "BenchmarkDotNetVersion": "0.15.8",
+            "OsVersion": "Windows 11 (10.0.26200.9711/25H2/2025Update/HudsonValley2)",
+            "ProcessorName": "13th Gen Intel Core i9-13900H",
+            "PhysicalProcessorCount": 1,
+            "PhysicalCoreCount": 14,
+            "LogicalCoreCount": 20,
+            "RuntimeVersion": ".NET 10.0.12 (10.0.12, 10.0.1226.42308)",
+            "Architecture": "X64",
+            "HasAttachedDebugger": false,
+            "HasRyuJit": true,
+            "Configuration": "RELEASE",
+            "DotNetCliVersion": "10.0.401",
+            "ChronometerFrequency": {
+              "Hertz": 10000000
+            },
+            "HardwareTimerKind": "Unknown"
+          },
+          "benchmarks": [
+            {
+              "name": "AspectN.Benchmarks.RegexReuseBenchmarks.StaticCache(RuleCount: 1)",
+              "method": "StaticCache",
+              "parameters": "RuleCount=1",
+              "mean_ns": 38.66046816110611,
+              "error_ns": 3.0680021845325696,
+              "standard_deviation_ns": 2.3952943016226893,
+              "filtered_sample_count": 12,
+              "adjusted_samples_ns": [
+                39.29363489151001,
+                38.165903091430664,
+                37.47117519378662,
+                37.69049644470215,
+                35.652732849121094,
+                36.10659837722778,
+                36.41813099384308,
+                38.229355216026306,
+                44.16064918041229,
+                40.82787334918976,
+                40.672001242637634,
+                39.237067103385925
+              ],
+              "allocated_bytes_per_operation": 0,
+              "memory": {
+                "Gen0Collections": 0,
+                "Gen1Collections": 0,
+                "Gen2Collections": 0,
+                "TotalOperations": 16777216,
+                "BytesAllocatedPerOperation": 0
+              },
+              "actual_samples": [
+                {
+                  "launch": 1,
+                  "iteration": 1,
+                  "operations": 16777216,
+                  "nanoseconds": 659712300,
+                  "ns_per_operation": 39.32191729545593
+                },
+                {
+                  "launch": 1,
+                  "iteration": 2,
+                  "operations": 16777216,
+                  "nanoseconds": 640792100,
+                  "ns_per_operation": 38.19418549537659
+                },
+                {
+                  "launch": 1,
+                  "iteration": 3,
+                  "operations": 16777216,
+                  "nanoseconds": 629136500,
+                  "ns_per_operation": 37.499457597732544
+                },
+                {
+                  "launch": 1,
+                  "iteration": 4,
+                  "operations": 16777216,
+                  "nanoseconds": 632816100,
+                  "ns_per_operation": 37.71877884864807
+                },
+                {
+                  "launch": 1,
+                  "iteration": 5,
+                  "operations": 16777216,
+                  "nanoseconds": 598628100,
+                  "ns_per_operation": 35.68101525306702
+                },
+                {
+                  "launch": 1,
+                  "iteration": 6,
+                  "operations": 16777216,
+                  "nanoseconds": 606242700,
+                  "ns_per_operation": 36.134880781173706
+                },
+                {
+                  "launch": 2,
+                  "iteration": 1,
+                  "operations": 16777216,
+                  "nanoseconds": 611477400,
+                  "ns_per_operation": 36.44689321517944
+                },
+                {
+                  "launch": 2,
+                  "iteration": 2,
+                  "operations": 16777216,
+                  "nanoseconds": 641864700,
+                  "ns_per_operation": 38.25811743736267
+                },
+                {
+                  "launch": 2,
+                  "iteration": 3,
+                  "operations": 16777216,
+                  "nanoseconds": 741375300,
+                  "ns_per_operation": 44.18941140174866
+                },
+                {
+                  "launch": 2,
+                  "iteration": 4,
+                  "operations": 16777216,
+                  "nanoseconds": 685460600,
+                  "ns_per_operation": 40.85663557052612
+                },
+                {
+                  "launch": 2,
+                  "iteration": 5,
+                  "operations": 16777216,
+                  "nanoseconds": 682845500,
+                  "ns_per_operation": 40.700763463974
+                },
+                {
+                  "launch": 2,
+                  "iteration": 6,
+                  "operations": 16777216,
+                  "nanoseconds": 658771300,
+                  "ns_per_operation": 39.26582932472229
+                }
+              ]
+            },
+            {
+              "name": "AspectN.Benchmarks.RegexReuseBenchmarks.RetainedInstance(RuleCount: 1)",
+              "method": "RetainedInstance",
+              "parameters": "RuleCount=1",
+              "mean_ns": 41.448020393198185,
+              "error_ns": 2.2180553956037334,
+              "standard_deviation_ns": 1.6037993771476384,
+              "filtered_sample_count": 11,
+              "adjusted_samples_ns": [
+                40.16581177711487,
+                43.89764666557312,
+                42.63542890548706,
+                41.61186218261719,
+                44.091349840164185,
+                41.36019945144653,
+                39.72916007041931,
+                39.80140686035156,
+                39.65049386024475,
+                40.882331132888794,
+                42.10253357887268
+              ],
+              "allocated_bytes_per_operation": 0,
+              "memory": {
+                "Gen0Collections": 0,
+                "Gen1Collections": 0,
+                "Gen2Collections": 0,
+                "TotalOperations": 16777216,
+                "BytesAllocatedPerOperation": 0
+              },
+              "actual_samples": [
+                {
+                  "launch": 1,
+                  "iteration": 1,
+                  "operations": 16777216,
+                  "nanoseconds": 674408700,
+                  "ns_per_operation": 40.19789099693298
+                },
+                {
+                  "launch": 1,
+                  "iteration": 2,
+                  "operations": 16777216,
+                  "nanoseconds": 737018500,
+                  "ns_per_operation": 43.929725885391235
+                },
+                {
+                  "launch": 1,
+                  "iteration": 3,
+                  "operations": 16777216,
+                  "nanoseconds": 715842000,
+                  "ns_per_operation": 42.667508125305176
+                },
+                {
+                  "launch": 1,
+                  "iteration": 4,
+                  "operations": 16777216,
+                  "nanoseconds": 698669400,
+                  "ns_per_operation": 41.6439414024353
+                },
+                {
+                  "launch": 1,
+                  "iteration": 5,
+                  "operations": 16777216,
+                  "nanoseconds": 848704400,
+                  "ns_per_operation": 50.586724281311035
+                },
+                {
+                  "launch": 1,
+                  "iteration": 6,
+                  "operations": 16777216,
+                  "nanoseconds": 740268300,
+                  "ns_per_operation": 44.1234290599823
+                },
+                {
+                  "launch": 2,
+                  "iteration": 1,
+                  "operations": 16777216,
+                  "nanoseconds": 694355400,
+                  "ns_per_operation": 41.38680696487427
+                },
+                {
+                  "launch": 2,
+                  "iteration": 2,
+                  "operations": 16777216,
+                  "nanoseconds": 666991100,
+                  "ns_per_operation": 39.755767583847046
+                },
+                {
+                  "launch": 2,
+                  "iteration": 3,
+                  "operations": 16777216,
+                  "nanoseconds": 668203200,
+                  "ns_per_operation": 39.8280143737793
+                },
+                {
+                  "launch": 2,
+                  "iteration": 4,
+                  "operations": 16777216,
+                  "nanoseconds": 665671300,
+                  "ns_per_operation": 39.677101373672485
+                },
+                {
+                  "launch": 2,
+                  "iteration": 5,
+                  "operations": 16777216,
+                  "nanoseconds": 686338100,
+                  "ns_per_operation": 40.90893864631653
+                },
+                {
+                  "launch": 2,
+                  "iteration": 6,
+                  "operations": 16777216,
+                  "nanoseconds": 706809700,
+                  "ns_per_operation": 42.129141092300415
+                }
+              ]
+            },
+            {
+              "name": "AspectN.Benchmarks.RegexReuseBenchmarks.StaticCache(RuleCount: 32)",
+              "method": "StaticCache",
+              "parameters": "RuleCount=32",
+              "mean_ns": 528.3608865737915,
+              "error_ns": 40.115529787470145,
+              "standard_deviation_ns": 26.53393916485685,
+              "filtered_sample_count": 10,
+              "adjusted_samples_ns": [
+                593.1090831756592,
+                526.7330646514893,
+                526.3594150543213,
+                508.23092460632324,
+                514.7814273834229,
+                539.4418716430664,
+                516.9671058654785,
+                509.619140625,
+                545.5034255981445,
+                502.86340713500977
+              ],
+              "allocated_bytes_per_operation": 1556,
+              "memory": {
+                "Gen0Collections": 130,
+                "Gen1Collections": 14,
+                "Gen2Collections": 0,
+                "TotalOperations": 1048576,
+                "BytesAllocatedPerOperation": 1556
+              },
+              "actual_samples": [
+                {
+                  "launch": 1,
+                  "iteration": 1,
+                  "operations": 1048576,
+                  "nanoseconds": 713083200,
+                  "ns_per_operation": 680.0491333007812
+                },
+                {
+                  "launch": 1,
+                  "iteration": 2,
+                  "operations": 1048576,
+                  "nanoseconds": 621947900,
+                  "ns_per_operation": 593.1357383728027
+                },
+                {
+                  "launch": 1,
+                  "iteration": 3,
+                  "operations": 1048576,
+                  "nanoseconds": 552347600,
+                  "ns_per_operation": 526.7597198486328
+                },
+                {
+                  "launch": 1,
+                  "iteration": 4,
+                  "operations": 1048576,
+                  "nanoseconds": 551955800,
+                  "ns_per_operation": 526.3860702514648
+                },
+                {
+                  "launch": 1,
+                  "iteration": 5,
+                  "operations": 1048576,
+                  "nanoseconds": 532946700,
+                  "ns_per_operation": 508.2575798034668
+                },
+                {
+                  "launch": 1,
+                  "iteration": 6,
+                  "operations": 1048576,
+                  "nanoseconds": 539815400,
+                  "ns_per_operation": 514.8080825805664
+                },
+                {
+                  "launch": 2,
+                  "iteration": 1,
+                  "operations": 1048576,
+                  "nanoseconds": 565672000,
+                  "ns_per_operation": 539.4668579101562
+                },
+                {
+                  "launch": 2,
+                  "iteration": 2,
+                  "operations": 1048576,
+                  "nanoseconds": 542105500,
+                  "ns_per_operation": 516.9920921325684
+                },
+                {
+                  "launch": 2,
+                  "iteration": 3,
+                  "operations": 1048576,
+                  "nanoseconds": 534400600,
+                  "ns_per_operation": 509.64412689208984
+                },
+                {
+                  "launch": 2,
+                  "iteration": 4,
+                  "operations": 1048576,
+                  "nanoseconds": 572028000,
+                  "ns_per_operation": 545.5284118652344
+                },
+                {
+                  "launch": 2,
+                  "iteration": 5,
+                  "operations": 1048576,
+                  "nanoseconds": 682520800,
+                  "ns_per_operation": 650.9025573730469
+                },
+                {
+                  "launch": 2,
+                  "iteration": 6,
+                  "operations": 1048576,
+                  "nanoseconds": 527316700,
+                  "ns_per_operation": 502.8883934020996
+                }
+              ]
+            },
+            {
+              "name": "AspectN.Benchmarks.RegexReuseBenchmarks.RetainedInstance(RuleCount: 32)",
+              "method": "RetainedInstance",
+              "parameters": "RuleCount=32",
+              "mean_ns": 41.56106981364164,
+              "error_ns": 1.759525969132867,
+              "standard_deviation_ns": 1.272252559139663,
+              "filtered_sample_count": 11,
+              "adjusted_samples_ns": [
+                44.05720233917236,
+                42.18224883079529,
+                42.6683247089386,
+                40.65945744514465,
+                39.26708698272705,
+                41.076529026031494,
+                41.60286784172058,
+                40.72132110595703,
+                40.73017239570618,
+                42.25879907608032,
+                41.947758197784424
+              ],
+              "allocated_bytes_per_operation": 0,
+              "memory": {
+                "Gen0Collections": 0,
+                "Gen1Collections": 0,
+                "Gen2Collections": 0,
+                "TotalOperations": 16777216,
+                "BytesAllocatedPerOperation": 0
+              },
+              "actual_samples": [
+                {
+                  "launch": 1,
+                  "iteration": 1,
+                  "operations": 16777216,
+                  "nanoseconds": 739557300,
+                  "ns_per_operation": 44.081050157547
+                },
+                {
+                  "launch": 1,
+                  "iteration": 2,
+                  "operations": 16777216,
+                  "nanoseconds": 708100800,
+                  "ns_per_operation": 42.20609664916992
+                },
+                {
+                  "launch": 1,
+                  "iteration": 3,
+                  "operations": 16777216,
+                  "nanoseconds": 716255800,
+                  "ns_per_operation": 42.69217252731323
+                },
+                {
+                  "launch": 1,
+                  "iteration": 4,
+                  "operations": 16777216,
+                  "nanoseconds": 682552600,
+                  "ns_per_operation": 40.68330526351929
+                },
+                {
+                  "launch": 1,
+                  "iteration": 5,
+                  "operations": 16777216,
+                  "nanoseconds": 659192500,
+                  "ns_per_operation": 39.290934801101685
+                },
+                {
+                  "launch": 1,
+                  "iteration": 6,
+                  "operations": 16777216,
+                  "nanoseconds": 689549900,
+                  "ns_per_operation": 41.10037684440613
+                },
+                {
+                  "launch": 2,
+                  "iteration": 1,
+                  "operations": 16777216,
+                  "nanoseconds": 698374500,
+                  "ns_per_operation": 41.62636399269104
+                },
+                {
+                  "launch": 2,
+                  "iteration": 2,
+                  "operations": 16777216,
+                  "nanoseconds": 778307100,
+                  "ns_per_operation": 46.39071822166443
+                },
+                {
+                  "launch": 2,
+                  "iteration": 3,
+                  "operations": 16777216,
+                  "nanoseconds": 683584600,
+                  "ns_per_operation": 40.74481725692749
+                },
+                {
+                  "launch": 2,
+                  "iteration": 4,
+                  "operations": 16777216,
+                  "nanoseconds": 683733100,
+                  "ns_per_operation": 40.753668546676636
+                },
+                {
+                  "launch": 2,
+                  "iteration": 5,
+                  "operations": 16777216,
+                  "nanoseconds": 709379200,
+                  "ns_per_operation": 42.28229522705078
+                },
+                {
+                  "launch": 2,
+                  "iteration": 6,
+                  "operations": 16777216,
+                  "nanoseconds": 704160800,
+                  "ns_per_operation": 41.97125434875488
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "retention_path": "artifacts/rm19/before/retention.jsonl",
+      "retention_sha256": "9d16d249450ea6fdae84b7fd42fb50b276cb564eb8719040c76141691314adad",
+      "retention_runs": [
+        {
+          "Plans": 2048,
+          "BeforeFirstMatchBytes": 802840,
+          "AfterFirstMatchBytes": 832840,
+          "Runtime": "10.0.12"
+        },
+        {
+          "Plans": 2048,
+          "BeforeFirstMatchBytes": 802840,
+          "AfterFirstMatchBytes": 832840,
+          "Runtime": "10.0.12"
+        },
+        {
+          "Plans": 2048,
+          "BeforeFirstMatchBytes": 802840,
+          "AfterFirstMatchBytes": 832840,
+          "Runtime": "10.0.12"
+        },
+        {
+          "Plans": 2048,
+          "BeforeFirstMatchBytes": 802840,
+          "AfterFirstMatchBytes": 832840,
+          "Runtime": "10.0.12"
+        },
+        {
+          "Plans": 2048,
+          "BeforeFirstMatchBytes": 802840,
+          "AfterFirstMatchBytes": 832840,
+          "Runtime": "10.0.12"
+        }
+      ]
+    },
+    {
+      "phase": "after",
+      "sources": [
+        {
+          "path": "src/AspectN/Binding/Binder.cs",
+          "sha256": "a3ccd6761efb9fcf345f190bb658a3aff45d57fc7356b97c61dd8a03c0d7ad63"
+        },
+        {
+          "path": "src/AspectN/Binding/BoundSelector.cs",
+          "sha256": "901514caeeca791f9697a24f518ea575d93b25111aaf695307b26138974f41b7"
+        },
+        {
+          "path": "src/AspectN/Evaluation/RegexPatternEvaluator.cs",
+          "sha256": "7c2a136ff50665c0acb2eaf892d157b23dd0998fcf5d9701dec18c3abab5d062"
+        },
+        {
+          "path": "benchmarks/AspectN.Benchmarks/Program.cs",
+          "sha256": "4e0306f86ea7156db33b1ae8b296a82875c65ee247fe765fa36767d0570abd45"
+        },
+        {
+          "path": "benchmarks/AspectN.Benchmarks/RegexWorkload.cs",
+          "sha256": "9c21aa14f12718591efdc88da60d4c5365de5ef97136d017616310728fed9e24"
+        },
+        {
+          "path": "benchmarks/AspectN.Benchmarks/RegexReuseBenchmarks.cs",
+          "sha256": "0cc4e52e6849d889c984c069556e3947a403f195e65731b2ee6975fd1c16d79b"
+        },
+        {
+          "path": "benchmarks/AspectN.Benchmarks/RegexMatchingBenchmarks.cs",
+          "sha256": "b416a96975667203a37ff1ca3cb684c1858f7e5f30db6898e6e7688b9dabf17a"
+        },
+        {
+          "path": "benchmarks/AspectN.Benchmarks/RegexCompilationBenchmarks.cs",
+          "sha256": "1bea6c5cea45f0566131a99f5a351b5d7a4b503b7d0e4dce5fd63bf97c37a372"
+        },
+        {
+          "path": "benchmarks/AspectN.Benchmarks/RegexRetentionProbe.cs",
+          "sha256": "61dc15a96e14d9af94075fb3f2867981b1608d51dbdfc0049c3a7afc7dc40886"
+        }
+      ],
+      "reports": [
+        {
+          "raw_path": "artifacts/rm19/after/results/AspectN.Benchmarks.RegexCompilationBenchmarks-report-full.json",
+          "raw_sha256": "7145c5736d366895c7fe8a5e647da78cf8479965927aa3e3212b9530d3720088",
+          "environment": {
+            "BenchmarkDotNetCaption": "BenchmarkDotNet",
+            "BenchmarkDotNetVersion": "0.15.8",
+            "OsVersion": "Windows 11 (10.0.26200.9711/25H2/2025Update/HudsonValley2)",
+            "ProcessorName": "13th Gen Intel Core i9-13900H",
+            "PhysicalProcessorCount": 1,
+            "PhysicalCoreCount": 14,
+            "LogicalCoreCount": 20,
+            "RuntimeVersion": ".NET 10.0.12 (10.0.12, 10.0.1226.42308)",
+            "Architecture": "X64",
+            "HasAttachedDebugger": false,
+            "HasRyuJit": true,
+            "Configuration": "RELEASE",
+            "DotNetCliVersion": "10.0.401",
+            "ChronometerFrequency": {
+              "Hertz": 10000000
+            },
+            "HardwareTimerKind": "Unknown"
+          },
+          "benchmarks": [
+            {
+              "name": "AspectN.Benchmarks.RegexCompilationBenchmarks.Compile",
+              "method": "Compile",
+              "parameters": "",
+              "mean_ns": 2003.9927049116654,
+              "error_ns": 77.68519315196674,
+              "standard_deviation_ns": 56.17148455248822,
+              "filtered_sample_count": 11,
+              "adjusted_samples_ns": [
+                2026.3145446777344,
+                1988.0138397216797,
+                1950.9807586669922,
+                2029.1645050048828,
+                2010.4682922363281,
+                1921.1273193359375,
+                1924.5704650878906,
+                2112.0445251464844,
+                2017.2142028808594,
+                2013.0584716796875,
+                2050.9628295898438
+              ],
+              "allocated_bytes_per_operation": 8312,
+              "memory": {
+                "Gen0Collections": 173,
+                "Gen1Collections": 1,
+                "Gen2Collections": 0,
+                "TotalOperations": 262144,
+                "BytesAllocatedPerOperation": 8312
+              },
+              "actual_samples": [
+                {
+                  "launch": 1,
+                  "iteration": 1,
+                  "operations": 262144,
+                  "nanoseconds": 531860600,
+                  "ns_per_operation": 2028.8871765136719
+                },
+                {
+                  "launch": 1,
+                  "iteration": 2,
+                  "operations": 262144,
+                  "nanoseconds": 521820300,
+                  "ns_per_operation": 1990.5864715576172
+                },
+                {
+                  "launch": 1,
+                  "iteration": 3,
+                  "operations": 262144,
+                  "nanoseconds": 512112300,
+                  "ns_per_operation": 1953.5533905029297
+                },
+                {
+                  "launch": 1,
+                  "iteration": 4,
+                  "operations": 262144,
+                  "nanoseconds": 532607700,
+                  "ns_per_operation": 2031.7371368408203
+                },
+                {
+                  "launch": 1,
+                  "iteration": 5,
+                  "operations": 262144,
+                  "nanoseconds": 527706600,
+                  "ns_per_operation": 2013.0409240722656
+                },
+                {
+                  "launch": 1,
+                  "iteration": 6,
+                  "operations": 262144,
+                  "nanoseconds": 504286400,
+                  "ns_per_operation": 1923.699951171875
+                },
+                {
+                  "launch": 2,
+                  "iteration": 1,
+                  "operations": 262144,
+                  "nanoseconds": 505166800,
+                  "ns_per_operation": 1927.0584106445312
+                },
+                {
+                  "launch": 2,
+                  "iteration": 2,
+                  "operations": 262144,
+                  "nanoseconds": 554312000,
+                  "ns_per_operation": 2114.532470703125
+                },
+                {
+                  "launch": 2,
+                  "iteration": 3,
+                  "operations": 262144,
+                  "nanoseconds": 529452800,
+                  "ns_per_operation": 2019.7021484375
+                },
+                {
+                  "launch": 2,
+                  "iteration": 4,
+                  "operations": 262144,
+                  "nanoseconds": 528363400,
+                  "ns_per_operation": 2015.5464172363281
+                },
+                {
+                  "launch": 2,
+                  "iteration": 5,
+                  "operations": 262144,
+                  "nanoseconds": 690304800,
+                  "ns_per_operation": 2633.3038330078125
+                },
+                {
+                  "launch": 2,
+                  "iteration": 6,
+                  "operations": 262144,
+                  "nanoseconds": 538299800,
+                  "ns_per_operation": 2053.4507751464844
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "raw_path": "artifacts/rm19/after/results/AspectN.Benchmarks.RegexMatchingBenchmarks-report-full.json",
+          "raw_sha256": "a9e9d81c00e0d73bb79dd54088430b1a32345396f19511f6f3eb53f188c5bbe7",
+          "environment": {
+            "BenchmarkDotNetCaption": "BenchmarkDotNet",
+            "BenchmarkDotNetVersion": "0.15.8",
+            "OsVersion": "Windows 11 (10.0.26200.9711/25H2/2025Update/HudsonValley2)",
+            "ProcessorName": "13th Gen Intel Core i9-13900H",
+            "PhysicalProcessorCount": 1,
+            "PhysicalCoreCount": 14,
+            "LogicalCoreCount": 20,
+            "RuntimeVersion": ".NET 10.0.12 (10.0.12, 10.0.1226.42308)",
+            "Architecture": "X64",
+            "HasAttachedDebugger": false,
+            "HasRyuJit": true,
+            "Configuration": "RELEASE",
+            "DotNetCliVersion": "10.0.401",
+            "ChronometerFrequency": {
+              "Hertz": 10000000
+            },
+            "HardwareTimerKind": "Unknown"
+          },
+          "benchmarks": [
+            {
+              "name": "AspectN.Benchmarks.RegexMatchingBenchmarks.Match(RuleCount: 1)",
+              "method": "Match",
+              "parameters": "RuleCount=1",
+              "mean_ns": 2125.8498986562095,
+              "error_ns": 193.4782377903377,
+              "standard_deviation_ns": 151.05508164356254,
+              "filtered_sample_count": 12,
+              "adjusted_samples_ns": [
+                2402.268600463867,
+                2208.285903930664,
+                1930.7411193847656,
+                2260.9500885009766,
+                2062.295913696289,
+                2009.0972900390625,
+                2299.7371673583984,
+                2101.5153884887695,
+                2050.300979614258,
+                2232.6278686523438,
+                1999.2813110351562,
+                1953.097152709961
+              ],
+              "allocated_bytes_per_operation": 6112,
+              "memory": {
+                "Gen0Collections": 255,
+                "Gen1Collections": 1,
+                "Gen2Collections": 0,
+                "TotalOperations": 524288,
+                "BytesAllocatedPerOperation": 6112
+              },
+              "actual_samples": [
+                {
+                  "launch": 1,
+                  "iteration": 1,
+                  "operations": 262144,
+                  "nanoseconds": 629747500,
+                  "ns_per_operation": 2402.2960662841797
+                },
+                {
+                  "launch": 1,
+                  "iteration": 2,
+                  "operations": 262144,
+                  "nanoseconds": 578896100,
+                  "ns_per_operation": 2208.3133697509766
+                },
+                {
+                  "launch": 1,
+                  "iteration": 3,
+                  "operations": 262144,
+                  "nanoseconds": 506139400,
+                  "ns_per_operation": 1930.7685852050781
+                },
+                {
+                  "launch": 1,
+                  "iteration": 4,
+                  "operations": 262144,
+                  "nanoseconds": 592701700,
+                  "ns_per_operation": 2260.977554321289
+                },
+                {
+                  "launch": 1,
+                  "iteration": 5,
+                  "operations": 262144,
+                  "nanoseconds": 540625700,
+                  "ns_per_operation": 2062.3233795166016
+                },
+                {
+                  "launch": 1,
+                  "iteration": 6,
+                  "operations": 262144,
+                  "nanoseconds": 526680000,
+                  "ns_per_operation": 2009.124755859375
+                },
+                {
+                  "launch": 2,
+                  "iteration": 1,
+                  "operations": 524288,
+                  "nanoseconds": 1205738500,
+                  "ns_per_operation": 2299.7636795043945
+                },
+                {
+                  "launch": 2,
+                  "iteration": 2,
+                  "operations": 524288,
+                  "nanoseconds": 1101813200,
+                  "ns_per_operation": 2101.5419006347656
+                },
+                {
+                  "launch": 2,
+                  "iteration": 3,
+                  "operations": 524288,
+                  "nanoseconds": 1074962100,
+                  "ns_per_operation": 2050.327491760254
+                },
+                {
+                  "launch": 2,
+                  "iteration": 4,
+                  "operations": 524288,
+                  "nanoseconds": 1170553900,
+                  "ns_per_operation": 2232.65438079834
+                },
+                {
+                  "launch": 2,
+                  "iteration": 5,
+                  "operations": 524288,
+                  "nanoseconds": 1048213100,
+                  "ns_per_operation": 1999.3078231811523
+                },
+                {
+                  "launch": 2,
+                  "iteration": 6,
+                  "operations": 524288,
+                  "nanoseconds": 1023999300,
+                  "ns_per_operation": 1953.123664855957
+                }
+              ]
+            },
+            {
+              "name": "AspectN.Benchmarks.RegexMatchingBenchmarks.Match(RuleCount: 32)",
+              "method": "Match",
+              "parameters": "RuleCount=32",
+              "mean_ns": 2130.9675216674805,
+              "error_ns": 207.35169476218158,
+              "standard_deviation_ns": 161.88656429243431,
+              "filtered_sample_count": 12,
+              "adjusted_samples_ns": [
+                1861.8980407714844,
+                1953.4461975097656,
+                2062.0986938476562,
+                2233.4205627441406,
+                2103.4568786621094,
+                2381.544876098633,
+                1971.7693328857422,
+                2278.6502838134766,
+                2245.218276977539,
+                2024.4274139404297,
+                2315.176773071289,
+                2140.5029296875
+              ],
+              "allocated_bytes_per_operation": 6112,
+              "memory": {
+                "Gen0Collections": 127,
+                "Gen1Collections": 0,
+                "Gen2Collections": 0,
+                "TotalOperations": 262144,
+                "BytesAllocatedPerOperation": 6112
+              },
+              "actual_samples": [
+                {
+                  "launch": 1,
+                  "iteration": 1,
+                  "operations": 262144,
+                  "nanoseconds": 488091900,
+                  "ns_per_operation": 1861.922836303711
+                },
+                {
+                  "launch": 1,
+                  "iteration": 2,
+                  "operations": 262144,
+                  "nanoseconds": 512090700,
+                  "ns_per_operation": 1953.4709930419922
+                },
+                {
+                  "launch": 1,
+                  "iteration": 3,
+                  "operations": 262144,
+                  "nanoseconds": 540573300,
+                  "ns_per_operation": 2062.123489379883
+                },
+                {
+                  "launch": 1,
+                  "iteration": 4,
+                  "operations": 262144,
+                  "nanoseconds": 585484300,
+                  "ns_per_operation": 2233.445358276367
+                },
+                {
+                  "launch": 1,
+                  "iteration": 5,
+                  "operations": 262144,
+                  "nanoseconds": 551415100,
+                  "ns_per_operation": 2103.481674194336
+                },
+                {
+                  "launch": 1,
+                  "iteration": 6,
+                  "operations": 262144,
+                  "nanoseconds": 624314200,
+                  "ns_per_operation": 2381.5696716308594
+                },
+                {
+                  "launch": 2,
+                  "iteration": 1,
+                  "operations": 262144,
+                  "nanoseconds": 516894100,
+                  "ns_per_operation": 1971.7945098876953
+                },
+                {
+                  "launch": 2,
+                  "iteration": 2,
+                  "operations": 262144,
+                  "nanoseconds": 597341100,
+                  "ns_per_operation": 2278.6754608154297
+                },
+                {
+                  "launch": 2,
+                  "iteration": 3,
+                  "operations": 262144,
+                  "nanoseconds": 588577100,
+                  "ns_per_operation": 2245.243453979492
+                },
+                {
+                  "launch": 2,
+                  "iteration": 4,
+                  "operations": 262144,
+                  "nanoseconds": 530698100,
+                  "ns_per_operation": 2024.4525909423828
+                },
+                {
+                  "launch": 2,
+                  "iteration": 5,
+                  "operations": 262144,
+                  "nanoseconds": 606916300,
+                  "ns_per_operation": 2315.201950073242
+                },
+                {
+                  "launch": 2,
+                  "iteration": 6,
+                  "operations": 262144,
+                  "nanoseconds": 561126600,
+                  "ns_per_operation": 2140.528106689453
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "retention_path": "artifacts/rm19/after/retention.jsonl",
+      "retention_sha256": "5f2291b211db5bab565b3ad82cb91c9f4149c1b533c862d7660a3c52abf41960",
+      "retention_runs": [
+        {
+          "Plans": 2048,
+          "BeforeFirstMatchBytes": 2555928,
+          "AfterFirstMatchBytes": 4620312,
+          "Runtime": "10.0.12"
+        },
+        {
+          "Plans": 2048,
+          "BeforeFirstMatchBytes": 2555928,
+          "AfterFirstMatchBytes": 4620312,
+          "Runtime": "10.0.12"
+        },
+        {
+          "Plans": 2048,
+          "BeforeFirstMatchBytes": 2555928,
+          "AfterFirstMatchBytes": 4620312,
+          "Runtime": "10.0.12"
+        },
+        {
+          "Plans": 2048,
+          "BeforeFirstMatchBytes": 2555928,
+          "AfterFirstMatchBytes": 4628536,
+          "Runtime": "10.0.12"
+        },
+        {
+          "Plans": 2048,
+          "BeforeFirstMatchBytes": 2555928,
+          "AfterFirstMatchBytes": 4620312,
+          "Runtime": "10.0.12"
+        }
+      ]
+    }
+  ]
+}

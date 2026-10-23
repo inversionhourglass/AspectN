@@ -27,11 +27,7 @@ internal static class RegexPatternEvaluator
         try
         {
             var signature = CanonicalSignatureFormatter.Format(candidate, context.QueryContext);
-            return Regex.IsMatch(
-                signature,
-                pattern.Pattern,
-                RegexOptions.CultureInvariant,
-                context.Options.MatchOptions.RegexTimeout.RegexTimeout)
+            return pattern.Regex!.IsMatch(signature)
                 ? MatchStatus.Matched
                 : MatchStatus.NotMatched;
         }

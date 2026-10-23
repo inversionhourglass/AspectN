@@ -43,6 +43,7 @@ internal sealed partial class Binder(
     private int _genericDefinitionDepth;
     private int _genericDefinitionNegationDepth;
     private readonly GenericVariableMode _variableMode = options?.GenericVariableMode ?? GenericVariableMode.Declaration;
+    private readonly TimeSpan _regexTimeout = (options?.MatchOptions ?? new AspectNMatchOptions()).RegexTimeout.RegexTimeout;
     private DeclarationSource? _declarationSource = syntaxTree.ParseKind == AspectNParseKind.TypePattern ? DeclarationSource.RootType : null;
     private readonly List<DeclarationTypeStep> _declarationPath = [];
     private DeclarationSlot? _declarationSlot;
@@ -236,10 +237,11 @@ internal sealed partial class Binder(
     private BoundRegexPattern BindRegexPattern(RegexSelectorSyntax syntax)
     {
         var body = syntax.RegexBodyToken;
+        Regex? regex = null;
         try
         {
-            // 只验证语法；实际匹配使用编译选项中的有限超时。
-            _ = new Regex(body.Text, RegexOptions.CultureInvariant);
+            // 验证时创建的实例随计划复用，避免匹配依赖进程共享的静态缓存。
+            regex = new Regex(body.Text, RegexOptions.CultureInvariant, _regexTimeout);
         }
         catch (ArgumentException exception)
         {
@@ -250,7 +252,7 @@ internal sealed partial class Binder(
                 body.Span);
         }
 
-        return new BoundRegexPattern(body.Span, body.Text);
+        return new BoundRegexPattern(body.Span, regex);
     }
 
     private async StackWork<BoundSelector> BindAttributeSelectorWork(

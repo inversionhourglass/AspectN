@@ -32,7 +32,7 @@
       "adapter": "core",
       "input_mode": "neutral",
       "entry_point": "Parse/Compile / CompiledPattern.Match",
-      "conditions": "InputDepthTests、SignatureLimitTests、RegexPatternTests 和 MemberPathTests 的实际边界及取消 fixture；InheritanceClosureLimitTests 的第三方祖先深度/元数、64边界、正常分支顺序和Unknown绑定备选；原C05变量备选用例显式Capture",
+      "conditions": "InputDepthTests、SignatureLimitTests、RegexPatternTests 和 MemberPathTests 的实际边界及取消 fixture；InheritanceClosureLimitTests 的第三方祖先深度/元数、64边界、正常分支顺序和Unknown绑定备选；原C05变量备选用例显式Capture；RegexReuseTests：跨规则分配、默认/有限/Unlimited超时持有、同值缓存、共享模式并发及复用后取消",
       "target": "working-tree",
       "expected_behavior": "默认结构深度64含根、默认类型有效元数64和默认方法自身元数64；解析/编译给诊断，外部中立匹配超限 Unknown；取消传播；核心闭包模式遍历对每个祖先先检查限制，超限为Unknown并保留诊断和备选，继续其他祖先，确定匹配仍为Matched",
       "contract_status": "supported",
@@ -44,7 +44,8 @@
         "EV-20261014-001",
         "EV-20261021-002",
         "EV-20261021-007",
-        "EV-20261022-201"
+        "EV-20261022-201",
+        "EV-20261023-305"
       ],
       "unverified_notes": ""
     },
@@ -446,6 +447,8 @@ int 根加64层数组总共65层；不能说“64个数组后缀仍在支持范�
 2026-10-23 的 RM-18 将类型解析算法共享，S9 的当前前端回归见 EV-20261023-304。保留两个入口的节点预留和 Peek 收费顺序，86 项新增对照与 2,160 项有限探针记录所列边界；四个 Core/1000 深度泛型解析及编译形状在 256 KiB 线程通过。历史其他输入保持原范围，不将这些观察扩展为所有恢复形状或取消时序。详情见[共享解析记录](../../../reviews/2026-10-23-rm18-shared-type-parser.md)；默认限额和 N/A 未变。
 
 ## 关联与缺口
+
+2026-10-23 RM-19 的 Regex 实例保留遵循编译配置中的超时，不复用其他超时的计划。S1 的正则文本限额、超时Unknown和取消随完整矩阵重验，新增复用后的取消及默认/有限/Unlimited 配置持有回归；[处置记录](../../../reviews/2026-10-23-rm19-regex-reuse.md)与 EV-20261023-305 限定当前执行范围。预算和公开资源配置未变，未新增内存配额。
 
 CROSS-AVAILABILITY-001 处理事实缺失，SEM-REGEX-001 处理正则编译/超时。未穷举全部线程调度或GC时机；资源测试不等于性能基准结论。
 

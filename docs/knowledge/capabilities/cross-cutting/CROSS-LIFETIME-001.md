@@ -28,7 +28,7 @@
       "adapter": "core",
       "input_mode": "neutral",
       "entry_point": "AspectNEngine.Compile* / CompiledPattern.Match",
-      "conditions": "CompiledPatternCacheTests、ResourceContractTests：全部配置按值缓存、LRU、异常不缓存、锁等待取消及并发未命中隔离；ResourceBudgetTests、BindingBudgetTests：并发和后续匹配独立预算",
+      "conditions": "CompiledPatternCacheTests、ResourceContractTests：全部配置按值缓存、LRU、异常不缓存、锁等待取消及并发未命中隔离；ResourceBudgetTests、BindingBudgetTests：并发和后续匹配独立预算；RegexReuseTests：跨规则分配、默认/有限/Unlimited超时持有、同值缓存、共享模式并发及复用后取消",
       "target": "working-tree",
       "expected_behavior": "实例LRU保持；键含源码、ParseKind、RegexTimeout、模式和两个限额；每Match独立声明事实缓存或Capture绑定/共享预算及诊断，不跨并发候选共享",
       "contract_status": "supported",
@@ -39,7 +39,8 @@
       "evidence_ids": [
         "EV-20261014-001",
         "EV-20261021-007",
-        "EV-20261022-201"
+        "EV-20261022-201",
+        "EV-20261023-305"
       ],
       "unverified_notes": ""
     },
@@ -233,6 +234,8 @@ using (var system = new AspectN.Cecil.CecilTypeSystem(module))
 默认借用与显式接管由 [CecilOwnershipTests](../../../../tests/AspectN.Cecil.Tests/CecilOwnershipTests.cs) 验证真实文件的延迟方法体读取及模块写回，避免仅修改内存模块导致“原生资源其实已关闭”的假阳性。S2/S3 的[当前证据](../../../reviews/evidence/EV-20261022-101.json)各执行 9 项所有权和生命周期回归，包含既有缓存回收及重复释放守卫；使用独立宿主直接编译原测试源码，不表示当前完整测试矩阵通过。
 
 ## 关联与缺口
+
+2026-10-23 RM-19 使编译计划持有语法验证阶段创建的 Regex 及其超时，后续匹配不依赖进程共享的静态正则缓存。S1 新增默认/有限/Unlimited 配置持有、同值缓存复用、并发结果与诊断隔离，以及取消后再次使用的回归；[处置记录](../../../reviews/2026-10-23-rm19-regex-reuse.md)说明存活内存代价。实例及执行缓冲的回收随计划和引擎缓存引用，不承诺即时回收或固定大小。
 
 原生关联缺失依 CROSS-AVAILABILITY-001；取消/限制依 CROSS-RESOURCES-001。没有承诺第三方Module/Compilation自身的任意并发行为或固定GC延迟。
 

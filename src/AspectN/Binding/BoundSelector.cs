@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Text.RegularExpressions;
 using AspectN.Metadata;
 using AspectN.Text;
 
@@ -200,9 +201,10 @@ internal sealed class BoundAttributePattern(
             throw new ArgumentNullException(nameof(attributeType));
 }
 
-internal sealed class BoundRegexPattern(TextSpan span, string pattern) : BoundSelectorPayload(span)
+internal sealed class BoundRegexPattern(TextSpan span, Regex? regex) : BoundSelectorPayload(span)
 {
-    public string Pattern { get; } = pattern ?? throw new ArgumentNullException(nameof(pattern));
+    // 无效正则保留诊断节点；含错误的绑定树不会发布为可匹配计划。
+    public Regex? Regex { get; } = regex;
 }
 
 internal sealed class BoundStaticConstructorSignature(

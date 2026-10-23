@@ -24,7 +24,7 @@
       "adapter": "core",
       "input_mode": "neutral",
       "entry_point": "CompileMemberExpression / CompiledMemberPattern.Match",
-      "conditions": "RegexSubsetTests、RegexParserTests 和 RegexPatternTests 的受限子集、语法、格式化、超时用例",
+      "conditions": "RegexSubsetTests、RegexParserTests 和 RegexPatternTests 的受限子集、语法、格式化、超时用例；RegexReuseTests：跨规则分配、默认/有限/Unlimited超时持有、同值缓存、共享模式并发及复用后取消",
       "target": "working-tree",
       "expected_behavior": "普通分组/类/量词可编译；特殊分组/反向引用等 AN2012；无效语法 AN3002；超时 Unknown/AN3003",
       "contract_status": "supported",
@@ -34,7 +34,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-001",
-        "EV-20261022-201"
+        "EV-20261022-201",
+        "EV-20261023-305"
       ],
       "unverified_notes": ""
     },
@@ -72,7 +73,8 @@
       ],
       "evidence_ids": [
         "EV-20261014-001",
-        "EV-20261022-201"
+        "EV-20261022-201",
+        "EV-20261023-305"
       ],
       "unverified_notes": "",
       "exclusion": {
@@ -189,7 +191,7 @@ regex 在一份规范成员签名上做区域性无关的子串搜索，既不�
 
 ## 分层能力
 
-Parser 保留正则原文并识别外层闭合；Binder 检查受限子集并调用 .NET 语法验证；Formatter 生成规范签名；Evaluator 默认执行单次250ms有限超时的匹配，允许显式 TimeLimit.Unlimited。源 async 标记不包含在该文本内。
+Parser 保留正则原文并识别外层闭合；Binder 检查受限子集并调用 .NET 语法验证，创建带编译配置超时的 Regex 实例随计划保留；Formatter 生成规范签名；Evaluator 复用实例，默认执行单次250ms有限超时的匹配，允许显式 TimeLimit.Unlimited。源 async 标记不包含在该文本内。
 
 ## 阶段失败
 
@@ -214,6 +216,8 @@ regex((?=GetName))      // 环视被排除
 [子集编译](../../../../tests/AspectN.Tests/Binding/RegexSubsetTests.cs)、[规范与超时](../../../../tests/AspectN.Tests/Evaluation/RegexPatternTests.cs)、[开放泛型编号](../../../../tests/AspectN.Reflection.Tests/GenericDefinitionMatchingTests.cs)。超时示例由确定性回归治理，不鼓励运行高成本正则演示。
 
 ## 关联与缺口
+
+2026-10-23 RM-19 的实例复用与取舍见[处置记录](../../../reviews/2026-10-23-rm19-regex-reuse.md)。S1/S3 语义、错误与超时随完整矩阵重验，新增配置持有、缓存复用、并发和取消回归；性能数据不替代语义证据。实例及其可复用缓冲随计划引用存活，不承诺固定内存大小；尚未测量复杂回溯和并发吞吐。
 
 泛型身份依 GEN-IDENTITY-001；限制/取消依 CROSS-RESOURCES-001。不承诺文本能区分所有 CLR 身份，更不承诺测试过所有任意正则输入。
 

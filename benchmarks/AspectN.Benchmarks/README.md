@@ -15,4 +15,20 @@ dotnet benchmarks/AspectN.Benchmarks/bin/Release/net10.0/AspectN.Benchmarks.dll 
 
 默认作业为 .NET 10、两个独立进程、每进程三轮预热和六轮测量，并启用 MemoryDiagnoser。输出包含环境、参数、均值、误差、GC 和每次操作分配量。运行期间避免并行构建、测试或其他 CPU 密集工作。对耗时差异结合误差及重复进程判断，不能将单次均值波动直接宣布为提升。
 
-结果默认写入已忽略的 `artifacts/benchmarks`；对照测量使用独立 before/after 目录，保留原始 JSON/CSV 和日志。`--validate` 只验证输入及结果，不构成性能测量。此工程仅覆盖 RM-17 的选定匹配路径，不代表完整发布性能闸门、冷映射、其他适配器或 .NET Framework 的表现。
+结果默认写入已忽略的 `artifacts/benchmarks`；对照测量使用独立 before/after 目录，保留原始 JSON/CSV 和日志。`--validate` 只验证输入及结果，不构成性能测量。匹配专项仅覆盖 RM-17 的选定路径，不代表完整发布性能闸门、冷映射、其他适配器或 .NET Framework 的表现。
+
+## 正则复用专项
+
+```powershell
+dotnet benchmarks/AspectN.Benchmarks/bin/Release/net10.0/AspectN.Benchmarks.dll --validate-regex
+dotnet benchmarks/AspectN.Benchmarks/bin/Release/net10.0/AspectN.Benchmarks.dll --filter '*Regex*Benchmarks*' --artifacts artifacts/rm19/before
+dotnet benchmarks/AspectN.Benchmarks/bin/Release/net10.0/AspectN.Benchmarks.dll --regex-retention
+# 修改生产实现、重新构建并验证后，复测完整匹配与编译：
+dotnet benchmarks/AspectN.Benchmarks/bin/Release/net10.0/AspectN.Benchmarks.dll --filter '*RegexMatchingBenchmarks*' '*RegexCompilationBenchmarks*' --artifacts artifacts/rm19/after
+```
+
+RegexReuseBenchmarks 在预生成规范字符串上比较静态缓存与普通 Regex 实例；RegexMatchingBenchmarks 计入真实 Match 的校验、上下文、规范文本生成；两者都用 1/32 条规则，64 次一批，成功/失败各半，结果按每次匹配归一化。每条规则连续匹配两个候选，32 条超过默认缓存容量 15，但不假定每次都未命中。实例不启用 RegexOptions.Compiled。只有独立基准进程会清空静态缓存并设为 15，结束时恢复原值；生产实现不修改全局设置。
+
+RegexCompilationBenchmarks 关闭引擎编译缓存，计时完整解析与绑定，不能解释为纯 Regex 构造。`--validate-regex` 校验全部结果、零诊断及规范文本；`--regex-retention` 预热后持有 2,048 份不同编译计划，以强制 GC 前后差值估计首次匹配前/后的存活堆，建议五个独立进程重复。该差值包含整个计划集合及静态缓存，并非单个对象的精确大小；与 MemoryDiagnoser 的每次分配量是不同指标。
+
+本轮结果、源码状态及命令见 [RM-19 报告](../../docs/performance/2026-10-23-rm19-regex-reuse.md)。只测 .NET 10 单线程简单分支，不外推复杂回溯、并发吞吐、其他后端或运行时。
