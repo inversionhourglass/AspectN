@@ -5,6 +5,7 @@
   "schema_version": 1,
   "capability_ids": [
     "SYN-GRAMMAR-001",
+    "SEM-REGEX-001",
     "CROSS-AVAILABILITY-001",
     "CROSS-LOGIC-001",
     "USE-REF-001",
@@ -36,6 +37,12 @@ var diagnostic = new AspectN.Diagnostics.AspectNDiagnostic(
     "Required relationship metadata is unavailable.");
 var result = AspectN.TypeSystem.TypeRelationResult.Unknown(diagnostic);
 ```
+
+## 诊断码与处理阶段
+
+诊断码前缀不代表实际检测阶段，不能据此将`AN1xxx`、`AN2xxx`、`AN3xxx`分别当作解析、绑定、匹配阶段的标记。应结合调用入口和返回结果判断阶段，使用完整诊断码识别具体问题。
+
+以当前实现为例，`regex((?=Run))`的环视超出支持子集，扫描正则正文时就会报告`AN2012`；未知选择器在解析时报告`AN2001`；无效正则语法在绑定时报告`AN3002`。这些错误都会阻止取得有效模式。编译调用先检查`Diagnostics`和`TryGet*`，取得模式后再处理匹配结果的三态及诊断，详见[诊断规范第17节](../superpowers/specs/2026-07-31-aspectn-language-spec.md)和[正则专题](../knowledge/capabilities/semantics/SEM-REGEX-001.md)。
 
 ## 解析错误的呈现
 

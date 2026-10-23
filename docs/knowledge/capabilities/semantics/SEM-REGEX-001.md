@@ -11,7 +11,7 @@
   "norm_refs": [
     {
       "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
-      "section": "15 / 21"
+      "section": "15 / 17 / 21"
     },
     {
       "path": "docs/superpowers/specs/2026-10-22-configurable-resource-limits-design.md",
@@ -191,11 +191,13 @@ regex 在一份规范成员签名上做区域性无关的子串搜索，既不�
 
 ## 分层能力
 
-Parser 保留正则原文并识别外层闭合；Binder 检查受限子集并调用 .NET 语法验证，创建带编译配置超时的 Regex 实例随计划保留；Formatter 生成规范签名；Evaluator 复用实例，默认执行单次250ms有限超时的匹配，允许显式 TimeLimit.Unlimited。源 async 标记不包含在该文本内。
+Lexer 扫描正则正文、识别外层闭合并检查受限子集，Parser 保留正则原文；Binder 调用 .NET 语法验证，创建带编译配置超时的 Regex 实例随计划保留；Formatter 生成规范签名；Evaluator 复用实例，默认执行单次250ms有限超时的匹配，允许显式 TimeLimit.Unlimited。源 async 标记不包含在该文本内。
 
 ## 阶段失败
 
 不支持结构 AN2012、无效正则 AN3002 都是编译失败；超时为 Unknown/AN3003。真正无法形成规范文本为 Unknown/AN3001；规范文本默认16,384个UTF-16代码单元，额度耗尽为整次Unknown/AN3008，支持配置有限值或显式Unlimited，仍受总工作约束。格式化阶段遵守匹配取消，正则超时从格式化结束后计时。
+
+AN2012在扫描正文时就可报告，AN3002由绑定阶段的.NET语法验证产生；数字前缀不代表检测阶段，不能把AN3002按前缀误当作匹配期失败。O-01仅同步[诊断规范](../../../superpowers/specs/2026-07-31-aspectn-language-spec.md)的既有分类及实际检查位置，S1/S3的编号、失败行为、验证状态和证据范围保持。
 
 ## 例子与边界
 
