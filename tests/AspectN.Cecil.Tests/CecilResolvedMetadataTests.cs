@@ -1,5 +1,3 @@
-using System.Globalization;
-using System.Reflection;
 using AspectN.Diagnostics;
 using AspectN.Evaluation;
 using AspectN.Metadata;
@@ -63,19 +61,7 @@ public sealed class CecilResolvedMetadataTests
         using var loaded = ModuleDefinition.ReadModule(new MemoryStream(image.ToArray()),
             new ReaderParameters { ReadingMode = ReadingMode.Deferred });
         var type = loaded.Types.Single(item => item.Name == "C");
-        var metadata = Field(loaded, "Image");
-        var heap = Field(metadata, "TableHeap");
-        var row = ((Array)Field(heap, "Tables")).GetValue(27)!;
-        var offset = Convert.ToInt32(Field(row, "Offset"), CultureInfo.InvariantCulture);
-        var data = (byte[])Field(heap, "data");
-        var blobIndex = data[offset] | data[offset + 1] << 8;
-        var blobs = (byte[])Field(Field(metadata, "BlobHeap"), "data");
-        // ARRAY int32，秩为零：接口集合的延迟读取会抛出可恢复的元数据异常。
-        blobs[blobIndex + 1] = 0x14;
-        blobs[blobIndex + 2] = 0x08;
-        blobs[blobIndex + 3] = 0;
-        blobs[blobIndex + 4] = 0;
-        blobs[blobIndex + 5] = 0;
+        CecilDamagedMetadataFixture.DamageInterfaceTypeSpecification(loaded);
         using var system = new CecilTypeSystem(loaded, new CecilMappingOptions(leaveOpen: true));
         var signature = system.Mapper.MapType(type);
 
@@ -114,7 +100,4 @@ public sealed class CecilResolvedMetadataTests
         Assert.Equal(MatchStatus.NotMatched, system.HasDirectAttribute(
             AttributeTarget.ForType(mapped.DeclaringType), system.Mapper.MapType(marker)).Status);
     }
-
-    private static object Field(object value, string name) => value.GetType().GetField(name,
-        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.GetValue(value)!;
 }

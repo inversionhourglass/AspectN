@@ -142,12 +142,7 @@ public sealed class CecilUnavailableMetadataTests
         using var loaded = ModuleDefinition.ReadModule(new MemoryStream(buffer.ToArray()),
             new ReaderParameters { ReadingMode = ReadingMode.Deferred });
         var property = loaded.Types[1].Properties[0];
-        var heap = Field(Field(loaded, "Image"), "TableHeap");
-        var row = ((Array)Field(heap, "Tables")).GetValue(24)!;
-        var offset = Convert.ToInt32(Field(row, "Offset"), System.Globalization.CultureInfo.InvariantCulture);
-        var data = (byte[])Field(heap, "data");
-        data[offset] = 0xFF;
-        data[offset + 1] = 0xFF;
+        CecilDamagedMetadataFixture.DamagePropertySemantics(loaded);
         using var typeSystem = new CecilTypeSystem(loaded, new CecilMappingOptions(leaveOpen: true));
 
         var signature = typeSystem.Mapper.MapProperty(property);
@@ -159,10 +154,6 @@ public sealed class CecilUnavailableMetadataTests
         Assert.False(signature.Availability.IsKnown(MetadataFacts.Parameters));
         Assert.IsType<NamedTypeSignature>(signature.PropertyType.Type);
     }
-
-    private static object Field(object value, string name) => value.GetType().GetField(name,
-        System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)!
-        .GetValue(value)!;
 
     private static ModuleDefinition CreateModule(IAssemblyResolver resolver)
     {
