@@ -6,6 +6,9 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $rootPath = [IO.Path]::GetFullPath($RepositoryRoot).TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
+# 与文档预检保持同一平台规则，避免区分大小写的平台接受相邻目录别名。
+$isWindowsHost = [Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([Runtime.InteropServices.OSPlatform]::Windows)
+$pathComparison = if ($isWindowsHost) { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
 $utf8 = [Text.UTF8Encoding]::new($false)
 $categories = [ordered]@{
     'types'='类型与身份'; 'generics'='泛型'; 'type-uses'='类型使用位置'; 'members'='成员'
@@ -22,7 +25,7 @@ function Resolve-RepositoryFile([string]$path) {
     if([string]::IsNullOrWhiteSpace($path) -or [IO.Path]::IsPathRooted($path)){throw "资料路径必须是仓库相对路径：$path"}
     $absolute = [IO.Path]::GetFullPath((Join-Path $rootPath $path))
     $prefix = $rootPath + [IO.Path]::DirectorySeparatorChar
-    if(!$absolute.StartsWith($prefix, [StringComparison]::OrdinalIgnoreCase)){throw "资料路径越界：$path"}
+    if(!$absolute.StartsWith($prefix, $pathComparison)){throw "资料路径越界：$path"}
     if(!(Test-Path -LiteralPath $absolute -PathType Leaf)){throw "资料文件不存在：$path"}
     return $absolute
 }

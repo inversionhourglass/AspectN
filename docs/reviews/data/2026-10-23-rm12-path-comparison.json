@@ -1,0 +1,119 @@
+{
+  "date": "2026-10-23",
+  "item": "RM-12",
+  "origin": "K3-M18",
+  "baseline_commit": "75a077b1a5731dbf5849e016a2e964dd81f64855",
+  "scope": "工程脚本一致性维护，非完整入口漏洞复现或产品能力证据",
+  "boundary_runs": [
+    {
+      "local_result_file": "artifacts/knowledge-path-tests/c5f843099bb944ba9fe5fa3d0fe624e2/results.json",
+      "sha256": "80186de35f121bc8d6275a048ec7941369d1c468036e9b4f2ccac5481ec5f3ee",
+      "generator_sha256": "57de84a288d276f27fa260de453c023ce5b6e2e6589c653966859f1f5ee3c69f",
+      "passed": 23,
+      "failed": 1,
+      "host_os": "Microsoft Windows 10.0.26200",
+      "failures": [
+        {
+          "policy": "Ordinal",
+          "case": "大小写别名",
+          "passed": false,
+          "expected_error": "资料路径越界",
+          "actual_error": ""
+        }
+      ]
+    },
+    {
+      "local_result_file": "artifacts/knowledge-path-tests/3cffe5c214f840b29dce637c83f097bf/results.json",
+      "sha256": "0c419c0f7ee880cc2440dfa8721029a440ecbb7d19383ab443af04314be333bf",
+      "generator_sha256": "c0d76e8c94856f7094d54490a61ab54c1e9cddf2fe1ecbc337277e6cfc26dfb1",
+      "passed": 24,
+      "failed": 0,
+      "host_os": "Microsoft Windows 10.0.26200",
+      "failures": []
+    }
+  ],
+  "executed_commands": [
+    {
+      "command": "pwsh -NoProfile -File eng/tests/generate-knowledge.Tests.ps1",
+      "exit": 0,
+      "boundary_checks": 24,
+      "original_black_box_checks": 14
+    },
+    {
+      "command": "pwsh -NoProfile -File eng/tests/verify-documentation.Tests.ps1",
+      "exit": 0,
+      "fixture_checks": 55
+    },
+    {
+      "command": "pwsh -NoProfile -File eng/generate-knowledge.ps1 -Check",
+      "before_change_exit": 0,
+      "after_code_change_exit": 0
+    }
+  ],
+  "before_inventory_update": {
+    "local_result_file": "artifacts/rm12/after-code.json",
+    "sha256": "d271de0668a5eb520415e63cce523e2dbbc2cd449aa136546ae110a3325cf364",
+    "files": [
+      {
+        "path": "eng/generate-knowledge.ps1",
+        "before": "57de84a288d276f27fa260de453c023ce5b6e2e6589c653966859f1f5ee3c69f",
+        "after": "c0d76e8c94856f7094d54490a61ab54c1e9cddf2fe1ecbc337277e6cfc26dfb1",
+        "unchanged": false
+      },
+      {
+        "path": "eng/verify-documentation.ps1",
+        "before": "cbe66c60fd624e2fb4e597f1081a3c8ccc2a052bedfa0f1a34ea99a10cff694d",
+        "after": "cbe66c60fd624e2fb4e597f1081a3c8ccc2a052bedfa0f1a34ea99a10cff694d",
+        "unchanged": true
+      },
+      {
+        "path": ".github/workflows/ci.yml",
+        "before": "9546823b0fe94ba86a10f530d1070a91cae130cb346afdb3b820fb8fe500236a",
+        "after": "9546823b0fe94ba86a10f530d1070a91cae130cb346afdb3b820fb8fe500236a",
+        "unchanged": true
+      },
+      {
+        "path": "docs/knowledge/generated/catalog.md",
+        "before": "a91c33a451d777a26a139d4b37de890288b3a5f298f60e95e1e4300d155b5dca",
+        "after": "a91c33a451d777a26a139d4b37de890288b3a5f298f60e95e1e4300d155b5dca",
+        "unchanged": true
+      },
+      {
+        "path": "docs/knowledge/generated/support-matrix.md",
+        "before": "0af5be867760e31e5c95da8bb1156b419e8ebcbd112a22a3e101c7244c963110",
+        "after": "0af5be867760e31e5c95da8bb1156b419e8ebcbd112a22a3e101c7244c963110",
+        "unchanged": true
+      }
+    ]
+  },
+  "sources": [
+    {
+      "file": "eng/generate-knowledge.ps1",
+      "sha256": "c0d76e8c94856f7094d54490a61ab54c1e9cddf2fe1ecbc337277e6cfc26dfb1"
+    },
+    {
+      "file": "eng/tests/generate-knowledge-paths.Tests.ps1",
+      "sha256": "a6ba7b4d825c4cc31203fdbd4ba0799e3cd6c0edeb72245f64ccdfc2046ebb09"
+    },
+    {
+      "file": "eng/tests/generate-knowledge.Tests.ps1",
+      "sha256": "467f28ef30bb8462f5a22bcd8c34b2e4e33de09188662b0939365a537c0d8166"
+    },
+    {
+      "file": "eng/verify-documentation.ps1",
+      "sha256": "cbe66c60fd624e2fb4e597f1081a3c8ccc2a052bedfa0f1a34ea99a10cff694d"
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "sha256": "9546823b0fe94ba86a10f530d1070a91cae130cb346afdb3b820fb8fe500236a"
+    }
+  ],
+  "linux_execution": false,
+  "remote_actions_execution": false,
+  "dotnet_matrix_execution": false,
+  "limits": [
+    "两种显式比较策略为本地作用域模拟；Host保留真实平台初始化",
+    "未改变符号链接策略或探测每个挂载点的大小写设置",
+    "完整入口前置校验保持，不声称已复现其越界读取"
+  ]
+}

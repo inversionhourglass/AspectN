@@ -3,6 +3,8 @@
 param()
 $ErrorActionPreference = 'Stop'
 $generator = Join-Path $PSScriptRoot '../generate-knowledge.ps1'
+& pwsh -NoProfile -File (Join-Path $PSScriptRoot 'generate-knowledge-paths.Tests.ps1')
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 $base = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../artifacts/knowledge-generation-tests'))
 [IO.Directory]::CreateDirectory($base) | Out-Null
 
