@@ -1,0 +1,183 @@
+{
+  "date": "2026-10-23",
+  "item": "RM-13",
+  "origin": "K3-M19",
+  "baseline_commit": "31a61600c13a94e9d99d7c5fc40d288bed6be398",
+  "initialization_runs": [
+    {
+      "local_result_file": "artifacts/package-version-tests/52917c725dba4312bce11eb87ceb49b0/results.json",
+      "sha256": "58e46203b3bd4280d10385a08d0b15b28e2797df570fcd55157b119722691754",
+      "verifier_host": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+      "verifier_sha256": "71d5f3c389362ae3d0434813aba84b74903bab3dfc95c7e3e570b6017028a211",
+      "passed": 5,
+      "failed": 21
+    },
+    {
+      "local_result_file": "artifacts/package-version-tests/22637063b11b4db3ae2b6496ac09bab2/results.json",
+      "sha256": "9ee19860741665632d52d273b355b5c90d6d72da9f0ae1ff79216406332ef28c",
+      "verifier_host": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+      "verifier_sha256": "a0f98239381d89cf15d97690efb470c2aa372ff32793e20a04592c9d9b0f8cb4",
+      "passed": 26,
+      "failed": 0
+    },
+    {
+      "local_result_file": "artifacts/package-version-tests/7b2d0e4cdfc4489e8eb68874cbae722d/results.json",
+      "sha256": "a78b2f57fd82be63bea79ddba8f6c266335c0ea7acd4001532ee95d382699783",
+      "verifier_host": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "verifier_sha256": "a0f98239381d89cf15d97690efb470c2aa372ff32793e20a04592c9d9b0f8cb4",
+      "passed": 26,
+      "failed": 0
+    }
+  ],
+  "case_names": [
+    "original-layout",
+    "nodes-without-attributes",
+    "unrelated-property-group",
+    "split-groups",
+    "empty-group-before-defaults",
+    "explicit-partial",
+    "explicit-blank-falls-back",
+    "explicit-all-no-defaults",
+    "explicit-skips-invalid-corresponding-default",
+    "explicit-does-not-skip-other-default",
+    "wrong-location",
+    "missing-CecilVersion",
+    "duplicate-CecilVersion",
+    "duplicate-same-value-CecilVersion",
+    "empty-CecilVersion",
+    "whitespace-CecilVersion",
+    "missing-RoslynVersion",
+    "duplicate-RoslynVersion",
+    "duplicate-same-value-RoslynVersion",
+    "empty-RoslynVersion",
+    "whitespace-RoslynVersion",
+    "missing-FodyHelpersVersion",
+    "duplicate-FodyHelpersVersion",
+    "duplicate-same-value-FodyHelpersVersion",
+    "empty-FodyHelpersVersion",
+    "whitespace-FodyHelpersVersion"
+  ],
+  "workflow_checks": {
+    "yaml_version": "1.2",
+    "yaml_parser_version": "2.9.0",
+    "no_errors_or_warnings": true,
+    "only_package_job_test_step_added": true,
+    "test_before_verify_packages": true,
+    "other_jobs_triggers_and_formatting_unchanged": true,
+    "release_and_compatibility_unchanged": true
+  },
+  "actual_package_flow": {
+    "result": "failed",
+    "exit": 1,
+    "local_result_file": "artifacts/rm13/package-result.json",
+    "result_sha256": "e56f97b8c577c1146e2e05e9bf08ad9e006805d5220c936b2bd9d35aa46002a0",
+    "local_log_file": "artifacts/rm13/package-validation.log",
+    "log_sha256": "e9a028531dec6d17573894f4db2923b704fadd00539dcf514870a9ab806f9009",
+    "package_directory": "artifacts/rm13/package-flow-1d01c9e2b85e4cc3a47a8a33e4db57cf",
+    "package_version": "0.0.0-validation-rm13-1d01c9e2b85e",
+    "packaged_nupkg": 5,
+    "packaged_snupkg": 5,
+    "metadata_and_symbols": "passed",
+    "completed_consumer_builds_and_runs": [
+      "AspectN/net472",
+      "AspectN/net10.0",
+      "AspectN.Cecil/net472",
+      "AspectN.Cecil/net10.0",
+      "AspectN.Cecil.Fody/net472",
+      "AspectN.Cecil.Fody/net10.0"
+    ],
+    "failed_stage": "AspectN.Roslyn Consumer.csproj net472 build, MSB3277 System.Memory 4.0.1.2 vs 4.0.2.0",
+    "not_executed": [
+      "AspectN.Roslyn consumer runs",
+      "AspectN.Reflection consumer phase"
+    ],
+    "baseline_control": {
+      "result": "failed",
+      "exit": 1,
+      "mode": "ValidateExisting, same packages/version",
+      "local_result_file": "artifacts/rm13/baseline-result.json",
+      "result_sha256": "c3c29f03cce7307648368dda19c199e6d8a29a961732b5918c24556990852c57",
+      "local_log_file": "artifacts/rm13/baseline-validation.log",
+      "log_sha256": "77ac76bf081e099a2c2d74fa8981f4e60e09b70a769c2eee83b7372d35897e31",
+      "baseline_source_sha256": "704d597ecdeb0f5babbfcf0d7df8699587eef2a4a8fd8966ebcd96fe9000f91a",
+      "same_failure": true
+    },
+    "packages": [
+      {
+        "name": "AspectN.0.0.0-validation-rm13-1d01c9e2b85e.nupkg",
+        "sha256": "6b4ebcb5ebc91d23e072df93bd714d3d5c949cf0aedfecf8d9035414a68b4bdb"
+      },
+      {
+        "name": "AspectN.0.0.0-validation-rm13-1d01c9e2b85e.snupkg",
+        "sha256": "66e5101b565bbcaa271eb148870401c6d1cbf85f382752df7985ba0d52f20cf0"
+      },
+      {
+        "name": "AspectN.Cecil.0.0.0-validation-rm13-1d01c9e2b85e.nupkg",
+        "sha256": "088822588d8dfbed7ab1a71217c2203aec3bc82bab178d65a16975b9a874a948"
+      },
+      {
+        "name": "AspectN.Cecil.0.0.0-validation-rm13-1d01c9e2b85e.snupkg",
+        "sha256": "c3044d992bc0915ab787b8c0636008ad6192c42cfefdb34559bd8d1cc0553e4b"
+      },
+      {
+        "name": "AspectN.Cecil.Fody.0.0.0-validation-rm13-1d01c9e2b85e.nupkg",
+        "sha256": "08b82e1b6555c589d8d34cf348bd89ca8d0bffe4b2c43d986c4cfec423b6b47b"
+      },
+      {
+        "name": "AspectN.Cecil.Fody.0.0.0-validation-rm13-1d01c9e2b85e.snupkg",
+        "sha256": "528bfa2d2e01b35938feddb8b7dc5a199f189f66d55b5b48fd504473a84dffca"
+      },
+      {
+        "name": "AspectN.Reflection.0.0.0-validation-rm13-1d01c9e2b85e.nupkg",
+        "sha256": "69653b361fd7c7adb555fff0b08bcbb3d09320209543cf3e5eaf8f07b16ae532"
+      },
+      {
+        "name": "AspectN.Reflection.0.0.0-validation-rm13-1d01c9e2b85e.snupkg",
+        "sha256": "76de80c5112d905ad21dc820c43517d324ced2b12b39d9a4f777cd1ed42fef89"
+      },
+      {
+        "name": "AspectN.Roslyn.0.0.0-validation-rm13-1d01c9e2b85e.nupkg",
+        "sha256": "e6386ab7ed80fdca34178f9f2a3e1c1bbee98b7daf02e8993a0244784631d87e"
+      },
+      {
+        "name": "AspectN.Roslyn.0.0.0-validation-rm13-1d01c9e2b85e.snupkg",
+        "sha256": "c90455215c9bc2cafbfdf5e00456392d0b8f5020b1c14b3a73d961db5c2259a4"
+      }
+    ]
+  },
+  "sources": [
+    {
+      "file": "eng/verify-packages.ps1",
+      "sha256": "a0f98239381d89cf15d97690efb470c2aa372ff32793e20a04592c9d9b0f8cb4"
+    },
+    {
+      "file": "eng/tests/verify-package-versions.Tests.ps1",
+      "sha256": "df6142044f3aa260d03666376cf336c4482ad91edbd9069fa4896f19aa56aa9c"
+    },
+    {
+      "file": "Directory.Packages.props",
+      "sha256": "9d948b704945855977f066f31633d774f355f19b78514d8bc791109541746d36"
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "sha256": "7a6dbd4f9ff1e5b7ab823e435294b662b40f98c7ee5f04143c48c55bb2a0d0f5"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "sha256": "234b5bc7e3a22fc09111c1635d9d56dcb5c91acb15fdad70380cc4ec173e82dd"
+    },
+    {
+      "file": ".github/workflows/compatibility.yml",
+      "sha256": "9fdb2fd4f6e7915e2f808366a77b8e0aa489131c397f541afa38853ec718fcbd"
+    }
+  ],
+  "linux_executed": false,
+  "remote_actions_executed": false,
+  "signing_executed": false,
+  "publishing_executed": false,
+  "limits": [
+    "初始化探针在打包前截断，不替代完整包流程",
+    "完整消费者流程存在基准同样失败的Roslyn/net472依赖冲突，不记为通过",
+    "不求值MSBuild条件、导入和属性表达式；显式参数保留优先级"
+  ]
+}

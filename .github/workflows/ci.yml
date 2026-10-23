@@ -136,6 +136,10 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
+      - name: Test package version defaults
+        shell: pwsh
+        run: ./eng/tests/verify-package-versions.Tests.ps1 -VerifierHost powershell
+
       - name: Verify packages
         run: powershell -NoProfile -File eng/verify-packages.ps1
 

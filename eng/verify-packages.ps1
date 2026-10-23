@@ -25,7 +25,15 @@ if ([string]::IsNullOrWhiteSpace($PackageVersion)) {
 [xml] $centralPackages = Get-Content -LiteralPath (Join-Path $repositoryRoot "Directory.Packages.props") -Raw
 foreach ($propertyName in @("CecilVersion", "RoslynVersion", "FodyHelpersVersion")) {
     if ([string]::IsNullOrWhiteSpace((Get-Variable -Name $propertyName -ValueOnly))) {
-        Set-Variable -Name $propertyName -Value $centralPackages.Project.PropertyGroup.$propertyName.InnerText
+        $versionNodes = $centralPackages.SelectNodes("/Project/PropertyGroup/$propertyName")
+        if ($versionNodes.Count -ne 1) {
+            throw "Directory.Packages.props must define exactly one default '$propertyName'; found $($versionNodes.Count)."
+        }
+        $defaultVersion = $versionNodes.Item(0).InnerText
+        if ([string]::IsNullOrWhiteSpace($defaultVersion)) {
+            throw "Directory.Packages.props default '$propertyName' must not be empty."
+        }
+        Set-Variable -Name $propertyName -Value $defaultVersion
     }
 }
 $buildProperties = @("-p:CecilVersion=$CecilVersion", "-p:RoslynVersion=$RoslynVersion",
