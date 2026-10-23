@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/AspectN.Reflection/AspectN.Reflection.csproj" />
+    <ProjectReference Include="../../src/AspectN.Cecil/AspectN.Cecil.csproj" />
     <PackageReference Include="BenchmarkDotNet" />
   </ItemGroup>
 </Project>

@@ -3,6 +3,27 @@ using AspectN.Benchmarks;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Running;
 
+if (args is ["--validate-cecil-cache"])
+{
+    foreach (var shape in Enum.GetValues<CecilCacheShape>())
+    {
+        foreach (var path in Enum.GetValues<CecilCachePath>())
+        {
+            var benchmark = new CecilCacheBenchmarks { Shape = shape, Path = path };
+            try
+            {
+                benchmark.Setup();
+                benchmark.Reset();
+                _ = benchmark.Map();
+                benchmark.Validate();
+                Console.WriteLine($"validated:cecil-cache:{shape}:{path}");
+            }
+            finally { benchmark.Cleanup(); }
+        }
+    }
+    return;
+}
+
 if (args is ["--validate-regex"])
 {
     foreach (var count in new[] { 1, 32 })

@@ -1,0 +1,1224 @@
+{
+  "schema_version": 1,
+  "recorded_on": "2026-10-23",
+  "baseline_commit": "34de9bc8554d18867f253661384679f31da1383f",
+  "disposition": "assessed_no_production_change",
+  "notes": "只有一轮生产基线，没有after或生产加速结论。MapType含校验、预算及映射。批次1024，IterationSetup强制每轮1次调用/Unroll1。短轮次限制吞吐判断，Allocated是每次累计托管分配，不是存活内存。局部token探针只反映预热.NET10委托上下文，不能外推实际AppendShape全部调用。",
+  "job": {
+    "runtime": "net10.0",
+    "launch_count": 2,
+    "warmup_count": 3,
+    "iteration_count": 6,
+    "invocation_count": 1,
+    "unroll_factor": 1,
+    "operations_per_invoke": 1024
+  },
+  "raw_report": {
+    "path": "artifacts/rm20/before/results/AspectN.Benchmarks.CecilCacheBenchmarks-report-full.json",
+    "sha256": "90d6c02f79eb54931aecd9410d77bbc70ede0431603ea763c8cdb0cdaecec6ee"
+  },
+  "environment": {
+    "BenchmarkDotNetCaption": "BenchmarkDotNet",
+    "BenchmarkDotNetVersion": "0.15.8",
+    "OsVersion": "Windows 11 (10.0.26200.9711/25H2/2025Update/HudsonValley2)",
+    "ProcessorName": "13th Gen Intel Core i9-13900H",
+    "PhysicalProcessorCount": 1,
+    "PhysicalCoreCount": 14,
+    "LogicalCoreCount": 20,
+    "RuntimeVersion": ".NET 10.0.12 (10.0.12, 10.0.1226.42308)",
+    "Architecture": "X64",
+    "HasAttachedDebugger": false,
+    "HasRyuJit": true,
+    "Configuration": "RELEASE",
+    "DotNetCliVersion": "10.0.401",
+    "ChronometerFrequency": {
+      "Hertz": 10000000
+    },
+    "HardwareTimerKind": "Unknown"
+  },
+  "sources": [
+    {
+      "path": "src/AspectN.Cecil/Internal/CecilTypeCache.cs",
+      "sha256": "41de3b465638f747740c5338084c1951e96df952ed351f5c03ab452dafd50ecb"
+    },
+    {
+      "path": "src/AspectN.Cecil/CecilMappingOperation.cs",
+      "sha256": "b3319ace05cb8b6ea4bd031788b0fd774c3536bbd9d0bbbc0d1c2a601579d9c7"
+    },
+    {
+      "path": "src/AspectN.Cecil/CecilSignatureMapper.cs",
+      "sha256": "dc068974d3b8c7568b821774717f31f9827d74f775e52aeb0cd1a9ce4f317290"
+    },
+    {
+      "path": "benchmarks/AspectN.Benchmarks/Program.cs",
+      "sha256": "b87080fb5ea241ebb337a3b2d664da42f9620d8e4a1e5925cb23b3644714abcc"
+    },
+    {
+      "path": "benchmarks/AspectN.Benchmarks/AspectN.Benchmarks.csproj",
+      "sha256": "34f293039d219898d0bf068f0ce9db80e52063b0daae0dbb4d6c2aab48e78f40"
+    },
+    {
+      "path": "benchmarks/AspectN.Benchmarks/CecilCacheBenchmarks.cs",
+      "sha256": "5b304301650f086cabfe938fe689989faa3d7a3fbff3975dc37cc31edd027999"
+    },
+    {
+      "path": "benchmarks/AspectN.Benchmarks/CecilCacheFixture.cs",
+      "sha256": "af3290402cfdbe25490d1f316df6c5bbbd3d24c46f3a12d964554c4b29dada25"
+    },
+    {
+      "path": "benchmarks/AspectN.Benchmarks/CecilCachePath.cs",
+      "sha256": "445d59c5e2cc0a47be78c889a1b7a4cbb6d98ab4fd5676ddd743e7be8f55a010"
+    },
+    {
+      "path": "benchmarks/AspectN.Benchmarks/CecilCacheShape.cs",
+      "sha256": "4e7be15543003aa93ba60b407529bb0620950cd3f41cb6b6fb3f1f0ed001b90a"
+    }
+  ],
+  "benchmarks": [
+    {
+      "name": "AspectN.Benchmarks.CecilCacheBenchmarks.Map(Shape: Named, Path: ReferenceHit)",
+      "parameters": "Shape=Named&Path=ReferenceHit",
+      "mean_ns": 1360.83984375,
+      "error_ns": 930.7180807370704,
+      "standard_deviation_ns": 672.9701526592686,
+      "filtered_sample_count": 11,
+      "adjusted_samples_ns": [
+        1638.96484375,
+        1063.57421875,
+        1024.4140625,
+        1226.07421875,
+        2936.328125,
+        2308.0078125,
+        905.17578125,
+        927.734375,
+        889.35546875,
+        957.03125,
+        1092.578125
+      ],
+      "allocated_bytes_per_operation": 1760,
+      "memory": {
+        "Gen0Collections": 0,
+        "Gen1Collections": 0,
+        "Gen2Collections": 0,
+        "TotalOperations": 1024,
+        "BytesAllocatedPerOperation": 1760
+      },
+      "actual_samples": [
+        {
+          "launch": 1,
+          "iteration": 1,
+          "operations": 1024,
+          "nanoseconds": 1678500,
+          "ns_per_operation": 1639.16015625
+        },
+        {
+          "launch": 1,
+          "iteration": 2,
+          "operations": 1024,
+          "nanoseconds": 1089300,
+          "ns_per_operation": 1063.76953125
+        },
+        {
+          "launch": 1,
+          "iteration": 3,
+          "operations": 1024,
+          "nanoseconds": 1049200,
+          "ns_per_operation": 1024.609375
+        },
+        {
+          "launch": 1,
+          "iteration": 4,
+          "operations": 1024,
+          "nanoseconds": 1255700,
+          "ns_per_operation": 1226.26953125
+        },
+        {
+          "launch": 1,
+          "iteration": 5,
+          "operations": 1024,
+          "nanoseconds": 3007000,
+          "ns_per_operation": 2936.5234375
+        },
+        {
+          "launch": 1,
+          "iteration": 6,
+          "operations": 1024,
+          "nanoseconds": 2363600,
+          "ns_per_operation": 2308.203125
+        },
+        {
+          "launch": 2,
+          "iteration": 1,
+          "operations": 1024,
+          "nanoseconds": 927100,
+          "ns_per_operation": 905.37109375
+        },
+        {
+          "launch": 2,
+          "iteration": 2,
+          "operations": 1024,
+          "nanoseconds": 950200,
+          "ns_per_operation": 927.9296875
+        },
+        {
+          "launch": 2,
+          "iteration": 3,
+          "operations": 1024,
+          "nanoseconds": 910900,
+          "ns_per_operation": 889.55078125
+        },
+        {
+          "launch": 2,
+          "iteration": 4,
+          "operations": 1024,
+          "nanoseconds": 980200,
+          "ns_per_operation": 957.2265625
+        },
+        {
+          "launch": 2,
+          "iteration": 5,
+          "operations": 1024,
+          "nanoseconds": 2684000,
+          "ns_per_operation": 2621.09375
+        },
+        {
+          "launch": 2,
+          "iteration": 6,
+          "operations": 1024,
+          "nanoseconds": 1119000,
+          "ns_per_operation": 1092.7734375
+        }
+      ]
+    },
+    {
+      "name": "AspectN.Benchmarks.CecilCacheBenchmarks.Map(Shape: Named, Path: StableIdentityHit)",
+      "parameters": "Shape=Named&Path=StableIdentityHit",
+      "mean_ns": 3723.818359375,
+      "error_ns": 417.17498060967694,
+      "standard_deviation_ns": 275.93541990451126,
+      "filtered_sample_count": 10,
+      "adjusted_samples_ns": [
+        3597.94921875,
+        3454.4921875,
+        3528.3203125,
+        3869.7265625,
+        4052.34375,
+        3490.0390625,
+        3556.8359375,
+        3500.87890625,
+        3985.546875,
+        4202.05078125
+      ],
+      "allocated_bytes_per_operation": 3868,
+      "memory": {
+        "Gen0Collections": 0,
+        "Gen1Collections": 0,
+        "Gen2Collections": 0,
+        "TotalOperations": 1024,
+        "BytesAllocatedPerOperation": 3868
+      },
+      "actual_samples": [
+        {
+          "launch": 1,
+          "iteration": 1,
+          "operations": 1024,
+          "nanoseconds": 3684500,
+          "ns_per_operation": 3598.14453125
+        },
+        {
+          "launch": 1,
+          "iteration": 2,
+          "operations": 1024,
+          "nanoseconds": 3537600,
+          "ns_per_operation": 3454.6875
+        },
+        {
+          "launch": 1,
+          "iteration": 3,
+          "operations": 1024,
+          "nanoseconds": 3613200,
+          "ns_per_operation": 3528.515625
+        },
+        {
+          "launch": 1,
+          "iteration": 4,
+          "operations": 1024,
+          "nanoseconds": 3962800,
+          "ns_per_operation": 3869.921875
+        },
+        {
+          "launch": 1,
+          "iteration": 5,
+          "operations": 1024,
+          "nanoseconds": 5344700,
+          "ns_per_operation": 5219.43359375
+        },
+        {
+          "launch": 1,
+          "iteration": 6,
+          "operations": 1024,
+          "nanoseconds": 4149800,
+          "ns_per_operation": 4052.5390625
+        },
+        {
+          "launch": 2,
+          "iteration": 1,
+          "operations": 1024,
+          "nanoseconds": 3574000,
+          "ns_per_operation": 3490.234375
+        },
+        {
+          "launch": 2,
+          "iteration": 2,
+          "operations": 1024,
+          "nanoseconds": 3642400,
+          "ns_per_operation": 3557.03125
+        },
+        {
+          "launch": 2,
+          "iteration": 3,
+          "operations": 1024,
+          "nanoseconds": 3585100,
+          "ns_per_operation": 3501.07421875
+        },
+        {
+          "launch": 2,
+          "iteration": 4,
+          "operations": 1024,
+          "nanoseconds": 4081400,
+          "ns_per_operation": 3985.7421875
+        },
+        {
+          "launch": 2,
+          "iteration": 5,
+          "operations": 1024,
+          "nanoseconds": 5387200,
+          "ns_per_operation": 5260.9375
+        },
+        {
+          "launch": 2,
+          "iteration": 6,
+          "operations": 1024,
+          "nanoseconds": 4303100,
+          "ns_per_operation": 4202.24609375
+        }
+      ]
+    },
+    {
+      "name": "AspectN.Benchmarks.CecilCacheBenchmarks.Map(Shape: Named, Path: Miss)",
+      "parameters": "Shape=Named&Path=Miss",
+      "mean_ns": 6990.700461647727,
+      "error_ns": 503.6784505192681,
+      "standard_deviation_ns": 364.1925205414514,
+      "filtered_sample_count": 11,
+      "adjusted_samples_ns": [
+        7351.318359375,
+        6765.576171875,
+        6596.630859375,
+        7163.525390625,
+        7737.939453125,
+        7082.91015625,
+        6694.3359375,
+        6651.953125,
+        6662.98828125,
+        7270.99609375,
+        6919.53125
+      ],
+      "allocated_bytes_per_operation": 5585,
+      "memory": {
+        "Gen0Collections": 0,
+        "Gen1Collections": 0,
+        "Gen2Collections": 0,
+        "TotalOperations": 1024,
+        "BytesAllocatedPerOperation": 5585
+      },
+      "actual_samples": [
+        {
+          "launch": 1,
+          "iteration": 1,
+          "operations": 1024,
+          "nanoseconds": 7528500,
+          "ns_per_operation": 7352.05078125
+        },
+        {
+          "launch": 1,
+          "iteration": 2,
+          "operations": 1024,
+          "nanoseconds": 6928700,
+          "ns_per_operation": 6766.30859375
+        },
+        {
+          "launch": 1,
+          "iteration": 3,
+          "operations": 1024,
+          "nanoseconds": 6755700,
+          "ns_per_operation": 6597.36328125
+        },
+        {
+          "launch": 1,
+          "iteration": 4,
+          "operations": 1024,
+          "nanoseconds": 7336200,
+          "ns_per_operation": 7164.2578125
+        },
+        {
+          "launch": 1,
+          "iteration": 5,
+          "operations": 1024,
+          "nanoseconds": 14662600,
+          "ns_per_operation": 14318.9453125
+        },
+        {
+          "launch": 1,
+          "iteration": 6,
+          "operations": 1024,
+          "nanoseconds": 7924400,
+          "ns_per_operation": 7738.671875
+        },
+        {
+          "launch": 2,
+          "iteration": 1,
+          "operations": 1024,
+          "nanoseconds": 7253200,
+          "ns_per_operation": 7083.203125
+        },
+        {
+          "launch": 2,
+          "iteration": 2,
+          "operations": 1024,
+          "nanoseconds": 6855300,
+          "ns_per_operation": 6694.62890625
+        },
+        {
+          "launch": 2,
+          "iteration": 3,
+          "operations": 1024,
+          "nanoseconds": 6811900,
+          "ns_per_operation": 6652.24609375
+        },
+        {
+          "launch": 2,
+          "iteration": 4,
+          "operations": 1024,
+          "nanoseconds": 6823200,
+          "ns_per_operation": 6663.28125
+        },
+        {
+          "launch": 2,
+          "iteration": 5,
+          "operations": 1024,
+          "nanoseconds": 7445800,
+          "ns_per_operation": 7271.2890625
+        },
+        {
+          "launch": 2,
+          "iteration": 6,
+          "operations": 1024,
+          "nanoseconds": 7085900,
+          "ns_per_operation": 6919.82421875
+        }
+      ]
+    },
+    {
+      "name": "AspectN.Benchmarks.CecilCacheBenchmarks.Map(Shape: GenericArray, Path: ReferenceHit)",
+      "parameters": "Shape=GenericArray&Path=ReferenceHit",
+      "mean_ns": 5429.5703125,
+      "error_ns": 1476.7478865831047,
+      "standard_deviation_ns": 976.7772927846486,
+      "filtered_sample_count": 10,
+      "adjusted_samples_ns": [
+        5470.01953125,
+        4914.55078125,
+        4986.5234375,
+        4736.62109375,
+        4766.30859375,
+        6317.1875,
+        4466.30859375,
+        5189.35546875,
+        7743.45703125,
+        5705.37109375
+      ],
+      "allocated_bytes_per_operation": 3944,
+      "memory": {
+        "Gen0Collections": 0,
+        "Gen1Collections": 0,
+        "Gen2Collections": 0,
+        "TotalOperations": 1024,
+        "BytesAllocatedPerOperation": 3944
+      },
+      "actual_samples": [
+        {
+          "launch": 1,
+          "iteration": 1,
+          "operations": 1024,
+          "nanoseconds": 5601600,
+          "ns_per_operation": 5470.3125
+        },
+        {
+          "launch": 1,
+          "iteration": 2,
+          "operations": 1024,
+          "nanoseconds": 5032800,
+          "ns_per_operation": 4914.84375
+        },
+        {
+          "launch": 1,
+          "iteration": 3,
+          "operations": 1024,
+          "nanoseconds": 5106500,
+          "ns_per_operation": 4986.81640625
+        },
+        {
+          "launch": 1,
+          "iteration": 4,
+          "operations": 1024,
+          "nanoseconds": 4850600,
+          "ns_per_operation": 4736.9140625
+        },
+        {
+          "launch": 1,
+          "iteration": 5,
+          "operations": 1024,
+          "nanoseconds": 6494800,
+          "ns_per_operation": 6342.578125
+        },
+        {
+          "launch": 1,
+          "iteration": 6,
+          "operations": 1024,
+          "nanoseconds": 4881000,
+          "ns_per_operation": 4766.6015625
+        },
+        {
+          "launch": 2,
+          "iteration": 1,
+          "operations": 1024,
+          "nanoseconds": 6469000,
+          "ns_per_operation": 6317.3828125
+        },
+        {
+          "launch": 2,
+          "iteration": 2,
+          "operations": 1024,
+          "nanoseconds": 4573700,
+          "ns_per_operation": 4466.50390625
+        },
+        {
+          "launch": 2,
+          "iteration": 3,
+          "operations": 1024,
+          "nanoseconds": 5314100,
+          "ns_per_operation": 5189.55078125
+        },
+        {
+          "launch": 2,
+          "iteration": 4,
+          "operations": 1024,
+          "nanoseconds": 7929500,
+          "ns_per_operation": 7743.65234375
+        },
+        {
+          "launch": 2,
+          "iteration": 5,
+          "operations": 1024,
+          "nanoseconds": 15260700,
+          "ns_per_operation": 14903.02734375
+        },
+        {
+          "launch": 2,
+          "iteration": 6,
+          "operations": 1024,
+          "nanoseconds": 5842500,
+          "ns_per_operation": 5705.56640625
+        }
+      ]
+    },
+    {
+      "name": "AspectN.Benchmarks.CecilCacheBenchmarks.Map(Shape: GenericArray, Path: StableIdentityHit)",
+      "parameters": "Shape=GenericArray&Path=StableIdentityHit",
+      "mean_ns": 15966.361860795454,
+      "error_ns": 1132.1581073541156,
+      "standard_deviation_ns": 818.6244901755255,
+      "filtered_sample_count": 11,
+      "adjusted_samples_ns": [
+        16155.76171875,
+        16135.9375,
+        15489.453125,
+        14467.7734375,
+        16089.35546875,
+        15732.8125,
+        17252.9296875,
+        16517.28515625,
+        14959.9609375,
+        15813.96484375,
+        17014.74609375
+      ],
+      "allocated_bytes_per_operation": 9890,
+      "memory": {
+        "Gen0Collections": 0,
+        "Gen1Collections": 0,
+        "Gen2Collections": 0,
+        "TotalOperations": 1024,
+        "BytesAllocatedPerOperation": 9890
+      },
+      "actual_samples": [
+        {
+          "launch": 1,
+          "iteration": 1,
+          "operations": 1024,
+          "nanoseconds": 16543800,
+          "ns_per_operation": 16156.0546875
+        },
+        {
+          "launch": 1,
+          "iteration": 2,
+          "operations": 1024,
+          "nanoseconds": 16523500,
+          "ns_per_operation": 16136.23046875
+        },
+        {
+          "launch": 1,
+          "iteration": 3,
+          "operations": 1024,
+          "nanoseconds": 15861500,
+          "ns_per_operation": 15489.74609375
+        },
+        {
+          "launch": 1,
+          "iteration": 4,
+          "operations": 1024,
+          "nanoseconds": 14815300,
+          "ns_per_operation": 14468.06640625
+        },
+        {
+          "launch": 1,
+          "iteration": 5,
+          "operations": 1024,
+          "nanoseconds": 16475800,
+          "ns_per_operation": 16089.6484375
+        },
+        {
+          "launch": 1,
+          "iteration": 6,
+          "operations": 1024,
+          "nanoseconds": 16110700,
+          "ns_per_operation": 15733.10546875
+        },
+        {
+          "launch": 2,
+          "iteration": 1,
+          "operations": 1024,
+          "nanoseconds": 17667500,
+          "ns_per_operation": 17253.41796875
+        },
+        {
+          "launch": 2,
+          "iteration": 2,
+          "operations": 1024,
+          "nanoseconds": 16914200,
+          "ns_per_operation": 16517.7734375
+        },
+        {
+          "launch": 2,
+          "iteration": 3,
+          "operations": 1024,
+          "nanoseconds": 15319500,
+          "ns_per_operation": 14960.44921875
+        },
+        {
+          "launch": 2,
+          "iteration": 4,
+          "operations": 1024,
+          "nanoseconds": 16194000,
+          "ns_per_operation": 15814.453125
+        },
+        {
+          "launch": 2,
+          "iteration": 5,
+          "operations": 1024,
+          "nanoseconds": 17423600,
+          "ns_per_operation": 17015.234375
+        },
+        {
+          "launch": 2,
+          "iteration": 6,
+          "operations": 1024,
+          "nanoseconds": 21013800,
+          "ns_per_operation": 20521.2890625
+        }
+      ]
+    },
+    {
+      "name": "AspectN.Benchmarks.CecilCacheBenchmarks.Map(Shape: GenericArray, Path: Miss)",
+      "parameters": "Shape=GenericArray&Path=Miss",
+      "mean_ns": 44819.132486979164,
+      "error_ns": 13433.611991307396,
+      "standard_deviation_ns": 10488.080619763732,
+      "filtered_sample_count": 12,
+      "adjusted_samples_ns": [
+        34204.6875,
+        35107.8125,
+        35955.2734375,
+        52945.01953125,
+        56214.453125,
+        62274.51171875,
+        36687.841796875,
+        36187.646484375,
+        33714.794921875,
+        47393.310546875,
+        53793.115234375,
+        53351.123046875
+      ],
+      "allocated_bytes_per_operation": 24254,
+      "memory": {
+        "Gen0Collections": 1,
+        "Gen1Collections": 0,
+        "Gen2Collections": 0,
+        "TotalOperations": 1024,
+        "BytesAllocatedPerOperation": 24254
+      },
+      "actual_samples": [
+        {
+          "launch": 1,
+          "iteration": 1,
+          "operations": 1024,
+          "nanoseconds": 35026400,
+          "ns_per_operation": 34205.46875
+        },
+        {
+          "launch": 1,
+          "iteration": 2,
+          "operations": 1024,
+          "nanoseconds": 35951200,
+          "ns_per_operation": 35108.59375
+        },
+        {
+          "launch": 1,
+          "iteration": 3,
+          "operations": 1024,
+          "nanoseconds": 36819000,
+          "ns_per_operation": 35956.0546875
+        },
+        {
+          "launch": 1,
+          "iteration": 4,
+          "operations": 1024,
+          "nanoseconds": 54216500,
+          "ns_per_operation": 52945.80078125
+        },
+        {
+          "launch": 1,
+          "iteration": 5,
+          "operations": 1024,
+          "nanoseconds": 57564400,
+          "ns_per_operation": 56215.234375
+        },
+        {
+          "launch": 1,
+          "iteration": 6,
+          "operations": 1024,
+          "nanoseconds": 63769900,
+          "ns_per_operation": 62275.29296875
+        },
+        {
+          "launch": 2,
+          "iteration": 1,
+          "operations": 1024,
+          "nanoseconds": 37569000,
+          "ns_per_operation": 36688.4765625
+        },
+        {
+          "launch": 2,
+          "iteration": 2,
+          "operations": 1024,
+          "nanoseconds": 37056800,
+          "ns_per_operation": 36188.28125
+        },
+        {
+          "launch": 2,
+          "iteration": 3,
+          "operations": 1024,
+          "nanoseconds": 34524600,
+          "ns_per_operation": 33715.4296875
+        },
+        {
+          "launch": 2,
+          "iteration": 4,
+          "operations": 1024,
+          "nanoseconds": 48531400,
+          "ns_per_operation": 47393.9453125
+        },
+        {
+          "launch": 2,
+          "iteration": 5,
+          "operations": 1024,
+          "nanoseconds": 55084800,
+          "ns_per_operation": 53793.75
+        },
+        {
+          "launch": 2,
+          "iteration": 6,
+          "operations": 1024,
+          "nanoseconds": 54632200,
+          "ns_per_operation": 53351.7578125
+        }
+      ]
+    },
+    {
+      "name": "AspectN.Benchmarks.CecilCacheBenchmarks.Map(Shape: DeepArray, Path: ReferenceHit)",
+      "parameters": "Shape=DeepArray&Path=ReferenceHit",
+      "mean_ns": 12856.013997395834,
+      "error_ns": 1036.691164296399,
+      "standard_deviation_ns": 809.3802706206627,
+      "filtered_sample_count": 12,
+      "adjusted_samples_ns": [
+        13407.03125,
+        13377.24609375,
+        12731.54296875,
+        12581.4453125,
+        14293.65234375,
+        12178.80859375,
+        12387.01171875,
+        11981.93359375,
+        12257.2265625,
+        11847.75390625,
+        13111.5234375,
+        14116.9921875
+      ],
+      "allocated_bytes_per_operation": 16960,
+      "memory": {
+        "Gen0Collections": 1,
+        "Gen1Collections": 0,
+        "Gen2Collections": 0,
+        "TotalOperations": 1024,
+        "BytesAllocatedPerOperation": 16960
+      },
+      "actual_samples": [
+        {
+          "launch": 1,
+          "iteration": 1,
+          "operations": 1024,
+          "nanoseconds": 13729000,
+          "ns_per_operation": 13407.2265625
+        },
+        {
+          "launch": 1,
+          "iteration": 2,
+          "operations": 1024,
+          "nanoseconds": 13698500,
+          "ns_per_operation": 13377.44140625
+        },
+        {
+          "launch": 1,
+          "iteration": 3,
+          "operations": 1024,
+          "nanoseconds": 13037300,
+          "ns_per_operation": 12731.73828125
+        },
+        {
+          "launch": 1,
+          "iteration": 4,
+          "operations": 1024,
+          "nanoseconds": 12883600,
+          "ns_per_operation": 12581.640625
+        },
+        {
+          "launch": 1,
+          "iteration": 5,
+          "operations": 1024,
+          "nanoseconds": 14636900,
+          "ns_per_operation": 14293.84765625
+        },
+        {
+          "launch": 1,
+          "iteration": 6,
+          "operations": 1024,
+          "nanoseconds": 12471300,
+          "ns_per_operation": 12179.00390625
+        },
+        {
+          "launch": 2,
+          "iteration": 1,
+          "operations": 1024,
+          "nanoseconds": 12684500,
+          "ns_per_operation": 12387.20703125
+        },
+        {
+          "launch": 2,
+          "iteration": 2,
+          "operations": 1024,
+          "nanoseconds": 12269700,
+          "ns_per_operation": 11982.12890625
+        },
+        {
+          "launch": 2,
+          "iteration": 3,
+          "operations": 1024,
+          "nanoseconds": 12551600,
+          "ns_per_operation": 12257.421875
+        },
+        {
+          "launch": 2,
+          "iteration": 4,
+          "operations": 1024,
+          "nanoseconds": 12132300,
+          "ns_per_operation": 11847.94921875
+        },
+        {
+          "launch": 2,
+          "iteration": 5,
+          "operations": 1024,
+          "nanoseconds": 13426400,
+          "ns_per_operation": 13111.71875
+        },
+        {
+          "launch": 2,
+          "iteration": 6,
+          "operations": 1024,
+          "nanoseconds": 14456000,
+          "ns_per_operation": 14117.1875
+        }
+      ]
+    },
+    {
+      "name": "AspectN.Benchmarks.CecilCacheBenchmarks.Map(Shape: DeepArray, Path: StableIdentityHit)",
+      "parameters": "Shape=DeepArray&Path=StableIdentityHit",
+      "mean_ns": 42160.9130859375,
+      "error_ns": 14892.444595010384,
+      "standard_deviation_ns": 11627.041159064502,
+      "filtered_sample_count": 12,
+      "adjusted_samples_ns": [
+        33281.4453125,
+        33401.85546875,
+        32133.30078125,
+        46504.19921875,
+        54668.84765625,
+        50074.12109375,
+        29820.3125,
+        30339.55078125,
+        29613.76953125,
+        52512.98828125,
+        58833.59375,
+        54746.97265625
+      ],
+      "allocated_bytes_per_operation": 27936,
+      "memory": {
+        "Gen0Collections": 2,
+        "Gen1Collections": 1,
+        "Gen2Collections": 0,
+        "TotalOperations": 1024,
+        "BytesAllocatedPerOperation": 27936
+      },
+      "actual_samples": [
+        {
+          "launch": 1,
+          "iteration": 1,
+          "operations": 1024,
+          "nanoseconds": 34080900,
+          "ns_per_operation": 33282.12890625
+        },
+        {
+          "launch": 1,
+          "iteration": 2,
+          "operations": 1024,
+          "nanoseconds": 34204200,
+          "ns_per_operation": 33402.5390625
+        },
+        {
+          "launch": 1,
+          "iteration": 3,
+          "operations": 1024,
+          "nanoseconds": 32905200,
+          "ns_per_operation": 32133.984375
+        },
+        {
+          "launch": 1,
+          "iteration": 4,
+          "operations": 1024,
+          "nanoseconds": 47621000,
+          "ns_per_operation": 46504.8828125
+        },
+        {
+          "launch": 1,
+          "iteration": 5,
+          "operations": 1024,
+          "nanoseconds": 55981600,
+          "ns_per_operation": 54669.53125
+        },
+        {
+          "launch": 1,
+          "iteration": 6,
+          "operations": 1024,
+          "nanoseconds": 51276600,
+          "ns_per_operation": 50074.8046875
+        },
+        {
+          "launch": 2,
+          "iteration": 1,
+          "operations": 1024,
+          "nanoseconds": 30536500,
+          "ns_per_operation": 29820.80078125
+        },
+        {
+          "launch": 2,
+          "iteration": 2,
+          "operations": 1024,
+          "nanoseconds": 31068200,
+          "ns_per_operation": 30340.0390625
+        },
+        {
+          "launch": 2,
+          "iteration": 3,
+          "operations": 1024,
+          "nanoseconds": 30325000,
+          "ns_per_operation": 29614.2578125
+        },
+        {
+          "launch": 2,
+          "iteration": 4,
+          "operations": 1024,
+          "nanoseconds": 53773800,
+          "ns_per_operation": 52513.4765625
+        },
+        {
+          "launch": 2,
+          "iteration": 5,
+          "operations": 1024,
+          "nanoseconds": 60246100,
+          "ns_per_operation": 58834.08203125
+        },
+        {
+          "launch": 2,
+          "iteration": 6,
+          "operations": 1024,
+          "nanoseconds": 56061400,
+          "ns_per_operation": 54747.4609375
+        }
+      ]
+    },
+    {
+      "name": "AspectN.Benchmarks.CecilCacheBenchmarks.Map(Shape: DeepArray, Path: Miss)",
+      "parameters": "Shape=DeepArray&Path=Miss",
+      "mean_ns": 208488.52982954544,
+      "error_ns": 46506.62506755529,
+      "standard_deviation_ns": 33627.337019814135,
+      "filtered_sample_count": 11,
+      "adjusted_samples_ns": [
+        177698.92578125,
+        225146.2890625,
+        206564.74609375,
+        209215.52734375,
+        204572.94921875,
+        184732.763671875,
+        171206.298828125,
+        193738.037109375,
+        245767.138671875,
+        286526.513671875,
+        188204.638671875
+      ],
+      "allocated_bytes_per_operation": 218340,
+      "memory": {
+        "Gen0Collections": 18,
+        "Gen1Collections": 6,
+        "Gen2Collections": 1,
+        "TotalOperations": 1024,
+        "BytesAllocatedPerOperation": 218340
+      },
+      "actual_samples": [
+        {
+          "launch": 1,
+          "iteration": 1,
+          "operations": 1024,
+          "nanoseconds": 181965000,
+          "ns_per_operation": 177700.1953125
+        },
+        {
+          "launch": 1,
+          "iteration": 2,
+          "operations": 1024,
+          "nanoseconds": 230551100,
+          "ns_per_operation": 225147.55859375
+        },
+        {
+          "launch": 1,
+          "iteration": 3,
+          "operations": 1024,
+          "nanoseconds": 273212700,
+          "ns_per_operation": 266809.27734375
+        },
+        {
+          "launch": 1,
+          "iteration": 4,
+          "operations": 1024,
+          "nanoseconds": 211523600,
+          "ns_per_operation": 206566.015625
+        },
+        {
+          "launch": 1,
+          "iteration": 5,
+          "operations": 1024,
+          "nanoseconds": 214238000,
+          "ns_per_operation": 209216.796875
+        },
+        {
+          "launch": 1,
+          "iteration": 6,
+          "operations": 1024,
+          "nanoseconds": 209484000,
+          "ns_per_operation": 204574.21875
+        },
+        {
+          "launch": 2,
+          "iteration": 1,
+          "operations": 1024,
+          "nanoseconds": 189167600,
+          "ns_per_operation": 184733.984375
+        },
+        {
+          "launch": 2,
+          "iteration": 2,
+          "operations": 1024,
+          "nanoseconds": 175316500,
+          "ns_per_operation": 171207.51953125
+        },
+        {
+          "launch": 2,
+          "iteration": 3,
+          "operations": 1024,
+          "nanoseconds": 198389000,
+          "ns_per_operation": 193739.2578125
+        },
+        {
+          "launch": 2,
+          "iteration": 4,
+          "operations": 1024,
+          "nanoseconds": 251666800,
+          "ns_per_operation": 245768.359375
+        },
+        {
+          "launch": 2,
+          "iteration": 5,
+          "operations": 1024,
+          "nanoseconds": 293404400,
+          "ns_per_operation": 286527.734375
+        },
+        {
+          "launch": 2,
+          "iteration": 6,
+          "operations": 1024,
+          "nanoseconds": 192722800,
+          "ns_per_operation": 188205.859375
+        }
+      ]
+    }
+  ],
+  "token_probe": {
+    "source_path": "docs/performance/reproductions/2026-10-23-rm20/CecilCacheTokenTests.cs",
+    "source_sha256": "52f7a396591cf95ce68342300ef576ce55edf861f54272df257c4059454d856d",
+    "project_path": "docs/performance/reproductions/2026-10-23-rm20/TokenProbe.csproj",
+    "project_sha256": "8a5977c2b83304e8b0b95b161b4e5e8d6d1ab6c1ed7e2a61a8317e9220907a82",
+    "checks": 12,
+    "measurements": [
+      {
+        "input": "bool:true",
+        "operations": 256,
+        "allocated_bytes": 0
+      },
+      {
+        "input": "bool:false",
+        "operations": 256,
+        "allocated_bytes": 0
+      },
+      {
+        "input": "int:1",
+        "operations": 256,
+        "allocated_bytes": 0
+      },
+      {
+        "input": "int:2",
+        "operations": 256,
+        "allocated_bytes": 0
+      },
+      {
+        "input": "int:32",
+        "operations": 256,
+        "allocated_bytes": 0
+      }
+    ],
+    "controls": "输出文本、布尔文本额度边界、自定义当前文化下的Invariant整数格式；全部原实现即通过。"
+  },
+  "test_runs": [
+    {
+      "path": "artifacts/rm20/reproduction/Administrator_LAPTOP-ERQOPF47_2026-10-23_17_57_18_net10.0.trx",
+      "sha256": "874d5e3c7d7534a26afda0eb39c1140e029cb0cff9b1f6be9a7d797502d29a4e",
+      "total": 12,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/rm20/tests/Administrator_LAPTOP-ERQOPF47_2026-10-23_17_56_37_net10.0.trx",
+      "sha256": "4fe52fcc44169b5c89edae09ac4ce4de649a647cc10f375ee57b0b620acb5778",
+      "total": 1398,
+      "passed": 1398,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/rm20/tests/Administrator_LAPTOP-ERQOPF47_2026-10-23_17_56_42_net10.0.trx",
+      "sha256": "ee351972b419c95a2349f0428397bd61e6404ab2493aeacc631c70cd1b29f1a8",
+      "total": 232,
+      "passed": 232,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/rm20/tests/Administrator_LAPTOP-ERQOPF47_2026-10-23_17_56_44_net10.0.trx",
+      "sha256": "0984c66ea6aa03405950ac99379db319880748b4525d13d55e04f2f91d97d80e",
+      "total": 110,
+      "passed": 110,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/rm20/tests/Administrator_LAPTOP-ERQOPF47_2026-10-23_17_56_46_net10.0.trx",
+      "sha256": "4cd8152a2e6769ca00c5196f27ad16d2251fa2e6e3d70d8916faa6e686a27aa3",
+      "total": 30,
+      "passed": 30,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/rm20/tests/Administrator_LAPTOP-ERQOPF47_2026-10-23_17_56_51_net10.0.trx",
+      "sha256": "51a54f2fd5e4f42ad269d339b8d105a52361926994cc4ebfe3d7d922ddba099b",
+      "total": 415,
+      "passed": 415,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/rm20/tests/Administrator_LAPTOP-ERQOPF47_2026-10-23_17_57_28_net472.trx",
+      "sha256": "b8051064e852f53cc16f91e6947108987858ba482fef8ff4ea9f091110c0182b",
+      "total": 8,
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/rm20/tests/Administrator_LAPTOP-ERQOPF47_2026-10-23_17_57_32_net10.0.trx",
+      "sha256": "a1cebd9ad181e6a367ee152a7ea08d1491f6d823856cdc5c59245de2f71dbce6",
+      "total": 9,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/rm20/tests/Administrator_LAPTOP-ERQOPF47_2026-10-23_17_57_33_net10.0.trx",
+      "sha256": "8556a1deeee7bb912456e82b6d245627f12a0ef157a9b0a9331f551bed9553bf",
+      "total": 234,
+      "passed": 234,
+      "failed": 0,
+      "skipped": 0
+    }
+  ]
+}

@@ -32,3 +32,16 @@ RegexReuseBenchmarks 在预生成规范字符串上比较静态缓存与普通 R
 RegexCompilationBenchmarks 关闭引擎编译缓存，计时完整解析与绑定，不能解释为纯 Regex 构造。`--validate-regex` 校验全部结果、零诊断及规范文本；`--regex-retention` 预热后持有 2,048 份不同编译计划，以强制 GC 前后差值估计首次匹配前/后的存活堆，建议五个独立进程重复。该差值包含整个计划集合及静态缓存，并非单个对象的精确大小；与 MemoryDiagnoser 的每次分配量是不同指标。
 
 本轮结果、源码状态及命令见 [RM-19 报告](../../docs/performance/2026-10-23-rm19-regex-reuse.md)。只测 .NET 10 单线程简单分支，不外推复杂回溯、并发吞吐、其他后端或运行时。
+
+## Cecil 类型缓存专项
+
+```powershell
+dotnet benchmarks/AspectN.Benchmarks/bin/Release/net10.0/AspectN.Benchmarks.dll --validate-cecil-cache
+dotnet benchmarks/AspectN.Benchmarks/bin/Release/net10.0/AspectN.Benchmarks.dll --filter '*CecilCacheBenchmarks*' --artifacts artifacts/rm20/before
+```
+
+CecilCacheBenchmarks通过公开MapType测量具名类型、泛型与数组组合、32层数组，分别执行同对象引用命中、跨对象相同结构命中、根稳定身份未命中，共9组。输入在GlobalSetup前后准备并验证，每轮IterationSetup重建适配器缓存，固定一次1024项批次，按每次映射归一化。Miss仍可复用批次内已见子图，不能称所有节点都冷。引用命中也包含公开入口的守卫、预算与映射调度。
+
+IterationSetup用于保留首次查询状态，会强制InvocationCount=1和UnrollFactor=1；短轮次警告及误差应与结果一起阅读，不能据该设置精确判断普遍吞吐。分配量是本轮累计托管分配，不是保留内存，路径差额也不能全算成键构造成本。只测普通Cecil/.NET10单线程，不外推Fody或真实程序集整体负载。
+
+[RM-20报告](../../docs/performance/2026-10-23-rm20-cecil-cache.md)记录本轮保留生产实现的决定，及独立可复跑的局部写入探针。`before`只有一轮基线，没有生产改动后的after。
