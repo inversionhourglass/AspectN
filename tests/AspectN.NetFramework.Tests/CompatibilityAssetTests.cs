@@ -11,6 +11,13 @@ namespace AspectN.NetFramework.Tests;
 public sealed class CompatibilityAssetTests
 {
     [Fact]
+    public void LoadedAssets_CoreAssembly_DoesNotReferenceSystemMemory()
+    {
+        Assert.DoesNotContain(typeof(AspectNEngine).Assembly.GetReferencedAssemblies(),
+            assembly => assembly.Name == "System.Memory");
+    }
+
+    [Fact]
     public void Reflection_CustomModifierOverloads_SeparateGenericDeclarations()
     {
         var assembly = System.Reflection.Assembly.Load(AspectN.Tests.Shared.CustomModifierOwnerFixture.CreateImage());

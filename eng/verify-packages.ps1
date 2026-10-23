@@ -140,14 +140,24 @@ function Get-ConsumerSource {
 using AspectN;
 using AspectN.Metadata;
 
-var compilation = new AspectNEngine().CompileMemberExpression(
-    "method(* Example.Service.Run(..))");
+var engine = new AspectNEngine();
+const string memberExpression = "method(* Example.Service.Run(..))";
+var compilation = engine.CompileMemberExpression(memberExpression);
+if (!object.ReferenceEquals(compilation, engine.CompileMemberExpression(memberExpression)))
+{
+    throw new InvalidOperationException("AspectN member compilation was not cached.");
+}
 if (!compilation.TryGetMemberPattern(out var memberPattern))
 {
     throw new InvalidOperationException("AspectN compilation failed.");
 }
 _ = memberPattern.Options;
-var typeCompilation = new AspectNEngine().CompileTypePattern("Example.Container<>");
+const string typeExpression = "Example.Container<>";
+var typeCompilation = engine.CompileTypePattern(typeExpression);
+if (!object.ReferenceEquals(typeCompilation, engine.CompileTypePattern(typeExpression)))
+{
+    throw new InvalidOperationException("AspectN type compilation was not cached.");
+}
 if (!typeCompilation.TryGetTypePattern(out var typePattern))
 {
     throw new InvalidOperationException("AspectN type compilation failed.");

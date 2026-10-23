@@ -85,6 +85,8 @@ AspectN.Cecil 与 AspectN.Cecil.Fody 面向不同强名称的 Mono.Cecil 程序�
 
 五个包共用基础版本；正式包示例为 `1.0.0`，预发布包示例为 `1.0.0-preview-1792779709513`。需要多个 AspectN 包时选择同一完整版本。发布入口和版本生成规则见[发布版本指南](../../eng/release-versioning.md)，本节的包版本格式不扩大运行时兼容性验证范围。
 
+当前核心包无需额外安装 System.Memory 才能编译表达式或命中编译缓存。SourceLink 等构建工具不会代替库声明运行时依赖；Roslyn 适配器的实际依赖仍由 NuGet 正常传递。当前五包在 net472/net10.0 的消费者验证见[依赖修复记录](../reviews/2026-10-24-package-runtime-dependencies.md)，不代表任意第三方应用的依赖组合均已验证。
+
 本轮实际验证为 Windows 上的 net10.0 和 net472 测试宿主；兼容项目确认核心、Cecil、Roslyn、Reflection 加载 netstandard2.0 资产并执行指定例子。没有由此宣称 Fody 的全部兼容宿主、任意历史 CLR/NuGet 版本或远程 Linux CI 已验证。[兼容专题](../knowledge/capabilities/cross-cutting/CROSS-COMPAT-001.md)和[场景矩阵](../knowledge/generated/support-matrix.md)列出精确范围。
 
 ## 候选尚未形成与事实不可用

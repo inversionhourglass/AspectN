@@ -82,8 +82,17 @@ internal readonly struct CompiledPatternCacheKey(string source, AspectNParseKind
     private readonly ResourceLimit[] _limits = parseOptions.Limits.Concat(compilationOptions.MatchOptions.Limits).ToArray();
     private readonly TimeLimit _regexTimeout = compilationOptions.MatchOptions.RegexTimeout;
 
-    public bool Equals(CompiledPatternCacheKey other) => _parseKind == other._parseKind && _mode == other._mode &&
-        _regexTimeout == other._regexTimeout && _limits.SequenceEqual(other._limits) && StringComparer.Ordinal.Equals(_source, other._source);
+    public bool Equals(CompiledPatternCacheKey other)
+    {
+        if (_parseKind != other._parseKind || _mode != other._mode || _regexTimeout != other._regexTimeout ||
+            _limits.Length != other._limits.Length) return false;
+
+        // 显式比较避免数组扩展方法绑定到构建依赖提供的 Span 重载。
+        for (var index = 0; index < _limits.Length; index++)
+            if (_limits[index] != other._limits[index]) return false;
+
+        return StringComparer.Ordinal.Equals(_source, other._source);
+    }
 
     public override bool Equals(object? obj) => obj is CompiledPatternCacheKey other && Equals(other);
 

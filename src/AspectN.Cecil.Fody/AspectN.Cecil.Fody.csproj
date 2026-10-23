@@ -29,7 +29,7 @@
   <ItemGroup>
     <PackageReference Include="FodyHelpers" />
     <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all" ExcludeAssets="compile;runtime" />
   </ItemGroup>
   <ItemGroup>
     <AdditionalFiles Include="..\AspectN.Cecil\PublicAPI.Shipped.txt"

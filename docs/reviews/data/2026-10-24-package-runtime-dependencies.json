@@ -1,0 +1,530 @@
+{
+  "date": "2026-10-24",
+  "baseline_commit": "33eb272a919d61780e1c284be8887d5e8fbb4062",
+  "sources": [
+    {
+      "path": "src/AspectN/Caching/CompiledPatternCache.cs",
+      "sha256": "7d3d4124429abe0ee33cd5d96815c0de6cdbe0f0ad6565bd0b97981ac70c5e1e"
+    },
+    {
+      "path": "src/AspectN/AspectNEngine.cs",
+      "sha256": "ee326890605fdc1012cc7f007f934a8a830e418215c9e3c079a2b8ba271ba2f3"
+    },
+    {
+      "path": "src/AspectN/ResourceLimit.cs",
+      "sha256": "d925714710c140d2eebb64c98ec40a66cda6cee2effab60dc85411c83580827c"
+    },
+    {
+      "path": "src/AspectN/AspectNParseOptions.cs",
+      "sha256": "63d752311307afb08017eecdd0a6871d64f3a61bd913ebd1a827431316ffe188"
+    },
+    {
+      "path": "src/AspectN/AspectNCompilationOptions.cs",
+      "sha256": "30805fd4e275fc38ec048ef5d0b1230d9dc5c3f5c69dd2548378ee7120b45c6f"
+    },
+    {
+      "path": "src/AspectN/AspectNMatchOptions.cs",
+      "sha256": "32bbb153dd2f8d931c84facc95ef83e7f0959e9dc59b915f992763c995109932"
+    },
+    {
+      "path": "src/AspectN/AspectN.csproj",
+      "sha256": "2d958416470beabc9735ee16b6f0d551efaaf41c5f1545d5bfec2ed649754d76"
+    },
+    {
+      "path": "src/AspectN.Cecil/AspectN.Cecil.csproj",
+      "sha256": "95a2a139e1186df33d5ac003fd5c0462f1f41f98580a4f2f309c556643b1c0b4"
+    },
+    {
+      "path": "src/AspectN.Cecil.Fody/AspectN.Cecil.Fody.csproj",
+      "sha256": "b066c010e828687027e826d5ad2c6adc742aff669d7845d963a7e8bd6f433aea"
+    },
+    {
+      "path": "src/AspectN.Roslyn/AspectN.Roslyn.csproj",
+      "sha256": "a66ce5892ad3423aa1a9b1b61ad9570f65ca344e43146b4244982ae99041016b"
+    },
+    {
+      "path": "src/AspectN.Reflection/AspectN.Reflection.csproj",
+      "sha256": "ecc0c3fee341e9e808d72a52f7258792d2f4ebc5c4acc54605ec7fe4cfd498e8"
+    },
+    {
+      "path": "tests/AspectN.NetFramework.Tests/CompatibilityAssetTests.cs",
+      "sha256": "bd407219f650fed67f058561dde8b1f51c4d450b1fd22fa7b065853047aa75c9"
+    },
+    {
+      "path": "tests/AspectN.NetFramework.Tests/AspectN.NetFramework.Tests.csproj",
+      "sha256": "b8319378b74628b419afc126ba5c7ec0a5276b5e8585a624e4074a73d6745ffc"
+    },
+    {
+      "path": "tests/AspectN.Tests/Caching/CompiledPatternCacheTests.cs",
+      "sha256": "4f557b3e437fcf1f463aca24957925e5a5df16e9bf2582411d045e56222f547b"
+    },
+    {
+      "path": "tests/AspectN.Tests/ResourceContractTests.cs",
+      "sha256": "8323b13c60cea73b2891d36822e4431e23f557cbda9fe0bfd70a91b91dfd976f"
+    },
+    {
+      "path": "eng/verify-packages.ps1",
+      "sha256": "92528ec3a11633b181a2c333f9ed78bbd0b2be32a5ac2a8a82ac64ef072782df"
+    },
+    {
+      "path": "Directory.Build.props",
+      "sha256": "f3d3704488023c9b94d0cbf03b27b39b524484aa3bd4ece5cf7c6247831b8b5b"
+    },
+    {
+      "path": "Directory.Packages.props",
+      "sha256": "9d948b704945855977f066f31633d774f355f19b78514d8bc791109541746d36"
+    }
+  ],
+  "red_test": {
+    "failed": 1,
+    "total": 1,
+    "reason": "netstandard core references System.Memory 4.0.2.0"
+  },
+  "red_consumer": {
+    "package": "artifacts/o02/release-packages/AspectN.1.0.0.nupkg",
+    "stage": "core/net472 cache hit",
+    "exception": "FileNotFoundException: System.Memory 4.0.2.0",
+    "result": "failed",
+    "sha256": "d3d60f0490d5fa5cc560283ae0dcc8a8298ddaf526c534920ecd5e1972a50311"
+  },
+  "build": {
+    "warnings": 0,
+    "exit": 0,
+    "errors": 0
+  },
+  "product_tests": {
+    "exit": 0,
+    "total": 2438,
+    "passed": 2438,
+    "runs": [
+      {
+        "path": "artifacts/package-runtime-dependencies/tests/runtime-dependencies_net10.0_20261024025826.trx",
+        "sha256": "11df0ba9ec8e7e4b98f374d0190d342a8b033384052002e099b231d8b368bac0",
+        "total": 1398,
+        "passed": 1398,
+        "failed": 0,
+        "skipped": 0
+      },
+      {
+        "path": "artifacts/package-runtime-dependencies/tests/runtime-dependencies_net10.0_20261024025828.trx",
+        "sha256": "2a8c30471e4af49108eb68a71e7cb258f1cf1168600cbaa1b3a32a3747445aa6",
+        "total": 232,
+        "passed": 232,
+        "failed": 0,
+        "skipped": 0
+      },
+      {
+        "path": "artifacts/package-runtime-dependencies/tests/runtime-dependencies_net10.0_20261024025830.trx",
+        "sha256": "a74f74620c30466af5e1130792f5eaaf28416de230550744ee253fded17b8c93",
+        "total": 110,
+        "passed": 110,
+        "failed": 0,
+        "skipped": 0
+      },
+      {
+        "path": "artifacts/package-runtime-dependencies/tests/runtime-dependencies_net10.0_20261024025835.trx",
+        "sha256": "6d1b7327d045c1c94f585b59f24567ae4f78f9fa393d36c0977c880da4a43a79",
+        "total": 30,
+        "passed": 30,
+        "failed": 0,
+        "skipped": 0
+      },
+      {
+        "path": "artifacts/package-runtime-dependencies/tests/runtime-dependencies_net10.0_20261024025911.trx",
+        "sha256": "2e7350553ad9cc148264effd84bcacbb55595f3b3528c7a383a7e30f2454da0c",
+        "total": 415,
+        "passed": 415,
+        "failed": 0,
+        "skipped": 0
+      },
+      {
+        "path": "artifacts/package-runtime-dependencies/tests/runtime-dependencies_net10.0_20261024025920.trx",
+        "sha256": "43268620d291b17f49c70b0b70c4b0d41cb6bfc813241b0a9b628e93f1ef20a3",
+        "total": 10,
+        "passed": 10,
+        "failed": 0,
+        "skipped": 0
+      },
+      {
+        "path": "artifacts/package-runtime-dependencies/tests/runtime-dependencies_net10.0_20261024025922.trx",
+        "sha256": "1a77470b5748953e5228b749361b949e9111819003c8bc1cc57a9190a9fd61b3",
+        "total": 234,
+        "passed": 234,
+        "failed": 0,
+        "skipped": 0
+      },
+      {
+        "path": "artifacts/package-runtime-dependencies/tests/runtime-dependencies_net472_20261024025917.trx",
+        "sha256": "6ff6ee1f15eaa7996de49d009c5ac7bd11747f6c0ff4e978d487069409076858",
+        "total": 9,
+        "passed": 9,
+        "failed": 0,
+        "skipped": 0
+      }
+    ],
+    "skipped": 0,
+    "failed": 0
+  },
+  "script_tests": [
+    {
+      "path": "artifacts/package-version-tests/f6a57c8705fe4e99bf4225c11a97a3ac/results.json",
+      "sha256": "6658e984b0a569126f02b43d013510355f434fde259bb6b887e44d163097ff12",
+      "host": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+      "passed": 26,
+      "failed": 0
+    },
+    {
+      "path": "artifacts/package-version-tests/bd78c4b681124047b4c6b823350bfcc5/results.json",
+      "sha256": "ab9546942e2e0f4aa86af9eb4b54d8f7ee5779ce029605938b3512c925c42c05",
+      "host": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "passed": 26,
+      "failed": 0
+    },
+    {
+      "path": "artifacts/package-dependency-tests/43196e3c24eb4fc6b8e4d390e038cc02/results.json",
+      "sha256": "087958b3b0da360d6ac01bfc8168daf0c974e0e628845f4deb6195a4937f2c0e",
+      "host": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+      "passed": 11,
+      "failed": 0
+    },
+    {
+      "path": "artifacts/package-dependency-tests/6caf1eb9974141b4b46494735a22f26d/results.json",
+      "sha256": "1ea05ef981215e23dee8fe542f2d1cbaf9a65fe7ba284e3b06fe3792884b7fe0",
+      "host": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "passed": 11,
+      "failed": 0
+    }
+  ],
+  "package_validation": {
+    "exit": 0,
+    "version": "0.0.0-validation-runtime-a6c61790e4dc",
+    "directory": "artifacts/package-runtime-dependencies/packages-a6c61790e4dc",
+    "verifier_sha256": "92528ec3a11633b181a2c333f9ed78bbd0b2be32a5ac2a8a82ac64ef072782df"
+  },
+  "consumers": [
+    "AspectN/net472",
+    "AspectN/net10.0",
+    "AspectN.Cecil/net472",
+    "AspectN.Cecil/net10.0",
+    "AspectN.Cecil.Fody/net472",
+    "AspectN.Cecil.Fody/net10.0",
+    "AspectN.Roslyn/net472",
+    "AspectN.Roslyn/net10.0",
+    "AspectN.Reflection/net472",
+    "AspectN.Reflection/net10.0"
+  ],
+  "packages": [
+    {
+      "id": "AspectN",
+      "package": "artifacts\\package-runtime-dependencies\\packages-a6c61790e4dc\\AspectN.0.0.0-validation-runtime-a6c61790e4dc.nupkg",
+      "package_sha256": "7200be95b96981c8e9a92100532c58794a07e15ec4fc8ef95c94f61a59a3b182",
+      "symbols": "artifacts\\package-runtime-dependencies\\packages-a6c61790e4dc\\AspectN.0.0.0-validation-runtime-a6c61790e4dc.snupkg",
+      "symbols_sha256": "983682ae171ef7add5c262aeb0fb19750cc82cd9f6ae02f7a798c7defb34a3ce",
+      "frameworks": [
+        {
+          "framework": "netstandard2.0",
+          "references": [
+            "netstandard, Version=2.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51"
+          ],
+          "source_link_documents": {
+            "D:\\Code\\Hourglass\\AspectN\\*": "https://raw.githubusercontent.com/inversionhourglass/AspectN/33eb272a919d61780e1c284be8887d5e8fbb4062/*"
+          },
+          "matching_symbols": true
+        },
+        {
+          "framework": "net10.0",
+          "references": [
+            "System.Runtime, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+            "System.Collections, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+            "System.Text.RegularExpressions, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+            "System.Linq, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+            "System.Threading, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+            "System.Runtime.InteropServices, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+          ],
+          "source_link_documents": {
+            "D:\\Code\\Hourglass\\AspectN\\*": "https://raw.githubusercontent.com/inversionhourglass/AspectN/33eb272a919d61780e1c284be8887d5e8fbb4062/*"
+          },
+          "matching_symbols": true
+        }
+      ]
+    },
+    {
+      "id": "AspectN.Cecil",
+      "package": "artifacts\\package-runtime-dependencies\\packages-a6c61790e4dc\\AspectN.Cecil.0.0.0-validation-runtime-a6c61790e4dc.nupkg",
+      "package_sha256": "4bbd6af09c0877d3daeb90547bcee37e3c1b11852de3e6cd686ff69eb784d9f0",
+      "symbols": "artifacts\\package-runtime-dependencies\\packages-a6c61790e4dc\\AspectN.Cecil.0.0.0-validation-runtime-a6c61790e4dc.snupkg",
+      "symbols_sha256": "cf1669c25962d90ac53b8f876c12a42073e1c206ae8dc5d9c374b41867bce5b3",
+      "frameworks": [
+        {
+          "framework": "netstandard2.0",
+          "references": [
+            "netstandard, Version=2.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51",
+            "AspectN, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+            "Mono.Cecil, Version=0.11.5.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e"
+          ],
+          "source_link_documents": {
+            "D:\\Code\\Hourglass\\AspectN\\*": "https://raw.githubusercontent.com/inversionhourglass/AspectN/33eb272a919d61780e1c284be8887d5e8fbb4062/*"
+          },
+          "matching_symbols": true
+        },
+        {
+          "framework": "net10.0",
+          "references": [
+            "System.Runtime, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+            "AspectN, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+            "System.Collections, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+            "Mono.Cecil, Version=0.11.5.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e",
+            "System.Linq, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+            "System.Threading, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+            "System.Memory, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51"
+          ],
+          "source_link_documents": {
+            "D:\\Code\\Hourglass\\AspectN\\*": "https://raw.githubusercontent.com/inversionhourglass/AspectN/33eb272a919d61780e1c284be8887d5e8fbb4062/*"
+          },
+          "matching_symbols": true
+        }
+      ]
+    },
+    {
+      "id": "AspectN.Cecil.Fody",
+      "package": "artifacts\\package-runtime-dependencies\\packages-a6c61790e4dc\\AspectN.Cecil.Fody.0.0.0-validation-runtime-a6c61790e4dc.nupkg",
+      "package_sha256": "b6b4d93fc68e81d57fe5aea6b5ffd399aadec67af1bac455df7172d3460d345c",
+      "symbols": "artifacts\\package-runtime-dependencies\\packages-a6c61790e4dc\\AspectN.Cecil.Fody.0.0.0-validation-runtime-a6c61790e4dc.snupkg",
+      "symbols_sha256": "ec4d279b169cae8dfa5561b0d1290108c2ec04b214f1e2811aea540ea244a965",
+      "frameworks": [
+        {
+          "framework": "netstandard2.0",
+          "references": [
+            "netstandard, Version=2.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51",
+            "AspectN, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+            "Mono.Cecil, Version=0.11.5.0, Culture=neutral, PublicKeyToken=1ca091877d12ca03"
+          ],
+          "source_link_documents": {
+            "D:\\Code\\Hourglass\\AspectN\\*": "https://raw.githubusercontent.com/inversionhourglass/AspectN/33eb272a919d61780e1c284be8887d5e8fbb4062/*"
+          },
+          "matching_symbols": true
+        },
+        {
+          "framework": "net10.0",
+          "references": [
+            "System.Runtime, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+            "AspectN, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+            "Mono.Cecil, Version=0.11.5.0, Culture=neutral, PublicKeyToken=1ca091877d12ca03",
+            "System.Collections, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+            "System.Threading, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+            "System.Linq, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+            "System.Memory, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51"
+          ],
+          "source_link_documents": {
+            "D:\\Code\\Hourglass\\AspectN\\*": "https://raw.githubusercontent.com/inversionhourglass/AspectN/33eb272a919d61780e1c284be8887d5e8fbb4062/*"
+          },
+          "matching_symbols": true
+        }
+      ]
+    },
+    {
+      "id": "AspectN.Roslyn",
+      "package": "artifacts\\package-runtime-dependencies\\packages-a6c61790e4dc\\AspectN.Roslyn.0.0.0-validation-runtime-a6c61790e4dc.nupkg",
+      "package_sha256": "f7205912652ea6842ac9b7708631e8e1539c8fb3e35f367a5548575660769c1b",
+      "symbols": "artifacts\\package-runtime-dependencies\\packages-a6c61790e4dc\\AspectN.Roslyn.0.0.0-validation-runtime-a6c61790e4dc.snupkg",
+      "symbols_sha256": "56c718153be356bcc91543831d7ca4f1fc1dcea2cb820cddc55cb90b5e5dd392",
+      "frameworks": [
+        {
+          "framework": "netstandard2.0",
+          "references": [
+            "netstandard, Version=2.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51",
+            "AspectN, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+            "Microsoft.CodeAnalysis, Version=4.12.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35",
+            "System.Collections.Immutable, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+            "System.Reflection.Metadata, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+            "Microsoft.CodeAnalysis.CSharp, Version=4.12.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"
+          ],
+          "source_link_documents": {
+            "D:\\Code\\Hourglass\\AspectN\\*": "https://raw.githubusercontent.com/inversionhourglass/AspectN/33eb272a919d61780e1c284be8887d5e8fbb4062/*"
+          },
+          "matching_symbols": true
+        },
+        {
+          "framework": "net10.0",
+          "references": [
+            "System.Runtime, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+            "AspectN, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+            "System.Collections, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+            "Microsoft.CodeAnalysis, Version=4.12.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35",
+            "System.Collections.Immutable, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+            "System.Reflection.Metadata, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+            "Microsoft.CodeAnalysis.CSharp, Version=4.12.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35",
+            "System.Linq, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+            "System.Threading, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+          ],
+          "source_link_documents": {
+            "D:\\Code\\Hourglass\\AspectN\\*": "https://raw.githubusercontent.com/inversionhourglass/AspectN/33eb272a919d61780e1c284be8887d5e8fbb4062/*"
+          },
+          "matching_symbols": true
+        }
+      ]
+    },
+    {
+      "id": "AspectN.Reflection",
+      "package": "artifacts\\package-runtime-dependencies\\packages-a6c61790e4dc\\AspectN.Reflection.0.0.0-validation-runtime-a6c61790e4dc.nupkg",
+      "package_sha256": "e15245fee0b50a3499d7fa346fdf56f25866655df8ab8c96c55176f41d3f542a",
+      "symbols": "artifacts\\package-runtime-dependencies\\packages-a6c61790e4dc\\AspectN.Reflection.0.0.0-validation-runtime-a6c61790e4dc.snupkg",
+      "symbols_sha256": "c185712e349407b96b7ac292b98af5346f919413a6377f4a4f18f48e5f521b4a",
+      "frameworks": [
+        {
+          "framework": "netstandard2.0",
+          "references": [
+            "netstandard, Version=2.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51",
+            "AspectN, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null"
+          ],
+          "source_link_documents": {
+            "D:\\Code\\Hourglass\\AspectN\\*": "https://raw.githubusercontent.com/inversionhourglass/AspectN/33eb272a919d61780e1c284be8887d5e8fbb4062/*"
+          },
+          "matching_symbols": true
+        },
+        {
+          "framework": "net10.0",
+          "references": [
+            "System.Runtime, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+            "AspectN, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
+            "System.Collections, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+            "System.Linq, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+            "System.Runtime.InteropServices, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+          ],
+          "source_link_documents": {
+            "D:\\Code\\Hourglass\\AspectN\\*": "https://raw.githubusercontent.com/inversionhourglass/AspectN/33eb272a919d61780e1c284be8887d5e8fbb4062/*"
+          },
+          "matching_symbols": true
+        }
+      ]
+    }
+  ],
+  "artifact_refs": [
+    {
+      "path": "artifacts/package-runtime-dependencies/red.log",
+      "sha256": "7b1acb993d3241dae6f487593b5be28f7524ec07818487a8e0b46499a75adcbb"
+    },
+    {
+      "path": "artifacts/package-runtime-dependencies/red/red.trx",
+      "sha256": "0af2ff6caa5926e1af62df70092a0707f12fc13a0b0102fd8838b4c1bbdd9763"
+    },
+    {
+      "path": "artifacts/package-runtime-dependencies/consumer-red.log",
+      "sha256": "fec0420882cf977e8d3bdbac79b32248f0e6fefbaf49a319ac3ab6b05f56015b"
+    },
+    {
+      "path": "artifacts/package-runtime-dependencies/consumer-verifier-before-fix.ps1",
+      "sha256": "92528ec3a11633b181a2c333f9ed78bbd0b2be32a5ac2a8a82ac64ef072782df"
+    },
+    {
+      "path": "artifacts/package-runtime-dependencies/capture.ps1",
+      "sha256": "ef5c3996612b978bc409ac2d661beabd320807ccce561d801e481b58991c9e74"
+    },
+    {
+      "path": "artifacts/package-runtime-dependencies/before-assemblies.json",
+      "sha256": "e30b9eaf766f046021c2fce3c9a05ae6e3bd88f66863106044594a586822e297"
+    },
+    {
+      "path": "artifacts/package-runtime-dependencies/after-assemblies.json",
+      "sha256": "16b97b03f8c03e0e5dc1394ba788552e79101fc5c65edfce99a2139fbca1e6a0"
+    },
+    {
+      "path": "artifacts/package-runtime-dependencies/source-link.json",
+      "sha256": "f6daaaf7e5ad5020853a739731b047dc1793a0bb0dc09c6b57ee9c561f608d0b"
+    },
+    {
+      "path": "artifacts/package-runtime-dependencies/core-reference-path.json",
+      "sha256": "574c1a98324e3d3ebc73008f4b9192fc8691973454ff89365bbe9572057e9ea4"
+    },
+    {
+      "path": "artifacts/package-runtime-dependencies/restore.log",
+      "sha256": "c0f7fcc0d9c24bc8750a523dc324b0d0698e80cbb7be1a245384ddf0285a8b54"
+    },
+    {
+      "path": "artifacts/package-runtime-dependencies/build.log",
+      "sha256": "5214f37e4b5ac18cb743953a0823ae87f4b8abdaf95f44cb9b1e88721ae5d883"
+    },
+    {
+      "path": "artifacts/package-runtime-dependencies/tests.log",
+      "sha256": "8b3365fd22d2ce0fbdbcda1595d52068c38b106e5c0e39296433ceb6c04069db"
+    },
+    {
+      "path": "artifacts/package-runtime-dependencies/test-summary.json",
+      "sha256": "f23302d20077c300767d2516f6809a936a974cccf582a82f2de54af6593ab050"
+    },
+    {
+      "path": "artifacts/package-runtime-dependencies/format.log",
+      "sha256": "fa397e31a142a019209205d2f95c50522eb19bc5c9794c51efa376777e92a88e"
+    },
+    {
+      "path": "artifacts/package-runtime-dependencies/packages-green.log",
+      "sha256": "6551eae994a8a4319824202f3dffb1101d17364de33d1bdd412f2ea4af2c0514"
+    },
+    {
+      "path": "artifacts/package-runtime-dependencies/package-input.json",
+      "sha256": "740c85772adaed134ae10509a3335ac5b8debb6bef0ac4e4fe75de6dcfc7d476"
+    },
+    {
+      "path": "artifacts/package-runtime-dependencies/package-exit.json",
+      "sha256": "21ed72adb2c268b9b7c88e7028c835f82b288e1070d8459d02f7da6c0ed7c789"
+    },
+    {
+      "path": "artifacts/package-runtime-dependencies/packaged-assemblies.json",
+      "sha256": "75730e4f6678503d75317060dc2a9bba4ca9b2982c7720f64e6dd6891d1f778c"
+    },
+    {
+      "path": "artifacts/package-runtime-dependencies/inspect-packages.ps1",
+      "sha256": "4ab9ed928eb7488adac80e8a337f8625b7d8a11b5cbd300da51b2c583fe2e1fe"
+    },
+    {
+      "path": "artifacts/package-runtime-dependencies/verify-package-versions-pwsh.log",
+      "sha256": "46a7b396d9325504dc0f87c81b18dfc564ccb972f54791a2d380b25ee7ac8a7b"
+    },
+    {
+      "path": "artifacts/package-runtime-dependencies/verify-package-versions-powershell.log",
+      "sha256": "3521a1a21f296aa6b8e4ea8a5f55258498a039060a7465ff746af7d2ec50c329"
+    },
+    {
+      "path": "artifacts/package-runtime-dependencies/verify-package-dependencies-pwsh.log",
+      "sha256": "ae28e7491b02162daae5779dba2f20c7b8580942da831a3d2626ad2bef4887a9"
+    },
+    {
+      "path": "artifacts/package-runtime-dependencies/verify-package-dependencies-powershell.log",
+      "sha256": "a5a5856bb4e50ddca0652cd39fd06c117e2394bd0757c43034c88b6fec3381d8"
+    },
+    {
+      "path": "artifacts/package-runtime-dependencies/knowledge-generate.log",
+      "sha256": "dc4799efb0283ee484c8a2dd7b312be03f5ebc9cae11981d45649e2ac53473bd"
+    },
+    {
+      "path": "artifacts/package-runtime-dependencies/knowledge-check.log",
+      "sha256": "4c82827f9b06be1b2ae06ba56063b2e67114a216f19fc3acfa4d068c9bae8aab"
+    },
+    {
+      "path": "artifacts/package-runtime-dependencies/documentation.json",
+      "sha256": "4f3424e0ecf837e094627451e7941ca4aada2119a0f0e5cb250fa80815bbd972"
+    }
+  ],
+  "format_exit": 0,
+  "format_workspace_warning": true,
+  "remote_actions_executed": false,
+  "signing_executed": false,
+  "publishing_executed": false,
+  "limits": "Windows and current pinned dependencies only; asset filtering does not remove graph nodes; net10 framework Memory references are legitimate.",
+  "documentation_validation": {
+    "generation_exit": 0,
+    "check_exit": 0,
+    "verifier_exit": 0,
+    "errors": 0,
+    "warnings": 0
+  },
+  "independent_review": {
+    "reviewer": "/root/runtime_dependency_review",
+    "date": "2026-10-24",
+    "critical": 0,
+    "important": 0,
+    "minor": 0,
+    "read_only": true,
+    "scope": "source, actual assembly/assets, red/green logs, ten consumers, eight TRX, symbols, documentation and knowledge metadata"
+  }
+}

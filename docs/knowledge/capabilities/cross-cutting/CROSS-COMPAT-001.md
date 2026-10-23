@@ -74,9 +74,9 @@
       "adapter": "core",
       "input_mode": "neutral",
       "entry_point": "netstandard2.0 资产的加载及已选原生查询",
-      "conditions": "CompatibilityAssetTests/NetFrameworkSmokeTests 在 net10.0 进程；不含Fody兼容资产；NetFrameworkSmokeTests 双模式反射开放/闭合方法与AN3007，实际加载netstandard2.0核心/适配器",
+      "conditions": "CompatibilityAssetTests/NetFrameworkSmokeTests 在 net10.0 进程；不含Fody兼容资产；NetFrameworkSmokeTests 双模式反射开放/闭合方法与AN3007，实际加载netstandard2.0核心/适配器；LoadedAssets_CoreAssembly_DoesNotReferenceSystemMemory核对实际netstandard核心的程序集引用",
       "target": "working-tree",
-      "expected_behavior": "实际加载核心/Cecil/Roslyn/Reflection netstandard2.0 资产，指定反射方法、数组形状和约束查询可执行；所列双模式及预算查询可执行",
+      "expected_behavior": "实际加载核心/Cecil/Roslyn/Reflection netstandard2.0 资产，指定反射方法、数组形状和约束查询可执行；所列双模式及预算查询可执行；核心不引用未声明的System.Memory",
       "contract_status": "supported",
       "verification_status": "verified",
       "verification_methods": [
@@ -85,7 +85,8 @@
       "evidence_ids": [
         "EV-20261014-007",
         "EV-20261021-007",
-        "EV-20261022-201"
+        "EV-20261022-201",
+        "EV-20261024-001"
       ],
       "unverified_notes": ""
     },
@@ -94,9 +95,9 @@
       "adapter": "core",
       "input_mode": "neutral",
       "entry_point": "netstandard2.0 资产的加载及已选原生查询",
-      "conditions": "相同兼容项目实际 net472 进程；Windows已安装.NET Framework运行时；不含Fody兼容资产；NetFrameworkSmokeTests 双模式反射开放/闭合方法与AN3007，实际加载netstandard2.0核心/适配器",
+      "conditions": "相同兼容项目实际 net472 进程；Windows已安装.NET Framework运行时；不含Fody兼容资产；NetFrameworkSmokeTests 双模式反射开放/闭合方法与AN3007，实际加载netstandard2.0核心/适配器；LoadedAssets_CoreAssembly_DoesNotReferenceSystemMemory核对实际netstandard核心的程序集引用",
       "target": "working-tree",
-      "expected_behavior": "指定公开入口及查询能在该环境执行；不把一次测试等同所有旧运行时和所有表达式支持；所列双模式及预算查询可执行",
+      "expected_behavior": "指定公开入口及查询能在该环境执行；不把一次测试等同所有旧运行时和所有表达式支持；所列双模式及预算查询可执行；核心不引用未声明的System.Memory",
       "contract_status": "supported",
       "verification_status": "verified",
       "verification_methods": [
@@ -105,7 +106,8 @@
       "evidence_ids": [
         "EV-20261014-008",
         "EV-20261021-007",
-        "EV-20261022-201"
+        "EV-20261022-201",
+        "EV-20261024-001"
       ],
       "unverified_notes": ""
     },
@@ -237,6 +239,8 @@
 [兼容资产测试](../../../../tests/AspectN.NetFramework.Tests/CompatibilityAssetTests.cs)、[Fody身份测试](../../../../tests/AspectN.Cecil.Fody.Tests/FodyCecilIdentityTests.cs)、[核心公开API](../../../../tests/AspectN.Tests/PublicApiTests.cs)。
 
 ## 关联与缺口
+
+2026-10-24 的[运行时依赖修复](../../../reviews/2026-10-24-package-runtime-dependencies.md)移除核心缓存比较意外产生的 System.Memory 引用，并过滤 SourceLink 的 compile/runtime 资产。S3/S4 新增实际 netstandard 核心引用断言，配合原有资产 TFM 检查；本轮五包十消费者完整通过，关闭 RM-13 后续记录的独立冲突。旧失败报告保留，现代框架合法的 System.Memory 引用及 Roslyn 的真实依赖不被排除；不外推其他版本、宿主或加载器。
 
 2026-10-24 的 [O-02 版本策略](../../../reviews/2026-10-24-o02-release-version-policy.md)将五个包的基础版本集中在根 props，正式 tag 必须匹配，prerelease 分支生成一次 preview-时间戳供整次流程复用。对应发布工程盘点 INV-0021；[用户版本说明](../../../usage/lifetimes-and-compatibility.md)与[发布指南](../../../../eng/release-versioning.md)同步。该变更未改变公共 API、目标框架或后端依赖版本，不升级 S1—S5 的场景验证状态、证据或 N/A；整包构建与包元数据核验的实际范围见本轮处置记录，既有消费者缺口单独保留。
 

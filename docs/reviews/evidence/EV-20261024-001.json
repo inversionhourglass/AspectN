@@ -1,0 +1,246 @@
+{
+  "schema_version": 1,
+  "id": "EV-20261024-001",
+  "method": "automated",
+  "scenario_refs": [
+    {
+      "capability_id": "CROSS-LIFETIME-001",
+      "scenario_id": "S1"
+    },
+    {
+      "capability_id": "CROSS-COMPAT-001",
+      "scenario_id": "S3"
+    },
+    {
+      "capability_id": "CROSS-COMPAT-001",
+      "scenario_id": "S4"
+    }
+  ],
+  "oracle_refs": [
+    {
+      "path": "docs/superpowers/specs/2026-07-31-aspectn-redesign-design.md",
+      "section": "5 / 9.1 / 14.2 / 16"
+    },
+    {
+      "path": "docs/reviews/2026-10-24-package-runtime-dependencies.md",
+      "section": "原因与修复 / 红绿回归与当前结果 / 能力与证据影响"
+    }
+  ],
+  "procedure": "新资产引用断言先失败；旧真实包增强缓存命中消费者在net472抛FileNotFoundException。修复后dotnet build AspectN.sln -c Release --no-restore -m:1 -nr:false -p:UseSharedCompilation=false零告警；dotnet test AspectN.sln -c Release --no-build --no-restore -m:1 -nr:false --logger trx，八TRX共2438通过。原verify-packages.ps1全流程生成五对新包并完成十消费者，两个宿主版本/依赖脚本共74项。实际包DLL/PDB配对与SourceLink检查通过，细节和哈希见数据。",
+  "result": "passed",
+  "recorded_on": "2026-10-24",
+  "environment": {
+    "os": "Microsoft Windows NT 10.0.26200.0",
+    "sdk": "10.0.401",
+    "runtime": "10.0.12",
+    "execution_target": "net10.0",
+    "compatibility_target": "net472",
+    "build_configuration": "Release",
+    "notes": "Windows当前依赖Mono.Cecil0.11.5、FodyHelpers6.8.1、Roslyn4.12.0、SourceLink10.0.401。S3/S4本证据补充实际资产及引用断言；其他原查询范围保留原证据。未执行远端Actions、其他OS、任意历史依赖或发包。"
+  },
+  "code_state": {
+    "head": "33eb272a919d61780e1c284be8887d5e8fbb4062",
+    "dirty": true,
+    "files": [
+      {
+        "path": "src/AspectN/Caching/CompiledPatternCache.cs",
+        "sha256": "7d3d4124429abe0ee33cd5d96815c0de6cdbe0f0ad6565bd0b97981ac70c5e1e"
+      },
+      {
+        "path": "src/AspectN/AspectNEngine.cs",
+        "sha256": "ee326890605fdc1012cc7f007f934a8a830e418215c9e3c079a2b8ba271ba2f3"
+      },
+      {
+        "path": "src/AspectN/ResourceLimit.cs",
+        "sha256": "d925714710c140d2eebb64c98ec40a66cda6cee2effab60dc85411c83580827c"
+      },
+      {
+        "path": "src/AspectN/AspectNParseOptions.cs",
+        "sha256": "63d752311307afb08017eecdd0a6871d64f3a61bd913ebd1a827431316ffe188"
+      },
+      {
+        "path": "src/AspectN/AspectNCompilationOptions.cs",
+        "sha256": "30805fd4e275fc38ec048ef5d0b1230d9dc5c3f5c69dd2548378ee7120b45c6f"
+      },
+      {
+        "path": "src/AspectN/AspectNMatchOptions.cs",
+        "sha256": "32bbb153dd2f8d931c84facc95ef83e7f0959e9dc59b915f992763c995109932"
+      },
+      {
+        "path": "src/AspectN/AspectN.csproj",
+        "sha256": "2d958416470beabc9735ee16b6f0d551efaaf41c5f1545d5bfec2ed649754d76"
+      },
+      {
+        "path": "src/AspectN.Cecil/AspectN.Cecil.csproj",
+        "sha256": "95a2a139e1186df33d5ac003fd5c0462f1f41f98580a4f2f309c556643b1c0b4"
+      },
+      {
+        "path": "src/AspectN.Cecil.Fody/AspectN.Cecil.Fody.csproj",
+        "sha256": "b066c010e828687027e826d5ad2c6adc742aff669d7845d963a7e8bd6f433aea"
+      },
+      {
+        "path": "src/AspectN.Roslyn/AspectN.Roslyn.csproj",
+        "sha256": "a66ce5892ad3423aa1a9b1b61ad9570f65ca344e43146b4244982ae99041016b"
+      },
+      {
+        "path": "src/AspectN.Reflection/AspectN.Reflection.csproj",
+        "sha256": "ecc0c3fee341e9e808d72a52f7258792d2f4ebc5c4acc54605ec7fe4cfd498e8"
+      },
+      {
+        "path": "tests/AspectN.NetFramework.Tests/CompatibilityAssetTests.cs",
+        "sha256": "bd407219f650fed67f058561dde8b1f51c4d450b1fd22fa7b065853047aa75c9"
+      },
+      {
+        "path": "tests/AspectN.NetFramework.Tests/AspectN.NetFramework.Tests.csproj",
+        "sha256": "b8319378b74628b419afc126ba5c7ec0a5276b5e8585a624e4074a73d6745ffc"
+      },
+      {
+        "path": "tests/AspectN.Tests/Caching/CompiledPatternCacheTests.cs",
+        "sha256": "4f557b3e437fcf1f463aca24957925e5a5df16e9bf2582411d045e56222f547b"
+      },
+      {
+        "path": "tests/AspectN.Tests/ResourceContractTests.cs",
+        "sha256": "8323b13c60cea73b2891d36822e4431e23f557cbda9fe0bfd70a91b91dfd976f"
+      },
+      {
+        "path": "eng/verify-packages.ps1",
+        "sha256": "92528ec3a11633b181a2c333f9ed78bbd0b2be32a5ac2a8a82ac64ef072782df"
+      },
+      {
+        "path": "Directory.Build.props",
+        "sha256": "f3d3704488023c9b94d0cbf03b27b39b524484aa3bd4ece5cf7c6247831b8b5b"
+      },
+      {
+        "path": "Directory.Packages.props",
+        "sha256": "9d948b704945855977f066f31633d774f355f19b78514d8bc791109541746d36"
+      }
+    ]
+  },
+  "dependency_scope": {
+    "paths": [
+      "src/AspectN/Caching/CompiledPatternCache.cs",
+      "src/AspectN/AspectNEngine.cs",
+      "src/AspectN/ResourceLimit.cs",
+      "src/AspectN/AspectNParseOptions.cs",
+      "src/AspectN/AspectNCompilationOptions.cs",
+      "src/AspectN/AspectNMatchOptions.cs",
+      "src/AspectN/AspectN.csproj",
+      "src/AspectN.Cecil/AspectN.Cecil.csproj",
+      "src/AspectN.Cecil.Fody/AspectN.Cecil.Fody.csproj",
+      "src/AspectN.Roslyn/AspectN.Roslyn.csproj",
+      "src/AspectN.Reflection/AspectN.Reflection.csproj",
+      "tests/AspectN.NetFramework.Tests/CompatibilityAssetTests.cs",
+      "tests/AspectN.NetFramework.Tests/AspectN.NetFramework.Tests.csproj",
+      "tests/AspectN.Tests/Caching/CompiledPatternCacheTests.cs",
+      "tests/AspectN.Tests/ResourceContractTests.cs",
+      "eng/verify-packages.ps1",
+      "Directory.Build.props",
+      "Directory.Packages.props"
+    ],
+    "environment_keys": [
+      "os",
+      "sdk",
+      "runtime",
+      "execution_target",
+      "compatibility_target",
+      "build_configuration"
+    ]
+  },
+  "revalidation_conditions": "缓存键比较、核心编译引用/包依赖、SourceLink资产策略、SDK语言绑定或目标框架变化时重验；包消费者独立验证，不外推所有兼容输入/应用依赖组合。",
+  "scenario_assertions": [
+    {
+      "capability_id": "CROSS-LIFETIME-001",
+      "scenario_id": "S1",
+      "test_methods": [
+        "AspectN.Tests.ResourceContractTests|Compile_CacheKey_ContainsEveryParseAndMatchLimitByValue",
+        "AspectN.Tests.Caching.CompiledPatternCacheTests|Compile_CacheKeyIncludesAllCompilationInputs",
+        "AspectN.Tests.Caching.CompiledPatternCacheTests|Compile_ConcurrentIdenticalRequests_ReturnOnePlan",
+        "AspectN.Tests.Caching.CompiledPatternCacheTests|Compile_CapacityUsesLeastRecentlyUsedEviction",
+        "AspectN.Tests.Caching.CompiledPatternCacheTests|Compile_CanceledWhileWaitingForCacheLock_ThrowsAndKeepsCompletedPlan",
+        "AspectN.Tests.Caching.CompiledPatternCacheTests|GetOrAdd_ConcurrentMissCancellation_DoesNotCancelOtherCaller"
+      ]
+    },
+    {
+      "capability_id": "CROSS-COMPAT-001",
+      "scenario_id": "S3",
+      "test_methods": [
+        "AspectN.NetFramework.Tests.CompatibilityAssetTests|LoadedAssets_AllAdaptersActuallyUseNetstandard20",
+        "AspectN.NetFramework.Tests.CompatibilityAssetTests|LoadedAssets_CoreAssembly_DoesNotReferenceSystemMemory"
+      ]
+    },
+    {
+      "capability_id": "CROSS-COMPAT-001",
+      "scenario_id": "S4",
+      "test_methods": [
+        "AspectN.NetFramework.Tests.CompatibilityAssetTests|LoadedAssets_AllAdaptersActuallyUseNetstandard20",
+        "AspectN.NetFramework.Tests.CompatibilityAssetTests|LoadedAssets_CoreAssembly_DoesNotReferenceSystemMemory"
+      ]
+    }
+  ],
+  "test_runs": [
+    {
+      "path": "artifacts/package-runtime-dependencies/tests/runtime-dependencies_net10.0_20261024025826.trx",
+      "sha256": "11df0ba9ec8e7e4b98f374d0190d342a8b033384052002e099b231d8b368bac0",
+      "total": 1398,
+      "passed": 1398,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/package-runtime-dependencies/tests/runtime-dependencies_net10.0_20261024025828.trx",
+      "sha256": "2a8c30471e4af49108eb68a71e7cb258f1cf1168600cbaa1b3a32a3747445aa6",
+      "total": 232,
+      "passed": 232,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/package-runtime-dependencies/tests/runtime-dependencies_net10.0_20261024025830.trx",
+      "sha256": "a74f74620c30466af5e1130792f5eaaf28416de230550744ee253fded17b8c93",
+      "total": 110,
+      "passed": 110,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/package-runtime-dependencies/tests/runtime-dependencies_net10.0_20261024025835.trx",
+      "sha256": "6d1b7327d045c1c94f585b59f24567ae4f78f9fa393d36c0977c880da4a43a79",
+      "total": 30,
+      "passed": 30,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/package-runtime-dependencies/tests/runtime-dependencies_net10.0_20261024025911.trx",
+      "sha256": "2e7350553ad9cc148264effd84bcacbb55595f3b3528c7a383a7e30f2454da0c",
+      "total": 415,
+      "passed": 415,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/package-runtime-dependencies/tests/runtime-dependencies_net10.0_20261024025920.trx",
+      "sha256": "43268620d291b17f49c70b0b70c4b0d41cb6bfc813241b0a9b628e93f1ef20a3",
+      "total": 10,
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/package-runtime-dependencies/tests/runtime-dependencies_net10.0_20261024025922.trx",
+      "sha256": "1a77470b5748953e5228b749361b949e9111819003c8bc1cc57a9190a9fd61b3",
+      "total": 234,
+      "passed": 234,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/package-runtime-dependencies/tests/runtime-dependencies_net472_20261024025917.trx",
+      "sha256": "6ff6ee1f15eaa7996de49d009c5ac7bd11747f6c0ff4e978d487069409076858",
+      "total": 9,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    }
+  ]
+}
