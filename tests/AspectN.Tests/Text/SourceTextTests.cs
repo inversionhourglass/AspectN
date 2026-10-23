@@ -5,13 +5,13 @@ namespace AspectN.Tests.Text;
 public sealed class SourceTextTests
 {
     [Fact]
-    public void TextSpan_End_Is_Start_Plus_Length()
+    public void End_ValidSpan_ReturnsStartPlusLength()
     {
         Assert.Equal(7, new TextSpan(2, 5).End);
     }
 
     [Fact]
-    public void TextSpan_EqualValues_Are_Equal()
+    public void Equals_IdenticalComponents_ReturnsTrue()
     {
         Assert.Equal(new TextSpan(2, 5), new TextSpan(2, 5));
     }
@@ -25,7 +25,7 @@ public sealed class SourceTextTests
     }
 
     [Fact]
-    public void SourceText_From_Preserves_Content()
+    public void From_NonEmptyText_PreservesContent()
     {
         var source = SourceText.From("method(*)");
 

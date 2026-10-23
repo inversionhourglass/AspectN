@@ -42,7 +42,7 @@ public sealed class NetFrameworkSmokeTests
     }
 
     [Fact]
-    public void AdapterAssemblies_PublicEntryPoints_AreConsumableOnNet472()
+    public void AdapterAssemblies_TypeSystemEntryPoints_ArePublic()
     {
         Assert.True(typeof(Cecil.CecilTypeSystem).IsPublic);
         Assert.True(typeof(Roslyn.RoslynTypeSystem).IsPublic);

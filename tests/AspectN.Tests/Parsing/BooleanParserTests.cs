@@ -5,7 +5,7 @@ namespace AspectN.Tests.Parsing;
 public sealed class BooleanParserTests
 {
     [Fact]
-    public void ParseMemberExpression_WithoutOptions_UsesStandardLanguage()
+    public void ParseMemberExpression_ValidMethodSelector_HasNoDiagnostics()
     {
         var tree = AspectNParser.ParseMemberExpression("method(* A())");
 

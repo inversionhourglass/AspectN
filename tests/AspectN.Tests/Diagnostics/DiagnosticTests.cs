@@ -6,7 +6,7 @@ namespace AspectN.Tests.Diagnostics;
 public sealed class DiagnosticTests
 {
     [Fact]
-    public void Diagnostic_Stores_Stable_Code_And_Span()
+    public void Constructor_ValidArguments_PreservesValues()
     {
         var diagnostic = new AspectNDiagnostic(
             DiagnosticCodes.UnexpectedToken,
