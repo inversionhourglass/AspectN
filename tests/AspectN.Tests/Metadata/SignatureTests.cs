@@ -179,42 +179,6 @@ public sealed class SignatureTests
         Assert.NotEqual(MethodKind.InstanceConstructor, MethodKind.StaticConstructor);
     }
 
-    [Fact]
-    public void CorePublicApi_DoesNotExposeNativeBackendTypes()
-    {
-        string[] forbiddenPrefixes =
-        {
-            "Mono.Cecil",
-            "Microsoft.CodeAnalysis",
-            "System.Reflection"
-        };
-        var publicProperties = typeof(TypeSignature).Assembly
-            .GetExportedTypes()
-            .SelectMany(type => type.GetProperties(System.Reflection.BindingFlags.Public |
-                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static |
-                System.Reflection.BindingFlags.DeclaredOnly));
-
-        foreach (var property in publicProperties)
-        {
-            var exposedTypes = Flatten(property.PropertyType);
-            Assert.DoesNotContain(
-                exposedTypes,
-                type => forbiddenPrefixes.Any(
-                    prefix => type.FullName?.StartsWith(
-                        prefix,
-                        StringComparison.Ordinal) == true));
-        }
-    }
-
-    private static IEnumerable<Type> Flatten(Type type)
-    {
-        yield return type;
-        foreach (var argument in type.GetGenericArguments())
-        {
-            foreach (var nested in Flatten(argument)) yield return nested;
-        }
-    }
-
     private static NamedTypeSignature SystemType(
         string name,
         TypeKind kind = TypeKind.Class)

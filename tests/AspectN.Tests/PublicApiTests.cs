@@ -61,7 +61,7 @@ public sealed class PublicApiTests
                 Assert.All(additionalTypes, exposed => Assert.DoesNotContain(adapterPrefixes,
                     prefix => UsesNamespace(exposed, prefix)));
                 Assert.All(
-                    type.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly),
+                    GetPublicProperties(type),
                     property => Assert.DoesNotContain(
                         adapterPrefixes,
                         prefix => UsesNamespace(
@@ -89,6 +89,14 @@ public sealed class PublicApiTests
                                     prefix)));
                     });
             });
+    }
+
+    private static PropertyInfo[] GetPublicProperties(Type type)
+    {
+        // 保留原语法模型守卫的继承属性范围；其余类型继续只检查自身声明的属性。
+        var flags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static;
+        if (type.Namespace != "AspectN.Syntax") flags |= BindingFlags.DeclaredOnly;
+        return type.GetProperties(flags);
     }
 
     private static bool UsesNamespace(Type? type, string namespacePrefix)

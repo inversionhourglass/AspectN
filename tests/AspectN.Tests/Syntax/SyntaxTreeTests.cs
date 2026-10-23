@@ -122,32 +122,6 @@ public sealed class SyntaxTreeTests
         Assert.All(requiredTypes, type => Assert.True(type.IsSealed));
     }
 
-    [Fact]
-    public void SyntaxModel_PublicSurface_DoesNotReferenceBackendAssemblies()
-    {
-        var forbiddenPrefixes = new[]
-        {
-            "Mono.Cecil",
-            "Microsoft.CodeAnalysis",
-            "System.Reflection"
-        };
-        var syntaxTypes = typeof(SyntaxNode).Assembly
-            .GetExportedTypes()
-            .Where(type => type.Namespace == "AspectN.Syntax");
-
-        foreach (var type in syntaxTypes)
-        {
-            foreach (var property in type.GetProperties())
-            {
-                Assert.DoesNotContain(
-                    forbiddenPrefixes,
-                    prefix => property.PropertyType.FullName?.StartsWith(
-                        prefix,
-                        StringComparison.Ordinal) == true);
-            }
-        }
-    }
-
     private static MethodSelectorSyntax Selector(
         string name,
         int start,
