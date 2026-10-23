@@ -24,7 +24,7 @@
       "adapter": "core",
       "input_mode": "neutral",
       "entry_point": "AspectNParser / AspectNEngine.Compile*",
-      "conditions": "Lexer/LexerLiteral、SelectorParser、TypePatternParser、ParserRecovery及ModifierBoundaryTests的已执行输入；包含修饰符/连续类型名称、否定、复合权限与备选后的类型槽；仅核心解析与绑定；ResourceContractTests两种Parse/Compile预先取消优先于源码超限",
+      "conditions": "Lexer/LexerLiteral、SelectorParser、TypePatternParser、ParserRecovery、ModifierBoundaryTests及TypeSyntaxParityTests的已执行输入；包含修饰符/连续类型名称、否定、复合权限与备选后的类型槽；仅核心解析与绑定；ResourceContractTests两种Parse/Compile预先取消优先于源码超限",
       "target": "working-tree",
       "expected_behavior": "关键字和名称区分大小写；邻接规则保留；恢复给诊断但不能把有错误编译当作有效模式",
       "contract_status": "supported",
@@ -38,7 +38,8 @@
         "EV-20261020-003",
         "EV-20261022-201",
         "EV-20261022-202",
-        "EV-20261023-301"
+        "EV-20261023-301",
+        "EV-20261023-304"
       ],
       "unverified_notes": ""
     },
@@ -227,6 +228,8 @@ var invalid = engine.CompileMemberExpression("vendor.select(*)");
 ## 实现与证据
 
 [解析测试](../../../../tests/AspectN.Tests/Parsing/SelectorParserTests.cs)、[封闭语言测试](../../../../tests/AspectN.Tests/Binding/ClosedLanguageTests.cs)及[边界示例](../../../usage/examples/MatchingBoundaries/Program.cs)。场景证据只证明已执行输入，不证明任意恢复路径都完成审查。
+
+2026-10-23 的 RM-18 将两个入口重复的类型算法收敛到内部 TypeSyntaxParser，保留成员槽位、声明类型分隔点、ref/tasklike 解释及各自资源收费顺序。S1 由 EV-20261023-304 提供当前解析回归；[两入口对照测试](../../../../tests/AspectN.Tests/Parsing/TypeSyntaxParityTests.cs)和[处置记录](../../../reviews/2026-10-23-rm18-shared-type-parser.md)区分共同语法、合法上下文差异与有限探针范围。语言、公共 API 及 N/A 未改变，历史证据保留。
 
 S1 的修饰符边界回归见 [ModifierBoundaryTests](../../../../tests/AspectN.Tests/Parsing/ModifierBoundaryTests.cs)。[C03 修复记录](../../../reviews/2026-10-20-c03-modifier-boundaries.md)另列真实后端匹配对照，其通过不扩大本条目只覆盖解析/绑定的入口范围或当时四项 N/A；[Finding](../../../reviews/findings/FND-20261020-003.md)记录原始误解析及修复。
 

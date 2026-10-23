@@ -1,0 +1,489 @@
+{
+  "schema_version": 1,
+  "id": "EV-20261023-304",
+  "method": "automated",
+  "scenario_refs": [
+    {
+      "scenario_id": "S1",
+      "capability_id": "SYN-GRAMMAR-001"
+    },
+    {
+      "scenario_id": "S9",
+      "capability_id": "CROSS-RESOURCES-001"
+    }
+  ],
+  "oracle_refs": [
+    {
+      "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+      "section": "3 / 4 / 5 / 6 / 7 / 11 / 12 / 21"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-10-22-configurable-resource-limits-design.md",
+      "section": "2—6；前端配置"
+    },
+    {
+      "path": "docs/reviews/2026-10-23-rm18-shared-type-parser.md",
+      "section": "共同算法与入口差异 / 回归与受控变异 / 当前验证"
+    }
+  ],
+  "procedure": "先在原实现执行TypeSyntaxParityTests：初始76项、最终86项通过。临时将独立入口OR优先级改为2时2失败74通过，恢复后再提取共享核心，86项通过。完整验证：dotnet build AspectN.sln -c Release --no-restore -m:1 -nr:false -p:UseSharedCompilation=false；dotnet test AspectN.sln -c Release --no-build --no-restore -m:1 -nr:false --logger trx --results-directory artifacts/rm18/tests -v:minimal。另对相同2160项记录比较JSONL，并直跑FrontendProbe的四种Core形状，深度1000。",
+  "result": "passed",
+  "recorded_on": "2026-10-23",
+  "environment": {
+    "os": "Windows 11 25H2",
+    "sdk": "10.0.401",
+    "runtime": "10.0.12",
+    "execution_target": "net10.0",
+    "compatibility_target": "net472",
+    "build_configuration": "Release",
+    "notes": "生产netstandard2.0/net10.0均编译；完整2429项通过，0失败/0跳过。net472测试工程有既有MSB3277依赖冲突告警。FrontendProbe四个独立进程使用256KiB线程，父进程各30秒期限。"
+  },
+  "code_state": {
+    "head": "835709d2f5986c3d24ecbc020c857eb7ed3361b9",
+    "dirty": true,
+    "files": [
+      {
+        "path": "src/AspectN/Parsing/TypeSyntaxParser.cs",
+        "sha256": "63b8540040d64cf87bce4856b2252a68367ddfe81b6a612bba7fa37435c80be8"
+      },
+      {
+        "path": "src/AspectN/Parsing/TypePatternParser.cs",
+        "sha256": "b58b8ab39bafc0f9e571e3ea1a92c4eed86bb0e8d077490a6ebe858c81463478"
+      },
+      {
+        "path": "src/AspectN/Parsing/SelectorParser.cs",
+        "sha256": "a47a1a5f09c4669b4ae039d998488c244e1919a7c40bd52e6f89a40c03d40c71"
+      },
+      {
+        "path": "src/AspectN/Parsing/SelectorParser.MemberPaths.cs",
+        "sha256": "79fbf28ce1711d225fe30570d0a84d6865a14e54d4f56eeb889a0519ceef268e"
+      },
+      {
+        "path": "src/AspectN/Parsing/Parser.cs",
+        "sha256": "b2e6befca666ec6b1dfb0b9439d11eb18554e37e6200149af4dca6009caaf129"
+      },
+      {
+        "path": "src/AspectN/Parsing/Parser.Selectors.cs",
+        "sha256": "0faf5a7259e0cf03f4bdb1aa416bc503ea40db45ee925355322f6dcaa2523c50"
+      },
+      {
+        "path": "src/AspectN/Parsing/ParseContext.cs",
+        "sha256": "8535a0c1c92da82fd64369a0d5d291ff76f2b299bf456a115171971f913f5d83"
+      },
+      {
+        "path": "src/AspectN/Parsing/ParserDepthGuard.cs",
+        "sha256": "d5049f5c93de6c9a5da6af122e1e17c92240508b1ec34a35ee5ceb0fbdd99c31"
+      },
+      {
+        "path": "src/AspectN/Parsing/TypePatternSyntaxFacts.cs",
+        "sha256": "740d36ed31052dba7b51eb5c0389bcd3423ba6b77df338821d77ae79bd5bca82"
+      },
+      {
+        "path": "src/AspectN/Parsing/Lexer.cs",
+        "sha256": "ddf9b9581066e111b0163677add4eeedaec220019d214fe58e01326d8700db32"
+      },
+      {
+        "path": "src/AspectN/Execution/WorkStack.cs",
+        "sha256": "71b3cc8957b678d72de9981be5582fb6ad338f507a6ede17eac4d129d24be6fa"
+      },
+      {
+        "path": "src/AspectN/AspectNParser.cs",
+        "sha256": "885f771803ad5fc3a3b798b25891be772c47cd6d1ab1562cdc01a4b663965117"
+      },
+      {
+        "path": "src/AspectN/AspectNParseOptions.cs",
+        "sha256": "63d752311307afb08017eecdd0a6871d64f3a61bd913ebd1a827431316ffe188"
+      },
+      {
+        "path": "tests/AspectN.Tests/Parsing/TypeSyntaxParityTests.cs",
+        "sha256": "3c788a26b3e6eeb23c3d03cba266ec790b0a36152df6aa56557590c5b7ba0e8b"
+      },
+      {
+        "path": "tests/AspectN.Tests/Parsing/TypePatternParserTests.cs",
+        "sha256": "7b4e0419887c21477df95c04dfdd82b27e116bd71120d6647571b4d153839f90"
+      },
+      {
+        "path": "tests/AspectN.Tests/Parsing/SelectorParserTests.cs",
+        "sha256": "79420f13a951b17e91f1fdd7d7e7ad9b10c8994cb024fded15f7ead5d0948aee"
+      },
+      {
+        "path": "tests/AspectN.Tests/Parsing/ParserRecoveryTests.cs",
+        "sha256": "b51fdad69b4d41f444282b7c100b8e59089ef3956f46daf7cb9d7980f18769bd"
+      },
+      {
+        "path": "tests/AspectN.Tests/Parsing/ModifierBoundaryTests.cs",
+        "sha256": "febf8ec58e913c800390a1ee94b0d378a66d41f135653dffaf8a08b602487c69"
+      },
+      {
+        "path": "tests/AspectN.Tests/Fuzz/SyntaxReparseTests.cs",
+        "sha256": "1ce58bd8638fb9b407a8dd79faef355b3e596ab5cf526a14286ccb37b999fa7e"
+      },
+      {
+        "path": "tests/AspectN.Tests/Fuzz/InputDepthTests.cs",
+        "sha256": "fccdcf99d7606f9deb4a12a03cf6a041ee5c7193624a2523cf64addf61d4a1b9"
+      },
+      {
+        "path": "tests/AspectN.Tests/ResourceOptionsTests.cs",
+        "sha256": "8ffe107545d1966e62aa09b2ff7d830e024b5945f70904b037cb6c8ad7337f49"
+      },
+      {
+        "path": "tests/AspectN.Tests/ResourceContractTests.cs",
+        "sha256": "8323b13c60cea73b2891d36822e4431e23f557cbda9fe0bfd70a91b91dfd976f"
+      },
+      {
+        "path": "tests/AspectN.Tests/ResourceXmlExampleTests.cs",
+        "sha256": "6309ef41960a494c13091bfd22c194669ec086fa5d202f242889c4cf1b10491c"
+      },
+      {
+        "path": "tests/AspectN.MappingDepthProbe/FrontendProbe.cs",
+        "sha256": "1145f7a33cd2c812def5981f73e9a7437ba4d134872d7333f257a151896800da"
+      },
+      {
+        "path": "tests/AspectN.MappingDepthProbe/Program.cs",
+        "sha256": "d9315ca5ad100c602240f16b0e1afbbb38056a1c71e9ac20a2f490923febcafb"
+      },
+      {
+        "path": "src/AspectN/AspectN.csproj",
+        "sha256": "e07ca04e5e30610715a0e215f5250944c2454ac581bb9e6996a977ef2101b2fa"
+      },
+      {
+        "path": "tests/AspectN.Tests/AspectN.Tests.csproj",
+        "sha256": "3843c220293ff07b304dfcb8db2ccb82e57d423ac384ade1080a479fc2699b28"
+      },
+      {
+        "path": "Directory.Build.props",
+        "sha256": "590c968a6d115bf1ed04323e48b3dd8cfcc5a7938b7fdee2a133d50d5a5d97f5"
+      },
+      {
+        "path": "Directory.Packages.props",
+        "sha256": "9d948b704945855977f066f31633d774f355f19b78514d8bc791109541746d36"
+      },
+      {
+        "path": "global.json",
+        "sha256": "6cd80ed6f7a93e76c20e47164e3bfedfddc1b42b33519b2cd2dee6febff4e836"
+      },
+      {
+        "path": "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+        "sha256": "cd394c152e10a687ce140f401b4e9bbd4ba5a6b1c2b72c29b601f0211cff916d"
+      },
+      {
+        "path": "docs/superpowers/specs/2026-10-22-configurable-resource-limits-design.md",
+        "sha256": "343cb0f6e8d2bc2bc6db9f78d47592320f31f489486e723da49df35935dc7e3f"
+      }
+    ]
+  },
+  "dependency_scope": {
+    "paths": [
+      "src/AspectN/Parsing/TypeSyntaxParser.cs",
+      "src/AspectN/Parsing/TypePatternParser.cs",
+      "src/AspectN/Parsing/SelectorParser.cs",
+      "src/AspectN/Parsing/SelectorParser.MemberPaths.cs",
+      "src/AspectN/Parsing/Parser.cs",
+      "src/AspectN/Parsing/Parser.Selectors.cs",
+      "src/AspectN/Parsing/ParseContext.cs",
+      "src/AspectN/Parsing/ParserDepthGuard.cs",
+      "src/AspectN/Parsing/TypePatternSyntaxFacts.cs",
+      "src/AspectN/Parsing/Lexer.cs",
+      "src/AspectN/Execution/WorkStack.cs",
+      "src/AspectN/AspectNParser.cs",
+      "src/AspectN/AspectNParseOptions.cs",
+      "tests/AspectN.Tests/Parsing/TypeSyntaxParityTests.cs",
+      "tests/AspectN.Tests/Parsing/TypePatternParserTests.cs",
+      "tests/AspectN.Tests/Parsing/SelectorParserTests.cs",
+      "tests/AspectN.Tests/Parsing/ParserRecoveryTests.cs",
+      "tests/AspectN.Tests/Parsing/ModifierBoundaryTests.cs",
+      "tests/AspectN.Tests/Fuzz/SyntaxReparseTests.cs",
+      "tests/AspectN.Tests/Fuzz/InputDepthTests.cs",
+      "tests/AspectN.Tests/ResourceOptionsTests.cs",
+      "tests/AspectN.Tests/ResourceContractTests.cs",
+      "tests/AspectN.Tests/ResourceXmlExampleTests.cs",
+      "tests/AspectN.MappingDepthProbe/FrontendProbe.cs",
+      "tests/AspectN.MappingDepthProbe/Program.cs",
+      "src/AspectN/AspectN.csproj",
+      "tests/AspectN.Tests/AspectN.Tests.csproj",
+      "Directory.Build.props",
+      "Directory.Packages.props",
+      "global.json",
+      "docs/superpowers/specs/2026-07-31-aspectn-language-spec.md",
+      "docs/superpowers/specs/2026-10-22-configurable-resource-limits-design.md"
+    ],
+    "environment_keys": [
+      "os",
+      "sdk",
+      "runtime",
+      "execution_target",
+      "build_configuration"
+    ]
+  },
+  "covered_assertions": [
+    {
+      "scenario_id": "S1",
+      "test_methods": [
+        "AspectN.Tests.Fuzz.SyntaxReparseTests|Parse_CanonicalSource_ReparseOfSameTextPreservesSyntaxShape",
+        "AspectN.Tests.Parsing.AttributeExclusionTests|CompileMemberExpression_AccessorAttributePosition_RequiresSelectorComposition",
+        "AspectN.Tests.Parsing.AttributeExclusionTests|CompileMemberExpression_LongAttributePosition_RejectsWithMigration",
+        "AspectN.Tests.Parsing.BooleanParserTests|ParseMemberExpression_DoubleNegation_PreservesRecoveryNodesAndReportsError",
+        "AspectN.Tests.Parsing.BooleanParserTests|ParseMemberExpression_OrThenAndAndNot_UsesSpecifiedPrecedence",
+        "AspectN.Tests.Parsing.BooleanParserTests|ParseMemberExpression_Parentheses_OverridePrecedence",
+        "AspectN.Tests.Parsing.BooleanParserTests|ParseMemberExpression_ValidMethodSelector_HasNoDiagnostics",
+        "AspectN.Tests.Parsing.GenericPatternSyntaxTests|ParseTypePattern_FixedArityCommas_RemainSyntaxChildren",
+        "AspectN.Tests.Parsing.LexerLiteralTests|Lex_BackslashBeforePhysicalNewline_StopsAtTheLine",
+        "AspectN.Tests.Parsing.LexerLiteralTests|Lex_InvalidUnicodeEscape_DoesNotConsumeClosingQuote",
+        "AspectN.Tests.Parsing.LexerLiteralTests|Lex_NonAsciiDigit_ReportsInvalidCharacter",
+        "AspectN.Tests.Parsing.LexerLiteralTests|Lex_UnicodeEscape_DecodesCSharpString",
+        "AspectN.Tests.Parsing.LexerTests|Lex_BadCharacter_EmitsBadTokenAndDiagnostic",
+        "AspectN.Tests.Parsing.LexerTests|Lex_CoreToken_ReturnsExpectedKinds",
+        "AspectN.Tests.Parsing.LexerTests|Lex_EndOfInput_AlwaysEmitsEndOfFile",
+        "AspectN.Tests.Parsing.LexerTests|Lex_EscapedString_DecodesValueAndPreservesText",
+        "AspectN.Tests.Parsing.LexerTests|Lex_LetterNumberIdentifier_PreservesSingleToken",
+        "AspectN.Tests.Parsing.LexerTests|Lex_SignedInteger_StoresNumericValue",
+        "AspectN.Tests.Parsing.LexerTests|Lex_SinglePipe_EmitsPipeTokenWithoutDiagnostic",
+        "AspectN.Tests.Parsing.LexerTests|Lex_Tokens_PreserveExactTextAndSpan",
+        "AspectN.Tests.Parsing.LexerTests|Lex_UnicodeIdentifier_PreservesOriginalText",
+        "AspectN.Tests.Parsing.LexerTests|Lex_UnterminatedString_ReportsDiagnosticWithoutThrowing",
+        "AspectN.Tests.Parsing.LexerTests|LexRegexBody_NestedCharacterClass_ReportsUnsupportedFeature",
+        "AspectN.Tests.Parsing.LexerTests|LexRegexBody_NestedGroupsClassesAndEscapes_LeavesOuterCloseParen",
+        "AspectN.Tests.Parsing.LexerTests|LexRegexBody_UnmatchedCharacterClass_ReportsDiagnostic",
+        "AspectN.Tests.Parsing.ModifierBoundaryTests|CompileMemberExpression_InvalidModifierSyntax_RemainsInvalid",
+        "AspectN.Tests.Parsing.ModifierBoundaryTests|ParseMemberExpression_KeywordBoundary_PreservesTypeSlot",
+        "AspectN.Tests.Parsing.ParserRecoveryTests|ParseMemberExpression_BadCharacter_PreservesLexicalDiagnostic",
+        "AspectN.Tests.Parsing.ParserRecoveryTests|ParseMemberExpression_BooleanExpressionWithTail_PreservesExpressionTree",
+        "AspectN.Tests.Parsing.ParserRecoveryTests|ParseMemberExpression_DuplicateBinaryOperator_ReportsBothRecoveryPoints",
+        "AspectN.Tests.Parsing.ParserRecoveryTests|ParseMemberExpression_EmptyTaskLike_PreservesBoundaryAndDiagnostic",
+        "AspectN.Tests.Parsing.ParserRecoveryTests|ParseMemberExpression_IncompleteSelector_PreservesDistinctMissingComponents",
+        "AspectN.Tests.Parsing.ParserRecoveryTests|ParseMemberExpression_MalformedInput_ReturnsRootAndStableDiagnostics",
+        "AspectN.Tests.Parsing.ParserRecoveryTests|ParseMemberExpression_MalformedSignature_ReturnsDiagnostics",
+        "AspectN.Tests.Parsing.ParserRecoveryTests|ParseMemberExpression_MissingClosingParenthesisBeforeTail_PreservesBothDiagnostics",
+        "AspectN.Tests.Parsing.ParserRecoveryTests|ParseMemberExpression_NamespaceEllipsisWithoutMemberSeparator_ReportsOneError",
+        "AspectN.Tests.Parsing.ParserRecoveryTests|ParseMemberExpression_OnlyTrailingWhitespace_HasNoDiagnostics",
+        "AspectN.Tests.Parsing.ParserRecoveryTests|ParseMemberExpression_TrailingInput_ReportsOneDiagnosticCoveringAllTokens",
+        "AspectN.Tests.Parsing.ParserRecoveryTests|ParseMemberExpression_TrailingInput_StillConsumesSyntaxNodeBudget",
+        "AspectN.Tests.Parsing.ParserRecoveryTests|ParseMemberExpression_TrailingInput_StillConsumesTokenBudget",
+        "AspectN.Tests.Parsing.ParserRecoveryTests|ParseMemberExpression_TrailingInputWithCanceledToken_ThrowsCancellation",
+        "AspectN.Tests.Parsing.ParserRecoveryTests|ParseMemberExpression_TrailingLexicalError_PreservesLexicalDiagnostics",
+        "AspectN.Tests.Parsing.RegexParserTests|ParseMemberExpression_InvalidControlEscape_PreservesDelimiterAndFollowingSelector",
+        "AspectN.Tests.Parsing.RegexParserTests|ParseMemberExpression_RegexNestedGroupsAndClass_LeavesSelectorClose",
+        "AspectN.Tests.Parsing.RegexParserTests|ParseMemberExpression_RegexSelector_PreservesBody",
+        "AspectN.Tests.Parsing.RegexParserTests|ParseMemberExpression_RegexSubsetInConjunction_PreservesBodyAndOuterBoundary",
+        "AspectN.Tests.Parsing.RegexParserTests|ParseMemberExpression_UnterminatedRegex_PreservesLexicalDiagnostic",
+        "AspectN.Tests.Parsing.RegexParserTests|ParseMemberExpression_ValidControlEscape_PreservesOuterBoundary",
+        "AspectN.Tests.Parsing.SelectorModifierTests|CompileMemberExpression_AsyncInOrdinaryName_PreservesIdentifier",
+        "AspectN.Tests.Parsing.SelectorModifierTests|CompileMemberExpression_AsyncModifier_RejectsUnsupportedModifier",
+        "AspectN.Tests.Parsing.SelectorParserTests|ParseMemberExpression_AccessibilityAlternation_HasNoDiagnostics",
+        "AspectN.Tests.Parsing.SelectorParserTests|ParseMemberExpression_AssignableSuffixWithoutMemberSeparator_ReportsDiagnostic",
+        "AspectN.Tests.Parsing.SelectorParserTests|ParseMemberExpression_AsyncInStandard_ReportsUnexpected",
+        "AspectN.Tests.Parsing.SelectorParserTests|ParseMemberExpression_AttributePositionSpaceForm_HasNoDiagnostics",
+        "AspectN.Tests.Parsing.SelectorParserTests|ParseMemberExpression_CompoundAccessibilityInStandard_ReportsMigration",
+        "AspectN.Tests.Parsing.SelectorParserTests|ParseMemberExpression_ExecutionGenericClauseThenAssignableSuffix_HasNoDiagnostics",
+        "AspectN.Tests.Parsing.SelectorParserTests|ParseMemberExpression_GenericClauseThenAssignableSuffix_HasNoDiagnostics",
+        "AspectN.Tests.Parsing.SelectorParserTests|ParseMemberExpression_InvalidAlternation_ReportsUnexpected",
+        "AspectN.Tests.Parsing.SelectorParserTests|ParseMemberExpression_LeadingMemberSeparator_ReportsDiagnostic",
+        "AspectN.Tests.Parsing.SelectorParserTests|ParseMemberExpression_LongAttributePosition_ReportsMigration",
+        "AspectN.Tests.Parsing.SelectorParserTests|ParseMemberExpression_MissingNameAfterSeparator_ReportsDiagnostic",
+        "AspectN.Tests.Parsing.SelectorParserTests|ParseMemberExpression_NegativeParameterIndex_ReportsDiagnostic",
+        "AspectN.Tests.Parsing.SelectorParserTests|ParseMemberExpression_NonNegativeParameterIndex_HasNoDiagnostics",
+        "AspectN.Tests.Parsing.SelectorParserTests|ParseMemberExpression_SeparatedNegatedRef_ReportsInvalidRefKind",
+        "AspectN.Tests.Parsing.SelectorParserTests|ParseMemberExpression_SpacedCompoundAccessibility_HasNoDiagnostics",
+        "AspectN.Tests.Parsing.SelectorParserTests|ParseMemberExpression_SpaceGluedMemberName_ReportsDiagnostic",
+        "AspectN.Tests.Parsing.SelectorParserTests|ParseMemberExpression_StandardSelector_CreatesExpectedSyntax",
+        "AspectN.Tests.Parsing.SelectorParserTests|ParseMemberExpression_UnknownSelector_ReportsDiagnostic",
+        "AspectN.Tests.Parsing.SelectorParserTests|ParseMemberExpression_WellFormedMemberPath_HasNoDiagnostics",
+        "AspectN.Tests.Parsing.SelectorParserTests|ParseMemberExpression_WhitespaceAroundMemberSeparator_ReportsDiagnostic",
+        "AspectN.Tests.Parsing.TypePatternParserTests|ParseTypePattern_AssignableSuffix_WrapsNamedPattern",
+        "AspectN.Tests.Parsing.TypePatternParserTests|ParseTypePattern_BareTaskLike_HasNoResultType",
+        "AspectN.Tests.Parsing.TypePatternParserTests|ParseTypePattern_GenericSlotForms_Accepted",
+        "AspectN.Tests.Parsing.TypePatternParserTests|ParseTypePattern_GenericWildcardForm_StoresExplicitArity",
+        "AspectN.Tests.Parsing.TypePatternParserTests|ParseTypePattern_InvalidStandardForm_ReportsDiagnostic",
+        "AspectN.Tests.Parsing.TypePatternParserTests|ParseTypePattern_NamespaceWildcards_PreservesSegmentsAndSeparators",
+        "AspectN.Tests.Parsing.TypePatternParserTests|ParseTypePattern_NestedGenericType_PreservesSlashAndArguments",
+        "AspectN.Tests.Parsing.TypePatternParserTests|ParseTypePattern_NullableThenArray_PreservesSuffixOrderAndRank",
+        "AspectN.Tests.Parsing.TypePatternParserTests|ParseTypePattern_RefReadonly_PreservesTypeUseAndRejectsStandaloneRefKind",
+        "AspectN.Tests.Parsing.TypePatternParserTests|ParseTypePattern_TaskLike_CapturesResultType",
+        "AspectN.Tests.Parsing.TypePatternParserTests|ParseTypePattern_Tuple_CapturesElements",
+        "AspectN.Tests.Parsing.TypePatternParserTests|ParseTypePattern_Variable_CapturesExplicitIdentifier",
+        "AspectN.Tests.Parsing.TypePatternRecoveryTests|ParseMemberExpression_InvalidTuple_PreservesClosingTokenAndFollowingSelector",
+        "AspectN.Tests.Parsing.TypePatternRecoveryTests|ParseTypePattern_BareRefNameOutsideRoot_RemainsValid",
+        "AspectN.Tests.Parsing.TypePatternRecoveryTests|ParseTypePattern_DotAfterNestedSeparator_ReportsTheSeparator",
+        "AspectN.Tests.Parsing.TypePatternRecoveryTests|ParseTypePattern_NestedRefKindPrefixes_ReportInvalidRefKind",
+        "AspectN.Tests.Parsing.TypePatternRecoveryTests|ParseTypePattern_RefKindPrefixes_RejectsConsistently",
+        "AspectN.Tests.Parsing.TypeSyntaxParityTests|Parse_CommonTypeInReturnOrParameter_PreservesSameSyntax",
+        "AspectN.Tests.Parsing.TypeSyntaxParityTests|Parse_DeclaringTypeBoundary_PreservesTypeAndFollowingMember",
+        "AspectN.Tests.Parsing.TypeSyntaxParityTests|Parse_InvalidCommonType_PreservesDiagnosticsAndRecovery",
+        "AspectN.Tests.Parsing.TypeSyntaxParityTests|Parse_NestedTypesAndMethodArguments_PreservesParametersAndFollowingSelector",
+        "AspectN.Tests.Parsing.TypeSyntaxParityTests|Parse_NodeBudgetBoundary_PreservesExistingReservationCount",
+        "AspectN.Tests.Parsing.TypeSyntaxParityTests|Parse_RefAnnotation_RemainsSpecificToMemberTypeUse",
+        "AspectN.Tests.Parsing.TypeSyntaxParityTests|Parse_TaskLikeInDeclaringType_RemainsNameWhileReturnKeepsSpecialMeaning",
+        "AspectN.Tests.Parsing.TypeUseEntryTests|CompileMemberExpression_ConsecutiveNullableSuffixes_ReportsInvalidTypeSuffix",
+        "AspectN.Tests.Parsing.TypeUseEntryTests|CompileTypePattern_ConsecutiveNullableSuffixes_ReportsInvalidTypeSuffix",
+        "AspectN.Tests.Parsing.TypeUseEntryTests|CompileTypePattern_SeparatedNullableSuffixes_RemainsValid",
+        "AspectN.Tests.Parsing.TypeUseEntryTests|ParseTypePattern_NegatedRefAnnotation_ReportsInvalidRefKind"
+      ],
+      "capability_id": "SYN-GRAMMAR-001"
+    },
+    {
+      "scenario_id": "S9",
+      "test_methods": [
+        "AspectN.Tests.Fuzz.InputDepthTests|AreEqual_OneHundredThousandArrayLayers_UsesBoundedCallStack",
+        "AspectN.Tests.Fuzz.InputDepthTests|Match_DeepAttribute_ReturnsUnknownWithDepthDiagnostic",
+        "AspectN.Tests.Fuzz.InputDepthTests|Match_DeepCandidate_ReturnsUnknownWithDepthDiagnostic",
+        "AspectN.Tests.Fuzz.InputDepthTests|Match_SharedCandidateGraph_TraversesEachReferenceOnce",
+        "AspectN.Tests.Fuzz.InputDepthTests|Match_SharedNodeReachedOnDeeperPath_StillChecksDepth",
+        "AspectN.Tests.Fuzz.InputDepthTests|ParseMemberExpression_DeepParentheses_ReturnsDepthDiagnostic",
+        "AspectN.Tests.Fuzz.InputDepthTests|ParseMemberExpression_LongBooleanChain_ReturnsDepthDiagnostic",
+        "AspectN.Tests.Fuzz.InputDepthTests|ParseTypePattern_DeepGenericOrArray_ReturnsDepthDiagnostic",
+        "AspectN.Tests.Fuzz.InputDepthTests|StructuralComparison_SharedTypeGraph_DoesNotExpandEveryPath",
+        "AspectN.Tests.Fuzz.InputDepthTests|TypeIdentity_DeepContainingTypes_EqualityHashAndNameUseBoundedCallStack",
+        "AspectN.Tests.Parsing.TypeSyntaxParityTests|Parse_NodeBudgetBoundary_PreservesExistingReservationCount",
+        "AspectN.Tests.ResourceContractTests|Compile_CacheKey_ContainsEveryParseAndMatchLimitByValue",
+        "AspectN.Tests.ResourceContractTests|Compile_MethodSlots_UseIndependentBindingLimit",
+        "AspectN.Tests.ResourceContractTests|Limits_InvalidFiniteValuesAndDefaultAccess_Reject",
+        "AspectN.Tests.ResourceContractTests|Options_EveryCount_AcceptsFiniteAndUnlimitedAndRejectsInvalid",
+        "AspectN.Tests.ResourceContractTests|Parse_ParserDepth_CountsLogicalFrames",
+        "AspectN.Tests.ResourceContractTests|Parse_SourceBoundary_IncludesWhitespaceEscapesAndSurrogatePairs",
+        "AspectN.Tests.ResourceContractTests|Parse_SyntaxDepth_CountsRootAndTokens",
+        "AspectN.Tests.ResourceContractTests|Parse_SyntaxNodes_CountsTokenEofAndRoot",
+        "AspectN.Tests.ResourceContractTests|Parse_TokenBoundary_ExcludesEof",
+        "AspectN.Tests.ResourceContractTests|ParseAndCompile_PreCanceled_PrioritizeCancellationOverSourceLimit",
+        "AspectN.Tests.ResourceOptionsTests|Compilation_Options_ExposeOnlyModeAndMatchOptions",
+        "AspectN.Tests.ResourceOptionsTests|Compile_RaisedGenericSlots_AreReadFromSyntaxTree",
+        "AspectN.Tests.ResourceOptionsTests|Engine_CompileEntry_ExposesIndependentOptionsAndCancellation",
+        "AspectN.Tests.ResourceOptionsTests|Options_InvalidDefaultLimit_ThrowsAtConstruction",
+        "AspectN.Tests.ResourceOptionsTests|Parse_DefaultSourceLimit_Rejects257CodeUnits",
+        "AspectN.Tests.ResourceOptionsTests|Parse_LoweredTokenOrNodeLimit_StopsWithResourceDiagnostic",
+        "AspectN.Tests.ResourceOptionsTests|Parse_RaisedTypeDepthAndSource_AllowBeyondOldConstants",
+        "AspectN.Tests.ResourceOptionsTests|Parse_SourceBoundary_CountsFullUtf16Input",
+        "AspectN.Tests.ResourceOptionsTests|PublicOptions_ThreeIndependentStages_AreAvailable",
+        "AspectN.Tests.ResourceOptionsTests|TypeSystem_AreEqual_ExposesOrdinaryCancellation",
+        "AspectN.Tests.ResourceXmlExampleTests|GenericSlots_OuterTypeSlots_AreIndependentOfMethodSlots",
+        "AspectN.Tests.ResourceXmlExampleTests|MappingAndMatchOptions_XmlExamples_KeepIndependentQuotas",
+        "AspectN.Tests.ResourceXmlExampleTests|ParseOptions_XmlExamples_CompileAndRespectBoundaries"
+      ],
+      "capability_id": "CROSS-RESOURCES-001"
+    }
+  ],
+  "test_runs": [
+    {
+      "path": "artifacts/rm18/tests/Administrator_LAPTOP-ERQOPF47_2026-10-23_16_04_45_net10.0.trx",
+      "sha256": "dc1cca682a7e5fdb45be1a37ffbe8e645f358a90fb501668e405692681023c5c",
+      "total": 1391,
+      "passed": 1391,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/rm18/tests/Administrator_LAPTOP-ERQOPF47_2026-10-23_16_04_49_net10.0.trx",
+      "sha256": "e1df49d2d08f7e8b18571879fa5b51d3411add67015503798e696c853422c7a8",
+      "total": 232,
+      "passed": 232,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/rm18/tests/Administrator_LAPTOP-ERQOPF47_2026-10-23_16_04_51_net10.0.trx",
+      "sha256": "d84fdc5bcd5dbc0ea22253153ae2bc9dcacc2a6c9dd50902d0f1d5712ce49c5a",
+      "total": 110,
+      "passed": 110,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/rm18/tests/Administrator_LAPTOP-ERQOPF47_2026-10-23_16_04_53_net10.0.trx",
+      "sha256": "58f8d4cec9d540a3fc77429be657d021fc5308f0c6a7044d64fa3cd83977b554",
+      "total": 30,
+      "passed": 30,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/rm18/tests/Administrator_LAPTOP-ERQOPF47_2026-10-23_16_04_57_net10.0.trx",
+      "sha256": "3ed0dd90ba4a26f213cf180f534cfe32cc81aead54bbbf3a59ee966b59918b85",
+      "total": 415,
+      "passed": 415,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/rm18/tests/Administrator_LAPTOP-ERQOPF47_2026-10-23_16_05_28_net472.trx",
+      "sha256": "ad806a2fbc9ad5be93a5a5ecba575b9102cf96809ed4c1f4c3c51ef7e0deca4d",
+      "total": 8,
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/rm18/tests/Administrator_LAPTOP-ERQOPF47_2026-10-23_16_05_31_net10.0.trx",
+      "sha256": "b0d865769428f3e3727896f1c590451fafacff4e05a951b2779aea0f73fa99b3",
+      "total": 9,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "artifacts/rm18/tests/Administrator_LAPTOP-ERQOPF47_2026-10-23_16_05_33_net10.0.trx",
+      "sha256": "5efbf4c1357d8d6841b0d7072b22a2c694ce1f272c58cbb05f261588018d8fa6",
+      "total": 234,
+      "passed": 234,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "probe": {
+    "count": 2160,
+    "entries": [
+      "type",
+      "return",
+      "parameter"
+    ],
+    "default_cases": 120,
+    "node_cases": 960,
+    "token_cases": 960,
+    "depth_cases": 120,
+    "before_path": "artifacts/rm18/probe-before.jsonl",
+    "after_path": "artifacts/rm18/probe-after.jsonl",
+    "before_sha256": "59d3eb7f2ccaf9dc2de61c57abb2da5b63533cda808849ad73783e4d776e5228",
+    "after_sha256": "59d3eb7f2ccaf9dc2de61c57abb2da5b63533cda808849ad73783e4d776e5228",
+    "program_path": "artifacts/rm18/probe/Program.cs",
+    "program_sha256": "a1b8c93df130b7a716832c9de8998b98c567c5b83bf1d718e12fc233cc66f429",
+    "notes": "每条保存语法树摘要和完整诊断；前后逐字节相同。探针不含声明类型和成员名位置，这些由持久测试及完整矩阵覆盖。"
+  },
+  "frontend_probes": [
+    {
+      "shape": "parse-generic",
+      "depth": 1000,
+      "stack_bytes": 262144,
+      "exit_code": 0,
+      "marker": "mapped:Core:parse-generic:1000",
+      "stdout": "artifacts/rm18/frontend-parse-generic.log",
+      "sha256": "c844c799e21614081c41d40842253b44619bb2f621076b04f0e2286c35e605a8"
+    },
+    {
+      "shape": "compile-generic",
+      "depth": 1000,
+      "stack_bytes": 262144,
+      "exit_code": 0,
+      "marker": "mapped:Core:compile-generic:1000",
+      "stdout": "artifacts/rm18/frontend-compile-generic.log",
+      "sha256": "72ce850e177fbaa6d4d0c944251c191c3d8129b107ede088c8000d7338395639"
+    },
+    {
+      "shape": "parse-member-type",
+      "depth": 1000,
+      "stack_bytes": 262144,
+      "exit_code": 0,
+      "marker": "mapped:Core:parse-member-type:1000",
+      "stdout": "artifacts/rm18/frontend-parse-member-type.log",
+      "sha256": "68ada51ad17f9dfba1987f97ef509fdf1a71e60a9a742bd4f01899a5a5af68ea"
+    },
+    {
+      "shape": "compile-member-type",
+      "depth": 1000,
+      "stack_bytes": 262144,
+      "exit_code": 0,
+      "marker": "mapped:Core:compile-member-type:1000",
+      "stdout": "artifacts/rm18/frontend-compile-member-type.log",
+      "sha256": "42b196866e2694f6ce1349ba94f2bbe3e26cad84010593801f297c13d1524d98"
+    }
+  ],
+  "coverage_notes": "直接影响的两个场景在所列当前回归范围重验。86项新回归包含50共同类型位置、11声明边界、5ref位置、1tasklike上下文、9无效输入、9节点预算边界、1复杂外层边界。受控变异不是原产品缺陷；有限语料和256KiB/1000层的四个探针不等于所有输入、平台、资源组合或中途取消时序的等价证明。不改N/A、公开API、语言及匹配算法，不作性能改善承诺。",
+  "revalidation_conditions": "共享类型语法、入口钩子、成员路径、节点创建/前瞻收费、诊断恢复、StackWork、相关测试/规范或运行环境变化时重验；保留历史报告和原始快照。"
+}
