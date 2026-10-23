@@ -1,0 +1,238 @@
+{
+  "review": "RM-23",
+  "source_finding": "GLM-M14",
+  "date": "2026-10-23",
+  "base_commit": "4bdb791df4ad0198b8f69c1fa49b83261fbee490",
+  "platform": "Windows",
+  "runtime": "7.0.20",
+  "local_powershell_execution_policy": "Process-scoped Bypass for the authorized probe; machine policy unchanged.",
+  "assets_build": {
+    "initial": {
+      "exit": 1,
+      "warnings": 0,
+      "errors": 0,
+      "diagnostic": "No further diagnostic was printed; no cause established."
+    },
+    "retry": {
+      "command": "dotnet build src/AspectN.Reflection/AspectN.Reflection.csproj -c Release -f netstandard2.0 --no-restore -m:1 -v:diag",
+      "exit": 0,
+      "warnings": 0,
+      "errors": 0,
+      "log": "artifacts/rm23/assets-build-diagnostic.log",
+      "log_sha256": "522835935c438f199fed078eb3d612fa9f1e05c7eb020d13ca28c76024ebfadd"
+    }
+  },
+  "before": {
+    "phase": "before",
+    "base_commit": "4bdb791df4ad0198b8f69c1fa49b83261fbee490",
+    "platform": "Windows",
+    "sdk": "10.0.401",
+    "checks": {
+      "normal_probe_passed": true,
+      "actual_runtime": "7.0.20",
+      "normal_fallback": true,
+      "implicit_usings_without_root_props": "",
+      "language_version_without_root_props": "11.0",
+      "expected_missing_imports_failure_observed": true
+    },
+    "sources": [
+      {
+        "sha256": "00420932970a360dafd2f0805ae4e6837f7d06a9e96dee0162c379fdd5d17a9e",
+        "file": "eng/verify-function-pointer-fallback.ps1"
+      },
+      {
+        "sha256": "8dda826e793b93bdc7e55092ee84f0d5883378f7be2a9da62f9b9d4b0bd360b5",
+        "file": "artifacts/function-pointer-fallback/Program.cs"
+      },
+      {
+        "sha256": "4b9474bd90efe6ef140df9ce5d1595f19881efbc07df2ca713879ea80289c5d8",
+        "file": "src/AspectN/bin/Release/netstandard2.0/AspectN.dll"
+      },
+      {
+        "sha256": "bd41afde81d68167f4e3d26e83d2d1ef423fb9ffaf348ccdef7d25528a675147",
+        "file": "src/AspectN.Reflection/bin/Release/netstandard2.0/AspectN.Reflection.dll"
+      },
+      {
+        "sha256": "590c968a6d115bf1ed04323e48b3dd8cfcc5a7938b7fdee2a133d50d5a5d97f5",
+        "file": "Directory.Build.props"
+      },
+      {
+        "sha256": "9fdb2fd4f6e7915e2f808366a77b8e0aa489131c397f541afa38853ec718fcbd",
+        "file": ".github/workflows/compatibility.yml"
+      }
+    ],
+    "commands": [
+      {
+        "name": "normal",
+        "command": [
+          "powershell",
+          "-NoProfile",
+          "-ExecutionPolicy",
+          "Bypass",
+          "-File",
+          "D:\\Code\\Hourglass\\AspectN\\eng\\verify-function-pointer-fallback.ps1",
+          "-RuntimeVersion",
+          "7.0.20"
+        ],
+        "exit": 0,
+        "log": "artifacts/rm23/before/normal.log",
+        "log_sha256": "aa6a03f867be3afc48e1cc9510a61f7435c96cabfa61f26781563fd58cbdf341",
+        "output": "  Determining projects to restore...\n  Restored D:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Probe.csproj (in 165 ms).\n  Probe -> D:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\bin\\Release\\net7.0\\Probe.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:23.50\nRuntime 7.0.20: calling convention identity checks passed (fallback=True)."
+      },
+      {
+        "name": "property-without-root-props",
+        "command": [
+          "dotnet",
+          "msbuild",
+          "D:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Probe.csproj",
+          "-p:ImportDirectoryBuildProps=false",
+          "-getProperty:ImplicitUsings,LangVersion"
+        ],
+        "exit": 0,
+        "log": "artifacts/rm23/before/property-without-root-props.log",
+        "log_sha256": "a2c7d4e2c0f68956e588d44cd7f06c3e0574e0d0898e81f6702616ea51e4d2dc",
+        "output": "{\n  \"Properties\": {\n    \"ImplicitUsings\": \"\",\n    \"LangVersion\": \"11.0\"\n  }\n}"
+      },
+      {
+        "name": "build-without-root-props",
+        "command": [
+          "dotnet",
+          "build",
+          "D:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Probe.csproj",
+          "-c",
+          "Release",
+          "-p:ImportDirectoryBuildProps=false",
+          "-p:BaseIntermediateOutputPath=D:/Code/Hourglass/AspectN/artifacts/rm23/before/isolated/obj/",
+          "-p:OutputPath=D:/Code/Hourglass/AspectN/artifacts/rm23/before/isolated/bin/"
+        ],
+        "exit": 1,
+        "log": "artifacts/rm23/before/build-without-root-props.log",
+        "log_sha256": "7d0b1e0c39fe52c44d8ba6982eb14716da5cc01fe41e165e1bc56d522b169a74",
+        "output": "  Determining projects to restore...\n  Restored D:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Probe.csproj (in 66 ms).\nD:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Program.cs(8,44): error CS1061: 'MethodInfo[]' does not contain a definition for 'Where' and no accessible extension method 'Where' accepting a first argument of type 'MethodInfo[]' could be found (are you missing a using directive or an assembly reference?) [D:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Probe.csproj]\nD:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Program.cs(9,36): error CS0246: The type or namespace name 'InvalidOperationException' could not be found (are you missing a using directive or an assembly reference?) [D:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Probe.csproj]\nD:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Program.cs(12,26): error CS0246: The type or namespace name 'Type' could not be found (are you missing a using directive or an assembly reference?) [D:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Probe.csproj]\nD:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Program.cs(16,19): error CS0246: The type or namespace name 'InvalidOperationException' could not be found (are you missing a using directive or an assembly reference?) [D:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Probe.csproj]\nD:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Program.cs(18,15): error CS0246: The type or namespace name 'InvalidOperationException' could not be found (are you missing a using directive or an assembly reference?) [D:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Probe.csproj]\nD:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Program.cs(21,19): error CS0246: The type or namespace name 'InvalidOperationException' could not be found (are you missing a using directive or an assembly reference?) [D:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Probe.csproj]\nD:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Program.cs(22,1): error CS0103: The name 'Console' does not exist in the current context [D:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Probe.csproj]\nD:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Program.cs(22,30): error CS0103: The name 'Environment' does not exist in the current context [D:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Probe.csproj]\n\nBuild FAILED.\n\nD:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Program.cs(8,44): error CS1061: 'MethodInfo[]' does not contain a definition for 'Where' and no accessible extension method 'Where' accepting a first argument of type 'MethodInfo[]' could be found (are you missing a using directive or an assembly reference?) [D:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Probe.csproj]\nD:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Program.cs(9,36): error CS0246: The type or namespace name 'InvalidOperationException' could not be found (are you missing a using directive or an assembly reference?) [D:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Probe.csproj]\nD:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Program.cs(12,26): error CS0246: The type or namespace name 'Type' could not be found (are you missing a using directive or an assembly reference?) [D:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Probe.csproj]\nD:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Program.cs(16,19): error CS0246: The type or namespace name 'InvalidOperationException' could not be found (are you missing a using directive or an assembly reference?) [D:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Probe.csproj]\nD:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Program.cs(18,15): error CS0246: The type or namespace name 'InvalidOperationException' could not be found (are you missing a using directive or an assembly reference?) [D:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Probe.csproj]\nD:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Program.cs(21,19): error CS0246: The type or namespace name 'InvalidOperationException' could not be found (are you missing a using directive or an assembly reference?) [D:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Probe.csproj]\nD:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Program.cs(22,1): error CS0103: The name 'Console' does not exist in the current context [D:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Probe.csproj]\nD:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Program.cs(22,30): error CS0103: The name 'Environment' does not exist in the current context [D:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Probe.csproj]\n    0 Warning(s)\n    8 Error(s)\n\nTime Elapsed 00:00:22.49"
+      }
+    ]
+  },
+  "after": {
+    "phase": "after",
+    "base_commit": "4bdb791df4ad0198b8f69c1fa49b83261fbee490",
+    "platform": "Windows",
+    "sdk": "10.0.401",
+    "checks": {
+      "normal_probe_passed": true,
+      "actual_runtime": "7.0.20",
+      "normal_fallback": true,
+      "implicit_usings_without_root_props": "enable",
+      "language_version_without_root_props": "11.0",
+      "isolated_probe_passed": true,
+      "only_one_configuration_line_added": true
+    },
+    "sources": [
+      {
+        "file": "eng/verify-function-pointer-fallback.ps1",
+        "sha256": "2d71a57a4d9386dd36b4fffa20383236be65f356becd484eb5349d4fb0222040"
+      },
+      {
+        "file": "artifacts/function-pointer-fallback/Program.cs",
+        "sha256": "8dda826e793b93bdc7e55092ee84f0d5883378f7be2a9da62f9b9d4b0bd360b5"
+      },
+      {
+        "file": "src/AspectN/bin/Release/netstandard2.0/AspectN.dll",
+        "sha256": "4b9474bd90efe6ef140df9ce5d1595f19881efbc07df2ca713879ea80289c5d8"
+      },
+      {
+        "file": "src/AspectN.Reflection/bin/Release/netstandard2.0/AspectN.Reflection.dll",
+        "sha256": "bd41afde81d68167f4e3d26e83d2d1ef423fb9ffaf348ccdef7d25528a675147"
+      },
+      {
+        "file": "Directory.Build.props",
+        "sha256": "590c968a6d115bf1ed04323e48b3dd8cfcc5a7938b7fdee2a133d50d5a5d97f5"
+      },
+      {
+        "file": ".github/workflows/compatibility.yml",
+        "sha256": "9fdb2fd4f6e7915e2f808366a77b8e0aa489131c397f541afa38853ec718fcbd"
+      }
+    ],
+    "commands": [
+      {
+        "name": "normal",
+        "command": [
+          "powershell",
+          "-NoProfile",
+          "-ExecutionPolicy",
+          "Bypass",
+          "-File",
+          "D:\\Code\\Hourglass\\AspectN\\eng\\verify-function-pointer-fallback.ps1",
+          "-RuntimeVersion",
+          "7.0.20"
+        ],
+        "exit": 0,
+        "log": "artifacts/rm23/after/normal.log",
+        "log_sha256": "de76d8bbd99050c712374fbac33c83f6c2f4ea492204047261ab0a4b2207ca8c",
+        "output": "  Determining projects to restore...\n  All projects are up-to-date for restore.\n  Probe -> D:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\bin\\Release\\net7.0\\Probe.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:02.61\nRuntime 7.0.20: calling convention identity checks passed (fallback=True)."
+      },
+      {
+        "name": "property-without-root-props",
+        "command": [
+          "dotnet",
+          "msbuild",
+          "D:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Probe.csproj",
+          "-p:ImportDirectoryBuildProps=false",
+          "-getProperty:ImplicitUsings,LangVersion"
+        ],
+        "exit": 0,
+        "log": "artifacts/rm23/after/property-without-root-props.log",
+        "log_sha256": "fd2eafb7cfe7866ee0858571bac924c312a56723d28bd27755d87d97cb884794",
+        "output": "{\n  \"Properties\": {\n    \"ImplicitUsings\": \"enable\",\n    \"LangVersion\": \"11.0\"\n  }\n}"
+      },
+      {
+        "name": "build-without-root-props",
+        "command": [
+          "dotnet",
+          "build",
+          "D:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Probe.csproj",
+          "-c",
+          "Release",
+          "-p:ImportDirectoryBuildProps=false",
+          "-p:BaseIntermediateOutputPath=D:/Code/Hourglass/AspectN/artifacts/rm23/after/isolated/obj/",
+          "-p:OutputPath=D:/Code/Hourglass/AspectN/artifacts/rm23/after/isolated/bin/"
+        ],
+        "exit": 0,
+        "log": "artifacts/rm23/after/build-without-root-props.log",
+        "log_sha256": "311945024048997bcb3d9964f87a474e0e0cc60d1b806a3826e1699ad221845f",
+        "output": "  Determining projects to restore...\n  Restored D:\\Code\\Hourglass\\AspectN\\artifacts\\function-pointer-fallback\\Probe.csproj (in 82 ms).\n  Probe -> D:\\Code\\Hourglass\\AspectN\\artifacts\\rm23\\after\\isolated\\bin\\Probe.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:02.90"
+      },
+      {
+        "name": "run-without-root-props",
+        "command": [
+          "dotnet",
+          "--fx-version",
+          "7.0.20",
+          "D:/Code/Hourglass/AspectN/artifacts/rm23/after/isolated/bin/Probe.dll"
+        ],
+        "exit": 0,
+        "log": "artifacts/rm23/after/run-without-root-props.log",
+        "log_sha256": "b77c2ff34217c709fcecce8068d116d13413426a2997f3d8403483a6720b89bb",
+        "output": "Runtime 7.0.20: calling convention identity checks passed (fallback=True)."
+      }
+    ]
+  },
+  "sources": [
+    {
+      "file": "eng/verify-function-pointer-fallback.ps1",
+      "sha256": "2d71a57a4d9386dd36b4fffa20383236be65f356becd484eb5349d4fb0222040"
+    },
+    {
+      "file": "Directory.Build.props",
+      "sha256": "590c968a6d115bf1ed04323e48b3dd8cfcc5a7938b7fdee2a133d50d5a5d97f5"
+    },
+    {
+      "file": ".github/workflows/compatibility.yml",
+      "sha256": "9fdb2fd4f6e7915e2f808366a77b8e0aa489131c397f541afa38853ec718fcbd"
+    }
+  ],
+  "limits": [
+    "Only one generated project property was added; probe source and product binaries remained identical across before/after checks.",
+    "ImportDirectoryBuildProps=false is a local verification condition, not a new script option or a claim of complete project independence.",
+    "No Linux, remote Actions, full solution tests, packaging or consumers were executed."
+  ]
+}

@@ -12,6 +12,7 @@ $project = @"
     <OutputType>Exe</OutputType>
     <TargetFramework>net7.0</TargetFramework>
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>

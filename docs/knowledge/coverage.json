@@ -586,6 +586,19 @@
       "assessment_status": "unassessed",
       "capability_ids": [],
       "notes": "发布工程尚未独立建立产品能力条目。RM-10要求下载后、证书处理及签名前，未签名清单存在、包文件集合完全一致且逐包SHA256匹配；保留原包内容/消费者与签名验证、签后摘要。本地Windows两个PowerShell宿主各32项黑盒通过，YAML结构与实际清单生成步骤输出检查通过；Linux仅接入CI，未执行远端Actions、真实签名或发布。摘要不提供独立来源认证，不改变库场景验证状态。"
+    },
+    {
+      "id": "INV-0022",
+      "subject": "旧运行时函数指针探针的工程配置",
+      "origin_refs": [
+        {
+          "path": "docs/reviews/2026-10-23-rm23-probe-implicit-usings.md",
+          "section": "问题与处理 / 当前验证 / 能力与证据边界"
+        }
+      ],
+      "assessment_status": "unassessed",
+      "capability_ids": [],
+      "notes": "工程探针尚未独立建立能力条目。2026-10-23 RM-23仅在临时工程显式启用ImplicitUsings，正常目录下修改前后均通过；隔离根props导入后，原工程因缺少命名空间失败，修改后编译并在.NET7.0.20执行fallback=True通过。探针源码和两份产品DLL哈希保持，产品及CI未改，不表示临时工程完全独立于其他仓库配置。仅本机Windows验证，不扩大USE-SHAPES-001/S2或CROSS-COMPAT-001既有场景及证据范围。"
     }
   ]
 }
