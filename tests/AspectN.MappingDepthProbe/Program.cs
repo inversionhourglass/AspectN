@@ -2,6 +2,7 @@ using AspectN;
 using AspectN.Cecil;
 using AspectN.Diagnostics;
 using AspectN.Evaluation;
+using AspectN.MappingDepthProbe;
 using AspectN.Metadata;
 using AspectN.Reflection;
 using AspectN.Roslyn;
@@ -109,8 +110,7 @@ var thread = new Thread(() =>
     {
         if (shape == "hidden-pointer")
         {
-            var facts = typeof(ReflectionSignatureMapper).Assembly.GetType("AspectN.Reflection.Internal.RuntimeTypeFacts")!;
-            var contains = facts.GetMethod("ContainsIntPtr", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)!;
+            var contains = RuntimeTypeFactsProbe.Resolve(typeof(ReflectionSignatureMapper).Assembly);
             if (contains.Invoke(null, [runtimeType]) is not true || contains.Invoke(null, [typeof(List<int[]>)]) is not false)
                 throw new InvalidOperationException("Incorrect legacy function pointer ambiguity.");
             return;
