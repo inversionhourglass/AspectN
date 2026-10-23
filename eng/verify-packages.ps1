@@ -313,6 +313,11 @@ foreach ($package in $packages) {
 
         Assert-True ((Get-MetadataNode $metadata "version").InnerText -eq $PackageVersion) (
             "$packageId has an unexpected package version.")
+        $dependencyIds = @(
+            $metadata.SelectNodes(".//*[local-name()='dependency']") |
+                ForEach-Object { $_.GetAttribute("id") } |
+                Sort-Object -Unique)
+        Assert-DependencySet $packageId $dependencyIds $package.Dependencies
         foreach ($dependency in $metadata.SelectNodes(".//*[local-name()='dependency']")) {
             $expectedVersion = switch ($dependency.GetAttribute("id")) {
                 "AspectN" { $PackageVersion }
@@ -324,11 +329,6 @@ foreach ($package in $packages) {
                 "$packageId has an unexpected dependency version: $($dependency.OuterXml)")
         }
 
-        $dependencyIds = @(
-            $metadata.SelectNodes(".//*[local-name()='dependency']") |
-                ForEach-Object { $_.GetAttribute("id") } |
-                Sort-Object -Unique)
-        Assert-DependencySet $packageId $dependencyIds $package.Dependencies
         $dependencyGroups = @($metadata.SelectNodes(".//*[local-name()='dependencies']/*[local-name()='group']"))
         Assert-True ($dependencyGroups.Count -eq 2) "$packageId must have exactly two dependency groups."
         foreach ($framework in @(".NETStandard2.0", "net10.0")) {

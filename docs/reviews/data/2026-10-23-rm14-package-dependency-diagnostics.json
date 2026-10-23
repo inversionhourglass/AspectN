@@ -1,0 +1,128 @@
+{
+  "date": "2026-10-23",
+  "item": "RM-14",
+  "origin": "K3-M20",
+  "baseline_commit": "b36fe9e4e3d627725179ef63cbf3ecb3789c254d",
+  "code_checks": {
+    "identical_after_removing_same_moved_block": true,
+    "aggregate_check_precedes_version_loop": true,
+    "other_script_bytes_unchanged": true
+  },
+  "initialization_and_metadata_runs": [
+    {
+      "local_result_file": "artifacts/package-dependency-tests/c120f407f8bd493d9a05342319b0cd6e/results.json",
+      "sha256": "a93c721793986b915f3861f90cd82ae46fd35d300bde58deabb03e0fd8cbeb8f",
+      "verifier_host": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+      "verifier_sha256": "a0f98239381d89cf15d97690efb470c2aa372ff32793e20a04592c9d9b0f8cb4",
+      "passed": 8,
+      "failed": 3,
+      "failures": [
+        "unknown-extra",
+        "unknown-and-version-error",
+        "missing-and-version-error"
+      ]
+    },
+    {
+      "local_result_file": "artifacts/package-dependency-tests/5d1b8a82d2844a84b23cb90fff00923d/results.json",
+      "sha256": "4a70c2eacaed1952ae44bcf6873cb322bd3ce1e3ded22c915fb861eb31ef94ef",
+      "verifier_host": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+      "verifier_sha256": "61c1e8770488eacca7f82b0ee261d868b75719be10f9ab71bf3677df1ee53cf9",
+      "passed": 11,
+      "failed": 0,
+      "failures": []
+    },
+    {
+      "local_result_file": "artifacts/package-dependency-tests/b81bbe094d914937b9ce60fbfa11d76d/results.json",
+      "sha256": "a5b30b06cf5b125f14cb2fb4886541125b962f30c56de7e32bee471a09ad34eb",
+      "verifier_host": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "verifier_sha256": "61c1e8770488eacca7f82b0ee261d868b75719be10f9ab71bf3677df1ee53cf9",
+      "passed": 11,
+      "failed": 0,
+      "failures": []
+    }
+  ],
+  "case_names": [
+    "valid-five-packages",
+    "unknown-extra",
+    "known-extra",
+    "missing-dependency",
+    "unknown-and-version-error",
+    "missing-and-version-error",
+    "cecil-version-error",
+    "core-version-error",
+    "framework-missing-dependency",
+    "framework-group-count",
+    "framework-group-identity"
+  ],
+  "workflow_checks": {
+    "yaml_version": "1.2",
+    "yaml_parser_version": "2.9.0",
+    "no_errors_or_warnings": true,
+    "only_one_package_job_test_added": true,
+    "rm11_rm13_and_all_other_steps_unchanged": true,
+    "release_compatibility_and_props_unchanged": true
+  },
+  "real_package_metadata": {
+    "exit": 0,
+    "stage": "metadata-and-symbols-only",
+    "consumers_executed": false,
+    "package_directory": "artifacts/rm13/package-flow-1d01c9e2b85e4cc3a47a8a33e4db57cf",
+    "package_version": "0.0.0-validation-rm13-1d01c9e2b85e",
+    "package_count": 10,
+    "inputs_unchanged": true,
+    "source_sha256": "61c1e8770488eacca7f82b0ee261d868b75719be10f9ab71bf3677df1ee53cf9",
+    "probe_sha256": "9b770897f332ec2c6fe1e4f394449a1ab40801658abcc97bb84cd315d1bc682a",
+    "log_sha256": "cfa4deddef4612ca6f87c419ab4d43d01d2a3e52a8bb411e90004fca17d7e13b",
+    "local_result_file": "artifacts/rm14/real-metadata-result.json",
+    "result_sha256": "f7ac588999ba4a63ab1a849f0232d4d82566559e1512526fbd308da8071023ac",
+    "local_log_file": "artifacts/rm14/real-metadata.log",
+    "original_package_data": "docs/reviews/data/2026-10-23-rm13-package-version-defaults.json",
+    "original_data_sha256": "c73cf695797c272ba00f4058bab8fb4897ec0d756e0ff9c5333740cb69ce1855",
+    "packages_match_previous_sha256": true
+  },
+  "full_consumer_pipeline": {
+    "rerun": false,
+    "last_recorded_result": "failed",
+    "previous_report": "docs/reviews/2026-10-23-rm13-package-version-defaults.md",
+    "blocker": "Roslyn/net472 MSB3277 System.Memory 4.0.1.2 vs 4.0.2.0 remains unresolved"
+  },
+  "sources": [
+    {
+      "file": "eng/verify-packages.ps1",
+      "sha256": "61c1e8770488eacca7f82b0ee261d868b75719be10f9ab71bf3677df1ee53cf9"
+    },
+    {
+      "file": "eng/tests/verify-package-dependencies.Tests.ps1",
+      "sha256": "3ec547ef3ec9aac92c30a9321ca9282ad497dcbd1988ecacfa502f9e7d02cec8"
+    },
+    {
+      "file": "eng/tests/verify-package-versions.Tests.ps1",
+      "sha256": "df6142044f3aa260d03666376cf336c4482ad91edbd9069fa4896f19aa56aa9c"
+    },
+    {
+      "file": "Directory.Packages.props",
+      "sha256": "9d948b704945855977f066f31633d774f355f19b78514d8bc791109541746d36"
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "sha256": "ceccd1d78957c21a1f878c22a5f61e0fd74ae9c9d5c4129c42170f46e7248e9c"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "sha256": "234b5bc7e3a22fc09111c1635d9d56dcb5c91acb15fdad70380cc4ec173e82dd"
+    },
+    {
+      "file": ".github/workflows/compatibility.yml",
+      "sha256": "9fdb2fd4f6e7915e2f808366a77b8e0aa489131c397f541afa38853ec718fcbd"
+    }
+  ],
+  "consumers_executed": false,
+  "linux_executed": false,
+  "remote_actions_executed": false,
+  "signing_executed": false,
+  "publishing_executed": false,
+  "limits": [
+    "合成DLL/PDB是占位内容，只验证真实包元数据检查阶段",
+    "真实包仅复验元数据与符号，完整消费者失败未解决或重跑"
+  ]
+}
