@@ -1,0 +1,483 @@
+{
+  "review": "RM-24",
+  "source_finding": "GLM-M15",
+  "date": "2026-10-23",
+  "base_commit": "60dfb18ae2a8d681eb4b47539ef346e7fb62b9b8",
+  "platform": "Windows",
+  "powershell_version": "7.6.7",
+  "lifecycle_red": {
+    "exit": 1,
+    "reason": "缺少生命周期辅助实现",
+    "path": "artifacts/rm24/lifecycle-red.log",
+    "sha256": "13c43ddb81cd27f8a0cc028a0510a63fce5e42a2b33750812db168a6f50fa742",
+    "output": "Exception: D:\\Code\\Hourglass\\AspectN\\eng\\tests\\test-artifacts.Tests.ps1:6\r\nLine |\r\n   6 |  … -LiteralPath $helper)) { throw '尚未实现测试夹具生命周期：缺少test-artifacts.ps1。' }\r\n     |                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n     | 尚未实现测试夹具生命周期：缺少test-artifacts.ps1。\r\n"
+  },
+  "lifecycle_green": {
+    "exit": 0,
+    "passed": 15,
+    "failed": 0,
+    "path": "artifacts/rm24/lifecycle-green.log",
+    "sha256": "6af05fedcfb666050d416aae98a0be236f0862c97f7f0aad970a02f6f274a489",
+    "output": "已清理本次测试夹具：2 个目录。\r\n保留测试夹具：D:\\Code\\Hourglass\\AspectN\\artifacts\\test-artifact-tests\\548896702d054d1bb3b9d9e81ddb0a3d\\keep\\560dbe1e7f57404b972a472ed098c0ee\r\n保留测试夹具：D:\\Code\\Hourglass\\AspectN\\artifacts\\test-artifact-tests\\548896702d054d1bb3b9d9e81ddb0a3d\\failure\\c59d17abfe494552a758f52468a3ce42\r\n保留测试夹具：D:\\Code\\Hourglass\\AspectN\\artifacts\\test-artifact-tests\\548896702d054d1bb3b9d9e81ddb0a3d\\throw\\28269bceb0ea40ad991f4ca5542e33d1\r\n已清理本次测试夹具：1 个目录。\r\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\test-artifact-tests\\548896702d054d1bb3b9d9e81ddb0a3d\\parent\\594d0d59353e4fa183816137ace41450\r\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\test-artifact-tests\\548896702d054d1bb3b9d9e81ddb0a3d\\parent\r\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\test-artifact-tests\\548896702d054d1bb3b9d9e81ddb0a3d\\prefix\\169a6964bd1e4c13bc9a7e5b8d4ecf03\r\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\test-artifact-tests\\548896702d054d1bb3b9d9e81ddb0a3d\\prefixSuffix\\2c058c0fb17e4973a9bbd23990ba57ee\r\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\test-artifact-tests\\548896702d054d1bb3b9d9e81ddb0a3d\\traversal\\9192c9455583436d8c895c8b2bbcc4a3\r\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\test-artifact-tests\\548896702d054d1bb3b9d9e81ddb0a3d\\traversal\\..\\outside\\cc09a22eeba64929984d378f11f11adb\r\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\test-artifact-tests\\548896702d054d1bb3b9d9e81ddb0a3d\\nonguid\\349cb7cf4fe24148bdb016f60c4cf28f\r\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\test-artifact-tests\\548896702d054d1bb3b9d9e81ddb0a3d\\nonguid\\unowned\r\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\test-artifact-tests\\548896702d054d1bb3b9d9e81ddb0a3d\\file\\29e035f29094406f890ca3bbac137b5d\r\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\test-artifact-tests\\548896702d054d1bb3b9d9e81ddb0a3d\\file\\ade2d8b65d7742a68ea2cf33e6cae562\r\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\test-artifact-tests\\548896702d054d1bb3b9d9e81ddb0a3d\\link-descendant\\93d9d63cf0d64d75aa416a98fa766a74\r\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\test-artifact-tests\\548896702d054d1bb3b9d9e81ddb0a3d\\link-target\\5c4273b1886c41168836a0a0419fef92\r\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\test-artifact-tests\\548896702d054d1bb3b9d9e81ddb0a3d\\link-target\\6fde5a8ca653409790da5f96163308f7\r\n测试夹具生命周期：15 项检查通过。\r\n已清理本次测试夹具：1 个目录。\r\n"
+  },
+  "sandbox_link_creation": {
+    "exit": 1,
+    "reason": "沙箱拒绝创建junction；授权后重新执行完整检查，未跳过用例。",
+    "log": "artifacts/rm24/lifecycle-sandbox-denied.log",
+    "sha256": "74c6a149ffcf733e42ed6ba2c7662be05c707655690e8fbc509d7ec187fe61d8"
+  },
+  "default": {
+    "mode": "default",
+    "exit": 0,
+    "command": [
+      "pwsh",
+      "-NoProfile",
+      "-File",
+      "eng/tests/generate-knowledge.Tests.ps1"
+    ],
+    "log": "artifacts/rm24/default.log",
+    "log_sha256": "392d8d0b7e47dafe52b65504b33c168db14808a932ced8777e6201c91d1b8a57",
+    "lifecycle_checks": 15,
+    "original_generator_checks": 14,
+    "path_checks": 24,
+    "culture_checks": 8,
+    "new_directories_remaining": {
+      "knowledge-path-tests": [],
+      "knowledge-generation-tests": [],
+      "test-artifact-tests": []
+    },
+    "historical_directory_names_preserved": true,
+    "details": {},
+    "sources": [
+      {
+        "sha256": "c104dafd617f710f50e6e308772ed7b7fcc865e9da0cd119a5af312c741f4898",
+        "file": "eng/tests/test-artifacts.ps1"
+      },
+      {
+        "sha256": "f4b61ca03bb0da2befbd05e92aad75379f827ff78a5c15c597031b7ed595a103",
+        "file": "eng/tests/test-artifacts.Tests.ps1"
+      },
+      {
+        "sha256": "3b3218ea3c2b61217455bd81ce070c3396d03d02f7014a53ca674822772e99a6",
+        "file": "eng/tests/generate-knowledge.Tests.ps1"
+      },
+      {
+        "sha256": "09beef862bb6c6ce3883fa356035150774c968236bb4c45382570cb4d5c61e18",
+        "file": "eng/tests/generate-knowledge-paths.Tests.ps1"
+      },
+      {
+        "sha256": "76a9a1b2b1e17d7f9de36edf0f9a07c2b2931ff430f9b5d1f5948b52ef634d87",
+        "file": "eng/generate-knowledge.ps1"
+      },
+      {
+        "sha256": "cbe66c60fd624e2fb4e597f1081a3c8ccc2a052bedfa0f1a34ea99a10cff694d",
+        "file": "eng/verify-documentation.ps1"
+      },
+      {
+        "sha256": "ceccd1d78957c21a1f878c22a5f61e0fd74ae9c9d5c4129c42170f46e7248e9c",
+        "file": ".github/workflows/ci.yml"
+      }
+    ]
+  },
+  "keep": {
+    "mode": "keep",
+    "exit": 0,
+    "command": [
+      "pwsh",
+      "-NoProfile",
+      "-File",
+      "eng/tests/generate-knowledge.Tests.ps1",
+      "-KeepArtifacts"
+    ],
+    "log": "artifacts/rm24/keep.log",
+    "log_sha256": "dc2ca3477575248c0919691a870e01e9f3ad4a39a31426f7db77a3d5a552447c",
+    "lifecycle_checks": 15,
+    "original_generator_checks": 14,
+    "path_checks": 24,
+    "culture_checks": 8,
+    "new_directories_remaining": {
+      "knowledge-generation-tests": [
+        "D:\\Code\\Hourglass\\AspectN\\artifacts\\knowledge-generation-tests\\072ca2e43b6c4b4ba794d31d8acbf38f",
+        "D:\\Code\\Hourglass\\AspectN\\artifacts\\knowledge-generation-tests\\12e2f688ded042a6a48534df10059871",
+        "D:\\Code\\Hourglass\\AspectN\\artifacts\\knowledge-generation-tests\\277b0cb6afe546a2bff0333c6ee169ff",
+        "D:\\Code\\Hourglass\\AspectN\\artifacts\\knowledge-generation-tests\\31845de2fe7d411193c140691988fb4f",
+        "D:\\Code\\Hourglass\\AspectN\\artifacts\\knowledge-generation-tests\\3197520a68404504a2d151205657c24b",
+        "D:\\Code\\Hourglass\\AspectN\\artifacts\\knowledge-generation-tests\\4282fed2078b464babe8039310becaa7",
+        "D:\\Code\\Hourglass\\AspectN\\artifacts\\knowledge-generation-tests\\5916529bd20340968792299227d0335e",
+        "D:\\Code\\Hourglass\\AspectN\\artifacts\\knowledge-generation-tests\\5e9c1f1f46ea4e919a4cd412daeaf027",
+        "D:\\Code\\Hourglass\\AspectN\\artifacts\\knowledge-generation-tests\\707cf97e25fd40d2bdd3ecb1875da84f",
+        "D:\\Code\\Hourglass\\AspectN\\artifacts\\knowledge-generation-tests\\a503ddc9747e43b0ba965ae213d8df76",
+        "D:\\Code\\Hourglass\\AspectN\\artifacts\\knowledge-generation-tests\\bdb7e108f14f4c63ba13b14049d0372c"
+      ],
+      "knowledge-path-tests": [
+        "D:\\Code\\Hourglass\\AspectN\\artifacts\\knowledge-path-tests\\a61c899eefae47f091c946276c60a56d"
+      ],
+      "test-artifact-tests": [
+        "D:\\Code\\Hourglass\\AspectN\\artifacts\\test-artifact-tests\\bb55d488438740198b72ee7a28ffb30f"
+      ]
+    },
+    "historical_directory_names_preserved": true,
+    "details": {
+      "culture": {
+        "generator_sha256": "76a9a1b2b1e17d7f9de36edf0f9a07c2b2931ff430f9b5d1f5948b52ef634d87",
+        "original_black_box_checks": 14,
+        "results": [
+          {
+            "mode": "generate",
+            "culture": "en-US",
+            "passed": true,
+            "exit": 0,
+            "hashes": {
+              "catalog": "65bc6257b229f61e6c63f5a03a49e03c81f39bf5e8765e317cb4e81c60de52ab",
+              "support-matrix": "30ee3bdd5fbf3dd3dd2b801092235e556eb21c382baa217db414d0de85808527"
+            },
+            "output": "culture=en-US\n知识库已生成：4 条能力。"
+          },
+          {
+            "mode": "generate",
+            "culture": "zh-CN",
+            "passed": true,
+            "exit": 0,
+            "hashes": {
+              "catalog": "65bc6257b229f61e6c63f5a03a49e03c81f39bf5e8765e317cb4e81c60de52ab",
+              "support-matrix": "30ee3bdd5fbf3dd3dd2b801092235e556eb21c382baa217db414d0de85808527"
+            },
+            "output": "culture=zh-CN\n知识库已生成：4 条能力。"
+          },
+          {
+            "mode": "generate",
+            "culture": "da-DK",
+            "passed": true,
+            "exit": 0,
+            "hashes": {
+              "catalog": "65bc6257b229f61e6c63f5a03a49e03c81f39bf5e8765e317cb4e81c60de52ab",
+              "support-matrix": "30ee3bdd5fbf3dd3dd2b801092235e556eb21c382baa217db414d0de85808527"
+            },
+            "output": "culture=da-DK\n知识库已生成：4 条能力。"
+          },
+          {
+            "mode": "generate",
+            "culture": "cs-CZ",
+            "passed": true,
+            "exit": 0,
+            "hashes": {
+              "catalog": "65bc6257b229f61e6c63f5a03a49e03c81f39bf5e8765e317cb4e81c60de52ab",
+              "support-matrix": "30ee3bdd5fbf3dd3dd2b801092235e556eb21c382baa217db414d0de85808527"
+            },
+            "output": "culture=cs-CZ\n知识库已生成：4 条能力。"
+          },
+          {
+            "mode": "check",
+            "culture": "en-US",
+            "passed": true,
+            "exit": 0,
+            "output": "culture=en-US\n知识库派生资料一致性检查通过。"
+          },
+          {
+            "mode": "check",
+            "culture": "zh-CN",
+            "passed": true,
+            "exit": 0,
+            "output": "culture=zh-CN\n知识库派生资料一致性检查通过。"
+          },
+          {
+            "mode": "check",
+            "culture": "da-DK",
+            "passed": true,
+            "exit": 0,
+            "output": "culture=da-DK\n知识库派生资料一致性检查通过。"
+          },
+          {
+            "mode": "check",
+            "culture": "cs-CZ",
+            "passed": true,
+            "exit": 0,
+            "output": "culture=cs-CZ\n知识库派生资料一致性检查通过。"
+          }
+        ],
+        "passed": 8,
+        "failed": 0
+      },
+      "paths": {
+        "generator_sha256": "76a9a1b2b1e17d7f9de36edf0f9a07c2b2931ff430f9b5d1f5948b52ef634d87",
+        "host_os": "Microsoft Windows 10.0.26200",
+        "cases": [
+          {
+            "policy": "Host",
+            "case": "仓库内文件",
+            "passed": true,
+            "expected_error": "",
+            "actual_error": ""
+          },
+          {
+            "policy": "Host",
+            "case": "仓库内归一化",
+            "passed": true,
+            "expected_error": "",
+            "actual_error": ""
+          },
+          {
+            "policy": "Host",
+            "case": "大小写别名",
+            "passed": true,
+            "expected_error": "",
+            "actual_error": ""
+          },
+          {
+            "policy": "Host",
+            "case": "相邻目录",
+            "passed": true,
+            "expected_error": "资料路径越界",
+            "actual_error": "资料路径越界：../Sibling/contract.md"
+          },
+          {
+            "policy": "Host",
+            "case": "相同前缀目录",
+            "passed": true,
+            "expected_error": "资料路径越界",
+            "actual_error": "资料路径越界：../RepoSuffix/contract.md"
+          },
+          {
+            "policy": "Host",
+            "case": "缺失文件",
+            "passed": true,
+            "expected_error": "资料文件不存在",
+            "actual_error": "资料文件不存在：missing.md"
+          },
+          {
+            "policy": "Host",
+            "case": "绝对路径",
+            "passed": true,
+            "expected_error": "资料路径必须是仓库相对路径",
+            "actual_error": "资料路径必须是仓库相对路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\knowledge-path-tests\\a61c899eefae47f091c946276c60a56d\\Repo\\contract.md"
+          },
+          {
+            "policy": "Host",
+            "case": "空路径",
+            "passed": true,
+            "expected_error": "资料路径必须是仓库相对路径",
+            "actual_error": "资料路径必须是仓库相对路径："
+          },
+          {
+            "policy": "Ordinal",
+            "case": "仓库内文件",
+            "passed": true,
+            "expected_error": "",
+            "actual_error": ""
+          },
+          {
+            "policy": "Ordinal",
+            "case": "仓库内归一化",
+            "passed": true,
+            "expected_error": "",
+            "actual_error": ""
+          },
+          {
+            "policy": "Ordinal",
+            "case": "大小写别名",
+            "passed": true,
+            "expected_error": "资料路径越界",
+            "actual_error": "资料路径越界：../repo/contract.md"
+          },
+          {
+            "policy": "Ordinal",
+            "case": "相邻目录",
+            "passed": true,
+            "expected_error": "资料路径越界",
+            "actual_error": "资料路径越界：../Sibling/contract.md"
+          },
+          {
+            "policy": "Ordinal",
+            "case": "相同前缀目录",
+            "passed": true,
+            "expected_error": "资料路径越界",
+            "actual_error": "资料路径越界：../RepoSuffix/contract.md"
+          },
+          {
+            "policy": "Ordinal",
+            "case": "缺失文件",
+            "passed": true,
+            "expected_error": "资料文件不存在",
+            "actual_error": "资料文件不存在：missing.md"
+          },
+          {
+            "policy": "Ordinal",
+            "case": "绝对路径",
+            "passed": true,
+            "expected_error": "资料路径必须是仓库相对路径",
+            "actual_error": "资料路径必须是仓库相对路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\knowledge-path-tests\\a61c899eefae47f091c946276c60a56d\\Repo\\contract.md"
+          },
+          {
+            "policy": "Ordinal",
+            "case": "空路径",
+            "passed": true,
+            "expected_error": "资料路径必须是仓库相对路径",
+            "actual_error": "资料路径必须是仓库相对路径："
+          },
+          {
+            "policy": "OrdinalIgnoreCase",
+            "case": "仓库内文件",
+            "passed": true,
+            "expected_error": "",
+            "actual_error": ""
+          },
+          {
+            "policy": "OrdinalIgnoreCase",
+            "case": "仓库内归一化",
+            "passed": true,
+            "expected_error": "",
+            "actual_error": ""
+          },
+          {
+            "policy": "OrdinalIgnoreCase",
+            "case": "大小写别名",
+            "passed": true,
+            "expected_error": "",
+            "actual_error": ""
+          },
+          {
+            "policy": "OrdinalIgnoreCase",
+            "case": "相邻目录",
+            "passed": true,
+            "expected_error": "资料路径越界",
+            "actual_error": "资料路径越界：../Sibling/contract.md"
+          },
+          {
+            "policy": "OrdinalIgnoreCase",
+            "case": "相同前缀目录",
+            "passed": true,
+            "expected_error": "资料路径越界",
+            "actual_error": "资料路径越界：../RepoSuffix/contract.md"
+          },
+          {
+            "policy": "OrdinalIgnoreCase",
+            "case": "缺失文件",
+            "passed": true,
+            "expected_error": "资料文件不存在",
+            "actual_error": "资料文件不存在：missing.md"
+          },
+          {
+            "policy": "OrdinalIgnoreCase",
+            "case": "绝对路径",
+            "passed": true,
+            "expected_error": "资料路径必须是仓库相对路径",
+            "actual_error": "资料路径必须是仓库相对路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\knowledge-path-tests\\a61c899eefae47f091c946276c60a56d\\Repo\\contract.md"
+          },
+          {
+            "policy": "OrdinalIgnoreCase",
+            "case": "空路径",
+            "passed": true,
+            "expected_error": "资料路径必须是仓库相对路径",
+            "actual_error": "资料路径必须是仓库相对路径："
+          }
+        ],
+        "passed": 24,
+        "failed": 0
+      }
+    },
+    "sources": [
+      {
+        "file": "eng/tests/test-artifacts.ps1",
+        "sha256": "c104dafd617f710f50e6e308772ed7b7fcc865e9da0cd119a5af312c741f4898"
+      },
+      {
+        "file": "eng/tests/test-artifacts.Tests.ps1",
+        "sha256": "f4b61ca03bb0da2befbd05e92aad75379f827ff78a5c15c597031b7ed595a103"
+      },
+      {
+        "file": "eng/tests/generate-knowledge.Tests.ps1",
+        "sha256": "3b3218ea3c2b61217455bd81ce070c3396d03d02f7014a53ca674822772e99a6"
+      },
+      {
+        "file": "eng/tests/generate-knowledge-paths.Tests.ps1",
+        "sha256": "09beef862bb6c6ce3883fa356035150774c968236bb4c45382570cb4d5c61e18"
+      },
+      {
+        "file": "eng/generate-knowledge.ps1",
+        "sha256": "76a9a1b2b1e17d7f9de36edf0f9a07c2b2931ff430f9b5d1f5948b52ef634d87"
+      },
+      {
+        "file": "eng/verify-documentation.ps1",
+        "sha256": "cbe66c60fd624e2fb4e597f1081a3c8ccc2a052bedfa0f1a34ea99a10cff694d"
+      },
+      {
+        "file": ".github/workflows/ci.yml",
+        "sha256": "ceccd1d78957c21a1f878c22a5f61e0fd74ae9c9d5c4129c42170f46e7248e9c"
+      }
+    ]
+  },
+  "faults": [
+    {
+      "mode": "throw",
+      "exit": 1,
+      "log": "artifacts/rm24/fault-throw.log",
+      "log_sha256": "55070f30f0ced1f49c322e509fa77f96c264e5fb472f256af097d9b272ddb95c",
+      "mirror": "D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-throw-4e1b5820c08e4e618d2308ab4042ca97",
+      "retained": [
+        "D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-throw-4e1b5820c08e4e618d2308ab4042ca97\\artifacts\\knowledge-generation-tests\\7cec36090d18496587485ec895568b57"
+      ],
+      "original_failure_visible": true,
+      "parent_stopped_on_child_failure": false,
+      "output": "已清理本次测试夹具：2 个目录。\n保留测试夹具：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-throw-4e1b5820c08e4e618d2308ab4042ca97\\artifacts\\test-artifact-tests\\98935d0db8dc40d0b617918c895b5555\\keep\\ce2836bb14dd4c939d416dd1ae3e41b4\n保留测试夹具：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-throw-4e1b5820c08e4e618d2308ab4042ca97\\artifacts\\test-artifact-tests\\98935d0db8dc40d0b617918c895b5555\\failure\\e8bfa46959aa451b9e94c5a4f47e0f6f\n保留测试夹具：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-throw-4e1b5820c08e4e618d2308ab4042ca97\\artifacts\\test-artifact-tests\\98935d0db8dc40d0b617918c895b5555\\throw\\3560c3f3ac2b4a0bb32957f1bd83c241\n已清理本次测试夹具：1 个目录。\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-throw-4e1b5820c08e4e618d2308ab4042ca97\\artifacts\\test-artifact-tests\\98935d0db8dc40d0b617918c895b5555\\parent\\b51cb86f9a314e369d9224d3673828ea\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-throw-4e1b5820c08e4e618d2308ab4042ca97\\artifacts\\test-artifact-tests\\98935d0db8dc40d0b617918c895b5555\\parent\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-throw-4e1b5820c08e4e618d2308ab4042ca97\\artifacts\\test-artifact-tests\\98935d0db8dc40d0b617918c895b5555\\prefix\\46136ed284024619a7d7ac2920f7097d\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-throw-4e1b5820c08e4e618d2308ab4042ca97\\artifacts\\test-artifact-tests\\98935d0db8dc40d0b617918c895b5555\\prefixSuffix\\a78e33d4f46441b48bceb80ab6e9c146\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-throw-4e1b5820c08e4e618d2308ab4042ca97\\artifacts\\test-artifact-tests\\98935d0db8dc40d0b617918c895b5555\\traversal\\7583e64d51cc4521aec4c31258152578\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-throw-4e1b5820c08e4e618d2308ab4042ca97\\artifacts\\test-artifact-tests\\98935d0db8dc40d0b617918c895b5555\\traversal\\..\\outside\\cef96c8f93df41ffa7d6521e3264aa1e\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-throw-4e1b5820c08e4e618d2308ab4042ca97\\artifacts\\test-artifact-tests\\98935d0db8dc40d0b617918c895b5555\\nonguid\\4850f2d64a034f29a3ebcaa50940793f\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-throw-4e1b5820c08e4e618d2308ab4042ca97\\artifacts\\test-artifact-tests\\98935d0db8dc40d0b617918c895b5555\\nonguid\\unowned\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-throw-4e1b5820c08e4e618d2308ab4042ca97\\artifacts\\test-artifact-tests\\98935d0db8dc40d0b617918c895b5555\\file\\0449e23df39d4eb8b1e6197c85a4de46\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-throw-4e1b5820c08e4e618d2308ab4042ca97\\artifacts\\test-artifact-tests\\98935d0db8dc40d0b617918c895b5555\\file\\57c764ef9c4244268939b967df37f28e\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-throw-4e1b5820c08e4e618d2308ab4042ca97\\artifacts\\test-artifact-tests\\98935d0db8dc40d0b617918c895b5555\\link-descendant\\2e7505b806af473f900a1f29577a323e\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-throw-4e1b5820c08e4e618d2308ab4042ca97\\artifacts\\test-artifact-tests\\98935d0db8dc40d0b617918c895b5555\\link-target\\500aa8e2e50f499990ea7b782867662e\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-throw-4e1b5820c08e4e618d2308ab4042ca97\\artifacts\\test-artifact-tests\\98935d0db8dc40d0b617918c895b5555\\link-target\\0ee6cefa38724bd7b1e922e57a9e67e0\n测试夹具生命周期：15 项检查通过。\n已清理本次测试夹具：1 个目录。\n生成器路径边界：24 项通过，0 项失败；结果：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-throw-4e1b5820c08e4e618d2308ab4042ca97\\artifacts\\knowledge-path-tests\\8d6be3bbf562416ab5fe8928f88ac5a5\n已清理本次测试夹具：1 个目录。\n保留测试夹具：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-throw-4e1b5820c08e4e618d2308ab4042ca97\\artifacts\\knowledge-generation-tests\\7cec36090d18496587485ec895568b57\nException: D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-throw-4e1b5820c08e4e618d2308ab4042ca97\\eng\\tests\\generate-knowledge.Tests.ps1:74\nLine |\n  74 |      throw 'RM24 injected parent failure'\n     |      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n     | RM24 injected parent failure"
+    },
+    {
+      "mode": "path-exit",
+      "exit": 1,
+      "log": "artifacts/rm24/fault-path-exit.log",
+      "log_sha256": "6a9878cd8edda31153d5443044569b945317dee3889f653930a9a9142a46534b",
+      "mirror": "D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-path-exit-1b4e64d9897149b5b341b74f0e540f0f",
+      "retained": [
+        "D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-path-exit-1b4e64d9897149b5b341b74f0e540f0f\\artifacts\\knowledge-path-tests\\d1c09f41249b47c79883e35365d65afe"
+      ],
+      "original_failure_visible": true,
+      "parent_stopped_on_child_failure": true,
+      "output": "已清理本次测试夹具：2 个目录。\n保留测试夹具：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-path-exit-1b4e64d9897149b5b341b74f0e540f0f\\artifacts\\test-artifact-tests\\803fb885ac1a4c18a9cee146c03d4bcb\\keep\\a17c748fc02143deb6c6f001f7d77fb4\n保留测试夹具：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-path-exit-1b4e64d9897149b5b341b74f0e540f0f\\artifacts\\test-artifact-tests\\803fb885ac1a4c18a9cee146c03d4bcb\\failure\\d49377ccb1334ad8b3ccb731724660c8\n保留测试夹具：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-path-exit-1b4e64d9897149b5b341b74f0e540f0f\\artifacts\\test-artifact-tests\\803fb885ac1a4c18a9cee146c03d4bcb\\throw\\d570b9b772f4498c915789b2acc3c10d\n已清理本次测试夹具：1 个目录。\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-path-exit-1b4e64d9897149b5b341b74f0e540f0f\\artifacts\\test-artifact-tests\\803fb885ac1a4c18a9cee146c03d4bcb\\parent\\6304714809e543bf98a13fff0de0ef91\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-path-exit-1b4e64d9897149b5b341b74f0e540f0f\\artifacts\\test-artifact-tests\\803fb885ac1a4c18a9cee146c03d4bcb\\parent\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-path-exit-1b4e64d9897149b5b341b74f0e540f0f\\artifacts\\test-artifact-tests\\803fb885ac1a4c18a9cee146c03d4bcb\\prefix\\c521ca4ba6b142a3accad73029e8f7ab\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-path-exit-1b4e64d9897149b5b341b74f0e540f0f\\artifacts\\test-artifact-tests\\803fb885ac1a4c18a9cee146c03d4bcb\\prefixSuffix\\08f77e32e496459c9ed125d82d595a6f\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-path-exit-1b4e64d9897149b5b341b74f0e540f0f\\artifacts\\test-artifact-tests\\803fb885ac1a4c18a9cee146c03d4bcb\\traversal\\b9d3644227704916b8fa7e66198833f9\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-path-exit-1b4e64d9897149b5b341b74f0e540f0f\\artifacts\\test-artifact-tests\\803fb885ac1a4c18a9cee146c03d4bcb\\traversal\\..\\outside\\660e526dc8394da390d5d9221042a699\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-path-exit-1b4e64d9897149b5b341b74f0e540f0f\\artifacts\\test-artifact-tests\\803fb885ac1a4c18a9cee146c03d4bcb\\nonguid\\36642b8aa735428eb42a47782b5ed810\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-path-exit-1b4e64d9897149b5b341b74f0e540f0f\\artifacts\\test-artifact-tests\\803fb885ac1a4c18a9cee146c03d4bcb\\nonguid\\unowned\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-path-exit-1b4e64d9897149b5b341b74f0e540f0f\\artifacts\\test-artifact-tests\\803fb885ac1a4c18a9cee146c03d4bcb\\file\\de712d80676447a38743eaa87e144a34\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-path-exit-1b4e64d9897149b5b341b74f0e540f0f\\artifacts\\test-artifact-tests\\803fb885ac1a4c18a9cee146c03d4bcb\\file\\c60b7541ac764de59b476b55432a48e9\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-path-exit-1b4e64d9897149b5b341b74f0e540f0f\\artifacts\\test-artifact-tests\\803fb885ac1a4c18a9cee146c03d4bcb\\link-descendant\\bf841a84d5a14118aff1b287e322bd4c\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-path-exit-1b4e64d9897149b5b341b74f0e540f0f\\artifacts\\test-artifact-tests\\803fb885ac1a4c18a9cee146c03d4bcb\\link-target\\6accf381fe3e40b29fa1e59a6c3b5557\n清理未完成，保留测试夹具路径：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-path-exit-1b4e64d9897149b5b341b74f0e540f0f\\artifacts\\test-artifact-tests\\803fb885ac1a4c18a9cee146c03d4bcb\\link-target\\f9319e6fc89c4f5abcd3f7081b13da67\n测试夹具生命周期：15 项检查通过。\n已清理本次测试夹具：1 个目录。\n{\"policy\":\"Host\",\"case\":\"仓库内文件\",\"passed\":false,\"expected_error\":\"合成错误\",\"actual_error\":\"\"}\n{\"policy\":\"Ordinal\",\"case\":\"仓库内文件\",\"passed\":false,\"expected_error\":\"合成错误\",\"actual_error\":\"\"}\n{\"policy\":\"OrdinalIgnoreCase\",\"case\":\"仓库内文件\",\"passed\":false,\"expected_error\":\"合成错误\",\"actual_error\":\"\"}\n生成器路径边界：21 项通过，3 项失败；结果：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-path-exit-1b4e64d9897149b5b341b74f0e540f0f\\artifacts\\knowledge-path-tests\\d1c09f41249b47c79883e35365d65afe\n保留测试夹具：D:\\Code\\Hourglass\\AspectN\\artifacts\\rm24\\fault-path-exit-1b4e64d9897149b5b341b74f0e540f0f\\artifacts\\knowledge-path-tests\\d1c09f41249b47c79883e35365d65afe"
+    }
+  ],
+  "history": {
+    "entries": 2548,
+    "all_preserved": true,
+    "snapshot_sha256": "b72cd2d067545c0db827fd20497bbed6b2c90a1a347d24de304d6e9338dfd3ca"
+  },
+  "sources": [
+    {
+      "file": "eng/tests/test-artifacts.ps1",
+      "sha256": "c104dafd617f710f50e6e308772ed7b7fcc865e9da0cd119a5af312c741f4898"
+    },
+    {
+      "file": "eng/tests/test-artifacts.Tests.ps1",
+      "sha256": "f4b61ca03bb0da2befbd05e92aad75379f827ff78a5c15c597031b7ed595a103"
+    },
+    {
+      "file": "eng/tests/generate-knowledge.Tests.ps1",
+      "sha256": "3b3218ea3c2b61217455bd81ce070c3396d03d02f7014a53ca674822772e99a6"
+    },
+    {
+      "file": "eng/tests/generate-knowledge-paths.Tests.ps1",
+      "sha256": "09beef862bb6c6ce3883fa356035150774c968236bb4c45382570cb4d5c61e18"
+    },
+    {
+      "file": "eng/generate-knowledge.ps1",
+      "sha256": "76a9a1b2b1e17d7f9de36edf0f9a07c2b2931ff430f9b5d1f5948b52ef634d87"
+    },
+    {
+      "file": "eng/verify-documentation.ps1",
+      "sha256": "cbe66c60fd624e2fb4e597f1081a3c8ccc2a052bedfa0f1a34ea99a10cff694d"
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "sha256": "ceccd1d78957c21a1f878c22a5f61e0fd74ae9c9d5c4129c42170f46e7248e9c"
+    }
+  ],
+  "unchanged_controls": [
+    "eng/generate-knowledge.ps1",
+    "eng/verify-documentation.ps1",
+    ".github/workflows/ci.yml"
+  ],
+  "limits": [
+    "实际仅Windows；Linux和远端CI未执行。",
+    "故障仅注入本轮隔离副本；两个正式入口的通过预期保持。",
+    "历史快照仅核对本机原有三个测试目录，不能外推所有工作区。",
+    "产品、语言、API和证据状态不变；没有重跑.NET矩阵、打包或消费者。"
+  ]
+}

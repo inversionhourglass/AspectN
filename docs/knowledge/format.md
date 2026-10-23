@@ -23,3 +23,5 @@ JSON 由标准库 System.Text.Json.JsonDocument 读取，ISO 日期保持字符�
 生成器写入前复用完整文档校验，仅在生成预检中允许这两个派生目标缺失或正文陈旧。其他来源、能力、证据、章节及引用仍完整校验；默认文档校验检查生成后的全部链接。生成器不判断语义批准或当前证据适用性。
 
 CI 运行 `pwsh -NoProfile -File eng/generate-knowledge.ps1 -Check`，派生资料缺失或陈旧时失败，且不会改写文件。[生成器回归](../../eng/tests/generate-knowledge.Tests.ps1)覆盖独立状态、确定性、陈旧输出、完整格式预检、路径及 Markdown 转义；[文档校验器回归](../../eng/tests/verify-documentation.Tests.ps1)保留完整格式规则的回归覆盖。
+
+生成器回归及其路径子测试默认在各自成功结束后清理本次创建的GUID夹具；失败时保留现场并输出路径。需要检查成功结果或归档证据时，运行 `pwsh -NoProfile -File eng/tests/generate-knowledge.Tests.ps1 -KeepArtifacts`，保留开关会传给子测试；独立运行路径子测试也支持该开关。历史目录不属于后续运行的清理范围。长期证据应按审查格式归档，临时目录路径和一次成功日志不能替代可复查的正式记录。
