@@ -144,15 +144,6 @@ public sealed class TypePatternParserTests
         Assert.Empty(tree.Diagnostics);
     }
 
-    [Fact]
-    public void ParseTypePattern_SingleParenthesizedType_ReportsDiagnostic()
-    {
-        // 括号类型只保留 Boolean 分组含义，单元素括号按缺 tuple 元素诊断。
-        var tree = AspectNParser.ParseTypePattern("(int)");
-
-        Assert.NotEmpty(tree.Diagnostics);
-    }
-
     [Theory]
     [InlineData("Name<!>")]
     [InlineData("Name<?>")]
@@ -172,6 +163,7 @@ public sealed class TypePatternParserTests
     [InlineData("out int")]
     [InlineData("tasklike<>")]
     [InlineData("()")]
+    // 括号类型只保留 Boolean 分组含义，单元素括号按缺 tuple 元素诊断。
     [InlineData("(int)")]
     public void ParseTypePattern_InvalidStandardForm_ReportsDiagnostic(string source)
     {
