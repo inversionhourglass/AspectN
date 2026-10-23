@@ -1,6 +1,7 @@
 using AspectN.Diagnostics;
 using AspectN.Evaluation;
 using Xunit;
+using Xunit.Sdk;
 
 namespace AspectN.Conformance.Tests;
 
@@ -23,14 +24,17 @@ public sealed class SignatureLimitConformanceTests
 
         foreach (var (backend, system, map) in fixture.MethodMappings("Run"))
         {
-            if (arity == 65)
+            WithBackendContext(backend, $"arity={arity}; methodParameters={methodParameters}", () =>
             {
-                var exception = Assert.Throws<AspectNLimitException>(map);
-                Assert.Equal(DiagnosticCodes.MetadataGenericArityExceeded, exception.Diagnostic.Code);
-                continue;
-            }
+                if (arity == 65)
+                {
+                    var exception = Assert.Throws<AspectNLimitException>(map);
+                    Assert.Equal(DiagnosticCodes.MetadataGenericArityExceeded, exception.Diagnostic.Code);
+                    return;
+                }
 
-            Assert.True(pattern!.Match(map(), system).Status == MatchStatus.Matched, backend);
+                Assert.Equal(MatchStatus.Matched, pattern!.Match(map(), system).Status);
+            });
         }
     }
 
@@ -47,14 +51,17 @@ public sealed class SignatureLimitConformanceTests
             $"public class Fixture {{ public Outer<{outerArguments}>.Inner<{innerArguments}> Run() => null; }}";
         using var fixture = new ReviewFixture(source);
 
-        foreach (var (_, _, map) in fixture.MethodMappings("Run"))
+        foreach (var (backend, _, map) in fixture.MethodMappings("Run"))
         {
-            if (innerArity == 33)
+            WithBackendContext(backend, $"outerArity=32; innerArity={innerArity}", () =>
             {
-                var exception = Assert.Throws<AspectNLimitException>(map);
-                Assert.Equal(DiagnosticCodes.MetadataGenericArityExceeded, exception.Diagnostic.Code);
-            }
-            else Assert.NotNull(map());
+                if (innerArity == 33)
+                {
+                    var exception = Assert.Throws<AspectNLimitException>(map);
+                    Assert.Equal(DiagnosticCodes.MetadataGenericArityExceeded, exception.Diagnostic.Code);
+                }
+                else Assert.NotNull(map());
+            });
         }
     }
 
@@ -69,12 +76,15 @@ public sealed class SignatureLimitConformanceTests
             $"public class Fixture {{ public Outer<{argument}>.Inner Run() => null; }}");
         foreach (var (backend, _, map) in fixture.MethodMappings("Run"))
         {
-            if (arrayLayers == 63)
+            WithBackendContext(backend, $"arrayLayers={arrayLayers}", () =>
             {
-                var exception = Assert.Throws<AspectNLimitException>(map);
-                Assert.Equal(DiagnosticCodes.MetadataDepthExceeded, exception.Diagnostic.Code);
-            }
-            else Assert.True(map().ReturnType.Type is not null, backend);
+                if (arrayLayers == 63)
+                {
+                    var exception = Assert.Throws<AspectNLimitException>(map);
+                    Assert.Equal(DiagnosticCodes.MetadataDepthExceeded, exception.Diagnostic.Code);
+                }
+                else Assert.True(map().ReturnType.Type is not null, "Expected a non-null return type.");
+            });
         }
     }
 
@@ -93,10 +103,27 @@ public sealed class SignatureLimitConformanceTests
         Assert.True(new AspectNEngine().CompileTypePattern(text).TryGetTypePattern(out var pattern));
         foreach (var (backend, system, map) in fixture.MethodMappings("Run"))
         {
-            var result = pattern!.Match(map().DeclaringType, system);
-            Assert.True(result.Status == expected, backend);
-            if (expected == MatchStatus.Unknown)
-                Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == DiagnosticCodes.MetadataGenericArityExceeded);
+            WithBackendContext(backend, $"text={text}; expected={expected}", () =>
+            {
+                var result = pattern!.Match(map().DeclaringType, system);
+                Assert.Equal(expected, result.Status);
+                if (expected == MatchStatus.Unknown)
+                    Assert.Contains(DiagnosticCodes.MetadataGenericArityExceeded,
+                        result.Diagnostics.Select(diagnostic => diagnostic.Code));
+            });
+        }
+    }
+
+    private static void WithBackendContext(string backend, string input, Action assertion)
+    {
+        try
+        {
+            assertion();
+        }
+        catch (Exception exception)
+        {
+            // 保留原断言或映射异常及其堆栈，只为测试失败补充当前后端和输入。
+            throw new XunitException($"Backend: {backend}; {input}{Environment.NewLine}{exception.Message}", exception);
         }
     }
 }
