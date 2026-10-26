@@ -73,6 +73,8 @@ try {
     [IO.File]::WriteAllText((Join-Path $fixture 'results.json'),($summary | ConvertTo-Json -Depth 8),[Text.UTF8Encoding]::new($false))
     Write-Output "发布版本策略：$($results.Count) 项检查通过（$PowerShellHost）；结果：$fixture"
     $completed = $true
+    # 最后一批负例以非零退出码收尾，$LASTEXITCODE 会残留；显式退出，避免 pwsh 步骤把它当作失败。
+    exit 0
 } finally {
     Complete-TestArtifactScope $scope -Succeeded:$completed -KeepArtifacts:$KeepArtifacts
 }

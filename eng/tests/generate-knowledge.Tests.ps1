@@ -240,6 +240,8 @@ exit $LASTEXITCODE
     Write-Output "跨文化生成：$($cultureSummary.passed) 项通过，$($cultureSummary.failed) 项失败；结果：$cultureRoot"
     if ($failed.Count) { exit 1 }
     $completed = $true
+    # 子进程调用会留下 $LASTEXITCODE；当前恰好以正例收尾，显式退出以防后续调整用例顺序后静默失败。
+    exit 0
 } finally {
     Complete-TestArtifactScope $artifactScope -Succeeded:$completed -KeepArtifacts:$KeepArtifacts
 }
